@@ -173,7 +173,7 @@ function SalesDashboardInner({
               ))}
             </div>
             {secondaryKpis.length > 0 ? (
-              <div className="dashboard-kpi-secondary-strip grid grid-cols-3 gap-x-4 gap-y-3 border-t border-sales-border-subtle pt-3 sm:gap-x-6">
+              <div className="dashboard-kpi-secondary-strip">
                 {secondaryKpis.map((item) => (
                   <KpiCard key={item.id} item={item} variant="secondary" />
                 ))}

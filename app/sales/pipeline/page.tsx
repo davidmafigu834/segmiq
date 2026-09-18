@@ -31,7 +31,7 @@ function PipelineSkeleton() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="min-h-[16rem] rounded-[12px] border border-sales-border bg-sales-surface p-3 shadow-sales-card"
+            className="min-h-[16rem] rounded-[10px] border border-sales-border bg-sales-surface p-3"
           >
             <div className="mb-3 h-4 w-24 animate-pulse rounded bg-sales-neutral-100" />
             <div className="space-y-2">

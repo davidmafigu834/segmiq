@@ -142,18 +142,18 @@ export function PipelineLeadCard({
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface transition-[border-color,box-shadow] duration-150 hover:border-sales-border-strong hover:shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${
+      className={`group relative overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface transition-[border-color,background-color] duration-150 hover:border-sales-border-strong hover:bg-sales-surface-hover ${
         compact ? "p-3" : "p-3.5"
       }`}
     >
       <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-[#F8F9FB]">
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center text-sales-text-secondary">
           {source.kind === "whatsapp" ? (
             <SiWhatsapp size={14} color="#25D366" aria-hidden />
           ) : source.kind === "facebook" ? (
             <SiFacebook size={14} color="#1877F2" aria-hidden />
           ) : (
-            <CircleUserRound size={14} strokeWidth={1.8} className="text-sales-text-secondary" aria-hidden />
+            <CircleUserRound size={14} strokeWidth={1.8} aria-hidden />
           )}
         </span>
 

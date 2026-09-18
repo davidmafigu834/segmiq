@@ -46,9 +46,9 @@ export function DealNextBestActionPanel({
   return (
     <section
       aria-label="Next best action"
-      className="rounded-[12px] border border-sales-border bg-sales-surface p-4"
+      className="rounded-[10px] border border-sales-border bg-sales-surface p-4"
     >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+      <p className="text-[11px] font-medium text-sales-text-muted">
         Next best action
       </p>
       <p className="mt-1.5 text-[15px] font-semibold text-sales-text-primary">{nba.title}</p>

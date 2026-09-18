@@ -699,28 +699,28 @@ html[data-crm-theme="light"] .sales-dashboard-premium aside nav::-webkit-scrollb
 }
 
 .sales-dashboard-premium .dashboard-kpi-value {
-  font-size: clamp(26px, 1.85vw, 34px);
-  font-weight: 750;
-  letter-spacing: -0.045em;
+  font-size: clamp(22px, 1.6vw, 28px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: #ffffff;
+  color: var(--sales-text-primary);
 }
 
 .sales-dashboard-premium .dashboard-kpi-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--sales-text-muted);
 }
 
 .dashboard-focus-kicker {
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--sales-text-muted);
 }
 
 .dashboard-focus-title {
@@ -761,6 +761,15 @@ html[data-crm-theme="light"] .dashboard-focus-kicker {
   color: var(--sales-text-muted);
 }
 
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-kpi-value {
+  color: #ffffff;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-kpi-label,
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-focus-kicker {
+  color: var(--sales-text-muted);
+}
+
 /* ---------- Sales portal refinement ----------
    Keep work surfaces calm and consistent across dashboard, pipeline,
    calendar, tasks, reports, and detail pages. */
@@ -779,7 +788,7 @@ html[data-crm-theme="light"] .dashboard-focus-kicker {
 .sales-dashboard-premium[data-sales-portal="true"] .dashboard-panel,
 .sales-dashboard-premium[data-sales-portal="true"] .sd-card:not(.dashboard-kpi),
 .sales-dashboard-premium[data-sales-portal="true"] .workspace-card,
-.sales-dashboard-premium[data-sales-portal="true"] .dashboard-kpi {
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-kpi:not(.dashboard-kpi--secondary) {
   border-color: var(--sales-card-border, var(--sales-border-subtle));
   border-radius: 12px;
   background: var(--sales-surface);
@@ -789,8 +798,8 @@ html[data-crm-theme="light"] .dashboard-focus-kicker {
 html[data-crm]:not([data-crm-theme="light"])
   .sales-dashboard-premium[data-sales-portal="true"] {
   --segmiq-canvas:
-    radial-gradient(720px circle at 0% -8%, rgba(147, 51, 234, 0.12), transparent 62%),
-    radial-gradient(680px circle at 100% -10%, rgba(77, 141, 255, 0.08), transparent 60%),
+    radial-gradient(720px circle at 0% -8%, rgba(212, 255, 79, 0.04), transparent 62%),
+    radial-gradient(680px circle at 100% -10%, rgba(77, 141, 255, 0.06), transparent 60%),
     linear-gradient(180deg, #080916 0%, #070814 100%);
 }
 
@@ -801,10 +810,60 @@ html[data-crm]:not([data-crm-theme="light"])
 html[data-crm]:not([data-crm-theme="light"])
   .sales-dashboard-premium[data-sales-portal="true"] .workspace-card,
 html[data-crm]:not([data-crm-theme="light"])
-  .sales-dashboard-premium[data-sales-portal="true"] .dashboard-kpi {
+  .sales-dashboard-premium[data-sales-portal="true"] .dashboard-kpi:not(.dashboard-kpi--secondary) {
   background: var(--sales-surface);
   border-color: var(--sales-card-border, var(--sales-border-subtle));
   box-shadow: var(--sales-shadow-card);
+}
+
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-kpi.dashboard-kpi--secondary,
+.sales-dashboard-premium .dashboard-kpi.dashboard-kpi--secondary {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-height: 0;
+}
+
+.sales-dashboard-premium .dashboard-kpi-secondary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--sales-border-subtle);
+  padding-top: 12px;
+}
+
+.sales-dashboard-premium .dashboard-kpi-secondary-strip > .dashboard-kpi--secondary {
+  padding: 0 16px !important;
+  border-right: 1px solid var(--sales-border-subtle) !important;
+}
+
+.sales-dashboard-premium .dashboard-kpi-secondary-strip > .dashboard-kpi--secondary:first-child {
+  padding-left: 0 !important;
+}
+
+.sales-dashboard-premium .dashboard-kpi-secondary-strip > .dashboard-kpi--secondary:last-child {
+  border-right: 0 !important;
+  padding-right: 0 !important;
+}
+
+.sales-dashboard-premium .dashboard-kpi--secondary .dashboard-kpi-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--sales-text-muted);
+}
+
+.sales-dashboard-premium .dashboard-kpi--secondary .dashboard-kpi-value {
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  color: var(--sales-text-primary);
+}
+
+html[data-crm]:not([data-crm-theme="light"])
+  .sales-dashboard-premium .dashboard-kpi--secondary .dashboard-kpi-value {
+  color: var(--sales-text-primary);
 }
 
 .sales-dashboard-premium[data-sales-portal="true"] .dashboard-panel-header {

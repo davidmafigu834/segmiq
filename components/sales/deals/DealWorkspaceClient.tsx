@@ -55,10 +55,10 @@ type NextActionState = {
   emptyMessage: string;
 };
 
-function stageBadgeTone(stage: string): "neutral" | "brand" | "info" | "purple" | "warning" | "success" | "danger" {
+function stageBadgeTone(stage: string): "neutral" | "brand" | "info" | "warning" | "success" | "danger" {
   if (stage === "QUALIFIED") return "info";
   if (stage === "SCOPING") return "brand";
-  if (stage === "PROPOSAL_SENT") return "purple";
+  if (stage === "PROPOSAL_SENT") return "info";
   if (stage === "NEGOTIATING") return "warning";
   if (stage === "WON") return "success";
   if (stage === "LOST") return "danger";
@@ -372,7 +372,7 @@ export function DealWorkspaceClient({
         <CardContent className="space-y-5 pt-5">
           <div className="flex flex-col gap-4 layout:flex-row layout:items-start layout:justify-between">
             <div className="min-w-0">
-              <p className="sales-type-label uppercase tracking-[0.06em] text-sales-text-muted">
+              <p className="sales-type-label text-sales-text-muted">
                 {customerName}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -458,7 +458,7 @@ export function DealWorkspaceClient({
 
           {/* Stage progress */}
           <div className="border-t border-sales-border-subtle pt-4">
-            <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+            <p className="mb-2.5 text-[11px] font-medium text-sales-text-muted">
               Stage
             </p>
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -472,9 +472,9 @@ export function DealWorkspaceClient({
                     disabled={closed || moving}
                     onClick={() => void moveStage(stage)}
                     className={cn(
-                      "min-h-10 shrink-0 rounded-full px-3.5 text-[12px] font-medium transition-colors disabled:opacity-50",
+                      "min-h-10 shrink-0 rounded-sales-md px-3.5 text-[12px] font-medium transition-colors disabled:opacity-50",
                       current
-                        ? "bg-sales-brand text-sales-brand-text shadow-sales-card"
+                        ? "bg-sales-brand text-sales-ink"
                         : done
                           ? "bg-sales-brand-soft text-sales-text-primary"
                           : "border border-sales-border bg-sales-surface text-sales-text-secondary hover:bg-sales-surface-hover"
@@ -489,14 +489,14 @@ export function DealWorkspaceClient({
                   <button
                     type="button"
                     onClick={() => setCloseMode("won")}
-                    className="min-h-10 shrink-0 rounded-full border border-sales-border bg-sales-success-soft px-3.5 text-[12px] font-medium text-sales-success-fg"
+                    className="min-h-10 shrink-0 rounded-sales-md border border-sales-border bg-sales-success-soft px-3.5 text-[12px] font-medium text-sales-success-fg"
                   >
                     Won
                   </button>
                   <button
                     type="button"
                     onClick={() => setCloseMode("lost")}
-                    className="min-h-10 shrink-0 rounded-full border border-sales-border bg-sales-danger-soft px-3.5 text-[12px] font-medium text-sales-danger-fg"
+                    className="min-h-10 shrink-0 rounded-sales-md border border-sales-border bg-sales-danger-soft px-3.5 text-[12px] font-medium text-sales-danger-fg"
                   >
                     Lost
                   </button>
@@ -594,7 +594,7 @@ export function DealWorkspaceClient({
                       </Button>
                       <Link
                         href={`/sales/calendar?deal=${deal.id}`}
-                        className="inline-flex min-h-11 items-center justify-center rounded-sales-md border border-sales-border-strong bg-sales-surface px-4 text-[13px] font-semibold text-sales-text-primary shadow-sales-card transition-colors hover:bg-sales-surface-hover"
+                        className="inline-flex min-h-11 items-center justify-center rounded-sales-md border border-sales-border-strong bg-sales-surface px-4 text-[13px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
                       >
                         Open calendar
                       </Link>
@@ -634,7 +634,7 @@ export function DealWorkspaceClient({
                     <div className="rounded-sales-lg border border-sales-border bg-sales-surface px-3 py-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                          <p className="text-[11px] font-medium text-sales-text-muted">
                             Current offer
                           </p>
                           <Link
@@ -948,7 +948,7 @@ export function DealWorkspaceClient({
           {lead ? (
             <Card variant="flat">
               <CardContent className="py-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                <p className="text-[11px] font-medium text-sales-text-muted">
                   Related lead
                 </p>
                 <p className="mt-1 text-[13px] text-sales-text-secondary">
@@ -998,7 +998,7 @@ export function DealWorkspaceClient({
                       type="button"
                       onClick={() => setLostReason(r)}
                       className={cn(
-                        "min-h-10 rounded-full border px-3 text-[12px] font-medium transition-colors",
+                        "min-h-10 rounded-sales-md border px-3 text-[12px] font-medium transition-colors",
                         lostReason === r
                           ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
                           : "border-sales-border bg-sales-surface text-sales-text-secondary hover:bg-sales-surface-hover"

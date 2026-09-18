@@ -210,12 +210,12 @@ export function PipelineDealCard({
         }
       }}
       className={cn(
-        "group relative cursor-pointer rounded-[12px] border bg-sales-surface text-left shadow-sales-card",
-        "transition-[border-color,box-shadow,background-color] duration-150",
+        "group relative cursor-pointer rounded-[10px] border bg-sales-surface text-left",
+        "transition-[border-color,background-color] duration-150",
         compact ? "p-3" : "px-3.5 py-3",
         selected
-          ? "border-sales-brand-border bg-sales-brand-soft shadow-sales-card"
-          : "border-sales-border hover:border-sales-border-strong hover:shadow-sales-card-hover"
+          ? "border-sales-brand-border bg-sales-brand-soft"
+          : "border-sales-border hover:border-sales-border-strong hover:bg-sales-surface-hover"
       )}
     >
       <div className="flex items-start gap-2.5">

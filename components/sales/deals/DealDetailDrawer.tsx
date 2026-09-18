@@ -53,7 +53,7 @@ type DrawerPayload = {
 };
 
 const actionSquare =
-  "inline-flex h-11 w-11 flex-col items-center justify-center gap-0.5 rounded-[10px] border border-sales-border bg-sales-surface-raised text-[10px] font-medium text-sales-text-secondary transition-colors hover:border-sales-border-strong hover:bg-sales-surface-hover";
+  "inline-flex h-11 w-11 flex-col items-center justify-center gap-0.5 rounded-[10px] border border-sales-border bg-sales-surface text-[10px] font-medium text-sales-text-secondary transition-colors hover:border-sales-border-strong hover:bg-sales-surface-hover";
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "";

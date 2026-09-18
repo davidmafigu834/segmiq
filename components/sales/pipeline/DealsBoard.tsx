@@ -18,7 +18,6 @@ import {
 import { DealDetailDrawer } from "@/components/sales/deals/DealDetailDrawer";
 import {
   DEAL_ACTIVE_STAGES,
-  DEAL_STAGE_ACCENT,
   DEAL_STAGE_LABEL,
   compareDealsByAttention,
   formatDealStage,
@@ -488,7 +487,7 @@ export function DealsBoard({
               </button>
               {filterOpen ? (
                 <div className="absolute right-0 z-30 mt-1.5 w-[min(100vw-2rem,20rem)] rounded-sales-lg border border-sales-border bg-sales-surface-raised p-3.5 shadow-sales-popover">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                  <p className="text-[11px] font-medium text-sales-text-muted">
                     Stage
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -507,10 +506,10 @@ export function DealsBoard({
                             }))
                           }
                           className={cn(
-                            "rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+                            "rounded-sales-sm px-2.5 py-1 text-[11px] font-medium transition-colors",
                             on
-                              ? "bg-sales-neutral-900 text-white dark:bg-sales-brand dark:text-sales-brand-text"
-                              : "bg-sales-neutral-100 text-sales-text-secondary hover:bg-sales-surface-hover"
+                              ? "bg-sales-brand-soft text-sales-text-primary ring-1 ring-sales-brand-border"
+                              : "bg-sales-surface-subtle text-sales-text-secondary hover:bg-sales-surface-hover"
                           )}
                         >
                           {DEAL_STAGE_LABEL[s]}
@@ -518,7 +517,7 @@ export function DealsBoard({
                       );
                     })}
                   </div>
-                  <p className="mt-3.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                  <p className="mt-3.5 text-[11px] font-medium text-sales-text-muted">
                     Attention
                   </p>
                   <div className="mt-2 space-y-2">
@@ -548,7 +547,7 @@ export function DealsBoard({
                       No Next Action
                     </label>
                   </div>
-                  <p className="mt-3.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                  <p className="mt-3.5 text-[11px] font-medium text-sales-text-muted">
                     Quote status
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -564,10 +563,10 @@ export function DealsBoard({
                         type="button"
                         onClick={() => setFilters((f) => ({ ...f, hasQuote: o.v }))}
                         className={cn(
-                          "rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+                          "rounded-sales-sm px-2.5 py-1 text-[11px] font-medium transition-colors",
                           filters.hasQuote === o.v
-                            ? "bg-sales-neutral-900 text-white dark:bg-sales-brand dark:text-sales-brand-text"
-                            : "bg-sales-neutral-100 text-sales-text-secondary"
+                            ? "bg-sales-brand-soft text-sales-text-primary ring-1 ring-sales-brand-border"
+                            : "bg-sales-surface-subtle text-sales-text-secondary"
                         )}
                       >
                         {o.l}
@@ -587,7 +586,7 @@ export function DealsBoard({
                     </button>
                     <button
                       type="button"
-                      className="rounded-sales-sm bg-sales-neutral-900 px-3 py-1.5 text-[12px] font-semibold text-white dark:bg-sales-brand dark:text-sales-brand-text"
+                      className="rounded-sales-sm bg-sales-brand px-3 py-1.5 text-[12px] font-semibold text-sales-ink"
                       onClick={() => setFilterOpen(false)}
                     >
                       Done
@@ -667,8 +666,8 @@ export function DealsBoard({
             }
           />
         ) : (
-          <div className="overflow-hidden rounded-sales-lg border border-sales-border bg-sales-surface shadow-sales-card">
-            <ul className="divide-y divide-sales-border">
+          <div className="overflow-hidden rounded-sales-lg border border-sales-border bg-sales-surface">
+            <ul className="divide-y divide-sales-border-subtle">
               {closedItems.map((it) => (
                 <li key={it.deal.id}>
                   <button
@@ -733,7 +732,7 @@ export function DealsBoard({
                   type="button"
                   onClick={() => openDeal(it.deal.id)}
                   className={cn(
-                    "w-full rounded-[12px] border border-sales-border bg-sales-surface p-4 text-left shadow-sales-card transition-[border-color,box-shadow] hover:border-sales-border-strong hover:shadow-sales-card-hover",
+                    "w-full rounded-[10px] border border-sales-border bg-sales-surface p-4 text-left transition-colors hover:border-sales-border-strong hover:bg-sales-surface-hover",
                     selectedDealId === it.deal.id &&
                       "border-sales-brand-border bg-sales-brand-soft"
                   )}
@@ -782,7 +781,7 @@ export function DealsBoard({
                   </div>
                   {att.reason ? (
                     <div className="mt-3 rounded-sales-md bg-sales-surface-subtle px-3 py-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                      <p className="text-[11px] font-medium text-sales-text-muted">
                         Why now
                       </p>
                       <p className="mt-0.5 text-[12px] text-sales-text-label">{att.reason}</p>
@@ -843,7 +842,7 @@ export function DealsBoard({
                 data-course-target={`pipeline-stage-${col.toLowerCase().replace(/_/g, "-")}`}
                 onClick={() => setMobileCol(col)}
                 className={cn(
-                  "min-h-10 shrink-0 rounded-full px-3 text-[12px] font-medium transition-colors",
+                  "min-h-10 shrink-0 rounded-sales-md px-3 text-[12px] font-medium transition-colors",
                   mobileCol === col
                     ? "bg-sales-brand-soft text-sales-text-primary ring-1 ring-sales-brand-border"
                     : "border border-sales-border bg-sales-surface text-sales-text-secondary"
@@ -886,15 +885,12 @@ export function DealsBoard({
                 className="min-w-0"
                 data-course-target={`pipeline-stage-${col.toLowerCase().replace(/_/g, "-")}`}
               >
-                <div
-                  className="mb-2.5 flex items-center justify-between gap-2 border-t-[2px] px-0.5 pt-2"
-                  style={{ borderColor: DEAL_STAGE_ACCENT[col] }}
-                >
+                <div className="mb-2.5 flex items-center justify-between gap-2 border-t border-sales-border-subtle px-0.5 pt-2.5">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-secondary">
+                    <h3 className="text-[13px] font-semibold tracking-[-0.01em] text-sales-text-primary">
                       {DEAL_STAGE_LABEL[col]}
                     </h3>
-                    <span className="rounded-sales-xs bg-sales-neutral-100 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-sales-text-label">
+                    <span className="rounded-sales-sm px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-sales-text-muted">
                       {rows.length}
                     </span>
                   </div>

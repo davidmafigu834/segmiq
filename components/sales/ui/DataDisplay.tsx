@@ -16,11 +16,9 @@ export function KpiStat({
   const body =
     variant === "secondary" ? (
       <>
-        <p className="dashboard-kpi-label min-w-0 text-[11px]">{item.label}</p>
-        <p className="dashboard-kpi-value mt-1 truncate text-[18px] sm:text-[20px]">
-          {item.value || "—"}
-        </p>
-        <div className="mt-1.5 min-w-0">
+        <p className="dashboard-kpi-label min-w-0">{item.label}</p>
+        <p className="dashboard-kpi-value mt-1 truncate">{item.value || "—"}</p>
+        <div className="mt-1 min-w-0">
           {item.trend ? (
             <TrendChip direction={item.trend.direction} label={item.trend.label} />
           ) : (
