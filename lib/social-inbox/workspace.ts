@@ -5,16 +5,29 @@ import {
   canReplySocialInbox,
   canViewTeamSocialInbox,
 } from "./access";
-import { getDemoWorkspace } from "./demo-data";
 import { computeIndicators, matchesView, sortQueue } from "./ranking";
 import { listConnections, listConversations, listTeam, rowToQueueItem } from "./store";
-import type { SocialInboxFilters, SocialInboxViewId, SocialInboxWorkspace } from "./types";
+import { SOCIAL_INBOX_VIEWS } from "./types";
+import type {
+  SocialInboxFilters,
+  SocialInboxViewCounts,
+  SocialInboxViewId,
+  SocialInboxWorkspace,
+  SocialQueueItem,
+} from "./types";
+
+function countViews(items: SocialQueueItem[]): SocialInboxViewCounts {
+  const counts = {} as SocialInboxViewCounts;
+  for (const view of SOCIAL_INBOX_VIEWS) {
+    counts[view] = items.filter((item) => matchesView(item, view)).length;
+  }
+  return counts;
+}
 
 export async function getSocialInboxWorkspace(opts: {
   actor: PermissionActor;
   view: SocialInboxViewId;
   filters?: SocialInboxFilters;
-  demo?: boolean;
 }): Promise<SocialInboxWorkspace> {
   const clientId = opts.actor.clientId;
   if (!clientId) {
@@ -34,47 +47,25 @@ export async function getSocialInboxWorkspace(opts: {
     canReply: canReplySocialInbox(opts.actor),
   };
 
-  const connections = await listConnections(clientId);
-  const realConnections = connections.filter((c) => !c.isDemo);
-  const wantsDemo = opts.demo === true && realConnections.length === 0;
-  const noneConnected = realConnections.length === 0 && connections.length === 0;
-
-  if (wantsDemo || (noneConnected && process.env.SOCIAL_INBOX_DEMO === "1")) {
-    const demo = getDemoWorkspace({
-      view: opts.view,
-      viewerId: opts.actor.userId,
-      ...caps,
-    });
-    demo.team = await listTeam(clientId);
-    return demo;
-  }
-
-  if (noneConnected) {
+  const connections = (await listConnections(clientId)).filter((c) => !c.isDemo);
+  const live = connections.filter((c) => c.status !== "disconnected");
+  if (!live.length) {
     return {
       ...emptyWorkspace(opts.view, caps),
       connections,
-      connectionState: "none",
+      connectionState: connections.length ? "attention" : "none",
       team: await listTeam(clientId),
     };
   }
 
-  const { rows, errorMissingTable } = await listConversations({
+  const { rows } = await listConversations({
     clientId,
     viewerId: opts.actor.userId,
-    view: opts.view,
     canViewTeam,
     filters: opts.filters,
   });
 
-  if (errorMissingTable && process.env.NODE_ENV !== "production") {
-    return getDemoWorkspace({
-      view: opts.view,
-      viewerId: opts.actor.userId,
-      ...caps,
-    });
-  }
-
-  let items = rows.map((row) => rowToQueueItem(row, opts.actor.userId));
+  let items = rows.map((row) => rowToQueueItem(row, opts.actor.userId)).filter((item) => !item.isDemo);
   if (opts.filters?.channel === "facebook") {
     items = items.filter((i) => i.channel.startsWith("facebook"));
   } else if (opts.filters?.channel === "instagram") {
@@ -98,7 +89,6 @@ export async function getSocialInboxWorkspace(opts: {
         (i.detectedProduct ?? "").toLowerCase().includes(q)
     );
   }
-  items = items.filter((i) => matchesView(i, opts.view));
   items = sortQueue(items, opts.view, opts.actor.userId);
 
   const attention = connections.some(
@@ -108,13 +98,13 @@ export async function getSocialInboxWorkspace(opts: {
   return {
     view: opts.view,
     items,
+    counts: countViews(items),
     nextCursor: null,
     indicators: computeIndicators(items),
     connections,
     connectionState: attention ? "attention" : "connected",
     ...caps,
     team: await listTeam(clientId),
-    isDemo: false,
   };
 }
 
@@ -128,12 +118,12 @@ function emptyWorkspace(
   return {
     view,
     items: [],
+    counts: countViews([]),
     nextCursor: null,
     indicators: { highIntent: 0, awaitingReply: 0, followUpsDue: 0, openDealsNeedingAttention: 0 },
     connections: [],
     connectionState: "none",
     ...caps,
     team: [],
-    isDemo: false,
   };
 }

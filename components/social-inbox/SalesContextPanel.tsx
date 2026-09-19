@@ -69,8 +69,7 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
   const item = selected.conversation;
   const intel = selected.intelligence;
   const chips = uniqueSignalChips(item.intentReasons);
-  const quote = session.quotations[item.conversationId];
-  const possibleMatch = item.conversationId === "demo-tendai" && intel.crm.state === "none";
+  const possibleMatch = intel.crm.match && intel.crm.state === "none";
 
   return (
     <aside
@@ -122,8 +121,8 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
         {possibleMatch ? (
           <div className="mt-3 rounded-[10px] border border-sales-border bg-sales-bg px-3 py-2.5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Possible customer match</p>
-            <p className="mt-1 text-[13px] font-medium">Tendai Moyo</p>
-            <p className="text-[12px] text-sales-text-muted">+263 77 214 8831 · 88% match</p>
+            <p className="mt-1 text-[13px] font-medium">{intel.crm.match?.name}</p>
+            <p className="text-[12px] text-sales-text-muted">{intel.crm.match?.reason}</p>
             <Button size="sm" variant="secondary" className="mt-2" onClick={() => session.setOverlay("match_review")}>
               Review
             </Button>
@@ -222,7 +221,7 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
               <div>
                 <p className="text-[13px] font-medium">{item.detectedProduct}</p>
                 <p className="text-[11px] text-sales-text-muted">
-                  {item.detectedProduct.includes("CAT") ? "Used equipment · Financing requested" : "Package · Quotation requested"}
+                  {intel.detectedLocation ? intel.detectedLocation : "From this conversation"}
                 </p>
               </div>
             </div>
@@ -270,15 +269,20 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
             <>
               <p className="text-[13px] font-medium">{intel.crm.customerName ?? item.displayName}</p>
               <p className="text-[12px] text-sales-text-muted">New lead</p>
-              <Button size="sm" variant="ghost" className="mt-1" onClick={() => (window.location.href = session.flash?.href ?? session.seed.leadsBase)}>
+              <Button size="sm" variant="ghost" className="mt-1" onClick={() => (window.location.href = intel.crm.leadId ? `${session.seed.leadsBase}${encodeURIComponent(intel.crm.leadId)}` : session.seed.leadsBase)}>
                 Open lead →
               </Button>
             </>
           ) : (
             <>
               <p className="text-[13px] font-medium">{intel.crm.customerName ?? item.displayName}</p>
-              <p className="text-[12px] text-sales-text-muted">Customer since May 2026</p>
-              <Button size="sm" variant="ghost" className="mt-1">
+              <p className="text-[12px] text-sales-text-muted">Existing customer</p>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="mt-1"
+                onClick={() => (window.location.href = session.seed.leadsBase)}
+              >
                 Open customer →
               </Button>
             </>
@@ -288,8 +292,9 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
         {intel.crm.state === "open_deal" ? (
           <Section id="deal" label="Open deal" session={session}>
             <p className="text-[13px] font-medium">{intel.crm.openDealName ?? item.detectedProduct}</p>
-            <p className="text-[12px] text-sales-text-muted">Proposal sent · $48,000</p>
-            <p className="text-[11px] text-sales-text-muted">Last activity 2d ago</p>
+            {intel.crm.match?.openDealName ? (
+              <p className="text-[12px] text-sales-text-muted">{intel.crm.match.openDealName}</p>
+            ) : null}
             <Button
               size="sm"
               variant="secondary"
@@ -298,31 +303,6 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
             >
               Open deal
             </Button>
-          </Section>
-        ) : null}
-
-        {quote ? (
-          <Section id="deal" label="Quotation" session={session}>
-            <p className="text-[13px] font-medium">{quote.id}</p>
-            <p className="text-[12px] text-sales-text-secondary">
-              {quote.product} · {quote.amount}
-            </p>
-            <p className="text-[11px] text-sales-text-muted">
-              {quote.status} · {quote.sentAgo}
-            </p>
-            <div className="mt-2 flex gap-1.5">
-              <Button size="sm" variant="secondary" onClick={() => (window.location.href = session.seed.quotesBase)}>
-                Open quotation
-              </Button>
-              <Popover>
-                <PopoverTrigger className="inline-flex h-8 items-center rounded-[8px] px-2 text-[12px] text-sales-text-secondary hover:bg-sales-surface-hover">
-                  Follow up
-                </PopoverTrigger>
-                <PopoverContent className="w-56 p-1.5">
-                  <FollowUpMenu session={session} />
-                </PopoverContent>
-              </Popover>
-            </div>
           </Section>
         ) : null}
 

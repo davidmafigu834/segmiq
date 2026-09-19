@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     conversationIds?: string[];
     assigneeId?: string | null;
   };
-  const ids = (body.conversationIds ?? []).filter((id) => !id.startsWith("demo-")).slice(0, 50);
+  const ids = (body.conversationIds ?? []).slice(0, 50);
   if (body.action === "assign") {
     const result = await bulkAssign({
       actor: gate.actor,

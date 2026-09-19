@@ -3,12 +3,14 @@ import { P } from "@/lib/auth/rbac/permissions";
 import { requireSocialInbox, loadVisibleConversation } from "@/lib/social-inbox/api-auth";
 import {
   assignConversation,
+  clearSocialFollowUp,
   convertOpportunityToLead,
   createDealFromSocial,
   createSocialFollowUp,
+  dismissSocialOpportunity,
   linkSocialIdentity,
-  markConversationRead,
   resolveConversation,
+  setConversationRead,
 } from "@/lib/social-inbox/actions";
 
 export const dynamic = "force-dynamic";
@@ -16,9 +18,6 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const gate = await requireSocialInbox(req, P.SOCIAL_INBOX_VIEW);
   if (!gate.ok) return gate.response;
-  if (params.id.startsWith("demo-")) {
-    return NextResponse.json({ error: "Sample conversations are read-only for this action." }, { status: 400 });
-  }
   const visible = await loadVisibleConversation(gate.actor, params.id);
   if (visible === "forbidden" || !visible) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
@@ -36,11 +35,23 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     contactId?: string | null;
     leadId?: string | null;
     rejected?: boolean;
+    read?: boolean;
+    clear?: boolean;
+    completed?: boolean;
   };
 
   switch (body.action) {
     case "read": {
-      await markConversationRead(gate.actor.clientId, params.id);
+      await setConversationRead(gate.actor.clientId, params.id, body.read !== false);
+      return NextResponse.json({ ok: true });
+    }
+    case "not_sales": {
+      const result = await dismissSocialOpportunity({
+        actor: gate.actor,
+        conversationId: params.id,
+        reason: body.reason ?? null,
+      });
+      if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
       return NextResponse.json({ ok: true });
     }
     case "assign": {
@@ -89,12 +100,18 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ ok: true, dealId: result.dealId, leadId: result.leadId });
     }
     case "follow_up": {
-      const result = await createSocialFollowUp({
-        actor: gate.actor,
-        conversationId: params.id,
-        followUpAt: body.followUpAt ?? "",
-        reason: body.reason,
-      });
+      const result = body.clear
+        ? await clearSocialFollowUp({
+            actor: gate.actor,
+            conversationId: params.id,
+            completed: body.completed,
+          })
+        : await createSocialFollowUp({
+            actor: gate.actor,
+            conversationId: params.id,
+            followUpAt: body.followUpAt ?? "",
+            reason: body.reason,
+          });
       if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
       return NextResponse.json({ ok: true });
     }

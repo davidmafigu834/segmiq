@@ -44,9 +44,9 @@ import { InboxScrollArea } from "./InboxScrollArea";
 import type { SocialInboxSession } from "./useSocialInboxSession";
 
 export function ConversationPane({ session }: { session: SocialInboxSession }) {
-  const { selected, hydrating, selectedId } = session;
+  const { selected, hydrating, detailLoading, selectedId } = session;
 
-  if (hydrating) {
+  if (hydrating || (selectedId && !selected && detailLoading)) {
     return (
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-sales-bg">
         <div className="h-16 border-b border-sales-border px-4 py-3">
@@ -274,7 +274,7 @@ export function FollowUpMenu({ session }: { session: SocialInboxSession }) {
       <button
         type="button"
         className="rounded-[6px] px-2 py-1.5 text-left text-[13px] hover:bg-sales-surface-hover"
-        onClick={() => session.setFollowUp(session.suggestedThursday, "Customer is arranging financing.")}
+        onClick={() => void session.setFollowUp(session.suggestedThursday)}
       >
         {session.suggestedThursday.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" })}
       </button>
@@ -403,7 +403,7 @@ function insightFor(session: SocialInboxSession) {
   if (selected.intelligence.nextAction.code === "convert_lead") {
     return {
       title: "Strong buying intent",
-      body: selected.intelligence.nextAction.followUpReason ?? selected.intelligence.summary ?? "Pricing, financing and availability came up.",
+      body: selected.intelligence.nextAction.followUpReason ?? selected.intelligence.summary ?? "This conversation looks like a sales opportunity.",
       actions: [
         { label: "Convert to lead", primary: true, onClick: () => session.setOverlay("convert_lead") },
         { label: "See details", primary: false, onClick: () => session.setOverlay("what_should_i_do") },

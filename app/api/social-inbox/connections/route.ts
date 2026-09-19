@@ -12,11 +12,7 @@ export async function GET(req: Request) {
   if (!gate.ok) return gate.response;
   const connections = await listConnections(gate.actor.clientId);
   const configured = Boolean(process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET);
-  return NextResponse.json({
-    connections,
-    metaConfigured: configured,
-    demoAvailable: process.env.NODE_ENV !== "production" || process.env.SOCIAL_INBOX_DEMO === "1",
-  });
+  return NextResponse.json({ connections, metaConfigured: configured });
 }
 
 export async function POST(req: Request) {

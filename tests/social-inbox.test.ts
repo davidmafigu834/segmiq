@@ -10,8 +10,8 @@ import {
 } from "../lib/social-inbox/access";
 import { classifySocialIntent } from "../lib/social-inbox/intent";
 import { computeIndicators, matchesView, rankScoreForYou, sortQueue } from "../lib/social-inbox/ranking";
+import { EMPTY_FILTERS, filterQueue } from "../lib/social-inbox/inbox-ui";
 import { bandFromScore, explainScore, opportunityScoreFromClassification } from "../lib/social-inbox/scoring";
-import { getDemoWorkspace } from "../lib/social-inbox/demo-data";
 import { SOCIAL_VIEW_LABELS } from "../lib/social-inbox/display";
 import { SALES_NAVIGATION, resolveSalesNavItems } from "../lib/sales/navigation/sales-nav-config";
 import { getCompanyNavigation } from "../lib/sales/navigation/company-nav-config";
@@ -182,19 +182,10 @@ describe("social inbox navigation and settings", () => {
     assert.equal(SOCIAL_VIEW_LABELS.for_you, "For You");
   });
 
-  it("demo workspace never mixes live connection state", () => {
-    const demo = getDemoWorkspace({
-      view: "for_you",
-      viewerId: "rep-a",
-      canViewUnassigned: true,
-      canAssign: true,
-      canManageChannels: false,
-      canReply: true,
-    });
-    assert.equal(demo.isDemo, true);
-    assert.equal(demo.connectionState, "demo");
-    assert.ok(demo.items.every((row) => row.isDemo));
-    assert.ok(demo.items.some((row) => row.intentBand === "hot"));
+  it("does not treat a demo owner as the current salesperson", () => {
+    const rows = [item({ assignedToId: "demo-rep", unread: true, intentBand: "hot", intentScore: 90 })];
+    const mine = filterQueue(rows, "for_you", "rep-a", EMPTY_FILTERS, "", "mine", true);
+    assert.equal(mine.length, 0);
   });
 
   it("extends the existing Meta webhook without treating Instagram as WhatsApp", () => {

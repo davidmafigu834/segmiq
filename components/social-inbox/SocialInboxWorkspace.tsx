@@ -23,7 +23,8 @@ export function SocialInboxSalesHost(props: {
   leadsBase: string;
   dealsBase: string;
   channelsHref: string;
-  viewerId?: string;
+  viewerId: string;
+  clientId: string;
 }) {
   const [pane, setPane] = useState<Pane>("queue");
   return (
@@ -45,7 +46,8 @@ export function SocialInboxSalesHost(props: {
         leadsBase={props.leadsBase}
         dealsBase={props.dealsBase}
         channelsHref={props.channelsHref}
-        viewerId={props.viewerId ?? "demo-rep"}
+        viewerId={props.viewerId}
+        clientId={props.clientId}
         canViewUnassigned={false}
         canAssign
         canManageChannels={false}
@@ -68,7 +70,8 @@ export function SocialInboxCompanyHost(props: {
   leadsBase: string;
   dealsBase: string;
   channelsHref: string;
-  viewerId?: string;
+  viewerId: string;
+  clientId: string;
 }) {
   const [pane, setPane] = useState<Pane>("queue");
   return (
@@ -90,7 +93,8 @@ export function SocialInboxCompanyHost(props: {
           leadsBase={props.leadsBase}
           dealsBase={props.dealsBase}
           channelsHref={props.channelsHref}
-          viewerId={props.viewerId ?? "demo-rep"}
+          viewerId={props.viewerId}
+          clientId={props.clientId}
           canViewUnassigned
           canAssign
           canManageChannels
@@ -108,6 +112,7 @@ function SocialInboxClient(props: {
   dealsBase: string;
   channelsHref: string;
   viewerId: string;
+  clientId: string;
   canViewUnassigned: boolean;
   canAssign: boolean;
   canManageChannels: boolean;
@@ -116,6 +121,7 @@ function SocialInboxClient(props: {
 }) {
   const session = useSocialInboxSession({
     viewerId: props.viewerId,
+    clientId: props.clientId,
     canViewUnassigned: props.canViewUnassigned,
     canAssign: props.canAssign,
     canManageChannels: props.canManageChannels,
@@ -130,11 +136,5 @@ function SocialInboxClient(props: {
     onPaneChange(session.mobilePane);
   }, [onPaneChange, session.mobilePane]);
 
-  return (
-    <SocialInboxApp
-      session={session}
-      channelsHref={props.channelsHref}
-      isDev={process.env.NODE_ENV !== "production"}
-    />
-  );
+  return <SocialInboxApp session={session} channelsHref={props.channelsHref} />;
 }

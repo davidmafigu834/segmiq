@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { P } from "@/lib/auth/rbac/permissions";
 import { requireSocialInbox, loadVisibleConversation } from "@/lib/social-inbox/api-auth";
-import { getDemoConversation } from "@/lib/social-inbox/demo-data";
 import { listMessages, rowToQueueItem } from "@/lib/social-inbox/store";
 import { summarizeSocialConversation } from "@/lib/social-inbox/ai";
 import { canAssignSocialInbox, canConvertSocialLead, canCreateSocialDeal, canCreateSocialQuote, canReplySocialInbox } from "@/lib/social-inbox/access";
@@ -19,12 +18,6 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const gate = await requireSocialInbox(req, P.SOCIAL_INBOX_VIEW);
   if (!gate.ok) return gate.response;
-
-  if (params.id.startsWith("demo-")) {
-    const demo = getDemoConversation(params.id, gate.actor.userId);
-    if (!demo) return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
-    return NextResponse.json(demo);
-  }
 
   const row = await loadVisibleConversation(gate.actor, params.id);
   if (row === "forbidden") return NextResponse.json({ error: "Not found." }, { status: 404 });

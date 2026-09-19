@@ -10,6 +10,7 @@ export type SocialAuditEventType =
   | "identity_linked"
   | "identity_unlinked"
   | "conversation_resolved"
+  | "opportunity_dismissed"
   | "reply_sent"
   | "ai_reply_sent"
   | "deal_created"

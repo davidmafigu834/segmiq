@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { SiFacebook, SiInstagram } from "react-icons/si";
 import {
   Button,
@@ -11,7 +11,7 @@ import {
   SearchInput,
   TextArea,
 } from "@/components/sales/ui";
-import { DEMO_CRM_CUSTOMERS, DEMO_PRODUCTS } from "@/lib/social-inbox/demo-data";
+import { formatRelativeTime } from "@/lib/social-inbox/display";
 import type { SocialInboxSession } from "./useSocialInboxSession";
 
 export function InboxOverlays({ session }: { session: SocialInboxSession }) {
@@ -25,6 +25,7 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
     return <LinkCustomerSheet session={session} />;
   }
   if (overlay === "create_quote" && item) {
+    const leadId = selected?.intelligence.crm.leadId;
     return (
       <PremiumSheet
         size="md"
@@ -38,27 +39,11 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
             </Button>
             <Button
               variant="primary"
+              disabled={!leadId}
               onClick={() => {
-                const id = selected?.conversation.conversationId ?? "new";
-                session.setQuotations((q) => ({
-                  ...q,
-                  [id]: {
-                    id: "Q-draft",
-                    product: item.detectedProduct ?? "Package",
-                    amount: "Draft",
-                    status: "Draft",
-                    sentAgo: "Just now",
-                  },
-                }));
+                if (!leadId) return;
                 setOverlay(null);
-                session.showFlash({
-                  title: "Quotation draft created",
-                  hrefLabel: "Open quotation",
-                  href: `${session.seed.quotesBase}${encodeURIComponent(id)}`,
-                });
-                window.setTimeout(() => {
-                  window.location.href = `${session.seed.quotesBase}${encodeURIComponent(id)}`;
-                }, 400);
+                window.location.href = `${session.seed.quotesBase}${encodeURIComponent(leadId)}`;
               }}
             >
               Continue to quotation
@@ -67,7 +52,9 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
         }
       >
         <p className="text-[13px] text-sales-text-secondary">
-          We&apos;ll open the SegmiQ quotation flow with this conversation attached. Use Back in the browser to return here.
+          {leadId
+            ? "We'll open the quotation flow with this conversation attached."
+            : "Convert this conversation to a lead first, then create a quotation."}
         </p>
       </PremiumSheet>
     );
@@ -84,14 +71,7 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
             <Button variant="secondary" onClick={() => setOverlay(null)}>
               Cancel
             </Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                session.patchConversation(item.conversationId, (row) => ({ ...row, crmState: "open_deal", primaryLabel: "Open deal" }));
-                setOverlay(null);
-                session.showFlash({ title: "Deal created", hrefLabel: "Open deal", href: session.seed.dealsBase });
-              }}
-            >
+            <Button variant="primary" loading={session.dealBusy} onClick={() => void session.createDeal()}>
               Create deal
             </Button>
           </div>
@@ -125,7 +105,7 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
           />
           <ChannelConnectRow
             name="Instagram"
-            detail="DMs + Comments"
+            detail="DMs + Comments, via the same Facebook Page"
             icon={<SiInstagram size={18} className="text-[#E1306C]" />}
             onConnect={() => session.connectChannels()}
           />
@@ -153,20 +133,19 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
           </div>
         }
       >
-        <p className="text-[14px] font-medium">{conn?.displayName ?? "SegmiQ Equipment"}</p>
+        <p className="text-[14px] font-medium">{conn?.displayName ?? (provider === "facebook" ? "Facebook Page" : "Instagram")}</p>
         <p className="mt-2 text-[13px] text-sales-text-secondary">
           {provider === "facebook" ? "Messenger · Page comments · Advertisement comments" : "DMs · Comments"}
         </p>
         <p className="mt-3 text-[12px] text-sales-text-muted">
           Connection: {conn?.status === "connected" ? "Healthy" : conn?.status ?? "Unknown"}
         </p>
-        <p className="text-[12px] text-sales-text-muted">Last sync: 2 mins ago</p>
+        {conn?.lastSyncAt ? (
+          <p className="text-[12px] text-sales-text-muted">Last sync: {formatRelativeTime(conn.lastSyncAt)}</p>
+        ) : null}
         <div className="mt-4 flex gap-2">
           <Button size="sm" variant="secondary" onClick={() => session.reconnectChannel(provider)}>
             Reconnect
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => session.showFlash({ title: "Change page is managed in Meta" }, "info")}>
-            Change page
           </Button>
         </div>
       </PremiumSheet>
@@ -182,11 +161,12 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
         description="New messages and comments will stop appearing in Social Inbox. Existing SegmiQ conversations will remain available."
         confirmLabel="Disconnect"
         destructive
-        onConfirm={() => session.disconnectChannel(provider)}
+        onConfirm={() => void session.disconnectChannel(provider)}
       />
     );
   }
   if (overlay === "match_review") {
+    const match = selected?.intelligence.crm.match;
     return (
       <PremiumSheet
         size="md"
@@ -194,19 +174,22 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
         onClose={() => setOverlay(null)}
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setOverlay(null)}>
+            <Button variant="secondary" onClick={() => void session.rejectMatch()}>
               Not the same person
             </Button>
             <Button
               variant="primary"
+              disabled={!match?.contactId}
               onClick={() =>
-                session.linkCustomer({
-                  id: "crm-tendai",
-                  name: "Tendai Moyo",
-                  phone: "+263 77 214 8831",
-                  email: "tendai.moyo@example.co.zw",
-                  note: "Matched on name",
-                })
+                match?.contactId
+                  ? void session.linkCustomer({
+                      id: match.contactId,
+                      name: match.name,
+                      phone: "",
+                      email: "",
+                      note: match.reason,
+                    })
+                  : undefined
               }
             >
               Link profiles
@@ -217,13 +200,13 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-[10px] border border-sales-border p-3">
             <p className="text-[11px] font-semibold uppercase text-sales-text-muted">Social profile</p>
-            <p className="mt-1 font-medium">Tendai Moyo</p>
-            <p className="text-[12px] text-sales-text-muted">Facebook</p>
+            <p className="mt-1 font-medium">{item?.displayName}</p>
+            <p className="text-[12px] text-sales-text-muted">{item?.username ? `@${item.username}` : "Facebook"}</p>
           </div>
           <div className="rounded-[10px] border border-sales-border p-3">
             <p className="text-[11px] font-semibold uppercase text-sales-text-muted">CRM customer</p>
-            <p className="mt-1 font-medium">Tendai Moyo</p>
-            <p className="text-[12px] text-sales-text-muted">+263 77 214 8831</p>
+            <p className="mt-1 font-medium">{match?.name ?? "No match yet"}</p>
+            <p className="text-[12px] text-sales-text-muted">{match?.reason ?? "Search from Link customer if this isn't right."}</p>
           </div>
         </div>
       </PremiumSheet>
@@ -240,7 +223,7 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
         title="This opportunity is still open."
         description="Resolve conversation anyway?"
         confirmLabel="Resolve"
-        onConfirm={() => session.resolveConversation(true)}
+        onConfirm={() => void session.resolveConversation(true)}
       />
     );
   }
@@ -251,12 +234,23 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
     return (
       <PremiumSheet size="md" title="Original post" onClose={() => setOverlay(null)}>
         <div className="overflow-hidden rounded-[10px] border border-sales-border">
-          <div className="flex h-36 items-center justify-center bg-[var(--sales-ink)] text-sales-brand">
-            CAT 320
-          </div>
           <div className="p-3">
             <p className="font-medium">{item?.origin?.adName ?? item?.detectedProduct ?? "Social post"}</p>
-            <p className="mt-1 text-[13px] text-sales-text-secondary">{item?.origin?.caption}</p>
+            {item?.origin?.caption ? (
+              <p className="mt-1 text-[13px] text-sales-text-secondary">{item.origin.caption}</p>
+            ) : (
+              <p className="mt-1 text-[13px] text-sales-text-muted">No caption stored for this post yet.</p>
+            )}
+            {item?.origin?.permalink ? (
+              <a
+                href={item.origin.permalink}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-block text-[12px] font-medium text-sales-text-primary"
+              >
+                Open on Facebook
+              </a>
+            ) : null}
           </div>
         </div>
       </PremiumSheet>
@@ -268,37 +262,14 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
   if (overlay === "tour") {
     return <TourSheet session={session} />;
   }
-  if (overlay === "setup") {
-    const labels = ["Connecting Facebook", "Finding recent conversations", "Preparing sales signals", "You're ready."];
-    return (
-      <PremiumSheet size="sm" title="Setting up Social Inbox…" onClose={() => session.finishSetup()}>
-        <ul className="space-y-2 text-[13px] text-sales-text-secondary">
-          {labels.map((label, i) => (
-            <li key={label} className={i <= session.setupStep ? "text-sales-text-primary" : "text-sales-text-muted"}>
-              {i < session.setupStep ? "✓ " : i === session.setupStep ? "· " : "○ "}
-              {label}
-            </li>
-          ))}
-        </ul>
-        {session.setupStep >= 3 ? (
-          <div className="mt-4">
-            <p className="text-[13px] text-sales-text-secondary">24 recent conversations found. 5 look like potential sales opportunities.</p>
-            <Button className="mt-3" variant="primary" onClick={session.finishSetup}>
-              Open Social Inbox
-            </Button>
-          </div>
-        ) : null}
-      </PremiumSheet>
-    );
-  }
   return null;
 }
 
 function ConvertLeadDrawer({ session }: { session: SocialInboxSession }) {
   const item = session.selected!.conversation;
   const [name, setName] = useState(item.displayName);
-  const [company, setCompany] = useState("");
-  const [product, setProduct] = useState(item.detectedProduct ?? "");
+  const [phone, setPhone] = useState("");
+  const [notes, setNotes] = useState(session.selected?.intelligence.summary ?? "");
 
   return (
     <PremiumSheet
@@ -311,7 +282,11 @@ function ConvertLeadDrawer({ session }: { session: SocialInboxSession }) {
           <Button variant="secondary" onClick={() => session.setOverlay(null)}>
             Cancel
           </Button>
-          <Button variant="primary" loading={session.convertBusy} onClick={() => void session.convertToLead()}>
+          <Button
+            variant="primary"
+            loading={session.convertBusy}
+            onClick={() => void session.convertToLead({ name, phone, notes })}
+          >
             {session.convertBusy ? "Converting…" : "Convert to lead"}
           </Button>
         </div>
@@ -323,20 +298,16 @@ function ConvertLeadDrawer({ session }: { session: SocialInboxSession }) {
           <Input id="si-name" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div>
-          <FieldLabel htmlFor="si-co">Company</FieldLabel>
-          <Input id="si-co" value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Optional" />
-        </div>
-        <div>
-          <FieldLabel htmlFor="si-prod">Interested in</FieldLabel>
-          <Input id="si-prod" value={product} onChange={(e) => setProduct(e.target.value)} />
+          <FieldLabel htmlFor="si-phone">Phone</FieldLabel>
+          <Input id="si-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" />
         </div>
         <p className="text-[12px] text-sales-text-muted">
           Source Facebook · Campaign {item.origin?.campaignName ?? "Organic"} · Owner {item.assignedToName ?? "Unassigned"} · Sales
-          intent {item.intentScore} Hot
+          intent {item.intentScore}
         </p>
         <div>
           <FieldLabel htmlFor="si-sum">Conversation summary</FieldLabel>
-          <TextArea id="si-sum" rows={3} defaultValue={session.selected?.intelligence.summary ?? ""} />
+          <TextArea id="si-sum" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
       </div>
     </PremiumSheet>
@@ -344,24 +315,67 @@ function ConvertLeadDrawer({ session }: { session: SocialInboxSession }) {
 }
 
 function LinkCustomerSheet({ session }: { session: SocialInboxSession }) {
-  const [q, setQ] = useState("");
-  const rows = useMemo(
-    () => DEMO_CRM_CUSTOMERS.filter((c) => `${c.name} ${c.phone} ${c.email}`.toLowerCase().includes(q.toLowerCase())),
-    [q]
-  );
+  const [q, setQ] = useState(session.selected?.conversation.displayName ?? "");
+  const [rows, setRows] = useState<Array<{ id: string; name: string; phone?: string | null; email?: string | null; note?: string }>>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const handle = window.setTimeout(() => {
+      setLoading(true);
+      const params = new URLSearchParams({ limit: "12" });
+      if (q.trim()) params.set("q", q.trim());
+      void fetch(`/api/contacts/list?${params.toString()}`, { signal: controller.signal })
+        .then(async (res) => {
+          const data = (await res.json()) as { contacts?: Array<{ id: string; name: string; phone?: string | null; email?: string | null }> };
+          setRows(
+            (data.contacts ?? []).map((c) => ({
+              id: c.id,
+              name: c.name,
+              phone: c.phone,
+              email: c.email,
+              note: [c.phone, c.email].filter(Boolean).join(" · "),
+            }))
+          );
+        })
+        .catch(() => undefined)
+        .finally(() => setLoading(false));
+    }, 200);
+    return () => {
+      controller.abort();
+      window.clearTimeout(handle);
+    };
+  }, [q]);
+
   return (
     <PremiumSheet size="md" title="Link to existing customer" onClose={() => session.setOverlay(null)}>
       <SearchInput value={q} onChange={setQ} placeholder="Search customer, phone or email…" />
       <ul className="mt-3 divide-y divide-sales-border">
+        {loading && rows.length === 0 ? (
+          <li className="py-3 text-[13px] text-sales-text-muted">Searching…</li>
+        ) : null}
+        {!loading && rows.length === 0 ? (
+          <li className="py-3 text-[13px] text-sales-text-muted">No matching customers.</li>
+        ) : null}
         {rows.map((row) => (
           <li key={row.id} className="flex items-center gap-3 py-2.5">
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-medium">{row.name}</p>
-              <p className="text-[12px] text-sales-text-muted">
-                {row.phone} · {row.note}
-              </p>
+              <p className="text-[12px] text-sales-text-muted">{row.note || "No contact details"}</p>
             </div>
-            <Button size="sm" variant="primary" onClick={() => session.linkCustomer(row)}>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() =>
+                void session.linkCustomer({
+                  id: row.id,
+                  name: row.name,
+                  phone: row.phone ?? "",
+                  email: row.email ?? "",
+                  note: row.note ?? "",
+                })
+              }
+            >
               Link
             </Button>
           </li>
@@ -383,7 +397,7 @@ function NotSalesSheet({ session }: { session: SocialInboxSession }) {
           <Button variant="secondary" onClick={() => session.setOverlay(null)}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={() => session.markNotSales(reason)}>
+          <Button variant="primary" onClick={() => void session.markNotSales(reason)}>
             Mark not sales
           </Button>
         </div>
@@ -407,27 +421,72 @@ function NotSalesSheet({ session }: { session: SocialInboxSession }) {
 
 function ProductPicker({ session }: { session: SocialInboxSession }) {
   const [q, setQ] = useState("");
-  const rows = DEMO_PRODUCTS.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()));
+  const [rows, setRows] = useState<Array<{ id: string; name: string; detail: string }>>([]);
+  const detected = session.selected?.conversation.detectedProduct;
+
+  useEffect(() => {
+    if (!session.seed.clientId) return;
+    const controller = new AbortController();
+    const handle = window.setTimeout(() => {
+      const params = new URLSearchParams({ limit: "12", status: "ACTIVE" });
+      if (q.trim()) params.set("q", q.trim());
+      void fetch(`/api/clients/${session.seed.clientId}/products?${params.toString()}`, { signal: controller.signal })
+        .then(async (res) => {
+          const data = (await res.json()) as { items?: Array<{ id: string; name: string; sku?: string | null; brand?: string | null }> };
+          setRows(
+            (data.items ?? []).map((p) => ({
+              id: p.id,
+              name: p.name,
+              detail: [p.brand, p.sku].filter(Boolean).join(" · "),
+            }))
+          );
+        })
+        .catch(() => setRows([]));
+    }, 200);
+    return () => {
+      controller.abort();
+      window.clearTimeout(handle);
+    };
+  }, [q, session.seed.clientId]);
+
   return (
     <PremiumSheet size="sm" title="Add product" onClose={() => session.setOverlay(null)}>
       <SearchInput value={q} onChange={setQ} placeholder="Search products…" />
-      <p className="mt-3 text-[11px] font-semibold uppercase text-sales-text-muted">Recent</p>
+      {detected ? (
+        <button
+          type="button"
+          className="mt-3 w-full rounded-[8px] px-2 py-2 text-left hover:bg-sales-surface-hover"
+          onClick={() => session.insertProduct(detected)}
+        >
+          <span className="block text-[11px] font-semibold uppercase text-sales-text-muted">From this conversation</span>
+          <span className="block text-[13px] font-medium">{detected}</span>
+        </button>
+      ) : null}
+      <p className="mt-3 text-[11px] font-semibold uppercase text-sales-text-muted">Catalog</p>
       <ul className="mt-1">
         {rows.map((p) => (
           <li key={p.id}>
             <button
               type="button"
               className="flex w-full items-center justify-between rounded-[8px] px-2 py-2 text-left hover:bg-sales-surface-hover"
-              onClick={() => session.insertProduct(`${p.name} — ${p.detail}`)}
+              onClick={() => session.insertProduct(p.detail ? `${p.name} — ${p.detail}` : p.name)}
             >
               <span>
                 <span className="block text-[13px] font-medium">{p.name}</span>
-                <span className="text-[12px] text-sales-text-muted">{p.detail}</span>
+                {p.detail ? <span className="text-[12px] text-sales-text-muted">{p.detail}</span> : null}
               </span>
             </button>
           </li>
         ))}
+        {rows.length === 0 ? (
+          <li className="px-2 py-2 text-[12px] text-sales-text-muted">No catalog matches. Type a name and it can still be inserted below.</li>
+        ) : null}
       </ul>
+      {q.trim() ? (
+        <Button className="mt-2" size="sm" variant="secondary" onClick={() => session.insertProduct(q.trim())}>
+          Insert “{q.trim()}”
+        </Button>
+      ) : null}
     </PremiumSheet>
   );
 }
@@ -449,14 +508,11 @@ function AssignOrAdviseSheet({ session }: { session: SocialInboxSession }) {
                 type="button"
                 className="flex w-full items-center justify-between rounded-[8px] px-3 py-2 text-left hover:bg-sales-surface-hover"
                 onClick={() => {
-                  session.assignTo(member.id, member.name);
+                  void session.assignTo(member.id, member.name);
                   session.setOverlay(null);
                 }}
               >
                 <span className="text-[13px] font-medium">{member.name}</span>
-                <span className="text-[12px] text-sales-text-muted">
-                  {member.name.startsWith("Tawanda") ? "3 open" : member.name.startsWith("Farai") ? "6 open" : "2 open"}
-                </span>
               </button>
             </li>
           ))}
@@ -471,7 +527,7 @@ function AssignOrAdviseSheet({ session }: { session: SocialInboxSession }) {
             <Button size="sm" variant="primary" onClick={() => void session.draftWithAi()}>
               Draft follow-up
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => session.setFollowUp(session.suggestedThursday)}>
+            <Button size="sm" variant="secondary" onClick={() => void session.setFollowUp(session.suggestedThursday)}>
               Schedule later
             </Button>
           </div>

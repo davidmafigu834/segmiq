@@ -3,7 +3,6 @@ export { classifySocialIntent, mergeClassifications } from "./intent";
 export { bandFromScore, opportunityScoreFromClassification, explainScore } from "./scoring";
 export { sortQueue, matchesView, computeIndicators } from "./ranking";
 export { getSocialInboxWorkspace } from "./workspace";
-export { getDemoConversation, getDemoWorkspace } from "./demo-data";
 export { ingestSocialWebhook } from "./webhook";
 export { listSocialFocusRecommendations } from "./focus";
 export { suggestSocialReply, summarizeSocialConversation } from "./ai";

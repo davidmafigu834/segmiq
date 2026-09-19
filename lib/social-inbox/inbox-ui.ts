@@ -2,17 +2,6 @@ import { matchesView, sortQueue } from "./ranking";
 import { signalChipLabel } from "./display";
 import type { SocialInboxViewId, SocialQueueItem } from "./types";
 
-export type InboxScene =
-  | "normal"
-  | "no_channels"
-  | "empty"
-  | "channel_error"
-  | "loading"
-  | "manager"
-  | "failed_send"
-  | "hot_opportunity"
-  | "existing_customer";
-
 export type ComposerMode = "reply" | "internal_note" | "public_reply" | "private_message";
 
 export type TeamScope = "mine" | "team" | string;
@@ -156,7 +145,7 @@ export function filterQueue(
     if (item.followUpLabel === "Snoozed") return view === "follow_up";
     if (!canViewUnassigned && !item.assignedToId) return false;
     if (teamScope === "mine") {
-      return item.assignedToId === viewerId || item.assignedToId === "demo-rep";
+      return item.assignedToId === viewerId;
     }
     if (teamScope !== "team") {
       return item.assignedToId === teamScope;

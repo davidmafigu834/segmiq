@@ -49,6 +49,8 @@ export default async function SalesSocialInboxPage() {
         leadsBase="/sales/leads?lead="
         dealsBase="/sales/deals/"
         channelsHref="/client/settings/integrations/channels"
+        viewerId={session.userId}
+        clientId={session.clientId!}
       />
     </Suspense>
   );

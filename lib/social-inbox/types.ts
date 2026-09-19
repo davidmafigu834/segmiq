@@ -233,19 +233,23 @@ export type SocialConversationDetail = {
   canAssign: boolean;
 };
 
+/** Per-view queue sizes, counted over everything the viewer is allowed to see. */
+export type SocialInboxViewCounts = Record<SocialInboxViewId, number>;
+
 export type SocialInboxWorkspace = {
   view: SocialInboxViewId;
+  /** Everything the viewer may see, unfiltered, so the client can switch views without a refetch. */
   items: SocialQueueItem[];
+  counts: SocialInboxViewCounts;
   nextCursor: string | null;
   indicators: SocialInboxIndicators;
   connections: SafeSocialConnection[];
-  connectionState: "none" | "demo" | "connected" | "attention";
+  connectionState: "none" | "connected" | "attention";
   canViewUnassigned: boolean;
   canManageChannels: boolean;
   canAssign: boolean;
   canReply: boolean;
   team: { id: string; name: string }[];
-  isDemo: boolean;
 };
 
 export type SocialInboxActor = {

@@ -21,13 +21,55 @@ function asIdentity(row: unknown): Record<string, unknown> | null {
   return row as Record<string, unknown>;
 }
 
-export async function markConversationRead(clientId: string, conversationId: string): Promise<void> {
+export async function setConversationRead(
+  clientId: string,
+  conversationId: string,
+  read: boolean
+): Promise<void> {
   const supabase = createAdminClient();
   await supabase
     .from("social_conversations")
-    .update({ unread: false, updated_at: new Date().toISOString() })
+    .update({ unread: !read, updated_at: new Date().toISOString() })
     .eq("client_id", clientId)
     .eq("id", conversationId);
+}
+
+/**
+ * Takes a conversation out of the sales queue without deleting the history. The
+ * opportunity is what gets dismissed; the thread stays readable and repliable.
+ */
+export async function dismissSocialOpportunity(opts: {
+  actor: SocialInboxActor;
+  conversationId: string;
+  reason?: string | null;
+}): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
+  const row = await getConversationRow(opts.actor.clientId, opts.conversationId);
+  if (!row) return { ok: false, error: "Conversation not found.", status: 404 };
+  const supabase = createAdminClient();
+  const now = new Date().toISOString();
+  const opp = asOpp(row.opportunity);
+  if (opp?.id) {
+    await supabase
+      .from("social_opportunities")
+      .update({ status: "not_a_lead", follow_up_at: null, follow_up_reason: opts.reason ?? null, updated_at: now })
+      .eq("id", opp.id)
+      .eq("client_id", opts.actor.clientId);
+  }
+  await supabase
+    .from("social_conversations")
+    .update({ status: "resolved", unread: false, updated_at: now })
+    .eq("id", opts.conversationId)
+    .eq("client_id", opts.actor.clientId);
+  await logSocialAudit({
+    clientId: opts.actor.clientId,
+    actorId: opts.actor.userId,
+    actorName: opts.actor.name,
+    eventType: "opportunity_dismissed",
+    conversationId: opts.conversationId,
+    opportunityId: (opp?.id as string | undefined) ?? null,
+    metadata: { reason: opts.reason ?? null },
+  });
+  return { ok: true };
 }
 
 export async function replyToConversation(opts: {
@@ -404,6 +446,43 @@ export async function createDealFromSocial(opts: {
     metadata: { dealId: created.deal.id, leadId },
   });
   return { ok: true, dealId: created.deal.id, leadId };
+}
+
+export async function clearSocialFollowUp(opts: {
+  actor: SocialInboxActor;
+  conversationId: string;
+  /** A completed follow-up also drops the unread flag; a cancelled one leaves it alone. */
+  completed?: boolean;
+}): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
+  const row = await getConversationRow(opts.actor.clientId, opts.conversationId);
+  if (!row) return { ok: false, error: "Conversation not found.", status: 404 };
+  const supabase = createAdminClient();
+  const now = new Date().toISOString();
+  const opp = asOpp(row.opportunity);
+  if (opp?.id) {
+    await supabase
+      .from("social_opportunities")
+      .update({ follow_up_at: null, follow_up_reason: null, updated_at: now })
+      .eq("id", opp.id)
+      .eq("client_id", opts.actor.clientId);
+  }
+  await supabase
+    .from("social_conversations")
+    .update({
+      status: opts.completed ? "resolved" : "open",
+      unread: opts.completed ? false : row.unread,
+      updated_at: now,
+    })
+    .eq("id", opts.conversationId)
+    .eq("client_id", opts.actor.clientId);
+  if (row.linked_lead_id) {
+    await supabase
+      .from("leads")
+      .update({ follow_up_date: null })
+      .eq("id", row.linked_lead_id)
+      .eq("client_id", opts.actor.clientId);
+  }
+  return { ok: true };
 }
 
 export async function createSocialFollowUp(opts: {

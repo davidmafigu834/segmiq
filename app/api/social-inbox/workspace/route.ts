@@ -18,7 +18,6 @@ export async function GET(req: Request) {
   const workspace = await getSocialInboxWorkspace({
     actor: gate.actor,
     view: parseView(url.searchParams.get("view")),
-    demo: url.searchParams.get("demo") === "1",
     filters: {
       q: url.searchParams.get("q"),
       channel: url.searchParams.get("channel") as never,

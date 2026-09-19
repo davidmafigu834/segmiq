@@ -12,14 +12,23 @@ export async function GET(req: Request) {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const cookieState = cookies().get("social_inbox_oauth_state")?.value;
-  const settingsPath = "/client/settings/integrations/channels";
+  const returnCookie = cookies().get("social_inbox_oauth_return")?.value;
+  const settingsPath =
+    returnCookie &&
+    (returnCookie.startsWith("/sales/social-inbox") ||
+      returnCookie.startsWith("/client/social-inbox") ||
+      returnCookie.startsWith("/client/settings/integrations/channels"))
+      ? returnCookie.split("?")[0]
+      : "/client/settings/integrations/channels";
+  const fail = (reason: string) =>
+    NextResponse.redirect(new URL(`${settingsPath}?social=${reason}`, url.origin));
 
   if (!code || !state || !cookieState || state !== cookieState) {
-    return NextResponse.redirect(new URL(`${settingsPath}?social=denied`, url.origin));
+    return fail("denied");
   }
   const clientId = state.split(":")[0];
   if (!clientId) {
-    return NextResponse.redirect(new URL(`${settingsPath}?social=denied`, url.origin));
+    return fail("denied");
   }
 
   const appId = process.env.FACEBOOK_APP_ID;
@@ -27,7 +36,7 @@ export async function GET(req: Request) {
   const redirectUri =
     process.env.SOCIAL_INBOX_OAUTH_REDIRECT_URI || `${url.origin}/api/social-inbox/oauth/callback`;
   if (!appId || !appSecret) {
-    return NextResponse.redirect(new URL(`${settingsPath}?social=unconfigured`, url.origin));
+    return fail("unconfigured");
   }
 
   const tokenUrl = new URL(`${getFacebookGraphBase()}/oauth/access_token`);
@@ -39,7 +48,7 @@ export async function GET(req: Request) {
   const tokenJson = (await tokenRes.json().catch(() => ({}))) as { access_token?: string };
   const userToken = tokenJson.access_token;
   if (!userToken) {
-    return NextResponse.redirect(new URL(`${settingsPath}?social=token_failed`, url.origin));
+    return fail("token_failed");
   }
 
   const pages = await graphCall<{ data?: Array<{ id: string; name?: string; access_token?: string; instagram_business_account?: { id: string } }> }>(
@@ -48,7 +57,7 @@ export async function GET(req: Request) {
     { clientId }
   );
   if (!pages.ok || !pages.data.data?.length) {
-    return NextResponse.redirect(new URL(`${settingsPath}?social=no_pages`, url.origin));
+    return fail("no_pages");
   }
 
   const supabase = createAdminClient();
@@ -106,5 +115,6 @@ export async function GET(req: Request) {
     metadata: { provider: "facebook", pages: pages.data.data.length },
   });
   cookies().set("social_inbox_oauth_state", "", { path: "/", maxAge: 0 });
+  cookies().set("social_inbox_oauth_return", "", { path: "/", maxAge: 0 });
   return NextResponse.redirect(new URL(`${settingsPath}?social=connected`, url.origin));
 }

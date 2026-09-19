@@ -4,12 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSalesToast } from "@/components/sales/ui";
 import {
-  DEMO_PRODUCTS,
-  DEMO_SUGGESTED_REPLIES,
-  getDemoConversation,
-  getDemoWorkspace,
-} from "@/lib/social-inbox/demo-data";
-import {
   EMPTY_FILTERS,
   activeFilterCount,
   filterQueue,
@@ -21,13 +15,13 @@ import {
   viewCounts,
   type ComposerMode,
   type InboxFilterState,
-  type InboxScene,
   type TeamScope,
 } from "@/lib/social-inbox/inbox-ui";
 import type {
   SafeSocialConnection,
   SocialConversationDetail,
   SocialInboxViewId,
+  SocialInboxWorkspace,
   SocialMessageDto,
   SocialQueueItem,
 } from "@/lib/social-inbox/types";
@@ -50,7 +44,6 @@ export type OverlayId =
   | "post_preview"
   | "what_should_i_do"
   | "tour"
-  | "setup"
   | "search";
 
 export type ActionFlash = {
@@ -59,14 +52,6 @@ export type ActionFlash = {
   undo?: () => void;
   hrefLabel?: string;
   href?: string;
-};
-
-export type QuotationSnippet = {
-  id: string;
-  product: string;
-  amount: string;
-  status: string;
-  sentAgo: string;
 };
 
 export type LinkedCustomer = {
@@ -79,14 +64,26 @@ export type LinkedCustomer = {
 
 type SessionSeed = {
   viewerId: string;
+  clientId: string;
   canViewUnassigned: boolean;
   canAssign: boolean;
   canManageChannels: boolean;
   canReply: boolean;
 };
 
-function cloneJson<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
+async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      ...(init?.body ? { "content-type": "application/json" } : {}),
+      ...(init?.headers ?? {}),
+    },
+  });
+  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
+  if (!res.ok) {
+    throw new Error(data.error || `Request failed (${res.status})`);
+  }
+  return data;
 }
 
 function nowIso() {
@@ -99,7 +96,7 @@ function makeMsg(
   extra?: Partial<SocialMessageDto>
 ): SocialMessageDto {
   return {
-    id: `msg-${Math.random().toString(36).slice(2, 9)}`,
+    id: `local-${Math.random().toString(36).slice(2, 9)}`,
     direction,
     visibility: extra?.visibility ?? "private",
     body,
@@ -123,6 +120,10 @@ function loadBool(key: string, fallback: boolean) {
   return raw === "1";
 }
 
+function facebookOAuthUrl(returnPath: string) {
+  return `/api/social-inbox/oauth/start?return=${encodeURIComponent(returnPath)}`;
+}
+
 export function useSocialInboxSession(
   seed: SessionSeed & {
     leadsBase: string;
@@ -135,165 +136,47 @@ export function useSocialInboxSession(
   const searchParams = useSearchParams();
   const { toast } = useSalesToast();
 
-  const sceneParam = (searchParams.get("scene") as InboxScene | null) ?? null;
   const initialView = parseInboxView(searchParams.get("view"));
   const initialConversation = searchParams.get("conversation");
 
-  const [scene, setScene] = useState<InboxScene>(sceneParam ?? "normal");
   const [view, setView] = useState<SocialInboxViewId>(initialView);
-  const [selectedId, setSelectedId] = useState<string | null>(initialConversation ?? "demo-tendai");
+  const [selectedId, setSelectedId] = useState<string | null>(initialConversation);
   const [items, setItems] = useState<SocialQueueItem[]>([]);
   const [details, setDetails] = useState<Record<string, SocialConversationDetail>>({});
   const [connections, setConnections] = useState<SafeSocialConnection[]>([]);
   const [team, setTeam] = useState<{ id: string; name: string }[]>([]);
   const [filters, setFilters] = useState<InboxFilterState>(EMPTY_FILTERS);
   const [query, setQuery] = useState("");
-  const [teamScope, setTeamScope] = useState<TeamScope>("mine");
+  const [teamScope, setTeamScope] = useState<TeamScope>(seed.canViewUnassigned ? "team" : "mine");
   const [viewsCollapsed, setViewsCollapsed] = useState(false);
   const [intelCollapsed, setIntelCollapsed] = useState(false);
   const [intelSection, setIntelSection] = useState<"customer" | "intent" | "deal" | "ai">("customer");
   const [mobilePane, setMobilePane] = useState<"queue" | "thread" | "intel">("queue");
   const [overlay, setOverlay] = useState<OverlayId>(null);
-  const [composerMode, setComposerMode] = useState<ComposerMode>("public_reply");
+  const [composerMode, setComposerMode] = useState<ComposerMode>("reply");
   const [draft, setDraft] = useState("");
   const [draftedByAi, setDraftedByAi] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [flash, setFlash] = useState<ActionFlash | null>(null);
-  const [quotations, setQuotations] = useState<Record<string, QuotationSnippet>>({
-    "demo-chipo": {
-      id: "Q-1041",
-      product: "CAT 320 Excavator",
-      amount: "$48,000",
-      status: "Sent",
-      sentAgo: "2 days ago",
-    },
-  });
   const [historyOpen, setHistoryOpen] = useState(false);
   const [insightDismissed, setInsightDismissed] = useState<Record<string, boolean>>({});
   const [newCount, setNewCount] = useState(0);
   const [stickBottom, setStickBottom] = useState(true);
-  const [typingName, setTypingName] = useState<string | null>(null);
   const [convertBusy, setConvertBusy] = useState(false);
-  const [setupStep, setSetupStep] = useState(0);
+  const [dealBusy, setDealBusy] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [canViewUnassigned, setCanViewUnassigned] = useState(seed.canViewUnassigned);
   const [canAssign, setCanAssign] = useState(seed.canAssign);
   const [canManageChannels, setCanManageChannels] = useState(seed.canManageChannels);
-  const [canReply] = useState(seed.canReply);
-  const failNextSend = useRef(false);
-  const tendaiJourney = useRef({ privateSent: false, customerReplied: false });
+  const [canReply, setCanReply] = useState(seed.canReply);
+  const [hydrating, setHydrating] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(false);
   const flashTimer = useRef<number | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
-
-  const hydrating = scene === "loading";
-
-  const resetFromDemo = useCallback(
-    (nextScene: InboxScene, nextView?: SocialInboxViewId, nextConversation?: string | null) => {
-      const workspace = getDemoWorkspace({
-        view: "for_you",
-        viewerId: seed.viewerId,
-        canViewUnassigned: nextScene === "manager" ? true : seed.canViewUnassigned,
-        canAssign: nextScene === "manager" ? true : seed.canAssign,
-        canManageChannels: seed.canManageChannels,
-        canReply: seed.canReply,
-      });
-      const allIds = [
-        "demo-tendai",
-        "demo-brian",
-        "demo-tatenda",
-        "demo-rudo",
-        "demo-chipo",
-        "demo-tawanda",
-        "demo-nyasha",
-        "demo-farai",
-        "demo-blessing",
-        "demo-chiedza",
-        "demo-tarisai",
-        "demo-gifts",
-        "demo-gweru",
-      ];
-      const fullItems = allIds
-        .map((id) => getDemoConversation(id, seed.viewerId)?.conversation)
-        .filter(Boolean) as SocialQueueItem[];
-      const map: Record<string, SocialConversationDetail> = {};
-      for (const id of allIds) {
-        const detail = getDemoConversation(id, seed.viewerId);
-        if (detail) map[id] = cloneJson(detail);
-      }
-
-      setItems(cloneJson(fullItems));
-      setDetails(map);
-      setTeam(workspace.team);
-      setFilters(EMPTY_FILTERS);
-      setQuery("");
-      setSelectedIds([]);
-      setSelectionMode(false);
-      setDraft("");
-      setDraftedByAi(false);
-      setInsightDismissed({});
-      setNewCount(0);
-      tendaiJourney.current = { privateSent: false, customerReplied: false };
-      failNextSend.current = nextScene === "failed_send";
-
-      if (nextScene === "no_channels") {
-        setConnections([]);
-        setSelectedId(null);
-      } else if (nextScene === "empty") {
-        setConnections(cloneJson(workspace.connections));
-        setItems([]);
-        setSelectedId(null);
-      } else if (nextScene === "channel_error") {
-        const conns = cloneJson(workspace.connections).map((c) =>
-          c.provider === "instagram"
-            ? { ...c, status: "auth_expired" as const, lastError: "Connection expired" }
-            : c
-        );
-        setConnections(conns);
-        setSelectedId("demo-tendai");
-      } else if (nextScene === "existing_customer") {
-        setConnections(cloneJson(workspace.connections));
-        setSelectedId("demo-chipo");
-        setView("for_you");
-      } else if (nextScene === "hot_opportunity") {
-        setConnections(cloneJson(workspace.connections));
-        setSelectedId("demo-tendai");
-        setView("hot");
-      } else if (nextScene === "manager") {
-        setConnections(cloneJson(workspace.connections));
-        setCanViewUnassigned(true);
-        setCanAssign(true);
-        setTeamScope("team");
-        setView("unassigned");
-        setSelectedId("demo-nyasha");
-      } else {
-        setConnections(cloneJson(workspace.connections));
-        const preferred =
-          nextConversation && fullItems.some((row) => row.conversationId === nextConversation)
-            ? nextConversation
-            : "demo-tendai";
-        setSelectedId(preferred);
-        setView(nextView ?? "for_you");
-      }
-
-      if (nextScene !== "manager") {
-        setCanViewUnassigned(seed.canViewUnassigned);
-        setCanAssign(seed.canAssign);
-        setTeamScope("mine");
-      }
-      setCanManageChannels(seed.canManageChannels);
-      setScene(nextScene === "loading" ? "loading" : nextScene);
-    },
-    [seed]
-  );
-
-  useEffect(() => {
-    setViewsCollapsed(loadBool("segmiq-social-inbox-nav-collapsed", false));
-    setIntelCollapsed(loadBool("segmiq-social-inbox-intel-collapsed", false));
-    resetFromDemo(sceneParam ?? "normal", initialView, initialConversation);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
 
   const syncUrl = useCallback(
     (nextView: SocialInboxViewId, nextId: string | null) => {
@@ -301,18 +184,97 @@ export function useSocialInboxSession(
       params.set("view", nextView);
       if (nextId) params.set("conversation", nextId);
       else params.delete("conversation");
-      if (scene !== "normal") params.set("scene", scene);
-      else params.delete("scene");
+      params.delete("scene");
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
-    [pathname, router, scene, searchParams]
+    [pathname, router, searchParams]
   );
+
+  const showFlash = useCallback(
+    (next: ActionFlash, tone: "success" | "info" | "warning" | "error" = "success") => {
+      if (flashTimer.current) window.clearTimeout(flashTimer.current);
+      setFlash(next);
+      toast({ tone, title: next.title, description: next.description });
+      flashTimer.current = window.setTimeout(() => setFlash(null), 5600);
+    },
+    [toast]
+  );
+
+  const applyWorkspace = useCallback((workspace: SocialInboxWorkspace) => {
+    setItems(workspace.items);
+    setConnections(workspace.connections);
+    setTeam(workspace.team);
+    setCanViewUnassigned(workspace.canViewUnassigned);
+    setCanAssign(workspace.canAssign);
+    setCanManageChannels(workspace.canManageChannels);
+    setCanReply(workspace.canReply);
+  }, []);
+
+  const refreshWorkspace = useCallback(async () => {
+    const workspace = await apiJson<SocialInboxWorkspace>("/api/social-inbox/workspace");
+    applyWorkspace(workspace);
+    return workspace;
+  }, [applyWorkspace]);
+
+  const loadConversation = useCallback(async (id: string) => {
+    setDetailLoading(true);
+    try {
+      const detail = await apiJson<SocialConversationDetail>(`/api/social-inbox/conversations/${id}`);
+      setDetails((prev) => ({ ...prev, [id]: detail }));
+      setItems((prev) => prev.map((item) => (item.conversationId === id ? detail.conversation : item)));
+      return detail;
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    setViewsCollapsed(loadBool("segmiq-social-inbox-nav-collapsed", false));
+    setIntelCollapsed(loadBool("segmiq-social-inbox-intel-collapsed", false));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setHydrating(true);
+    void (async () => {
+      try {
+        const workspace = await refreshWorkspace();
+        if (cancelled) return;
+        const wanted = selectedIdRef.current;
+        const stillThere = wanted && workspace.items.some((item) => item.conversationId === wanted);
+        if (wanted && !stillThere) {
+          setSelectedId(null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          showFlash(
+            { title: "Couldn't load Social Inbox", description: error instanceof Error ? error.message : undefined },
+            "error"
+          );
+        }
+      } finally {
+        if (!cancelled) setHydrating(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshWorkspace, showFlash]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    void loadConversation(selectedId).catch((error) => {
+      showFlash(
+        { title: "Couldn't load conversation", description: error instanceof Error ? error.message : undefined },
+        "error"
+      );
+    });
+  }, [loadConversation, selectedId, showFlash]);
 
   const selected = selectedId ? details[selectedId] ?? null : null;
 
   const visibleItems = useMemo(
-    () =>
-      filterQueue(items, view, seed.viewerId, filters, query, teamScope, canViewUnassigned),
+    () => filterQueue(items, view, seed.viewerId, filters, query, teamScope, canViewUnassigned),
     [items, view, seed.viewerId, filters, query, teamScope, canViewUnassigned]
   );
 
@@ -333,16 +295,6 @@ export function useSocialInboxSession(
     setNewCount(0);
     setStickBottom(true);
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const showFlash = useCallback(
-    (next: ActionFlash, tone: "success" | "info" | "warning" | "error" = "success") => {
-      if (flashTimer.current) window.clearTimeout(flashTimer.current);
-      setFlash(next);
-      toast({ tone, title: next.title, description: next.description });
-      flashTimer.current = window.setTimeout(() => setFlash(null), 5600);
-    },
-    [toast]
-  );
 
   const patchConversation = useCallback(
     (id: string, patch: (item: SocialQueueItem) => SocialQueueItem, intel?: Partial<SocialConversationDetail["intelligence"]>) => {
@@ -378,6 +330,10 @@ export function useSocialInboxSession(
       if (id) {
         patchConversation(id, (item) => ({ ...item, unread: false }));
         setMobilePane("thread");
+        void apiJson(`/api/social-inbox/conversations/${id}/actions`, {
+          method: "POST",
+          body: JSON.stringify({ action: "read", read: true }),
+        }).catch(() => undefined);
       }
       syncUrl(v, id);
     },
@@ -409,19 +365,22 @@ export function useSocialInboxSession(
     [selectConversation, selectedId, visibleItems]
   );
 
-  const appendMessage = useCallback((id: string, message: SocialMessageDto) => {
-    setDetails((prev) => {
-      const current = prev[id];
-      if (!current) return prev;
-      return { ...prev, [id]: { ...current, messages: [...current.messages, message] } };
-    });
-    patchConversation(id, (item) => ({
-      ...item,
-      preview: message.body,
-      lastMessageAt: message.sentAt,
-      unread: message.direction === "inbound",
-    }));
-  }, [patchConversation]);
+  const appendMessage = useCallback(
+    (id: string, message: SocialMessageDto) => {
+      setDetails((prev) => {
+        const current = prev[id];
+        if (!current) return prev;
+        return { ...prev, [id]: { ...current, messages: [...current.messages, message] } };
+      });
+      patchConversation(id, (item) => ({
+        ...item,
+        preview: message.body,
+        lastMessageAt: message.sentAt,
+        unread: message.direction === "inbound",
+      }));
+    },
+    [patchConversation]
+  );
 
   const updateMessage = useCallback((id: string, messageId: string, patch: Partial<SocialMessageDto>) => {
     setDetails((prev) => {
@@ -441,8 +400,7 @@ export function useSocialInboxSession(
     if (!selectedId || !selected || !draft.trim() || !canReply) return;
     const body = draft.trim();
     const isNote = composerMode === "internal_note";
-    const visibility: SocialMessageDto["visibility"] =
-      composerMode === "public_reply" ? "public" : "private";
+    const visibility: SocialMessageDto["visibility"] = composerMode === "public_reply" ? "public" : "private";
     const message = makeMsg("outbound", body, {
       visibility,
       isInternalNote: isNote,
@@ -453,103 +411,74 @@ export function useSocialInboxSession(
     setDraft("");
     setDraftedByAi(false);
 
-    if (failNextSend.current && !isNote) {
-      failNextSend.current = false;
-      window.setTimeout(() => {
-        updateMessage(selectedId, message.id, { sendStatus: "failed", sendError: "Not sent" });
-        showFlash({ title: "Couldn't send message" }, "error");
-      }, 700);
-      return;
-    }
-
-    window.setTimeout(() => {
-      updateMessage(selectedId, message.id, { sendStatus: "sent", sendError: null });
-      if (isNote) {
-        showFlash({ title: "Internal note added" }, "info");
-        return;
-      }
-      showFlash({
-        title: visibility === "public" ? "Public reply sent" : "Private message sent",
+    try {
+      const sent = await apiJson<{ ok: true; messageId?: string }>(`/api/social-inbox/conversations/${selectedId}/reply`, {
+        method: "POST",
+        body: JSON.stringify({
+          text: body,
+          visibility,
+          internalNote: isNote,
+          aiDraft: draftedByAi,
+          idempotencyKey: message.id,
+        }),
       });
-
-      if (
-        selectedId === "demo-tendai" &&
-        visibility === "private" &&
-        !tendaiJourney.current.customerReplied
-      ) {
-        tendaiJourney.current.privateSent = true;
-        setTypingName("Tendai");
-        window.setTimeout(() => {
-          setTypingName(null);
-          const reply = makeMsg(
-            "inbound",
-            "Financing please, and do you deliver to Bulawayo?",
-            { visibility: "private", sendStatus: "sent" }
-          );
-          appendMessage(selectedId, reply);
-          tendaiJourney.current.customerReplied = true;
-          patchConversation(
-            selectedId,
-            (item) => ({
-              ...item,
-              intentScore: 96,
-              intentBand: "hot",
-              intentReasons: [
-                "Asked about price",
-                "Asked about financing or deposit",
-                "Asked if it is still available",
-                "Asked about delivery",
-              ],
-              unread: stickBottom ? false : true,
-            }),
-            {
-              intentScore: 96,
-              intentBand: "hot",
-              reasons: [
-                "Asked about price",
-                "Asked about financing or deposit",
-                "Asked if it is still available",
-                "Asked about delivery",
-              ],
-              detectedLocation: "Bulawayo",
-              nextAction: {
-                label: "Qualify financing and create lead.",
-                code: "convert_lead",
-                followUpAt: null,
-                followUpReason: "Customer confirmed financing and asked about delivery to Bulawayo.",
-              },
-              summary:
-                "Customer is interested in the CAT 320. Asked about deposit, financing and delivery to Bulawayo.",
-            }
-          );
-          if (!stickBottom) setNewCount((n) => n + 1);
-        }, 1400);
-      }
-    }, 550);
+      updateMessage(selectedId, message.id, {
+        id: sent.messageId ?? message.id,
+        sendStatus: "sent",
+        sendError: null,
+      });
+      showFlash({
+        title: isNote ? "Internal note added" : visibility === "public" ? "Public reply sent" : "Private message sent",
+      });
+      void loadConversation(selectedId).catch(() => undefined);
+    } catch (error) {
+      updateMessage(selectedId, message.id, {
+        sendStatus: "failed",
+        sendError: error instanceof Error ? error.message : "Not sent",
+      });
+      showFlash({ title: "Couldn't send message", description: error instanceof Error ? error.message : undefined }, "error");
+    }
   }, [
     appendMessage,
     canReply,
     composerMode,
     draft,
     draftedByAi,
-    patchConversation,
+    loadConversation,
     selected,
     selectedId,
     showFlash,
-    stickBottom,
     updateMessage,
   ]);
 
   const retryMessage = useCallback(
-    (messageId: string) => {
-      if (!selectedId) return;
+    async (messageId: string) => {
+      if (!selectedId || !selected) return;
+      const failed = selected.messages.find((m) => m.id === messageId);
+      if (!failed) return;
       updateMessage(selectedId, messageId, { sendStatus: "sending", sendError: null });
-      window.setTimeout(() => {
+      try {
+        await apiJson(`/api/social-inbox/conversations/${selectedId}/reply`, {
+          method: "POST",
+          body: JSON.stringify({
+            text: failed.body,
+            visibility: failed.visibility,
+            internalNote: failed.isInternalNote,
+            aiDraft: failed.aiDraft,
+          }),
+        });
         updateMessage(selectedId, messageId, { sendStatus: "sent" });
         showFlash({ title: "Message sent" });
-      }, 500);
+        void loadConversation(selectedId).catch(() => undefined);
+      } catch (error) {
+        updateMessage(selectedId, messageId, {
+          sendStatus: "failed",
+          sendError: error instanceof Error ? error.message : "Not sent",
+        });
+        showFlash({ title: "Couldn't send message" }, "error");
+      }
     },
-    [selectedId, showFlash, updateMessage]
+    [loadConversation, selected, selectedId, showFlash, updateMessage]
   );
 
   const draftWithAi = useCallback(async () => {
@@ -559,22 +488,34 @@ export function useSocialInboxSession(
       return;
     }
     setDrafting(true);
-    await new Promise((r) => window.setTimeout(r, 700));
-    const text =
-      DEMO_SUGGESTED_REPLIES[selectedId] ??
-      `Hi ${selected.conversation.displayName.split(" ")[0]}, thanks for getting in touch. I can help with the details.`;
-    const missingPrice = /how much is this/i.test(selected.messages.at(-1)?.body ?? "");
-    setDraft(
-      missingPrice
-        ? `Hi ${selected.conversation.displayName.split(" ")[0]}, I'd be happy to help. Which configuration are you interested in?`
-        : text
-    );
-    setDraftedByAi(true);
-    setDrafting(false);
+    try {
+      const suggested = await apiJson<{ draft: string }>(`/api/social-inbox/conversations/${selectedId}/suggest-reply`, {
+        method: "POST",
+      });
+      setDraft(suggested.draft);
+      setDraftedByAi(true);
+    } catch (error) {
+      showFlash(
+        { title: "Couldn't draft a reply", description: error instanceof Error ? error.message : undefined },
+        "error"
+      );
+    } finally {
+      setDrafting(false);
+    }
   }, [draft, selected, selectedId, showFlash]);
 
+  const postAction = useCallback(
+    async (id: string, body: Record<string, unknown>) => {
+      return apiJson<{ ok: true; leadId?: string; dealId?: string }>(`/api/social-inbox/conversations/${id}/actions`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    },
+    []
+  );
+
   const assignTo = useCallback(
-    (userId: string | null, name: string | null) => {
+    async (userId: string | null, name: string | null) => {
       if (!selectedId) return;
       const prev = details[selectedId]?.conversation;
       patchConversation(selectedId, (item) => ({
@@ -582,23 +523,23 @@ export function useSocialInboxSession(
         assignedToId: userId,
         assignedToName: name,
       }));
-      showFlash({
-        title: name ? `Conversation assigned to ${name.split(" ")[0]}` : "Conversation unassigned",
-        undo: prev
-          ? () =>
-              patchConversation(selectedId, (item) => ({
-                ...item,
-                assignedToId: prev.assignedToId,
-                assignedToName: prev.assignedToName,
-              }))
-          : undefined,
-      });
+      try {
+        await postAction(selectedId, { action: "assign", assigneeId: userId });
+        showFlash({
+          title: name ? `Conversation assigned to ${name.split(" ")[0]}` : "Conversation unassigned",
+        });
+      } catch (error) {
+        if (prev) {
+          patchConversation(selectedId, () => prev);
+        }
+        showFlash({ title: "Couldn't assign conversation", description: error instanceof Error ? error.message : undefined }, "error");
+      }
     },
-    [details, patchConversation, selectedId, showFlash]
+    [details, patchConversation, postAction, selectedId, showFlash]
   );
 
   const bulkAssign = useCallback(
-    (userId: string, name: string) => {
+    async (userId: string, name: string) => {
       const ids = selectedIds;
       setItems((prev) =>
         prev.map((item) =>
@@ -607,154 +548,184 @@ export function useSocialInboxSession(
       );
       setSelectedIds([]);
       setSelectionMode(false);
-      showFlash({ title: `${ids.length} conversations assigned to ${name.split(" ")[0]}` });
+      try {
+        await apiJson("/api/social-inbox/bulk", {
+          method: "POST",
+          body: JSON.stringify({ action: "assign", conversationIds: ids, assigneeId: userId }),
+        });
+        showFlash({ title: `${ids.length} conversations assigned to ${name.split(" ")[0]}` });
+      } catch (error) {
+        showFlash({ title: "Couldn't assign conversations", description: error instanceof Error ? error.message : undefined }, "error");
+        void refreshWorkspace().catch(() => undefined);
+      }
     },
-    [selectedIds, showFlash]
+    [refreshWorkspace, selectedIds, showFlash]
   );
 
   const setFollowUp = useCallback(
-    (when: Date, reason?: string) => {
+    async (when: Date, reason?: string) => {
       if (!selectedId) return;
-      const label = when.toDateString() === new Date().toDateString() ? "Follow up today" : `Follow up ${formatFollowUpShort(when.toISOString())}`;
+      const label =
+        when.toDateString() === new Date().toDateString()
+          ? "Follow up today"
+          : `Follow up ${formatFollowUpShort(when.toISOString())}`;
       const prev = details[selectedId]?.conversation.followUpLabel;
-      patchConversation(
-        selectedId,
-        (item) => ({ ...item, followUpLabel: label }),
-        {
-          nextAction: {
-            label: "Follow-up scheduled",
-            code: "create_follow_up",
-            followUpAt: when.toISOString(),
-            followUpReason: reason ?? details[selectedId]?.intelligence.nextAction.followUpReason ?? null,
-          },
-        }
-      );
-      showFlash({
-        title: `Follow-up scheduled for ${formatFollowUpShort(when.toISOString())}`,
-        undo: () =>
-          patchConversation(selectedId, (item) => ({ ...item, followUpLabel: prev ?? null }), {
-            nextAction: details[selectedId]!.intelligence.nextAction,
-          }),
+      patchConversation(selectedId, (item) => ({ ...item, followUpLabel: label }), {
+        nextAction: {
+          label: "Follow-up scheduled",
+          code: "create_follow_up",
+          followUpAt: when.toISOString(),
+          followUpReason: reason ?? details[selectedId]?.intelligence.nextAction.followUpReason ?? null,
+        },
       });
+      try {
+        await postAction(selectedId, { action: "follow_up", followUpAt: when.toISOString(), reason });
+        showFlash({ title: `Follow-up scheduled for ${formatFollowUpShort(when.toISOString())}` });
+      } catch (error) {
+        patchConversation(selectedId, (item) => ({ ...item, followUpLabel: prev ?? null }));
+        showFlash({ title: "Couldn't schedule follow-up", description: error instanceof Error ? error.message : undefined }, "error");
+      }
     },
-    [details, patchConversation, selectedId, showFlash]
+    [details, patchConversation, postAction, selectedId, showFlash]
   );
 
-  const clearFollowUp = useCallback(() => {
+  const clearFollowUp = useCallback(async () => {
     if (!selectedId) return;
-    patchConversation(selectedId, (item) => ({ ...item, followUpLabel: null }));
-    showFlash({ title: "Follow-up removed" }, "info");
-  }, [patchConversation, selectedId, showFlash]);
+    try {
+      await postAction(selectedId, { action: "follow_up", clear: true });
+      patchConversation(selectedId, (item) => ({ ...item, followUpLabel: null }));
+      showFlash({ title: "Follow-up removed" }, "info");
+    } catch (error) {
+      showFlash({ title: "Couldn't remove follow-up", description: error instanceof Error ? error.message : undefined }, "error");
+    }
+  }, [patchConversation, postAction, selectedId, showFlash]);
 
-  const completeFollowUp = useCallback(() => {
+  const completeFollowUp = useCallback(async () => {
     if (!selectedId) return;
-    patchConversation(selectedId, (item) => ({ ...item, followUpLabel: null, unread: false }));
-    showFlash({ title: "Follow-up completed" });
-  }, [patchConversation, selectedId, showFlash]);
+    try {
+      await postAction(selectedId, { action: "follow_up", clear: true, completed: true });
+      patchConversation(selectedId, (item) => ({ ...item, followUpLabel: null, unread: false }));
+      showFlash({ title: "Follow-up completed" });
+    } catch (error) {
+      showFlash({ title: "Couldn't complete follow-up", description: error instanceof Error ? error.message : undefined }, "error");
+    }
+  }, [patchConversation, postAction, selectedId, showFlash]);
 
   const snoozeUntil = useCallback(
-    (when: Date) => {
+    async (when: Date) => {
       if (!selectedId) return;
       const id = selectedId;
-      patchConversation(id, (item) => ({ ...item, followUpLabel: "Snoozed", unread: false }));
-      showFlash({
-        title: "Conversation moved to later",
-        description: `Returns ${formatFollowUpShort(when.toISOString())} at 9:00 AM`,
-        undo: () => patchConversation(id, (item) => ({ ...item, followUpLabel: null })),
-      });
-      if (view !== "follow_up") setSelectedId(null);
+      try {
+        await postAction(id, { action: "follow_up", followUpAt: when.toISOString(), reason: "Snoozed" });
+        patchConversation(id, (item) => ({ ...item, followUpLabel: "Snoozed", unread: false }));
+        showFlash({
+          title: "Conversation moved to later",
+          description: `Returns ${formatFollowUpShort(when.toISOString())} at 9:00 AM`,
+        });
+        if (view !== "follow_up") setSelectedId(null);
+      } catch (error) {
+        showFlash({ title: "Couldn't snooze conversation", description: error instanceof Error ? error.message : undefined }, "error");
+      }
     },
-    [patchConversation, selectedId, showFlash, view]
+    [patchConversation, postAction, selectedId, showFlash, view]
   );
 
-  const convertToLead = useCallback(async () => {
-    if (!selectedId) return;
-    setConvertBusy(true);
-    await new Promise((r) => window.setTimeout(r, 800));
-    patchConversation(
-      selectedId,
-      (item) => ({ ...item, crmState: "converted", primaryLabel: "Lead", opportunityId: item.opportunityId ?? `opp-${item.conversationId}` }),
-      {
-        crm: {
-          state: "converted",
-          contactId: null,
-          leadId: `lead-${selectedId}`,
-          dealId: null,
-          customerName: details[selectedId]?.conversation.displayName ?? null,
-          openDealName: null,
-          match: null,
-        },
-        nextAction: {
-          label: "Create quotation or schedule a follow-up.",
-          code: "create_quote",
-          followUpAt: null,
-          followUpReason: null,
-        },
+  const convertToLead = useCallback(
+    async (payload?: { name?: string; phone?: string; email?: string; notes?: string }) => {
+      if (!selectedId) return;
+      setConvertBusy(true);
+      try {
+        const result = await postAction(selectedId, { action: "convert", ...payload });
+        await loadConversation(selectedId);
+        await refreshWorkspace();
+        setOverlay(null);
+        showFlash({
+          title: "Lead created",
+          description: `${details[selectedId]?.conversation.displayName} has been added to your pipeline.`,
+          hrefLabel: "View lead",
+          href: result.leadId ? `${seed.leadsBase}${encodeURIComponent(result.leadId)}` : seed.leadsBase,
+        });
+      } catch (error) {
+        showFlash({ title: "Couldn't create lead", description: error instanceof Error ? error.message : undefined }, "error");
+      } finally {
+        setConvertBusy(false);
       }
-    );
-    setConvertBusy(false);
-    setOverlay(null);
-    showFlash({
-      title: "Lead created",
-      description: `${details[selectedId]?.conversation.displayName} has been added to your pipeline.`,
-      hrefLabel: "View lead",
-      href: `${seed.leadsBase}${encodeURIComponent(`lead-${selectedId}`)}`,
-    });
-  }, [details, patchConversation, seed.leadsBase, selectedId, showFlash]);
+    },
+    [details, loadConversation, postAction, refreshWorkspace, seed.leadsBase, selectedId, showFlash]
+  );
+
+  const createDeal = useCallback(async () => {
+    if (!selectedId || !selected) return;
+    setDealBusy(true);
+    try {
+      const result = await postAction(selectedId, {
+        action: "create_deal",
+        name: selected.conversation.detectedProduct || selected.conversation.displayName,
+      });
+      await loadConversation(selectedId);
+      await refreshWorkspace();
+      setOverlay(null);
+      showFlash({
+        title: "Deal created",
+        hrefLabel: "Open deal",
+        href: result.dealId ? `${seed.dealsBase}${result.dealId}` : seed.dealsBase,
+      });
+    } catch (error) {
+      showFlash({ title: "Couldn't create deal", description: error instanceof Error ? error.message : undefined }, "error");
+    } finally {
+      setDealBusy(false);
+    }
+  }, [loadConversation, postAction, refreshWorkspace, seed.dealsBase, selected, selectedId, showFlash]);
 
   const linkCustomer = useCallback(
-    (customer: LinkedCustomer) => {
+    async (customer: LinkedCustomer) => {
       if (!selectedId) return;
-      patchConversation(
-        selectedId,
-        (item) => ({ ...item, crmState: item.crmState === "none" ? "existing_customer" : item.crmState }),
-        {
-          crm: {
-            state: "existing_customer",
-            contactId: customer.id,
-            leadId: null,
-            dealId: null,
-            customerName: customer.name,
-            openDealName: null,
-            match: null,
-          },
-        }
-      );
-      setOverlay(null);
-      showFlash({
-        title: "Customer linked",
-        description: `This social profile is now linked to ${customer.name}.`,
-        undo: () =>
-          patchConversation(selectedId, (item) => ({ ...item, crmState: "none" }), {
-            crm: {
-              state: "none",
-              contactId: null,
-              leadId: null,
-              dealId: null,
-              customerName: null,
-              openDealName: null,
-              match: null,
-            },
-          }),
-      });
+      try {
+        await postAction(selectedId, { action: "link_identity", contactId: customer.id });
+        await loadConversation(selectedId);
+        setOverlay(null);
+        showFlash({
+          title: "Customer linked",
+          description: `This social profile is now linked to ${customer.name}.`,
+        });
+      } catch (error) {
+        showFlash({ title: "Couldn't link customer", description: error instanceof Error ? error.message : undefined }, "error");
+      }
     },
-    [patchConversation, selectedId, showFlash]
+    [loadConversation, postAction, selectedId, showFlash]
   );
 
+  const rejectMatch = useCallback(async () => {
+    if (!selectedId) return;
+    try {
+      await postAction(selectedId, { action: "link_identity", rejected: true });
+      setOverlay(null);
+      showFlash({ title: "Match dismissed" }, "info");
+    } catch (error) {
+      showFlash({ title: "Couldn't update match", description: error instanceof Error ? error.message : undefined }, "error");
+    }
+  }, [postAction, selectedId, showFlash]);
+
   const markNotSales = useCallback(
-    (reason: string) => {
+    async (reason: string) => {
       if (!selectedId) return;
       const id = selectedId;
-      patchConversation(id, (item) => ({ ...item, intentBand: "cold", intentScore: 8, primaryLabel: null, unread: false }));
-      setOverlay(null);
-      showFlash({ title: "Removed from sales opportunities.", description: reason }, "info");
-      if (view === "hot" || view === "for_you") setSelectedId(null);
+      try {
+        await postAction(id, { action: "not_sales", reason });
+        patchConversation(id, (item) => ({ ...item, intentBand: "cold", intentScore: 8, primaryLabel: null, unread: false }));
+        setOverlay(null);
+        showFlash({ title: "Removed from sales opportunities.", description: reason }, "info");
+        if (view === "hot" || view === "for_you") setSelectedId(null);
+        void refreshWorkspace().catch(() => undefined);
+      } catch (error) {
+        showFlash({ title: "Couldn't update conversation", description: error instanceof Error ? error.message : undefined }, "error");
+      }
     },
-    [patchConversation, selectedId, showFlash, view]
+    [patchConversation, postAction, refreshWorkspace, selectedId, showFlash, view]
   );
 
   const resolveConversation = useCallback(
-    (force = false) => {
+    async (force = false) => {
       if (!selectedId || !selected) return;
       const hotOpen = selected.conversation.intentBand === "hot" && selected.conversation.crmState === "none";
       if (hotOpen && !force) {
@@ -762,30 +733,34 @@ export function useSocialInboxSession(
         return;
       }
       const id = selectedId;
-      const prev = selected.conversation;
-      patchConversation(id, (item) => ({ ...item, unread: false, primaryLabel: "Resolved" }));
-      setOverlay(null);
-      showFlash({
-        title: "Conversation resolved",
-        undo: () => patchConversation(id, () => prev),
-      });
+      try {
+        await postAction(id, { action: "resolve", resolved: true });
+        patchConversation(id, (item) => ({ ...item, unread: false, primaryLabel: "Resolved" }));
+        setOverlay(null);
+        showFlash({ title: "Conversation resolved" });
+        void refreshWorkspace().catch(() => undefined);
+      } catch (error) {
+        showFlash({ title: "Couldn't resolve conversation", description: error instanceof Error ? error.message : undefined }, "error");
+      }
     },
-    [patchConversation, selected, selectedId, showFlash]
+    [patchConversation, postAction, refreshWorkspace, selected, selectedId, showFlash]
   );
 
-  const markUnread = useCallback(() => {
+  const markUnread = useCallback(async () => {
     if (!selectedId) return;
-    patchConversation(selectedId, (item) => ({ ...item, unread: true }));
-    showFlash({ title: "Marked unread" }, "info");
-  }, [patchConversation, selectedId, showFlash]);
+    try {
+      await postAction(selectedId, { action: "read", read: false });
+      patchConversation(selectedId, (item) => ({ ...item, unread: true }));
+      showFlash({ title: "Marked unread" }, "info");
+    } catch (error) {
+      showFlash({ title: "Couldn't mark unread", description: error instanceof Error ? error.message : undefined }, "error");
+    }
+  }, [patchConversation, postAction, selectedId, showFlash]);
 
-  const insertProduct = useCallback(
-    (name: string) => {
-      setDraft((prev) => (prev ? `${prev}\n\n${name}` : name));
-      setOverlay(null);
-    },
-    []
-  );
+  const insertProduct = useCallback((name: string) => {
+    setDraft((prev) => (prev ? `${prev}\n\n${name}` : name));
+    setOverlay(null);
+  }, []);
 
   const toggleViewsCollapsed = useCallback(() => {
     setViewsCollapsed((v) => {
@@ -803,52 +778,40 @@ export function useSocialInboxSession(
     });
   }, []);
 
-  const applyScene = useCallback(
-    (next: InboxScene) => {
-      if (next === "loading") {
-        setScene("loading");
-        window.setTimeout(() => resetFromDemo("normal"), 1200);
-        return;
-      }
-      resetFromDemo(next);
-    },
-    [resetFromDemo]
-  );
-
   const connectChannels = useCallback(() => {
-    setOverlay("setup");
-    setSetupStep(0);
-    window.setTimeout(() => setSetupStep(1), 700);
-    window.setTimeout(() => setSetupStep(2), 1400);
-    window.setTimeout(() => setSetupStep(3), 2100);
-  }, []);
-
-  const finishSetup = useCallback(() => {
-    setOverlay(null);
-    resetFromDemo("normal");
-  }, [resetFromDemo]);
+    window.location.href = facebookOAuthUrl(`${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`);
+  }, [pathname, searchParams]);
 
   const disconnectChannel = useCallback(
-    (provider: "facebook" | "instagram") => {
-      setConnections((prev) =>
-        prev.map((c) => (c.provider === provider ? { ...c, status: "disconnected" as const } : c))
-      );
-      setOverlay(null);
-      showFlash({ title: `${provider === "facebook" ? "Facebook" : "Instagram"} disconnected.` }, "info");
+    async (provider: "facebook" | "instagram") => {
+      const conn = connections.find((c) => c.provider === provider && c.status !== "disconnected");
+      if (!conn) {
+        setOverlay(null);
+        return;
+      }
+      try {
+        await apiJson("/api/social-inbox/connections", {
+          method: "POST",
+          body: JSON.stringify({ action: "disconnect", connectionId: conn.id }),
+        });
+        setConnections((prev) =>
+          prev.map((c) => (c.id === conn.id ? { ...c, status: "disconnected" as const } : c))
+        );
+        setOverlay(null);
+        showFlash({ title: `${provider === "facebook" ? "Facebook" : "Instagram"} disconnected.` }, "info");
+        void refreshWorkspace().catch(() => undefined);
+      } catch (error) {
+        showFlash({ title: "Couldn't disconnect channel", description: error instanceof Error ? error.message : undefined }, "error");
+      }
     },
-    [showFlash]
+    [connections, refreshWorkspace, showFlash]
   );
 
   const reconnectChannel = useCallback(
-    (provider: "facebook" | "instagram") => {
-      setConnections((prev) =>
-        prev.map((c) =>
-          c.provider === provider ? { ...c, status: "connected" as const, lastError: null, lastSyncAt: nowIso() } : c
-        )
-      );
-      showFlash({ title: `${provider === "facebook" ? "Facebook" : "Instagram"} reconnected` });
+    (_provider?: "facebook" | "instagram") => {
+      connectChannels();
     },
-    [showFlash]
+    [connectChannels]
   );
 
   const finishTour = useCallback(() => {
@@ -861,19 +824,26 @@ export function useSocialInboxSession(
     if (q.length < 2) return null;
     const people = items.filter((i) => i.displayName.toLowerCase().includes(q)).slice(0, 4);
     const conversations = items.filter((i) => i.preview.toLowerCase().includes(q)).slice(0, 4);
-    const products = DEMO_PRODUCTS.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 4);
+    const products = items
+      .filter((i) => (i.detectedProduct ?? "").toLowerCase().includes(q))
+      .map((i) => ({ id: i.conversationId, name: i.detectedProduct ?? "" }))
+      .filter((p, index, all) => p.name && all.findIndex((x) => x.name === p.name) === index)
+      .slice(0, 4);
     const leads = items.filter((i) => i.crmState === "converted" && i.displayName.toLowerCase().includes(q));
-    const deals = items.filter((i) => i.crmState === "open_deal" && `${i.displayName} ${i.detectedProduct}`.toLowerCase().includes(q));
+    const deals = items.filter(
+      (i) => i.crmState === "open_deal" && `${i.displayName} ${i.detectedProduct}`.toLowerCase().includes(q)
+    );
     return { people, conversations, products, leads, deals };
   }, [items, query]);
 
   const suggestedThursday = upcomingThursday();
-  const connectionAttention = connections.some((c) => c.status !== "connected");
-  const noChannels = connections.length === 0 || scene === "no_channels";
+  const connectionAttention = connections.some(
+    (c) => c.status === "attention_required" || c.status === "auth_expired" || c.status === "sync_issue"
+  );
+  const noChannels = !connections.some((c) => c.status !== "disconnected");
 
   return {
     seed,
-    scene,
     view,
     selectedId,
     selected,
@@ -915,8 +885,6 @@ export function useSocialInboxSession(
     setSelectionMode,
     flash,
     setFlash,
-    quotations,
-    setQuotations,
     historyOpen,
     setHistoryOpen,
     insightDismissed,
@@ -925,9 +893,9 @@ export function useSocialInboxSession(
     setNewCount,
     stickBottom,
     setStickBottom,
-    typingName,
+    typingName: null as string | null,
     convertBusy,
-    setupStep,
+    dealBusy,
     tourStep,
     setTourStep,
     canViewUnassigned,
@@ -935,11 +903,11 @@ export function useSocialInboxSession(
     canManageChannels,
     canReply,
     hydrating,
+    detailLoading,
     suggestedThursday,
     connectionAttention,
     noChannels,
     uniqueSignalChips,
-    DEMO_PRODUCTS,
     selectConversation,
     changeView,
     moveSelection,
@@ -953,17 +921,18 @@ export function useSocialInboxSession(
     completeFollowUp,
     snoozeUntil,
     convertToLead,
+    createDeal,
     linkCustomer,
+    rejectMatch,
     markNotSales,
     resolveConversation,
     markUnread,
     insertProduct,
-    applyScene,
     connectChannels,
-    finishSetup,
     disconnectChannel,
     reconnectChannel,
     finishTour,
+    refreshWorkspace,
     showFlash,
     patchConversation,
     syncUrl,

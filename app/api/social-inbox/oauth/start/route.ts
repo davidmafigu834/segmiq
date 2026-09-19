@@ -20,6 +20,20 @@ const SOCIAL_SCOPES = [
   "business_management",
 ].join(",");
 
+function safeReturnPath(raw: string | null): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) {
+    return "/client/settings/integrations/channels";
+  }
+  if (
+    raw.startsWith("/sales/social-inbox") ||
+    raw.startsWith("/client/social-inbox") ||
+    raw.startsWith("/client/settings/integrations/channels")
+  ) {
+    return raw;
+  }
+  return "/client/settings/integrations/channels";
+}
+
 export async function GET(req: Request) {
   const gate = await requireSocialInbox(req, P.SOCIAL_INBOX_MANAGE_CHANNELS);
   if (!gate.ok) return gate.response;
@@ -37,7 +51,15 @@ export async function GET(req: Request) {
 
   const nonce = randomBytes(16).toString("hex");
   const state = `${gate.actor.clientId}:${nonce}`;
+  const returnPath = safeReturnPath(new URL(req.url).searchParams.get("return"));
   cookies().set("social_inbox_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 600,
+    path: "/",
+  });
+  cookies().set("social_inbox_oauth_return", returnPath, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

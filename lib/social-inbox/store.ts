@@ -170,16 +170,19 @@ export async function listConnections(clientId: string): Promise<SafeSocialConne
   }));
 }
 
+/**
+ * Every conversation the viewer is allowed to see. Views are narrowed in the
+ * workspace layer so one query can also produce accurate per-view counts.
+ */
 export async function listConversations(opts: {
   clientId: string;
   viewerId: string;
-  view: SocialInboxViewId;
   canViewTeam: boolean;
   filters?: SocialInboxFilters;
   limit?: number;
 }): Promise<{ rows: ConversationJoinRow[]; errorMissingTable: boolean }> {
   const supabase = createAdminClient();
-  const limit = Math.min(opts.limit ?? 80, 200);
+  const limit = Math.min(opts.limit ?? 200, 300);
   let query = supabase
     .from("social_conversations")
     .select(
@@ -203,14 +206,8 @@ export async function listConversations(opts: {
 
   if (!opts.canViewTeam) {
     query = query.eq("assigned_to_id", opts.viewerId);
-  } else if (opts.view === "unassigned") {
-    query = query.is("assigned_to_id", null);
   }
 
-  if (opts.view === "dms") query = query.eq("conversation_kind", "dm");
-  if (opts.view === "comments") query = query.eq("conversation_kind", "comment");
-  if (opts.view === "needs_reply") query = query.eq("unread", true);
-  if (opts.view === "hot") query = query.eq("opportunity.intent_band", "hot");
   if (opts.filters?.q?.trim()) {
     const q = opts.filters.q.trim().replace(/,/g, " ");
     query = query.or(`last_message_preview.ilike.%${q}%`);
@@ -222,7 +219,7 @@ export async function listConversations(opts: {
     console.error("[social-inbox] listConversations", error);
     return { rows: [], errorMissingTable: false };
   }
-  return { rows: (data ?? []) as unknown as ConversationJoinRow[], errorMissingTable: false };
+  return { rows: ((data ?? []) as unknown as ConversationJoinRow[]).filter((row) => !row.is_demo), errorMissingTable: false };
 }
 
 export async function getConversationRow(clientId: string, conversationId: string) {

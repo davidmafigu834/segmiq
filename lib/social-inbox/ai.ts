@@ -1,6 +1,5 @@
 import { assembleCompanyBrainContext, serializeCompanyBrainContext } from "@/lib/company-brain";
 import { getAgentModelProvider } from "@/lib/agent/provider";
-import { DEMO_SUGGESTED_REPLIES } from "./demo-data";
 import { classifySocialIntent } from "./intent";
 import type { SocialConversationDetail } from "./types";
 
@@ -27,13 +26,7 @@ function fallbackDraft(detail: SocialConversationDetail): string {
 export async function suggestSocialReply(opts: {
   clientId: string;
   detail: SocialConversationDetail;
-  isDemo?: boolean;
-}): Promise<{ draft: string; source: "ai" | "template" | "demo" }> {
-  if (opts.isDemo || opts.detail.conversation.isDemo) {
-    const canned = DEMO_SUGGESTED_REPLIES[opts.detail.conversation.conversationId];
-    return { draft: canned || fallbackDraft(opts.detail), source: "demo" };
-  }
-
+}): Promise<{ draft: string; source: "ai" | "template" }> {
   const latestInbound = [...opts.detail.messages].reverse().find((m) => m.direction === "inbound" && !m.isInternalNote);
   const customerMessage = latestInbound?.body || opts.detail.conversation.preview;
   let brainBlock = "";

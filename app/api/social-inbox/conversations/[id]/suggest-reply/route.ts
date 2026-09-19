@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { P } from "@/lib/auth/rbac/permissions";
 import { requireSocialInbox, loadVisibleConversation } from "@/lib/social-inbox/api-auth";
-import { getDemoConversation } from "@/lib/social-inbox/demo-data";
 import { suggestSocialReply } from "@/lib/social-inbox/ai";
 import { listMessages, rowToQueueItem } from "@/lib/social-inbox/store";
 import type { SocialConversationDetail, SocialIntelligence } from "@/lib/social-inbox/types";
@@ -11,13 +10,6 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const gate = await requireSocialInbox(req, P.SOCIAL_INBOX_REPLY);
   if (!gate.ok) return gate.response;
-
-  if (params.id.startsWith("demo-")) {
-    const demo = getDemoConversation(params.id, gate.actor.userId);
-    if (!demo) return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
-    const suggested = await suggestSocialReply({ clientId: gate.actor.clientId, detail: demo, isDemo: true });
-    return NextResponse.json(suggested);
-  }
 
   const row = await loadVisibleConversation(gate.actor, params.id);
   if (row === "forbidden" || !row) return NextResponse.json({ error: "Not found." }, { status: 404 });

@@ -26,11 +26,11 @@ import {
   StatusDot,
 } from "@/components/sales/ui";
 import { cn } from "@/lib/ui/cn";
+import { formatRelativeTime } from "@/lib/social-inbox/display";
 import { EMPTY_FILTERS } from "@/lib/social-inbox/inbox-ui";
 import { ChannelGlyph } from "./ChannelGlyph";
 import { ConversationPane } from "./ConversationPane";
 import { ConversationQueue } from "./ConversationQueue";
-import { DevStateSwitcher } from "./DevStateSwitcher";
 import { InboxOverlays } from "./InboxOverlays";
 import { InboxViewNav } from "./InboxViewNav";
 import { SalesContextPanel } from "./SalesContextPanel";
@@ -39,11 +39,9 @@ import type { SocialInboxSession } from "./useSocialInboxSession";
 export function SocialInboxApp({
   session,
   channelsHref,
-  isDev,
 }: {
   session: SocialInboxSession;
   channelsHref: string;
-  isDev: boolean;
 }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -79,7 +77,7 @@ export function SocialInboxApp({
     return () => window.removeEventListener("keydown", onKey);
   }, [session]);
 
-  if (session.noChannels && session.scene !== "loading") {
+  if (session.noChannels && !session.hydrating) {
     return (
       <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-sales-bg">
         <WorkspaceHeader session={session} channelsHref={channelsHref} />
@@ -89,12 +87,19 @@ export function SocialInboxApp({
             title="Turn social conversations into sales."
             description="Connect Facebook and Instagram to identify buying intent, reply faster and turn conversations into leads and deals."
             action={
-              <Button variant="primary" onClick={() => session.setOverlay("connect_channels")}>
-                Connect social channels
-              </Button>
+              session.canManageChannels ? (
+                <Button variant="primary" onClick={() => session.setOverlay("connect_channels")}>
+                  Connect Facebook
+                </Button>
+              ) : undefined
             }
           />
         </div>
+        {!session.canManageChannels ? (
+          <p className="-mt-6 pb-8 text-center text-[12px] text-sales-text-muted">
+            Ask a company manager to connect Facebook and Instagram.
+          </p>
+        ) : null}
         <div className="flex justify-center gap-6 pb-10 text-[12px] text-sales-text-muted">
           <span className="inline-flex items-center gap-1.5">
             <SiFacebook /> Facebook Messenger
@@ -106,7 +111,6 @@ export function SocialInboxApp({
           <span>Instagram Comments</span>
         </div>
         <InboxOverlays session={session} />
-        {isDev ? <DevStateSwitcher session={session} /> : null}
       </div>
     );
   }
@@ -114,10 +118,10 @@ export function SocialInboxApp({
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-sales-bg">
       <WorkspaceHeader session={session} channelsHref={channelsHref} />
-      {session.connectionAttention && session.scene !== "no_channels" ? (
+      {session.connectionAttention && !session.noChannels ? (
         <div className="flex items-center gap-2 border-b border-sales-border bg-sales-warning-soft px-4 py-1.5 text-[12px] text-sales-text-primary">
-          Instagram isn&apos;t syncing right now.
-          <Button size="sm" variant="secondary" onClick={() => session.reconnectChannel("instagram")}>
+          A social channel needs reconnection.
+          <Button size="sm" variant="secondary" onClick={() => session.reconnectChannel()}>
             Reconnect
           </Button>
         </div>
@@ -160,7 +164,6 @@ export function SocialInboxApp({
       ) : null}
       <InboxOverlays session={session} />
       {session.overlay === "search" ? <SearchOverlay session={session} /> : null}
-      {isDev ? <DevStateSwitcher session={session} /> : null}
     </div>
   );
 }
@@ -215,7 +218,7 @@ function WorkspaceHeader({ session, channelsHref }: { session: SocialInboxSessio
           </PopoverContent>
         </Popover>
 
-        <TooltipRefresh />
+        <TooltipRefresh session={session} />
 
         <DropdownMenu align="end">
           <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover">
@@ -232,32 +235,42 @@ function WorkspaceHeader({ session, channelsHref }: { session: SocialInboxSessio
   );
 }
 
-function TooltipRefresh() {
+function TooltipRefresh({ session }: { session: SocialInboxSession }) {
   return (
     <IconButton
       size="sm"
       aria-label="Refresh"
       icon={<RefreshCw size={14} />}
-      onClick={() => undefined}
+      onClick={() => {
+        void session.refreshWorkspace().catch(() => undefined);
+      }}
     />
   );
 }
 
 function ChannelHealth({ session, channelsHref }: { session: SocialInboxSession; channelsHref: string }) {
   const attention = session.connectionAttention;
+  const lastSync = session.connections
+    .map((c) => c.lastSyncAt || c.lastEventAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
   return (
         <Popover align="end">
       <PopoverTrigger className="inline-flex h-8 items-center gap-1.5 rounded-[8px] px-2 text-[12px] text-sales-text-secondary hover:bg-sales-surface-hover">
-        <StatusDot tone={attention ? "warning" : "success"} />
-        {attention ? "1 channel needs attention" : "Channels connected"}
+        <StatusDot tone={attention ? "warning" : session.noChannels ? "neutral" : "success"} />
+        {session.noChannels ? "No channels" : attention ? "1 channel needs attention" : "Channels connected"}
       </PopoverTrigger>
           <PopoverContent className="w-72 p-3">
-        {session.connections.map((conn) => (
+        {session.connections.length === 0 ? (
+          <p className="text-[13px] text-sales-text-secondary">Connect Facebook to receive Messenger and comments here.</p>
+        ) : (
+          session.connections.map((conn) => (
           <div key={conn.id} className="flex items-start justify-between gap-2 py-1.5">
             <div className="flex items-center gap-2">
               {conn.provider === "instagram" ? <SiInstagram size={14} /> : <SiFacebook size={14} />}
               <div>
-                <p className="text-[13px] font-medium">{conn.displayName}</p>
+                <p className="text-[13px] font-medium">{conn.displayName || (conn.provider === "instagram" ? "Instagram" : "Facebook")}</p>
                 <p className="text-[12px] text-sales-text-muted">
                   {conn.status === "connected" ? "Connected" : conn.lastError ?? conn.status}
                 </p>
@@ -269,8 +282,11 @@ function ChannelHealth({ session, channelsHref }: { session: SocialInboxSession;
               </Button>
             ) : null}
           </div>
-        ))}
-        <p className="mt-1 text-[11px] text-sales-text-muted">Last synced 2 minutes ago</p>
+          ))
+        )}
+        {lastSync ? (
+          <p className="mt-1 text-[11px] text-sales-text-muted">Last synced {formatRelativeTime(lastSync)}</p>
+        ) : null}
         <button
           type="button"
           className="mt-2 text-[12px] font-medium text-sales-text-primary"
