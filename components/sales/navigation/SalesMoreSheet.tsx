@@ -111,14 +111,14 @@ export function SalesMoreSheet({
         </button>
 
         <section>
-          <p className="mb-1.5 px-3 text-[11px] font-semibold text-sales-text-muted">
+          <p className="mb-1.5 px-3 text-[11px] font-medium text-sales-text-muted">
             Sales
           </p>
           <NavRows items={salesMore} pathname={pathname} onNavigate={close} />
         </section>
 
         <section>
-          <p className="mb-1.5 px-3 text-[11px] font-semibold text-sales-text-muted">
+          <p className="mb-1.5 px-3 text-[11px] font-medium text-sales-text-muted">
             Tools
           </p>
           <NavRows items={toolsMore} pathname={pathname} onNavigate={close} />
@@ -134,7 +134,7 @@ export function SalesMoreSheet({
         </section>
 
         <section>
-          <p className="mb-1.5 px-3 text-[11px] font-semibold text-sales-text-muted">
+          <p className="mb-1.5 px-3 text-[11px] font-medium text-sales-text-muted">
             Account
           </p>
           <Link

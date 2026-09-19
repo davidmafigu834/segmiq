@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { CircleHelp, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { Avatar } from "@/components/sales/ui/Avatar";
+import { Tooltip } from "@/components/sales/ui/Tooltip";
 import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import { SalesNavSection } from "@/components/sales/navigation/SalesNavItem";
 import {
@@ -63,12 +64,13 @@ function CompanyNavItem({
   onNavigate?: () => void;
 }) {
   const showBadge = badge != null && badge > 0;
-  return (
+  const label = item.label;
+
+  const link = (
     <Link
       href={item.href}
       onClick={onNavigate}
-      title={collapsed ? item.label : undefined}
-      aria-label={collapsed ? (showBadge ? `${item.label}, ${badge}` : item.label) : undefined}
+      aria-label={collapsed ? (showBadge ? `${label}, ${badge}` : label) : undefined}
       aria-current={active ? "page" : undefined}
       className={cn(
         "group relative flex items-center rounded-[8px] transition-[background-color,color] duration-150 ease-out",
@@ -84,7 +86,7 @@ function CompanyNavItem({
       <NavIcon icon={item.icon} active={active} collapsed={collapsed} />
       {!collapsed ? (
         <>
-          <span className="min-w-0 flex-1 truncate text-[13px] leading-snug">{item.label}</span>
+          <span className="min-w-0 flex-1 truncate text-[13px] leading-snug">{label}</span>
           {showBadge ? (
             <span className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-sales-sm bg-[var(--sales-sidebar-badge-bg)] px-1.5 text-[10px] font-semibold tabular-nums text-[var(--sales-sidebar-badge-text)]">
               {badge! > 99 ? "99+" : badge}
@@ -101,6 +103,16 @@ function CompanyNavItem({
       ) : null}
     </Link>
   );
+
+  if (collapsed) {
+    return (
+      <Tooltip label={label} side="right">
+        {link}
+      </Tooltip>
+    );
+  }
+
+  return link;
 }
 
 /**
@@ -148,7 +160,7 @@ export function CompanySidebar({
         <div
           className={cn(
             "relative flex shrink-0 items-center",
-            collapsedMode ? "h-[76px] justify-center px-2" : "h-[76px] justify-between gap-2 px-5"
+            collapsedMode ? "h-[68px] justify-center px-2" : "h-[72px] justify-between gap-2 px-5"
           )}
         >
           <Link
@@ -180,7 +192,7 @@ export function CompanySidebar({
           {drawer ? (
             <button
               type="button"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)]"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
               aria-label="Close menu"
               onClick={onCloseMobile}
             >
@@ -189,7 +201,7 @@ export function CompanySidebar({
           ) : onToggleCollapsed && !collapsedMode ? (
             <button
               type="button"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
               aria-label="Collapse sidebar"
               title="Collapse sidebar"
               onClick={onToggleCollapsed}
@@ -201,7 +213,7 @@ export function CompanySidebar({
           {onToggleCollapsed && collapsedMode && !drawer ? (
             <button
               type="button"
-              className="absolute bottom-1 left-1/2 inline-flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+              className="absolute bottom-0 left-1/2 inline-flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
               aria-label="Expand sidebar"
               title="Expand sidebar"
               onClick={onToggleCollapsed}
@@ -220,7 +232,7 @@ export function CompanySidebar({
             if (items.length === 0) return null;
             const isLast = index === sectionOrder.length - 1;
             return (
-              <div key={sectionId} className={index === 0 ? undefined : collapsedMode ? "mt-4" : "mt-5"}>
+              <div key={sectionId} className={index === 0 ? undefined : collapsedMode ? "mt-3" : "mt-3.5"}>
                 <SalesNavSection label={COMPANY_NAV_SECTION_LABEL[sectionId]} collapsed={collapsedMode}>
                   {items.map((item) => (
                     <CompanyNavItem

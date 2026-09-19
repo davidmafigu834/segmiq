@@ -3958,15 +3958,9 @@ label[for="photo-input"] {
   --sales-sidebar-icon: #475467;
   --sales-sidebar-icon-active: #4e6400;
   --sales-sidebar-hover: #eef1f8;
-  --sales-sidebar-active: rgba(212, 255, 79, 0.18);
-  --sales-sidebar-active-gradient: linear-gradient(
-    90deg,
-    rgba(212, 255, 79, 0.26) 0%,
-    rgba(212, 255, 79, 0.13) 75%,
-    rgba(212, 255, 79, 0.04) 100%
-  );
-  --sales-sidebar-active-indicator: #b7e821;
-  --sales-sidebar-badge-bg: rgba(212, 255, 79, 0.3);
+  --sales-sidebar-active: var(--sales-brand-soft);
+  --sales-sidebar-active-indicator: #4e6400;
+  --sales-sidebar-badge-bg: color-mix(in srgb, var(--sales-brand) 22%, transparent);
   --sales-sidebar-badge-text: #4e6500;
   --sales-sidebar-width: 228px;
   --sales-sidebar-width-collapsed: 68px;
@@ -4301,14 +4295,9 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-menu-surface {
   --sales-sidebar-icon: #cfd8ea;
   --sales-sidebar-icon-active: #d4ff4f;
   --sales-sidebar-hover: rgba(255, 255, 255, 0.08);
-  --sales-sidebar-active: rgba(212, 255, 79, 0.12);
-  --sales-sidebar-active-gradient: linear-gradient(
-    90deg,
-    rgba(212, 255, 79, 0.12),
-    rgba(212, 255, 79, 0.025)
-  );
+  --sales-sidebar-active: var(--sales-brand-soft);
   --sales-sidebar-active-indicator: #d4ff4f;
-  --sales-sidebar-badge-bg: rgba(212, 255, 79, 0.14);
+  --sales-sidebar-badge-bg: color-mix(in srgb, var(--sales-brand) 16%, transparent);
   --sales-sidebar-badge-text: #d4ff4f;
 
   /* Semantic — restrained, product-grade (not neon) */

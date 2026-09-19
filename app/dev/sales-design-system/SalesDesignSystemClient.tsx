@@ -1854,7 +1854,6 @@ function NavigationShowcaseSection() {
                           item.active ? "sales-nav-item-active font-semibold" : "text-[var(--sales-sidebar-text)]"
                         )}
                       >
-                        {item.active && !sidebarCollapsed ? <span className="sales-nav-rail" aria-hidden /> : null}
                         {item.icon ? (
                           <item.icon
                             size={17}

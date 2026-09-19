@@ -64,15 +64,12 @@ export function SettingsSectionNav({
             type="button"
             onClick={() => onSelect(section.id)}
             className={cn(
-              "relative flex h-11 items-center gap-2.5 rounded-[8px] px-3 text-left text-[13px] font-medium transition-colors",
+              "flex h-10 items-center gap-2.5 rounded-[8px] px-3 text-left text-[13px] font-medium transition-colors",
               selected
-                ? "bg-sales-brand-soft text-sales-text-primary"
+                ? "bg-[var(--sales-sidebar-active)] text-[var(--sales-sidebar-text-active)]"
                 : "text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
             )}
           >
-            {selected ? (
-              <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-sales-brand" aria-hidden />
-            ) : null}
             {section.icon === "whatsapp" ? (
               <SiWhatsapp size={15} className="shrink-0" aria-hidden />
             ) : Icon ? (

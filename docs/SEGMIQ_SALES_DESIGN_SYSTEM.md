@@ -210,11 +210,11 @@ Definitive salesperson navigation (cool chrome, not white). Source: `components/
 | Collapsed width | **68px** |
 | Background | `#F3F4EE` (`--sales-sidebar-bg`) |
 | Right border | `1px solid #D5D7CC` |
-| Section labels | `SALES` / `TOOLS` — 10px, uppercase, tracking 0.08em, `#8A8F84` |
+| Section labels | Sentence case (`Sales` / `Tools`) — 11px / medium / `--sales-sidebar-muted` |
 | Nav row height | **40px**, radius **8px** |
-| Default text | 13px / 500 / `#5C6156` |
-| Active | Soft lime gradient (`--sales-sidebar-active-gradient`), text `#101828` / 600, icon `#4E6400` |
-| Badges | Soft lime (`rgba(212,255,79,.30)`), text `#4E6500` — live counts only |
+| Default text | 13px / 500 / `--sales-sidebar-text` |
+| Active | Flat brand soft fill (`--sales-sidebar-active`), text `--sales-sidebar-text-active` / 600, icon `--sales-sidebar-icon-active` |
+| Badges | Soft brand tint (`--sales-sidebar-badge-bg`), text `--sales-sidebar-badge-text` — live counts only |
 | Logo | Real wordmark (`/segmiq-wordmark-black.png`); collapsed uses `/brand/segmiq-q.png` |
 | Profile | **Not** in sidebar — top-bar `SalesProfileMenu` (avatar, name, role) |
 | Tools | Toolbox + Help & Support (`mailto:support@leadstaq.tech`) |
@@ -251,7 +251,7 @@ Inbox compact / single-pane WhatsApp flow aligns to **below layout** (`INBOX_COM
 ### Chrome
 
 - **Top bar** (`SalesMobileTopBar`): wordmark, search, notifications, profile menu. Hidden at `layout+`.
-- **Bottom nav** (`SalesBottomNav`): Dashboard · Pipeline · WhatsApp · Tasks · More. Lime active; live WhatsApp/Tasks badges.
+- **Bottom nav** (`SalesBottomNav`): Dashboard · Pipeline · WhatsApp · Tasks · More. Brand-soft active; live WhatsApp/Tasks badges.
 - **More sheet** (`SalesMoreSheet`): Leads, Quotations, Calendar, Reports, Won & Lost, Goals, Toolbox, Help (mailto), My profile + Quick actions entry. No Customers until a route exists.
 - **Quick actions sheet**: Add lead, Log call, Create quote, Schedule follow-up — not a permanent header button on phone.
 - **WhatsApp**: hide top bar + bottom nav while chat/intel pane is active (`setHideBottomNav`); composer uses `dvh` + safe-area.

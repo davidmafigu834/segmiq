@@ -117,7 +117,7 @@ export function SalesNavSection({
   return (
     <div className={cn(collapsed ? "px-2" : "px-3")}>
       {!collapsed ? (
-        <p className="mb-1.5 px-3 text-[11px] font-semibold text-[var(--sales-sidebar-muted)]">
+        <p className="mb-1.5 px-3 text-[11px] font-medium text-[var(--sales-sidebar-muted)]">
           {label}
         </p>
       ) : (

@@ -584,10 +584,6 @@ html[data-crm-theme="light"] .sales-dashboard-premium .sales-nav-item-active-col
   color: var(--sales-sidebar-text-active);
 }
 
-.sales-dashboard-premium .sales-nav-rail {
-  display: none;
-}
-
 .sales-dashboard-premium aside a:not(.sales-nav-item-active):not(.sales-nav-item-active-collapsed) {
   font-weight: 500;
   color: var(--sales-sidebar-text);

@@ -141,7 +141,7 @@ export function SalesSidebar({
             ))}
           </SalesNavSection>
 
-          <div className={cn(collapsedMode ? "mt-4" : "mt-5")}>
+          <div className={cn(collapsedMode ? "mt-3" : "mt-3.5")}>
             <SalesNavSection label="Tools" collapsed={collapsedMode}>
               {toolsItems.map((item) => (
                 <SalesNavItem
