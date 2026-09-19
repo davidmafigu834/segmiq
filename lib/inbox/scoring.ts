@@ -187,6 +187,8 @@ export function stageStyle(status: string, followUpDate: string | null): {
 export const SOURCE_LABELS: Record<string, string> = {
   LANDING_PAGE: "Website",
   FACEBOOK: "Facebook",
+  FACEBOOK_AD: "Facebook Ad",
+  INSTAGRAM: "Instagram",
   MANUAL: "Manual",
   REFERRAL: "Referral",
   WHATSAPP_INBOUND: "WhatsApp",

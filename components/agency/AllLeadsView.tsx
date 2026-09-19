@@ -28,7 +28,8 @@ function firstName(full: string): string {
 
 function sourceLabel(s: LeadSource): string {
   if (s === "LANDING_PAGE") return "Landing";
-  if (s === "FACEBOOK") return "Facebook";
+  if (s === "FACEBOOK" || s === "FACEBOOK_AD") return "Facebook";
+  if (s === "INSTAGRAM") return "Instagram";
   if (s === "REFERRAL") return "Referral";
   if (s === "WHATSAPP_INBOUND") return "WhatsApp";
   return "Manual";

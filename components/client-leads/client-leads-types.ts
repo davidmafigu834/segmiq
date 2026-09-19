@@ -33,7 +33,8 @@ export function statusLabel(s: LeadStatus): string {
 }
 
 export function sourceLabel(s: LeadSource): string {
-  if (s === "FACEBOOK") return "Facebook";
+  if (s === "FACEBOOK" || s === "FACEBOOK_AD") return "Facebook";
+  if (s === "INSTAGRAM") return "Instagram";
   if (s === "LANDING_PAGE") return "Landing page";
   if (s === "REFERRAL") return "Referral";
   if (s === "WHATSAPP_INBOUND") return "WhatsApp";

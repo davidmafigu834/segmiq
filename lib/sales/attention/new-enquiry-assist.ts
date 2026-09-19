@@ -25,6 +25,7 @@ function sourceLabel(source: string | null | undefined): string | null {
   const map: Record<string, string> = {
     FACEBOOK: "Facebook",
     FACEBOOK_AD: "Facebook",
+    INSTAGRAM: "Instagram",
     WHATSAPP_INBOUND: "WhatsApp",
     LANDING_PAGE: "Website",
     WEBSITE: "Website",

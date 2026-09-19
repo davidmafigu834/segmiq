@@ -18,6 +18,7 @@ import { effectiveReportQueryString } from "@/lib/reports/report-range";
 const SOURCE_LABEL: Record<LeadSource, string> = {
   FACEBOOK: "Facebook",
   FACEBOOK_AD: "Facebook Ad",
+  INSTAGRAM: "Instagram",
   LANDING_PAGE: "Landing page",
   MANUAL: "Manual",
   REFERRAL: "Referral",
@@ -28,6 +29,7 @@ const SOURCE_LABEL: Record<LeadSource, string> = {
 const SOURCE_DOT: Record<LeadSource, string> = {
   FACEBOOK: "bg-blue-500",
   FACEBOOK_AD: "bg-blue-600",
+  INSTAGRAM: "bg-[#E1306C]",
   LANDING_PAGE: "bg-[var(--accent)]",
   MANUAL: "bg-ink-tertiary",
   REFERRAL: "bg-purple-500",

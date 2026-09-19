@@ -290,7 +290,8 @@ export function formatCardTimestamp(
 
 export function sourceLabel(source: string | null | undefined): string {
   if (source === "WHATSAPP_INBOUND") return "WhatsApp chat";
-  if (source === "FACEBOOK") return "Facebook";
+  if (source === "FACEBOOK" || source === "FACEBOOK_AD") return "Facebook";
+  if (source === "INSTAGRAM") return "Instagram";
   if (source === "LANDING_PAGE") return "Profile";
   if (source === "REFERRAL") return "Referral";
   if (source === "MANUAL") return "Manual";
