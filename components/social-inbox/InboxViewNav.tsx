@@ -43,7 +43,7 @@ export function InboxViewNav({ session }: { session: SocialInboxSession }) {
     <nav
       aria-label="Inbox views"
       className={cn(
-        "relative flex h-full min-h-0 shrink-0 flex-col border-r border-sales-border bg-sales-surface transition-[width] duration-200 ease-out motion-reduce:transition-none",
+        "relative flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-r border-sales-border bg-sales-surface transition-[width] duration-200 ease-out motion-reduce:transition-none",
         viewsCollapsed ? "w-[52px]" : "w-[208px]"
       )}
     >
@@ -59,7 +59,7 @@ export function InboxViewNav({ session }: { session: SocialInboxSession }) {
           </button>
         </Tooltip>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-3">
+      <div className="social-inbox-scroll h-0 min-h-0 flex-1 overflow-y-scroll overscroll-contain px-1.5 pb-3">
         <Section session={session} ids={focus} />
         <Divider collapsed={viewsCollapsed} />
         {!viewsCollapsed ? (

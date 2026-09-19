@@ -96,7 +96,7 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
         </div>
       </header>
 
-      <div className="inbox-scroll h-0 min-h-0 flex-1 overflow-y-scroll overscroll-contain px-3 py-3 pb-6 [scrollbar-gutter:stable]">
+      <div className="social-inbox-scroll h-0 min-h-0 flex-1 overflow-y-scroll overscroll-contain px-3 py-3 pb-6">
         <div className="flex items-start gap-2.5">
           <Avatar name={item.displayName} size="md" src={item.avatarUrl} />
           <div className="min-w-0">
