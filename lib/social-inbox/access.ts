@@ -8,7 +8,7 @@ export function socialActorFrom(auth: PermissionActor & { name?: string | null }
     userId: auth.userId,
     role: auth.role,
     clientId: auth.clientId,
-    alsoSells: auth.alsoSells,
+    alsoSells: auth.alsoSells ?? undefined,
     name: auth.name ?? null,
   };
 }
