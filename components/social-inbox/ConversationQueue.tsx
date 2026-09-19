@@ -46,7 +46,7 @@ export function ConversationQueue({ session }: { session: SocialInboxSession }) 
   return (
     <section
       aria-label="Conversation queue"
-      className="flex h-full min-h-0 w-full shrink-0 flex-col overflow-hidden border-r border-sales-border bg-sales-surface layout:w-[340px]"
+      className="flex min-h-0 w-full shrink-0 flex-col overflow-hidden border-r border-sales-border bg-sales-surface layout:w-[340px]"
     >
       <div className="shrink-0 border-b border-sales-border px-3 py-2.5">
         <div className="flex items-start justify-between gap-2">
@@ -172,8 +172,9 @@ export function ConversationQueue({ session }: { session: SocialInboxSession }) 
         </div>
       ) : null}
 
-      <InboxScrollArea>
-        {hydrating ? (
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <InboxScrollArea>
+          {hydrating ? (
           <div className="px-3 py-3">
             {Array.from({ length: 7 }).map((_, i) => (
               <Skeleton key={i} className="mb-3 h-[76px] w-full" />
@@ -206,9 +207,10 @@ export function ConversationQueue({ session }: { session: SocialInboxSession }) 
                 ))}
               </ul>
             </div>
-          ))
-        )}
-      </InboxScrollArea>
+            ))
+          )}
+        </InboxScrollArea>
+      </div>
     </section>
   );
 }

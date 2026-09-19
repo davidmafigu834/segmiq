@@ -69,12 +69,17 @@ export function InboxScrollArea({
     const el = localRef.current;
     if (!el) return;
     sync();
+    // Content height settles a frame after render, and the scrollport's own box
+    // never changes when its content grows, so re-measure on the next frame too.
+    const frame = requestAnimationFrame(sync);
     const observer = new ResizeObserver(sync);
     observer.observe(el);
+    for (const child of Array.from(el.children)) observer.observe(child);
     const mutations = new MutationObserver(sync);
     mutations.observe(el, { childList: true, subtree: true, characterData: true });
     window.addEventListener("resize", sync);
     return () => {
+      cancelAnimationFrame(frame);
       observer.disconnect();
       mutations.disconnect();
       window.removeEventListener("resize", sync);

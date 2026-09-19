@@ -44,7 +44,7 @@ export function InboxViewNav({ session }: { session: SocialInboxSession }) {
     <nav
       aria-label="Inbox views"
       className={cn(
-        "relative flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-r border-sales-border bg-sales-surface transition-[width] duration-200 ease-out motion-reduce:transition-none",
+        "relative flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-sales-border bg-sales-surface transition-[width] duration-200 ease-out motion-reduce:transition-none",
         viewsCollapsed ? "w-[52px]" : "w-[208px]"
       )}
     >
@@ -60,18 +60,20 @@ export function InboxViewNav({ session }: { session: SocialInboxSession }) {
           </button>
         </Tooltip>
       </div>
-      <InboxScrollArea contentClassName="px-1.5 pb-3">
-        <Section session={session} ids={focus} />
-        <Divider collapsed={viewsCollapsed} />
-        {!viewsCollapsed ? (
-          <p className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
-            Messages
-          </p>
-        ) : null}
-        <Section session={session} ids={messages} />
-        <Divider collapsed={viewsCollapsed} />
-        <Section session={session} ids={ops} />
-      </InboxScrollArea>
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <InboxScrollArea contentClassName="px-1.5 pb-3">
+          <Section session={session} ids={focus} />
+          <Divider collapsed={viewsCollapsed} />
+          {!viewsCollapsed ? (
+            <p className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+              Messages
+            </p>
+          ) : null}
+          <Section session={session} ids={messages} />
+          <Divider collapsed={viewsCollapsed} />
+          <Section session={session} ids={ops} />
+        </InboxScrollArea>
+      </div>
     </nav>
   );
 }

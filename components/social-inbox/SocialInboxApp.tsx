@@ -112,7 +112,7 @@ export function SocialInboxApp({
   }
 
   return (
-    <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-sales-bg">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-sales-bg">
       <WorkspaceHeader session={session} channelsHref={channelsHref} />
       {session.connectionAttention && session.scene !== "no_channels" ? (
         <div className="flex items-center gap-2 border-b border-sales-border bg-sales-warning-soft px-4 py-1.5 text-[12px] text-sales-text-primary">
@@ -123,8 +123,8 @@ export function SocialInboxApp({
         </div>
       ) : null}
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <div className={cn("flex h-full min-h-0 overflow-hidden", session.mobilePane !== "queue" && "hidden layout:flex")}>
-          <div className="hidden h-full layout:flex">
+        <div className={cn("flex min-h-0 overflow-hidden", session.mobilePane !== "queue" && "hidden layout:flex")}>
+          <div className="hidden min-h-0 layout:flex">
             <InboxViewNav session={session} />
           </div>
           <ConversationQueue session={session} />
@@ -137,7 +137,7 @@ export function SocialInboxApp({
         >
           <ConversationPane session={session} />
         </div>
-        <div className={cn("flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden layout:w-[340px] layout:flex-none", session.mobilePane !== "intel" && "hidden layout:flex")}>
+        <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden layout:w-[340px] layout:flex-none", session.mobilePane !== "intel" && "hidden layout:flex")}>
           <SalesContextPanel session={session} />
         </div>
       </div>
