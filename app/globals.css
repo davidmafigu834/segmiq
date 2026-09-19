@@ -4462,62 +4462,18 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
   background: #3d548c;
 }
 
-/* Social Inbox panes: classic always-visible scrollbar.
-   scrollbar-width/-color must stay `auto` here. The CRM themes set scrollbar-color
-   on <html> and it inherits, and any non-auto value makes Chrome drop
-   ::-webkit-scrollbar in favour of Windows' fading overlay bar. */
+/* Social Inbox panes: the native bar is hidden because Windows renders it as a
+   fading overlay. InboxScrollArea draws its own always-visible draggable rail. */
 .social-inbox-scroll {
   overflow-x: hidden;
-  overflow-y: scroll;
+  overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: auto;
-  scrollbar-color: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .social-inbox-scroll::-webkit-scrollbar {
-  width: 14px;
-  height: 14px;
-}
-/* Literal colours: custom properties and color-mix() are unreliable inside
-   ::-webkit-scrollbar-* pseudo-elements. Dark CRM is the default here. */
-html .social-inbox-scroll::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.06);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-}
-html .social-inbox-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.45);
-  border: 3px solid transparent;
-  border-radius: 999px;
-  background-clip: padding-box;
-  min-height: 40px;
-}
-html .social-inbox-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.62);
-  background-clip: padding-box;
-}
-html .social-inbox-scroll::-webkit-scrollbar-thumb:active {
-  background: rgba(255, 255, 255, 0.8);
-  background-clip: padding-box;
-}
-
-html[data-crm-theme="light"] .social-inbox-scroll::-webkit-scrollbar-track,
-html:has(.crm-theme-light) .social-inbox-scroll::-webkit-scrollbar-track {
-  background: rgba(16, 24, 40, 0.06);
-  border-left: 1px solid rgba(16, 24, 40, 0.1);
-}
-html[data-crm-theme="light"] .social-inbox-scroll::-webkit-scrollbar-thumb,
-html:has(.crm-theme-light) .social-inbox-scroll::-webkit-scrollbar-thumb {
-  background: rgba(16, 24, 40, 0.42);
-  background-clip: padding-box;
-}
-html[data-crm-theme="light"] .social-inbox-scroll::-webkit-scrollbar-thumb:hover,
-html:has(.crm-theme-light) .social-inbox-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 24, 40, 0.58);
-  background-clip: padding-box;
-}
-html[data-crm-theme="light"] .social-inbox-scroll::-webkit-scrollbar-thumb:active,
-html:has(.crm-theme-light) .social-inbox-scroll::-webkit-scrollbar-thumb:active {
-  background: rgba(16, 24, 40, 0.75);
-  background-clip: padding-box;
+  width: 0;
+  height: 0;
 }
 
 /* Typography scale (Sales Design System boards) */
