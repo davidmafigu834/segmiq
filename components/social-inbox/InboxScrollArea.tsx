@@ -36,8 +36,8 @@ export function InboxScrollArea({
 }) {
   const viewportId = useId();
   const localRef = useRef<HTMLDivElement | null>(null);
+  const dragCleanupRef = useRef<(() => void) | null>(null);
   const metricsRef = useRef({ top: 0, height: 48, track: 0, canScroll: false });
-  const dragRef = useRef<{ pointerId: number; startY: number; startTop: number } | null>(null);
   const [metrics, setMetrics] = useState(metricsRef.current);
 
   const setViewport = useCallback(
@@ -54,7 +54,7 @@ export function InboxScrollArea({
     const track = el.clientHeight;
     const scrollHeight = el.scrollHeight;
     const canScroll = scrollHeight > track + 1;
-    const height = canScroll ? Math.max(32, (track / scrollHeight) * track) : Math.min(track, 40);
+    const height = canScroll ? Math.max(40, (track / scrollHeight) * track) : Math.min(track, 40);
     const maxTop = Math.max(0, track - height);
     const maxScroll = Math.max(1, scrollHeight - track);
     const top = canScroll ? (el.scrollTop / maxScroll) * maxTop : 0;
@@ -82,46 +82,72 @@ export function InboxScrollArea({
       ro.disconnect();
       mo.disconnect();
       window.removeEventListener("resize", sync);
+      dragCleanupRef.current?.();
     };
   }, [sync, children]);
 
-  function clampedThumbTop(nextTop: number) {
-    const { height, track } = metricsRef.current;
-    const maxTop = Math.max(0, track - height);
-    return Math.min(maxTop, Math.max(0, nextTop));
+  function scrollByThumbDelta(startScroll: number, deltaY: number, trackH: number, thumbH: number) {
+    const el = localRef.current;
+    if (!el) return;
+    const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight);
+    const travel = Math.max(1, trackH - thumbH);
+    el.scrollTop = Math.min(maxScroll, Math.max(0, startScroll + (deltaY * maxScroll) / travel));
   }
 
-  function scrollToThumbTop(nextTop: number) {
+  function jumpToRailY(clientY: number, railTop: number, trackH: number, thumbH: number) {
     const el = localRef.current;
-    if (!el) return 0;
-    const clamped = clampedThumbTop(nextTop);
-    const { height, track } = metricsRef.current;
-    const maxTop = Math.max(0, track - height);
-    const maxScroll = Math.max(1, el.scrollHeight - el.clientHeight);
-    el.scrollTop = maxTop > 0 ? (clamped / maxTop) * maxScroll : 0;
-    return clamped;
+    if (!el) return;
+    const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight);
+    const travel = Math.max(1, trackH - thumbH);
+    const y = clientY - railTop - thumbH / 2;
+    el.scrollTop = Math.min(maxScroll, Math.max(0, (y / travel) * maxScroll));
   }
 
   function onRailPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
-    if (!metricsRef.current.canScroll) return;
+    const el = localRef.current;
+    if (!el || e.button !== 0) return;
+    const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight);
+    if (maxScroll <= 0) return;
+
     e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    const rect = e.currentTarget.getBoundingClientRect();
+    e.stopPropagation();
+
+    const rail = e.currentTarget;
+    const rect = rail.getBoundingClientRect();
+    const thumbH = Math.max(metricsRef.current.height, 40);
     const onThumb = !!(e.target as HTMLElement).closest("[data-inbox-thumb]");
-    const startTop = onThumb
-      ? metricsRef.current.top
-      : scrollToThumbTop(e.clientY - rect.top - metricsRef.current.height / 2);
-    dragRef.current = { pointerId: e.pointerId, startY: e.clientY, startTop };
-  }
+    if (!onThumb) jumpToRailY(e.clientY, rect.top, rect.height, thumbH);
 
-  function onRailPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== e.pointerId) return;
-    scrollToThumbTop(drag.startTop + (e.clientY - drag.startY));
-  }
+    const startY = e.clientY;
+    const startScroll = el.scrollTop;
+    const pointerId = e.pointerId;
 
-  function onRailPointerUp(e: ReactPointerEvent<HTMLDivElement>) {
-    if (dragRef.current?.pointerId === e.pointerId) dragRef.current = null;
+    try {
+      rail.setPointerCapture(pointerId);
+    } catch {
+      /* window listeners still drive the drag */
+    }
+
+    const onMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      ev.preventDefault();
+      scrollByThumbDelta(startScroll, ev.clientY - startY, rect.height, thumbH);
+    };
+    const onUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      dragCleanupRef.current?.();
+    };
+
+    window.addEventListener("pointermove", onMove, { capture: true, passive: false });
+    window.addEventListener("pointerup", onUp, { capture: true });
+    window.addEventListener("pointercancel", onUp, { capture: true });
+    dragCleanupRef.current = () => {
+      window.removeEventListener("pointermove", onMove, { capture: true });
+      window.removeEventListener("pointerup", onUp, { capture: true });
+      window.removeEventListener("pointercancel", onUp, { capture: true });
+      if (rail.hasPointerCapture?.(pointerId)) rail.releasePointerCapture(pointerId);
+      dragCleanupRef.current = null;
+    };
   }
 
   return (
@@ -129,7 +155,7 @@ export function InboxScrollArea({
       <div
         id={viewportId}
         ref={setViewport}
-        className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-scroll overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         onScroll={(e) => {
           sync();
           onScroll?.(e);
@@ -143,22 +169,22 @@ export function InboxScrollArea({
           aria-controls={viewportId}
           aria-orientation="vertical"
           aria-valuemin={0}
-          aria-valuemax={Math.max(0, Math.round(metrics.track - metrics.height))}
+          aria-valuemax={Math.max(0, Math.round(Math.max(0, metrics.track - metrics.height)))}
           aria-valuenow={Math.round(metrics.top)}
           aria-disabled={!metrics.canScroll}
-          className="relative w-2.5 shrink-0 touch-none select-none border-l border-sales-border bg-sales-surface"
+          className={cn(
+            "relative z-[2] w-4 shrink-0 touch-none select-none border-l border-sales-border bg-sales-surface",
+            metrics.canScroll ? "cursor-grab active:cursor-grabbing" : "cursor-default"
+          )}
           onPointerDown={onRailPointerDown}
-          onPointerMove={onRailPointerMove}
-          onPointerUp={onRailPointerUp}
-          onPointerCancel={onRailPointerUp}
         >
           <div
             data-inbox-thumb
             className={cn(
-              "absolute inset-x-[2px] rounded-full bg-sales-text-muted/70 hover:bg-sales-text-secondary",
-              metrics.canScroll ? "cursor-grab active:cursor-grabbing" : "opacity-40"
+              "absolute left-1/2 w-2.5 -translate-x-1/2 rounded-full bg-sales-text-muted hover:bg-sales-text-secondary",
+              metrics.canScroll ? "opacity-100" : "opacity-40"
             )}
-            style={{ top: metrics.top, height: Math.max(metrics.height, 32) }}
+            style={{ top: metrics.top, height: Math.max(metrics.height, 40) }}
           />
         </div>
       ) : null}
