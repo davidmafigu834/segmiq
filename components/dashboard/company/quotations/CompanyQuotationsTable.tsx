@@ -939,7 +939,7 @@ export function CompanyQuotationsTable({
                 key={row.id}
                 selected={selectedId === row.id}
                 onClick={() => onSelect(row.id)}
-                className="rounded-[12px] border border-sales-border bg-sales-surface p-3.5 shadow-sales-card"
+                className="rounded-[12px] border border-sales-border bg-sales-surface p-3.5 shadow-none"
                 data-course-target="company-quotation-row"
               >
               <div className="flex items-start justify-between gap-3">

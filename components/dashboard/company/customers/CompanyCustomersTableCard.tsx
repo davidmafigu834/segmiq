@@ -144,7 +144,7 @@ function FiltersPopover({
       </Button>
       {open ? (
         <div className="absolute left-0 z-30 mt-2 w-[270px] rounded-[12px] border border-sales-border bg-sales-surface p-3 shadow-sales-popover">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
             Active Deals
           </p>
           <select
@@ -161,7 +161,7 @@ function FiltersPopover({
             <option value="yes">Has active Deals</option>
             <option value="no">No active Deals</option>
           </select>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
             Customer Value
           </p>
           <select

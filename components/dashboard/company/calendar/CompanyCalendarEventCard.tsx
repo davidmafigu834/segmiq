@@ -58,7 +58,7 @@ export function CompanyCalendarEventCard({
       title={details}
       aria-label={`Open ${event.title} for ${event.relatedLabel}, owned by ${owner}`}
       className={cn(
-        "company-calendar-event group relative w-full overflow-hidden rounded-[8px] border text-left outline-none transition-[border-color,box-shadow,background-color] duration-150 hover:border-sales-border-strong hover:shadow-sales-card-hover focus-visible:ring-2 focus-visible:ring-sales-brand",
+        "company-calendar-event group relative w-full overflow-hidden rounded-[8px] border text-left outline-none transition-[border-color,box-shadow,background-color] duration-150 hover:border-sales-border-strong hover:shadow-none focus-visible:ring-2 focus-visible:ring-sales-brand",
         meta.className,
         overdue && "company-calendar-event-overdue",
         completed && "opacity-65",

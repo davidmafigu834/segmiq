@@ -97,7 +97,7 @@ export function RealEstateInquiryWorkspace({
   return (
     <aside
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card",
+        "flex h-full min-h-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none",
         overlay &&
           "fixed inset-y-0 right-0 z-40 w-full max-w-[440px] rounded-none border-y-0 border-r-0 sm:rounded-l-[14px] sm:border-y sm:border-r",
         stacked && overlay && "inset-0 max-w-none rounded-none"
@@ -484,7 +484,7 @@ function OverviewTab({
       </dl>
       {data.attribution ? (
         <section className="rounded-[12px] border border-sales-border-subtle bg-sales-surface-subtle/40 px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+          <p className="text-[11px] font-semibold text-sales-text-muted">
             Attribution
           </p>
           <dl className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -525,7 +525,7 @@ function OverviewTab({
       ) : null}
       {data.demandSide ? (
         <section>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+          <p className="text-[11px] font-semibold text-sales-text-muted">
             Property requirements
           </p>
           <p className="mt-1 text-sales-text-primary">
@@ -541,7 +541,7 @@ function OverviewTab({
       ) : null}
       {data.supplySide || data.linkedListing ? (
         <section>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+          <p className="text-[11px] font-semibold text-sales-text-muted">
             Linked property
           </p>
           {data.linkedListing ? (
@@ -563,7 +563,7 @@ function OverviewTab({
 function Fact({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <dt className="text-[11px] uppercase tracking-wide text-sales-text-muted">{label}</dt>
+      <dt className="text-[11px] font-semibold text-sales-text-muted">{label}</dt>
       <dd className="mt-0.5 text-sales-text-primary">{value || "—"}</dd>
     </div>
   );
@@ -763,7 +763,7 @@ function MatchesTab({
       </div>
       {data.interested.length > 0 ? (
         <section>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+          <p className="text-[11px] font-semibold text-sales-text-muted">
             Interested properties
           </p>
           <ul className="mt-2 space-y-2">
@@ -978,7 +978,7 @@ function ViewingsTab({
             })}
             {v.agentName ? ` · ${v.agentName}` : ""}
           </p>
-          <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-sales-text-muted">
+          <p className="mt-1 text-[10px] font-semibold text-sales-text-muted">
             {v.status}
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">

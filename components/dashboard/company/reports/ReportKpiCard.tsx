@@ -47,7 +47,7 @@ export function ReportKpiCard({
     <article className="sd-card relative flex h-full min-h-[128px] min-w-0 flex-col overflow-hidden p-3.5 sm:min-h-[136px] sm:p-4">
       <span className={cn("absolute inset-x-0 top-0 h-[2px]", accentClass)} aria-hidden />
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+        <p className="min-w-0 text-[11px] font-semibold text-sales-text-muted">
           {label}
         </p>
         <span

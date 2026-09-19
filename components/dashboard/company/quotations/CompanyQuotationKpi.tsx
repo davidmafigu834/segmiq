@@ -4,7 +4,7 @@ import { cn } from "@/lib/ui/cn";
 const tones = {
   blue: "bg-sales-info-soft text-sales-info-fg",
   neutral: "bg-sales-neutral-100 text-sales-text-secondary",
-  purple: "bg-sales-purple-soft text-sales-purple-fg",
+  purple: "bg-sales-teal-soft text-sales-teal-fg",
   success: "bg-sales-success-soft text-sales-success-fg",
   danger: "bg-sales-danger-soft text-sales-danger-fg",
   warning: "bg-sales-warning-soft text-sales-warning-fg",
@@ -14,7 +14,7 @@ const tones = {
 const accents = {
   blue: "bg-sales-info",
   neutral: "bg-sales-text-muted",
-  purple: "bg-sales-purple",
+  purple: "bg-sales-teal",
   success: "bg-sales-success",
   danger: "bg-sales-danger",
   warning: "bg-sales-warning",
@@ -40,14 +40,14 @@ export function CompanyQuotationKpi({
     "sd-card group relative flex h-full w-full min-h-[118px] min-w-0 flex-col overflow-hidden p-3.5 text-left",
     "transition-[border-color,box-shadow] duration-150 sm:min-h-[128px] sm:p-4",
     onClick &&
-      "hover:border-sales-border-strong hover:shadow-sales-card-hover focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]"
+      "hover:border-sales-border-strong hover:shadow-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]"
   );
 
   const body = (
     <>
       <span className={cn("absolute inset-x-0 top-0 h-[2px]", accents[tone])} aria-hidden />
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+        <p className="min-w-0 text-[11px] font-semibold text-sales-text-muted">
           {label}
         </p>
         <span

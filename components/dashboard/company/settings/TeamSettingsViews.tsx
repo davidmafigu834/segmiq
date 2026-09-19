@@ -140,7 +140,7 @@ export function TeamMembersSection({
         <>
           <div className="hidden overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface sm:block">
             <table className="w-full text-left text-[13px]">
-              <thead className="border-b border-sales-border-subtle text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+              <thead className="border-b border-sales-border-subtle text-[11px] font-medium text-sales-text-muted">
                 <tr>
                   <th className="px-4 py-3">Member</th>
                   <th className="px-4 py-3">Role</th>
@@ -314,15 +314,15 @@ function MemberAccessDrawer({
     >
       <dl className="space-y-3 text-[13px]">
         <div>
-          <dt className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Email</dt>
+          <dt className="text-[11px] font-medium text-sales-text-muted">Email</dt>
           <dd className="mt-1 text-sales-text-primary">{member.email}</dd>
         </div>
         <div>
-          <dt className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Role</dt>
+          <dt className="text-[11px] font-medium text-sales-text-muted">Role</dt>
           <dd className="mt-1 text-sales-text-primary">{roleLabel(member)}</dd>
         </div>
         <div>
-          <dt className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Status</dt>
+          <dt className="text-[11px] font-medium text-sales-text-muted">Status</dt>
           <dd className="mt-1 text-sales-text-primary">{member.is_active ? "Active" : "Inactive"}</dd>
         </div>
       </dl>

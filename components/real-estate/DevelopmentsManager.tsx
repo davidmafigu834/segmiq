@@ -258,13 +258,13 @@ export function DevelopmentsManager({
         </div>
       ) : null}
 
-      <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+      <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none">
         {rows.length === 0 ? (
           <p className="px-5 py-10 text-center text-[13px] text-sales-text-muted">No developments yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-[13px]">
-              <thead className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+              <thead className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] font-semibold text-sales-text-muted">
                 <tr>
                   <th className="px-5 py-2.5">Development</th>
                   <th className="px-3 py-2.5">Location</th>

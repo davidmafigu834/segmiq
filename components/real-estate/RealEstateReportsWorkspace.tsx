@@ -209,7 +209,7 @@ export function RealEstateReportsWorkspace({ clientId }: { clientId: string }) {
         ) : (
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+              <tr className="border-b border-sales-border-subtle text-[11px] font-semibold text-sales-text-muted">
                 <th className="px-5 py-2.5">Property</th>
                 <th className="px-3 py-2.5">Type</th>
                 <th className="px-3 py-2.5">Status</th>

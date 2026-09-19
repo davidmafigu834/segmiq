@@ -64,7 +64,7 @@ function llmProviderLabel(name: string): string {
 function StatusCell({ label, value, on }: { label: string; value: string; on: boolean }) {
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">{label}</p>
+      <p className="text-[10px] font-semibold text-sales-text-muted">{label}</p>
       <p className={`mt-0.5 text-[13px] font-semibold ${on ? "text-sales-text-primary" : "text-sales-text-secondary"}`}>
         {value}
       </p>
@@ -355,7 +355,7 @@ export function AgentSettingsSection({
         </div>
 
         <div className="mt-4 border-t border-sales-border-subtle pt-4">
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-medium text-sales-text-muted">
             Autonomy mode
           </p>
           <SegmentedControl

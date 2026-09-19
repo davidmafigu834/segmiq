@@ -92,7 +92,7 @@ function SummaryCell({
 }) {
   return (
     <div className="bg-sales-surface px-3.5 py-2.5">
-      <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">{label}</div>
+      <div className="text-[11px] font-medium text-sales-text-muted">{label}</div>
       <div
         className={cn(
           "mt-0.5 text-[15px] font-semibold text-sales-text-primary",
@@ -491,7 +491,7 @@ export function DocumentDetailWorkspace({
                 <div className="overflow-hidden rounded-[12px] border border-sales-border">
                   <table className="w-full text-left text-[13px]">
                     <thead>
-                      <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] uppercase tracking-wide text-sales-text-muted">
+                      <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] text-sales-text-muted">
                         <th className="px-4 py-2.5 font-medium">Version</th>
                         <th className="px-4 py-2.5 font-medium">File</th>
                         <th className="px-4 py-2.5 font-medium">Status</th>

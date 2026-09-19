@@ -122,7 +122,7 @@ export function DateRangeControl({
             ))}
           </div>
           <div className="mt-3 border-t border-sales-border-subtle pt-3">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+            <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
               Custom
             </p>
             <label className="mb-2 block text-[11px] text-sales-text-muted">
@@ -203,7 +203,7 @@ export function FiltersControl({
       </Button>
       {open ? (
         <div className="absolute right-0 z-30 mt-2 w-[260px] rounded-[12px] border border-sales-border bg-sales-surface p-3 shadow-sales-popover">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
             Salesperson
           </p>
           <select

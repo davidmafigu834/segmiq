@@ -164,7 +164,7 @@ export function CompanyDocumentCategoriesPage({
       <div className="mt-6 overflow-hidden rounded-[12px] border border-sales-border">
         <table className="w-full text-left text-[13px]">
           <thead>
-            <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] uppercase tracking-wide text-sales-text-muted">
+            <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] text-sales-text-muted">
               <th className="px-4 py-2.5 font-medium">Category</th>
               <th className="px-4 py-2.5 font-medium">Documents</th>
               <th className="px-4 py-2.5 font-medium">Created by</th>

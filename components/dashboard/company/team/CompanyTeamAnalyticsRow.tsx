@@ -62,7 +62,7 @@ export function CompanyTeamAnalyticsRow({
   const { businessType } = useCompanyWorkspace();
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 xl:gap-4">
-      <section className="flex min-h-[190px] flex-col workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
+      <section className="flex min-h-[190px] flex-col workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-none">
         <p className="text-[13px] font-semibold text-sales-text-primary">Team composition</p>
         <div className="mt-3 flex flex-1 items-center gap-4">
           <Donut
@@ -100,7 +100,7 @@ export function CompanyTeamAnalyticsRow({
         </button>
       </section>
 
-      <section className="flex min-h-[190px] flex-col workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
+      <section className="flex min-h-[190px] flex-col workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-none">
         <p className="text-[13px] font-semibold text-sales-text-primary">Goal coverage</p>
         <div className="mt-3 flex flex-1 items-center gap-4">
           {teamAvgPct != null ? (
@@ -134,7 +134,7 @@ export function CompanyTeamAnalyticsRow({
         </Link>
       </section>
 
-      <section className="flex min-h-[190px] flex-col workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card md:col-span-2 xl:col-span-1">
+      <section className="flex min-h-[190px] flex-col workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-none md:col-span-2 xl:col-span-1">
         <p className="text-[13px] font-semibold text-sales-text-primary">People needing support</p>
         {needingSupport.length === 0 ? (
           <p className="mt-6 text-[12px] text-sales-text-muted">

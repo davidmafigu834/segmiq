@@ -164,7 +164,7 @@ function FiltersPopover({
       </Button>
       {open ? (
         <div className="absolute right-0 z-30 mt-2 w-64 rounded-[12px] border border-sales-border bg-sales-surface p-3 shadow-sales-popover">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
             Attention
           </p>
           <select
@@ -179,7 +179,7 @@ function FiltersPopover({
             <option value="watch">Watch</option>
             <option value="needs_attention">Needs attention</option>
           </select>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
             Goal
           </p>
           <select

@@ -182,7 +182,7 @@ export function ViewingsTableCard({
       : "Try changing your search or clearing the active filters.";
 
   return (
-    <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+    <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none">
       <div className="flex flex-col gap-3 border-b border-sales-border-subtle px-3 py-3 sm:px-4">
         <div
           className="scrollbar-hide flex min-w-0 gap-4 overflow-x-auto overscroll-x-contain"

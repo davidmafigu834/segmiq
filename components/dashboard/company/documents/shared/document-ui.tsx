@@ -264,7 +264,7 @@ export function DocumentsDisabledState() {
 
 export function DocumentIntelligenceLabel() {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-sales-text-muted">
+    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-sales-text-muted">
       <Sparkles size={12} strokeWidth={1.8} className="text-sales-brand-fg" />
       Document intelligence
     </span>

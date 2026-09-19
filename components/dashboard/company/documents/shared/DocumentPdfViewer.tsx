@@ -26,7 +26,7 @@ export function DocumentPdfViewer({
     <div className={cn("space-y-3", className)}>
       {highlight ? (
         <div className="rounded-[10px] border border-sales-brand-border bg-sales-brand-soft px-4 py-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-sales-text-muted">
+          <p className="text-[11px] font-medium text-sales-text-muted">
             Source passage
           </p>
           <p className="mt-2 text-[13px] leading-relaxed text-sales-text-primary">

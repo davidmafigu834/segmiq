@@ -55,10 +55,10 @@ function InquiryCard({
       type="button"
       onClick={() => onOpen(item.id)}
       className={cn(
-        "w-full rounded-[12px] border bg-sales-surface px-3 py-2.5 text-left shadow-sales-card transition-[border-color,box-shadow] duration-150",
+        "w-full rounded-[12px] border bg-sales-surface px-3 py-2.5 text-left shadow-none transition-[border-color] duration-150",
         selected
           ? "border-sales-brand-border bg-sales-brand-soft"
-          : "border-sales-border hover:border-sales-border-strong hover:shadow-sales-card-hover"
+          : "border-sales-border-subtle hover:border-sales-border-strong"
       )}
     >
       <div className="flex items-start gap-2.5">
@@ -310,7 +310,7 @@ export function RealEstatePipelineBoard({
               }
             />
           ) : (
-            <div className="overflow-hidden rounded-sales-lg border border-sales-border bg-sales-surface shadow-sales-card">
+            <div className="overflow-hidden rounded-sales-lg border border-sales-border-subtle bg-sales-surface shadow-none">
               <ul className="divide-y divide-sales-border">
                 {closedItems.map((item) => (
                   <li key={item.id}>
@@ -402,7 +402,7 @@ export function RealEstatePipelineBoard({
                 type="button"
                 onClick={() => setMobileCol(col.id)}
                 className={cn(
-                  "min-h-10 shrink-0 rounded-full px-3 text-[12px] font-medium transition-colors",
+                  "min-h-10 shrink-0 rounded-sales-md px-3 text-[12px] font-medium transition-colors",
                   mobileCol === col.id
                     ? "bg-sales-brand-soft text-sales-text-primary ring-1 ring-sales-brand-border"
                     : "border border-sales-border bg-sales-surface text-sales-text-secondary"
@@ -445,7 +445,7 @@ export function RealEstatePipelineBoard({
                   className="mb-2.5 flex items-center justify-between gap-2 border-t-[2px] px-0.5 pt-2"
                   style={{ borderColor: col.accent }}
                 >
-                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-secondary">
+                  <h3 className="text-[11px] font-semibold text-sales-text-secondary">
                     {col.label}
                   </h3>
                   <span className="rounded-sales-xs bg-sales-neutral-100 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-sales-text-label">
@@ -488,7 +488,7 @@ export function RealEstatePipelineBoard({
         <div className="overflow-x-auto">
           <table className="dashboard-table w-full text-left">
             <thead>
-              <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+              <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold text-sales-text-muted">
                 <th className="px-5 py-2.5">Agent</th>
                 <th className="px-3 py-2.5 text-right">Inquiries</th>
                 <th className="px-3 py-2.5 text-right">Follow-ups</th>

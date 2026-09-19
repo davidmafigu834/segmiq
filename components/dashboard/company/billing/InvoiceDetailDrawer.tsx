@@ -131,7 +131,7 @@ export function InvoiceDetailDrawer({
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mb-5">
-      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">{title}</h3>
+      <h3 className="mb-2 text-[11px] font-semibold text-sales-text-muted">{title}</h3>
       {children}
     </section>
   );

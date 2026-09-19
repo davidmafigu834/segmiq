@@ -96,7 +96,7 @@ export function CompanyInventoryPage({
               ["Locations", overview.locations],
             ].map(([label, value]) => (
               <div key={String(label)} className="rounded-[10px] border border-sales-border px-4 py-3">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">{label}</div>
+                <div className="text-[11px] font-semibold text-sales-text-muted">{label}</div>
                 <div className="mt-1 text-[22px] font-semibold tabular-nums">{value}</div>
               </div>
             ))}

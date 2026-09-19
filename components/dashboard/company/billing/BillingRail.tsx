@@ -189,7 +189,7 @@ export function BillingRail({
         </p>
         <Link
           href="/client/settings/company"
-          className="mt-4 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-sales-sm border border-sales-border-strong bg-sales-surface text-[12px] font-semibold text-sales-text-primary shadow-sales-card hover:bg-sales-surface-hover"
+          className="mt-4 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-sales-sm border border-sales-border-strong bg-sales-surface text-[12px] font-semibold text-sales-text-primary shadow-none hover:bg-sales-surface-hover"
         >
           <Headphones size={14} aria-hidden />
           Contact Support

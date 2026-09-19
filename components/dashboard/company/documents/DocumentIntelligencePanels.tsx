@@ -44,7 +44,7 @@ export function DocumentSummaryCard({
 
   return (
     <div className="rounded-[12px] border border-sales-border bg-sales-surface-subtle p-5">
-      <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-sales-text-muted">
+      <p className="text-[11px] font-medium text-sales-text-muted">
         Document summary
       </p>
       <p className="mt-3 max-w-3xl text-[14px] leading-relaxed text-sales-text-primary">
@@ -191,7 +191,7 @@ export function DocumentObligationsPanel({
     <div className="overflow-hidden rounded-[12px] border border-sales-border">
       <table className="w-full text-left text-[13px]">
         <thead>
-          <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] uppercase tracking-wide text-sales-text-muted">
+          <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] text-sales-text-muted">
             <th className="px-4 py-2.5 font-medium">Obligation</th>
             <th className="hidden px-4 py-2.5 font-medium sm:table-cell">Responsible</th>
             <th className="hidden px-4 py-2.5 font-medium md:table-cell">Due</th>
@@ -283,7 +283,7 @@ export function DocumentDatesPanel({
                 upcoming ? "bg-sales-brand" : "bg-sales-text-muted"
               )}
             />
-            <p className="text-[12px] font-medium uppercase tracking-wide text-sales-text-muted">
+            <p className="text-[12px] font-medium text-sales-text-muted">
               {row.date_type.replace(/_/g, " ")}
             </p>
             <p className="mt-0.5 text-[15px] font-medium text-sales-text-primary">{row.label}</p>

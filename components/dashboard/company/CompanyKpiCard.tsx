@@ -42,7 +42,7 @@ const KPI_ACCENT: Record<SalesKpiItem["icon"], string> = {
   conversion: "var(--sales-cyan)",
   response: "var(--sales-orange)",
   enquiries: "var(--sales-info)",
-  deals: "var(--sales-purple)",
+  deals: "var(--sales-info)",
 };
 
 function TrendChip({

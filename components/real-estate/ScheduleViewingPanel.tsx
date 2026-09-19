@@ -198,7 +198,7 @@ export function ScheduleViewingPanel({
       </label>
 
       <div>
-        <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-sales-text-secondary">
+        <span className="mb-2 block font-mono text-[11px] text-sales-text-secondary">
           When
         </span>
         <div className="flex flex-wrap gap-2">
@@ -208,7 +208,7 @@ export function ScheduleViewingPanel({
               type="button"
               onClick={() => setScheduleOption(opt)}
               className={[
-                "rounded-full border px-3 py-1.5 text-[13px]",
+                "rounded-sales-md border px-3 py-1.5 text-[13px]",
                 scheduleOption === opt
                   ? "border-[var(--accent-border)] bg-[var(--accent-muted)]"
                   : "border-sales-border text-sales-text-secondary",
@@ -318,7 +318,7 @@ export function ScheduleViewingPanel({
                 type="button"
                 onClick={() => setFeedbackSentiment(s)}
                 className={[
-                  "rounded-full border px-3 py-1 text-xs capitalize",
+                  "rounded-sales-md border px-3 py-1 text-xs capitalize",
                   feedbackSentiment === s
                     ? "border-[var(--accent-border)] bg-[var(--accent-muted)]"
                     : "border-sales-border",

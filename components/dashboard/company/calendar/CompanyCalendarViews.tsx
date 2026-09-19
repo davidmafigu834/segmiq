@@ -185,7 +185,7 @@ export function CompanyWeekView({
                   selected && !isToday && "bg-sales-surface-hover"
                 )}
               >
-                <span className={cn("block text-[10px] font-semibold uppercase tracking-[0.06em]", isToday ? "text-sales-brand-fg" : "text-sales-text-muted")}>
+                <span className={cn("block text-[10px] font-semibold", isToday ? "text-sales-brand-fg" : "text-sales-text-muted")}>
                   {format(day, "EEE")}
                 </span>
                 <span className={cn("mx-auto mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-[16px] font-semibold", isToday ? "bg-sales-brand text-sales-brand-text" : "text-sales-text-primary")}>
@@ -337,7 +337,7 @@ export function CompanyMonthView({
     <div>
       <div className="grid border-b border-sales-border-subtle bg-sales-surface-subtle" style={{ gridTemplateColumns: `repeat(${weekdays.length}, minmax(0, 1fr))` }}>
         {weekdays.map((weekday) => (
-          <div key={weekday} className="px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+          <div key={weekday} className="px-2 py-2 text-center text-[10px] font-semibold text-sales-text-muted">
             {weekday}
           </div>
         ))}
@@ -519,7 +519,7 @@ export function MobileCalendarAgenda({
           const today = key === todayKey;
           return (
             <button key={key} type="button" onClick={() => onSelectDate(key)} className={cn("flex min-w-[52px] flex-1 flex-col items-center rounded-[10px] border px-2 py-2", selected ? "border-sales-brand bg-sales-brand-soft" : "border-sales-border bg-sales-surface", today && !selected && "ring-1 ring-sales-brand-border")}>
-              <span className="text-[10px] font-semibold uppercase text-sales-text-muted">{format(day, "EEE")}</span>
+              <span className="text-[10px] font-semibold text-sales-text-muted">{format(day, "EEE")}</span>
               <span className="mt-1 text-[14px] font-semibold text-sales-text-primary">{format(day, "d")}</span>
             </button>
           );

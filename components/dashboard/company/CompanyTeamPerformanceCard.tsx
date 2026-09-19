@@ -89,7 +89,7 @@ export function CompanyTeamPerformanceCard({
           <div className="hidden overflow-x-auto layout:block">
             <table className="dashboard-table w-full min-w-[640px] text-left">
               <thead>
-                <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+                <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold text-sales-text-muted">
                   <th className="px-5 py-2.5 font-semibold">{rowLabel}</th>
                   <th className="px-3 py-2.5 text-right font-semibold">Active Deals</th>
                   <th className="px-3 py-2.5 text-right font-semibold">Pipeline</th>
@@ -126,7 +126,7 @@ export function CompanyTeamPerformanceCard({
               </tbody>
               <tfoot>
                 <tr className="border-t border-sales-border-subtle bg-sales-surface-subtle">
-                  <td className="px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  <td className="px-5 py-2.5 text-[11px] font-semibold text-sales-text-muted">
                     Team total
                   </td>
                   <td className="px-3 py-2.5 text-right text-[12px] font-semibold tabular-nums text-sales-text-primary">
@@ -160,7 +160,7 @@ export function CompanyTeamPerformanceCard({
                   </div>
                   <dl className="mt-3 grid grid-cols-4 gap-2 text-center">
                     <div className="rounded-[10px] bg-sales-surface-subtle px-1.5 py-2">
-                      <dt className="text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                      <dt className="text-[10px] font-medium text-sales-text-muted">
                         Deals
                       </dt>
                       <dd className="mt-0.5 text-[13px] font-semibold tabular-nums text-sales-text-primary">
@@ -168,7 +168,7 @@ export function CompanyTeamPerformanceCard({
                       </dd>
                     </div>
                     <div className="rounded-[10px] bg-sales-surface-subtle px-1.5 py-2">
-                      <dt className="text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                      <dt className="text-[10px] font-medium text-sales-text-muted">
                         Pipeline
                       </dt>
                       <dd className="mt-0.5 truncate text-[13px] font-semibold tabular-nums text-sales-text-primary">
@@ -176,7 +176,7 @@ export function CompanyTeamPerformanceCard({
                       </dd>
                     </div>
                     <div className="rounded-[10px] bg-sales-surface-subtle px-1.5 py-2">
-                      <dt className="text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                      <dt className="text-[10px] font-medium text-sales-text-muted">
                         Won
                       </dt>
                       <dd className="mt-0.5 text-[13px] font-semibold tabular-nums text-sales-text-primary">
@@ -184,7 +184,7 @@ export function CompanyTeamPerformanceCard({
                       </dd>
                     </div>
                     <div className="rounded-[10px] bg-sales-surface-subtle px-1.5 py-2">
-                      <dt className="text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                      <dt className="text-[10px] font-medium text-sales-text-muted">
                         Due
                       </dt>
                       <dd

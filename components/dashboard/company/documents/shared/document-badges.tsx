@@ -56,7 +56,7 @@ export function DocumentProcessingBadge({ status }: { status: string }) {
 export function DocumentTypeBadge({ label }: { label: string | null | undefined }) {
   if (!label) return <span className="text-[13px] text-sales-text-muted">—</span>;
   return (
-    <span className="text-[12px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+    <span className="text-[12px] font-medium text-sales-text-muted">
       {label}
     </span>
   );

@@ -30,8 +30,8 @@ function NavIcon({
       return (
         <span
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full text-sales-brand-text shadow-[0_2px_8px_rgba(212,255,79,0.3)]",
-            active ? "bg-sales-brand" : "bg-sales-brand/60"
+            "flex h-9 w-9 items-center justify-center rounded-sales-md text-sales-brand-text",
+            active ? "bg-sales-brand" : "bg-sales-brand-soft text-[var(--sales-sidebar-icon-active)]"
           )}
         >
           <SiWhatsapp size={18} color="currentColor" aria-hidden />
@@ -72,7 +72,7 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
   return (
     <>
       <nav
-        className="sales-mobile-bottom-nav fixed inset-x-0 bottom-0 z-[40] border-t border-sales-border-subtle bg-sales-surface/95 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)] layout:hidden"
+        className="sales-mobile-bottom-nav fixed inset-x-0 bottom-0 z-[40] border-t border-sales-border-subtle bg-sales-surface pb-[env(safe-area-inset-bottom,0px)] layout:hidden"
         aria-label="Company mobile navigation"
         style={{ height: "calc(var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px))" }}
       >
@@ -101,7 +101,7 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
                 >
                   <NavIcon icon={item.icon} active={active} emphasized={isWa} />
                   {showBadge ? (
-                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-sales-brand px-1 text-[9px] font-semibold text-sales-brand-text">
+                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-sales-sm bg-sales-brand px-1 text-[9px] font-semibold text-sales-brand-text">
                       {badge! > 99 ? "99+" : badge}
                     </span>
                   ) : null}

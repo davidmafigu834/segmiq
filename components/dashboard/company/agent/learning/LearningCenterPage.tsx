@@ -288,7 +288,7 @@ export function LearningCenterPage({
                     className="w-full px-4 py-3 text-left"
                     onClick={() => void openKnowledge(item.id)}
                   >
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                    <p className="text-[10px] font-semibold text-sales-text-muted">
                       {CATEGORY_LABELS[item.category as keyof typeof CATEGORY_LABELS] ?? item.category}
                     </p>
                     <p className="mt-0.5 text-[14px] font-semibold text-sales-text-primary">{item.title}</p>
@@ -311,7 +311,7 @@ export function LearningCenterPage({
             {candidates.map((item) => (
               <li key={item.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                  <p className="text-[10px] font-semibold text-sales-text-muted">
                     {CATEGORY_LABELS[item.category]}
                     {item.comparisonState === "CONFLICTS" ? " · Conflict detected" : ""}
                     {item.previouslyRejected ? " · Previously rejected · new evidence available" : ""}
@@ -368,7 +368,7 @@ export function LearningCenterPage({
               </div>
             ) : null}
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+              <p className="text-[10px] font-semibold text-sales-text-muted">
                 Proposed learning
               </p>
               <textarea
@@ -429,7 +429,7 @@ export function LearningCenterPage({
             ) : null}
             {evidence.length ? (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                <p className="text-[10px] font-semibold text-sales-text-muted">
                   Example evidence
                 </p>
                 <ul className="mt-1 space-y-2">
@@ -508,7 +508,7 @@ export function LearningCenterPage({
             ) : null}
             {knowledgeVersions.length ? (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                <p className="text-[10px] font-semibold text-sales-text-muted">
                   Version history
                 </p>
                 <ul className="mt-1 space-y-2">

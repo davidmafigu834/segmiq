@@ -214,7 +214,7 @@ export function ScheduleViewingSheet({
                 type="button"
                 onClick={() => setScheduleOption(option)}
                 className={cn(
-                  "rounded-full border px-3 py-1.5 text-[12px] font-medium",
+                  "rounded-sales-md border px-3 py-1.5 text-[12px] font-medium",
                   scheduleOption === option
                     ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
                     : "border-sales-border text-sales-text-secondary hover:text-sales-text-primary"

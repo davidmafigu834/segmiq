@@ -173,7 +173,7 @@ export function ComplianceCasePanel({
       ) : null}
       <aside
         className={cn(
-          "flex h-full min-h-[660px] flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card",
+          "flex h-full min-h-[660px] flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none",
           overlay &&
             "fixed inset-y-0 right-0 z-[70] w-full max-w-[640px] rounded-none border-y-0 border-r-0 sm:rounded-l-[14px] sm:border-y sm:border-r",
           stacked && overlay && "inset-0 max-w-none rounded-none"
@@ -182,7 +182,7 @@ export function ComplianceCasePanel({
         <header className="border-b border-sales-border-subtle px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+              <p className="text-[11px] font-semibold text-sales-text-muted">
                 {String(c?.entity_type ?? "individual") === "corporate" ? "Organisation" : "Individual"}
               </p>
               <h2 className="truncate text-[18px] font-semibold tracking-[-0.03em]">
@@ -253,7 +253,7 @@ export function ComplianceCasePanel({
                 </div>
               ) : null}
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+                <p className="text-[11px] font-semibold text-sales-text-muted">
                   CDD completeness
                 </p>
                 <p className="mt-1 text-[16px] font-semibold">
@@ -338,7 +338,7 @@ export function ComplianceCasePanel({
                       ) : null}
                     </div>
                     {d.required ? (
-                      <span className="text-[10px] font-semibold uppercase text-sales-text-muted">Required</span>
+                      <span className="text-[10px] font-semibold text-sales-text-muted">Required</span>
                     ) : null}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">

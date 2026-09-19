@@ -223,7 +223,7 @@ function FiltersPopover({
       </Button>
       {open ? (
         <div className="absolute left-0 z-30 mt-2 w-[280px] rounded-[12px] border border-sales-border bg-sales-surface p-3 shadow-sales-popover sm:left-auto sm:right-0">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
             Lifecycle
           </p>
           <select
@@ -243,7 +243,7 @@ function FiltersPopover({
             <option value="CONVERTED_TO_DEAL">Deal created</option>
             <option value="NOT_QUALIFIED">Not Qualified</option>
           </select>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
             Intent
           </p>
           <select
@@ -258,7 +258,7 @@ function FiltersPopover({
             <option value="warm">Warm</option>
             <option value="cold">Cold</option>
           </select>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
             First contact
           </p>
           <select
@@ -275,7 +275,7 @@ function FiltersPopover({
             <option value="contacted">Contacted</option>
             <option value="not_contacted">Not contacted yet</option>
           </select>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
             Deal
           </p>
           <select
@@ -291,7 +291,7 @@ function FiltersPopover({
           </select>
           {sources.length > 0 ? (
             <>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+              <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
                 Source
               </p>
               <select
@@ -308,7 +308,7 @@ function FiltersPopover({
               </select>
             </>
           ) : null}
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
             Owner
           </p>
           <select

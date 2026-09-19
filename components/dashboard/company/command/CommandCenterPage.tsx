@@ -301,7 +301,7 @@ export function CommandCenterPage({
                     ) : (
                       <div
                         key={m.id}
-                        className="space-y-3 rounded-[12px] border border-sales-border bg-sales-surface p-4 shadow-sales-card"
+                        className="space-y-3 rounded-[12px] border border-sales-border bg-sales-surface p-4 shadow-none"
                       >
                         <CommandResultHeader
                           title={resultTitle(m)}
@@ -467,7 +467,7 @@ function BlockView({
         {block.snapshot.groups.map((g) => (
           <div key={g.type}>
             <div className="mb-2 flex items-baseline justify-between gap-2 border-b border-sales-border-subtle pb-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              <p className="text-[11px] font-semibold text-sales-text-muted">
                 {g.label}
               </p>
               <p className="text-[13px] font-semibold tabular-nums text-sales-text-primary">{g.count}</p>
@@ -521,7 +521,7 @@ function BlockView({
             : "border-sales-border-strong bg-sales-surface-subtle"
         )}
       >
-        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+        <p className="text-[10px] font-semibold text-sales-text-muted">
           {block.preview.risk.replace("_", " ").toLowerCase()} risk · confirmation required
         </p>
         <h3 className="mt-1 text-[15px] font-semibold text-sales-text-primary">{block.preview.title}</h3>

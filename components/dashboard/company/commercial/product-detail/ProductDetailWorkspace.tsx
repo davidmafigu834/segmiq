@@ -207,7 +207,7 @@ export function ProductDetailWorkspace({
               disabled={!product?.packageCount}
               onClick={() => product?.packageCount && setPackagesOpen(true)}
             >
-              <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Used in</div>
+              <div className="text-[11px] font-medium text-sales-text-muted">Used in</div>
               <div className={cn("mt-0.5 text-[15px] font-semibold", product?.packageCount ? "text-sales-brand-fg" : "text-sales-text-primary")}>
                 {isNew ? "—" : `${product?.packageCount ?? 0} package${product?.packageCount === 1 ? "" : "s"}`}
               </div>
@@ -323,7 +323,7 @@ function SummaryCell({
 }) {
   return (
     <div className="bg-sales-surface px-3.5 py-2.5">
-      <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">{label}</div>
+      <div className="text-[11px] font-medium text-sales-text-muted">{label}</div>
       <div
         className={cn(
           "mt-0.5 text-[15px] font-semibold tabular-nums",

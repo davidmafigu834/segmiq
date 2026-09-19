@@ -230,7 +230,7 @@ export function OfferDetailPanel({
     ) : null}
     <aside
       className={cn(
-        "flex h-full min-h-[660px] flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card",
+        "flex h-full min-h-[660px] flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none",
         overlay &&
           "fixed inset-y-0 right-0 z-[70] w-full max-w-[560px] rounded-none border-y-0 border-r-0 sm:rounded-l-[14px] sm:border-y sm:border-r",
         stacked && overlay && "inset-0 max-w-none rounded-none"
@@ -238,7 +238,7 @@ export function OfferDetailPanel({
     >
         <header className="flex items-start justify-between gap-3 px-4 py-4 sm:px-5">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">Offer</p>
+            <p className="text-[11px] font-semibold text-sales-text-muted">Offer</p>
             <h2 className="truncate text-[18px] font-semibold tracking-[-0.03em]">
               {data?.listing ? listingLabel(data.listing) : "Offer"}
             </h2>
@@ -270,7 +270,7 @@ export function OfferDetailPanel({
               <section>
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+                    <p className="text-[11px] font-semibold text-sales-text-muted">
                       Current offer
                     </p>
                     <p className="text-[28px] font-semibold tabular-nums tracking-[-0.04em]">
@@ -286,7 +286,7 @@ export function OfferDetailPanel({
 
               {status === "accepted" ? (
                 <section className="rounded-[12px] border border-sales-border bg-sales-neutral-50 p-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+                  <p className="text-[11px] font-semibold text-sales-text-muted">
                     Next step
                   </p>
                   {complianceSummary ? (
@@ -434,7 +434,7 @@ export function OfferDetailPanel({
                         })}
                         {ev.createdByName ? ` · ${ev.createdByName}` : ""}
                       </p>
-                      <p className="text-[11px] font-semibold uppercase tracking-wide">
+                      <p className="text-[11px] font-semibold">
                         {RE_OFFER_EVENT_LABEL[ev.eventType] ?? ev.label}
                       </p>
                       {ev.amountLabel ? (
@@ -659,7 +659,7 @@ export function OfferDetailPanel({
                   <button
                     key={r}
                     type="button"
-                    className={`rounded-full border px-2.5 py-1 text-[12px] ${
+                    className={`rounded-sales-md border px-2.5 py-1 text-[12px] ${
                       reason === r ? "border-sales-brand-border bg-sales-brand-soft" : "border-sales-border"
                     }`}
                     onClick={() => setReason(r)}
@@ -835,7 +835,7 @@ export function InquiryOffersSection({
       </div>
       {active.length > 0 ? (
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">Current</p>
+          <p className="text-[11px] font-semibold text-sales-text-muted">Current</p>
           <ul className="mt-2 space-y-2">
             {active.map((r) => (
               <OfferMiniRow key={r.id} row={r} onOpen={onOpen} />
@@ -845,7 +845,7 @@ export function InquiryOffersSection({
       ) : null}
       {history.length > 0 ? (
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">History</p>
+          <p className="text-[11px] font-semibold text-sales-text-muted">History</p>
           <ul className="mt-2 space-y-2">
             {history.map((r) => (
               <OfferMiniRow key={r.id} row={r} onOpen={onOpen} />
@@ -912,7 +912,7 @@ export function ListingOffersSection({
       ) : null}
       {active.length > 0 ? (
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">Active</p>
+          <p className="text-[11px] font-semibold text-sales-text-muted">Active</p>
           <ul className="mt-2 space-y-2">
             {active.map((r) => (
               <OfferMiniRow key={r.id} row={r} onOpen={onOpen} />
@@ -922,7 +922,7 @@ export function ListingOffersSection({
       ) : null}
       {accepted.length > 0 ? (
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">Accepted</p>
+          <p className="text-[11px] font-semibold text-sales-text-muted">Accepted</p>
           <ul className="mt-2 space-y-2">
             {accepted.map((r) => (
               <OfferMiniRow key={r.id} row={r} onOpen={onOpen} />
@@ -932,7 +932,7 @@ export function ListingOffersSection({
       ) : null}
       {history.length > 0 ? (
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">History</p>
+          <p className="text-[11px] font-semibold text-sales-text-muted">History</p>
           <ul className="mt-2 space-y-2">
             {history.map((r) => (
               <OfferMiniRow key={r.id} row={r} onOpen={onOpen} />

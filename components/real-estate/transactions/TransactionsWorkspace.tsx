@@ -157,7 +157,7 @@ export function TransactionsWorkspace({
   const empty = emptyCopy(tab);
 
   const table = (
-    <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+    <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none">
       <div className="flex flex-col gap-3 border-b border-sales-border-subtle px-3 py-3 sm:px-4">
         <div
           className="scrollbar-hide flex min-w-0 gap-4 overflow-x-auto overscroll-x-contain"
@@ -617,7 +617,7 @@ function TransactionDetailPanel({
             {toast ? <p className="text-[12px] text-sales-danger-fg">{toast}</p> : null}
 
             <section>
-              <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-sales-text-muted">
+              <h3 className="mb-2 text-[12px] font-semibold text-sales-text-muted">
                 Milestones
               </h3>
               <ul className="space-y-1.5">
@@ -638,7 +638,7 @@ function TransactionDetailPanel({
                       >
                         <span
                           className={cn(
-                            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
+                            "flex h-5 w-5 shrink-0 items-center justify-center rounded-sales-md border",
                             done
                               ? "border-sales-success/30 bg-sales-success-soft text-sales-success-fg"
                               : "border-sales-border bg-sales-surface text-transparent"
@@ -684,7 +684,7 @@ function TransactionDetailPanel({
             </section>
 
             <section>
-              <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-sales-text-muted">
+              <h3 className="mb-2 text-[12px] font-semibold text-sales-text-muted">
                 Activity
               </h3>
               {(data?.events ?? []).length === 0 ? (
@@ -725,7 +725,7 @@ function TransactionDetailPanel({
       >
         <aside
           className={cn(
-            "flex h-full w-full max-w-[420px] flex-col border-l border-sales-border bg-sales-surface shadow-sales-card",
+            "flex h-full w-full max-w-[420px] flex-col border-l border-sales-border-subtle bg-sales-surface shadow-none",
             stacked && "max-w-none"
           )}
           onClick={(e) => e.stopPropagation()}
@@ -737,7 +737,7 @@ function TransactionDetailPanel({
   }
 
   return (
-    <aside className="flex min-h-[660px] flex-col overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+    <aside className="flex min-h-[660px] flex-col overflow-hidden rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none">
       {body}
     </aside>
   );

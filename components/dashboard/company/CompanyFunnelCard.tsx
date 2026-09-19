@@ -11,10 +11,10 @@ function stepRate(current: number, previous: number): string | null {
 
 const FUNNEL_COLOR: Record<SalesFunnelStage["icon"], string> = {
   enquiries: "var(--sales-info)",
-  contacted: "#6b7cff",
+  contacted: "var(--sales-info)",
   qualified: "var(--sales-cyan)",
   deals: "var(--sales-success)",
-  proposal: "var(--sales-purple)",
+  proposal: "var(--sales-teal)",
   won: "var(--sales-brand)",
 };
 
@@ -37,7 +37,7 @@ export function CompanyFunnelCard({
     >
       <div className="grid gap-0 sm:grid-cols-[132px_minmax(0,1fr)]">
         <div className="flex flex-col justify-center border-b border-sales-border-subtle px-4 py-3 sm:border-b-0 sm:border-r">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+          <p className="text-[10px] font-semibold text-sales-text-muted">
             Lead → Won
           </p>
           <p className="mt-1.5 text-[32px] font-bold leading-none tracking-[-0.035em] tabular-nums text-sales-text-primary">

@@ -53,7 +53,7 @@ export function LeadSourceDetailPanel({
   const body = (
     <aside
       className={cn(
-        "flex h-full min-h-[660px] flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card",
+        "flex h-full min-h-[660px] flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none",
         overlay &&
           "fixed inset-y-0 right-0 z-[70] w-full max-w-[410px] rounded-none border-y-0 border-r-0 sm:rounded-l-[14px] sm:border-y sm:border-r",
         stacked && overlay && "inset-0 max-w-none rounded-none"

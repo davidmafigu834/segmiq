@@ -390,7 +390,7 @@ export function CompanyTeamMemberPanel({
   }
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+    <aside className="flex h-full min-h-0 w-full flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-none">
       {body}
     </aside>
   );

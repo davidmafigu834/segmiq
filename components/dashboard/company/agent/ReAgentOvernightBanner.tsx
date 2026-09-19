@@ -20,14 +20,14 @@ export function ReAgentOvernightBanner({
     summary.humanHandoffs > 0;
 
   return (
-    <div className="rounded-[12px] border border-sales-border bg-gradient-to-r from-sales-brand-soft/50 to-sales-surface px-4 py-3">
+    <div className="rounded-[12px] border border-sales-border-subtle bg-sales-surface px-4 py-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sales-brand/15 text-sales-brand">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-sales-md bg-sales-brand-soft text-[var(--sales-sidebar-icon-active)]">
             <Bot size={16} />
           </span>
           <div className="min-w-0">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+            <p className="text-[12px] font-medium text-sales-text-muted">
               SegmiQ Agent · {summary.windowLabel}
             </p>
             <p className="mt-0.5 text-[13px] font-medium leading-snug text-sales-text-primary">
@@ -46,7 +46,7 @@ export function ReAgentOvernightBanner({
           {summary.viewingApprovalsPending > 0 ? (
             <Link
               href={viewingApprovalsHref}
-              className="inline-flex h-8 items-center gap-1 rounded-[8px] bg-amber-600 px-3 text-[11px] font-semibold text-white hover:bg-amber-700"
+              className="inline-flex h-8 items-center gap-1 rounded-sales-md bg-sales-warning-soft px-3 text-[11px] font-semibold text-sales-warning-fg hover:opacity-90"
             >
               {summary.viewingApprovalsPending} viewing approval
               {summary.viewingApprovalsPending === 1 ? "" : "s"}
@@ -55,7 +55,7 @@ export function ReAgentOvernightBanner({
           ) : null}
           <Link
             href={agentActivityHref}
-            className="inline-flex h-8 items-center gap-1 rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[11px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+            className="inline-flex h-8 items-center gap-1 rounded-sales-md border border-sales-border bg-sales-surface px-3 text-[11px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
           >
             Agent activity
             <ChevronRight size={14} />

@@ -173,7 +173,7 @@ export function WebsiteIntegrationPanel({ clientId }: { clientId: string }) {
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+          <p className="text-[11px] font-semibold text-sales-text-muted">
             Setup instructions
           </p>
           <button type="button" className="text-[12px] text-sales-text-secondary" onClick={() => copy(example)}>

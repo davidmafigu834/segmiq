@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle } from "@/components/sales/ui/Card";
 
 export function PeriodChip({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-sales-surface-subtle px-2 py-0.5 text-[11px] font-medium text-sales-text-muted">
+    <span className="inline-flex items-center rounded-sales-sm bg-sales-surface-subtle px-2 py-0.5 text-[11px] font-medium text-sales-text-muted">
       {children}
     </span>
   );

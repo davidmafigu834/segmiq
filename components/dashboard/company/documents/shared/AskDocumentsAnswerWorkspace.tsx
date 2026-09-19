@@ -71,7 +71,7 @@ export function AskDocumentsAnswerWorkspace({
         <div className="border-b border-sales-border-subtle px-4 py-3">
           <div className="flex flex-wrap items-center gap-2">
             <Sparkles size={14} className="text-sales-brand-fg" />
-            <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-sales-text-muted">
+            <p className="text-[11px] font-medium text-sales-text-muted">
               Answer
             </p>
             {state.confidence ? (
@@ -107,7 +107,7 @@ export function AskDocumentsAnswerWorkspace({
 
       {state.citations.length ? (
         <div>
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-medium text-sales-text-muted">
             Sources
           </p>
           <ul className="space-y-2">

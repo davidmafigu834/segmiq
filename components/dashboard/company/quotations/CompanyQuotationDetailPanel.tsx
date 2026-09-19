@@ -82,7 +82,7 @@ function Section({
 }) {
   return (
     <section className="border-b border-sales-border-subtle px-4 py-3.5">
-      <h3 className="mb-2.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+      <h3 className="mb-2.5 text-[10px] font-semibold text-sales-text-muted">
         {title}
       </h3>
       {children}
@@ -148,7 +148,7 @@ export function CompanyQuotationDetailPanel({
   const body = (
     <aside
       className={cn(
-        "z-40 flex min-h-0 flex-col overflow-hidden border border-sales-border bg-sales-surface shadow-sales-card",
+        "z-40 flex min-h-0 flex-col overflow-hidden border border-sales-border bg-sales-surface shadow-none",
         overlay
           ? fullScreenApproval
             ? "fixed inset-0 rounded-none border-0"
@@ -509,7 +509,7 @@ function ApprovalRail({
     <>
       <header className="flex shrink-0 items-start justify-between gap-3 border-b border-sales-border-subtle px-4 py-3.5">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-warning-fg">
+          <p className="text-[10px] font-semibold text-sales-warning-fg">
             Approval request
           </p>
           <p className="mt-1 truncate text-[15px] font-semibold text-sales-text-primary">{quoteNumber(row)}</p>
@@ -589,13 +589,13 @@ function ApprovalRail({
               {row.standardValue != null && difference != null ? (
                 <div className="mt-4 grid grid-cols-2 gap-3 rounded-[10px] border border-sales-border-subtle p-3">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.05em] text-sales-text-muted">Standard</p>
+                    <p className="text-[10px] text-sales-text-muted">Standard</p>
                     <p className="mt-1 text-[14px] font-semibold tabular-nums">
                       {formatQuoteAmount(row.standardValue, row.currency)}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] uppercase tracking-[0.05em] text-sales-text-muted">Proposed</p>
+                    <p className="text-[10px] text-sales-text-muted">Proposed</p>
                     <p className="mt-1 text-[14px] font-semibold tabular-nums">
                       {formatQuoteAmount(row.amount, row.currency)}
                     </p>

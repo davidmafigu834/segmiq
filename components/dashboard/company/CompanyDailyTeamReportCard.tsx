@@ -56,7 +56,7 @@ function TeamMetric({
 }) {
   return (
     <div className="min-w-[88px] flex-1 rounded-[10px] border border-sales-border-subtle bg-sales-surface px-3 py-2.5">
-      <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+      <p className="text-[10px] font-medium text-sales-text-muted">
         {label}
       </p>
       <p
@@ -97,7 +97,7 @@ function ReportMetric({
         <Icon size={14} strokeWidth={1.8} aria-hidden />
       </span>
       <div className="min-w-0">
-        <p className="truncate text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+        <p className="truncate text-[10px] font-medium text-sales-text-muted">
           {label}
         </p>
         <p
@@ -235,7 +235,7 @@ export function CompanyDailyTeamReportCard({
                 <Sparkles size={17} strokeWidth={1.8} aria-hidden />
               </span>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+                <p className="text-[11px] font-semibold text-sales-text-muted">
                   Team summary
                 </p>
                 <p className="mt-1.5 text-[13px] leading-[1.65] text-sales-text-secondary">
@@ -276,7 +276,7 @@ export function CompanyDailyTeamReportCard({
 
           <div className="space-y-3 px-4 py-4 layout:space-y-4 layout:px-5 layout:py-5">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+              <p className="text-[11px] font-semibold text-sales-text-muted">
                 {rowLabel} reports
               </p>
               <p className="text-[11px] text-sales-text-muted">

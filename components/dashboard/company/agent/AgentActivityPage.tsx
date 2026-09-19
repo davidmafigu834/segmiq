@@ -340,7 +340,7 @@ export function AgentActivityPage({
                       {intentLabel(esc.reason)}
                       <span
                         className={cn(
-                          "ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase",
+                          "ml-2 rounded-sales-sm px-1.5 py-0.5 text-[10px] font-semibold",
                           esc.severity === "HIGH"
                             ? "bg-red-500/10 text-red-600 dark:text-red-400"
                             : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -415,14 +415,14 @@ export function AgentActivityPage({
                       <p className="flex flex-wrap items-center gap-x-2 text-[13px] font-medium text-sales-text-primary">
                         {row.customer_name}
                         {row.test_mode ? (
-                          <span className="rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-sky-600 dark:text-sky-400">
+                          <span className="rounded-sales-sm bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-600 dark:text-sky-400">
                             test
                           </span>
                         ) : null}
                         {(row.intents ?? []).slice(0, 2).map((intent) => (
                           <span
                             key={intent}
-                            className="rounded-full bg-sales-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-sales-text-secondary"
+                            className="rounded-sales-sm bg-sales-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-sales-text-secondary"
                           >
                             {intentLabel(intent)}
                           </span>
@@ -455,19 +455,19 @@ export function AgentActivityPage({
             <div className="flex flex-wrap items-center gap-2">
               <span
                 className={cn(
-                  "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                  "rounded-sales-md px-2 py-0.5 text-[11px] font-semibold",
                   STATE_STYLES[selected.state] ?? "bg-sales-neutral-100 text-sales-text-muted"
                 )}
               >
                 {selected.state.replace(/_/g, " ")}
               </span>
               {selected.autonomy_mode ? (
-                <span className="rounded-full bg-sales-neutral-100 px-2 py-0.5 text-[11px] text-sales-text-secondary">
+                <span className="rounded-sales-md bg-sales-neutral-100 px-2 py-0.5 text-[11px] text-sales-text-secondary">
                   {selected.autonomy_mode}
                 </span>
               ) : null}
               {selected.model ? (
-                <span className="rounded-full bg-sales-neutral-100 px-2 py-0.5 text-[11px] text-sales-text-secondary">
+                <span className="rounded-sales-md bg-sales-neutral-100 px-2 py-0.5 text-[11px] text-sales-text-secondary">
                   {selected.model}
                 </span>
               ) : null}
@@ -478,7 +478,7 @@ export function AgentActivityPage({
             </div>
 
             <div>
-              <h3 className="text-[12px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+              <h3 className="text-[12px] font-semibold text-sales-text-muted">
                 What the agent decided
               </h3>
               <p className="mt-1 text-[13px] leading-relaxed text-sales-text-primary">
@@ -491,7 +491,7 @@ export function AgentActivityPage({
               ) : null}
               {knowledgeUsedItems(detail?.execution).length ? (
                 <div className="mt-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                  <p className="text-[11px] font-semibold text-sales-text-muted">
                     Knowledge used
                   </p>
                   <ul className="mt-1 flex flex-col gap-1">
@@ -518,7 +518,7 @@ export function AgentActivityPage({
 
             {selected.customer_reply ? (
               <div>
-                <h3 className="text-[12px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                <h3 className="text-[12px] font-semibold text-sales-text-muted">
                   Reply {selected.reply_status ? `(${selected.reply_status.toLowerCase()})` : ""}
                 </h3>
                 <p className="mt-1 whitespace-pre-wrap rounded-[10px] border border-sales-border-subtle bg-sales-bg px-3 py-2.5 text-[13px] text-sales-text-primary">
@@ -528,7 +528,7 @@ export function AgentActivityPage({
             ) : null}
 
             <div>
-              <h3 className="text-[12px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+              <h3 className="text-[12px] font-semibold text-sales-text-muted">
                 Actions
               </h3>
               {detailLoading ? (

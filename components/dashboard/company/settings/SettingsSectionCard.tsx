@@ -45,7 +45,7 @@ export function SettingsInfoGrid({ rows }: { rows: Array<{ label: string; value:
     <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
       {rows.map((row) => (
         <div key={row.label} className="min-w-0">
-          <dt className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">{row.label}</dt>
+          <dt className="text-[11px] font-medium text-sales-text-muted">{row.label}</dt>
           <dd className="mt-1 truncate text-[13px] text-sales-text-primary">{row.value || "—"}</dd>
         </div>
       ))}

@@ -127,7 +127,7 @@ export function DocumentRelatedRecordsPanel({
             <div key={link.id} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-amber-200/80">
+                  <p className="text-xs text-amber-200/80">
                     {entityTypeLabel(link.entity_type)}
                   </p>
                   <p className="mt-1 text-sm font-medium text-white">{link.label}</p>
@@ -247,7 +247,7 @@ function LinkRow({
   return (
     <div className="flex items-start justify-between gap-3 rounded-lg border border-zinc-800 p-4">
       <div>
-        <p className="text-xs uppercase tracking-wide text-zinc-500">
+        <p className="text-xs text-zinc-500">
           {entityTypeLabel(link.entity_type)}
         </p>
         <p className="mt-1 text-sm font-medium text-white">{link.label}</p>

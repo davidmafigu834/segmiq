@@ -300,7 +300,7 @@ export function RealEstateMarketingWorkspace({
         </div>
       </div>
 
-      <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+      <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none">
       <WorkspaceUnderlineTabs
         items={[
           { id: "overview" as Tab, label: "Overview" },
@@ -511,7 +511,7 @@ function SourceTable({ rows }: { rows: SourceRow[] }) {
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-[13px]">
         <thead>
-          <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+          <tr className="border-b border-sales-border-subtle text-[11px] font-semibold text-sales-text-muted">
             <th className="px-4 py-3">Source</th>
             <th className="px-4 py-3 text-right">Inquiries</th>
             <th className="px-4 py-3 text-right">Qualified</th>
@@ -551,7 +551,7 @@ function CampaignTable({
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[800px] text-left text-[13px]">
           <thead>
-            <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+            <tr className="border-b border-sales-border-subtle text-[11px] font-semibold text-sales-text-muted">
               <th className="px-4 py-3">Campaign</th>
               <th className="px-4 py-3">Platform</th>
               <th className="px-4 py-3">Property</th>
@@ -644,7 +644,7 @@ function CampaignDetail({ campaign, onClose }: { campaign: CampaignRow; onClose:
           {campaign.flags.map((f) => (
             <li
               key={f.id + f.label}
-              className="rounded-full border border-sales-border px-2.5 py-1 text-[11px] text-sales-text-secondary"
+              className="rounded-sales-md border border-sales-border-subtle px-2.5 py-1 text-[11px] text-sales-text-secondary"
             >
               {f.label}
             </li>
@@ -665,7 +665,7 @@ function PropertyTable({ rows }: { rows: PropertyRow[] }) {
     <div className="overflow-x-auto">
       <table className="w-full min-w-[720px] text-left text-[13px]">
         <thead>
-          <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+          <tr className="border-b border-sales-border-subtle text-[11px] font-semibold text-sales-text-muted">
             <th className="px-4 py-3">Property</th>
             <th className="px-4 py-3 text-right">Inquiries</th>
             <th className="px-4 py-3 text-right">Qualified</th>
@@ -708,7 +708,7 @@ function AgentTable({ rows }: { rows: AgentRow[] }) {
       <p className="px-4 pt-1 text-[13px] font-semibold">Marketing → agent</p>
       <table className="mt-2 w-full min-w-[640px] text-left text-[13px]">
         <thead>
-          <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+          <tr className="border-b border-sales-border-subtle text-[11px] font-semibold text-sales-text-muted">
             <th className="px-4 py-3">Agent</th>
             <th className="px-4 py-3 text-right">Assigned</th>
             <th className="px-4 py-3 text-right">Contacted</th>

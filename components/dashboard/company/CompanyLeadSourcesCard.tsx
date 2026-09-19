@@ -8,7 +8,7 @@ import type { CompanyLeadSourceItem } from "./types";
 const BRAND_COLORS: Record<CompanyLeadSourceItem["brand"], string> = {
   whatsapp: "#25D366",
   facebook: "#1877F2",
-  referral: "#9366FF",
+  referral: "#0D9488",
   website: "#38BDF8",
   walkin: "#64748B",
   other: "#7B8BA8",
@@ -17,7 +17,7 @@ const BRAND_COLORS: Record<CompanyLeadSourceItem["brand"], string> = {
 const BRAND_TINT: Record<CompanyLeadSourceItem["brand"], string> = {
   whatsapp: "bg-[rgba(37,211,102,0.12)]",
   facebook: "bg-[rgba(24,119,242,0.12)]",
-  referral: "bg-sales-purple-soft",
+  referral: "bg-sales-teal-soft",
   website: "bg-sales-info-soft",
   walkin: "bg-sales-warning-soft",
   other: "bg-sales-neutral-100",
@@ -26,7 +26,7 @@ const BRAND_TINT: Record<CompanyLeadSourceItem["brand"], string> = {
 function SourceIcon({ brand }: { brand: CompanyLeadSourceItem["brand"] }) {
   if (brand === "whatsapp") return <SiWhatsapp size={13} className="text-[#25D366]" aria-hidden />;
   if (brand === "facebook") return <SiFacebook size={13} className="text-[#1877F2]" aria-hidden />;
-  if (brand === "referral") return <UserRoundPlus size={13} strokeWidth={2} className="text-[#9366FF]" aria-hidden />;
+  if (brand === "referral") return <UserRoundPlus size={13} strokeWidth={2} className="text-[#0D9488]" aria-hidden />;
   if (brand === "walkin") return <Footprints size={13} strokeWidth={2} aria-hidden />;
   if (brand === "website") return <Globe2 size={13} strokeWidth={2} className="text-[#38BDF8]" aria-hidden />;
   return <MoreHorizontal size={13} strokeWidth={2} aria-hidden />;

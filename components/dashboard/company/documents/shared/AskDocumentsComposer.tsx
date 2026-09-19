@@ -89,7 +89,7 @@ export function AskDocumentsComposer({
     <div className={cn("space-y-4", className)}>
       <div>
         {!compact ? (
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-sales-text-muted">
+          <p className="mb-2 text-[11px] font-medium text-sales-text-muted">
             {label}
           </p>
         ) : null}

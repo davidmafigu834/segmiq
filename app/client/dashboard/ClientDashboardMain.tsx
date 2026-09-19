@@ -408,7 +408,7 @@ export default function ClientDashboardMain({
             className="rounded-lg border border-[var(--border)] bg-[var(--surface-card)] p-3.5 text-left transition-colors hover:border-[var(--border-hover)]"
           >
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
+              <p className="text-[11px] font-semibold text-[var(--text-tertiary)]">
                 {item.label}
               </p>
               <ItemIcon size={14} style={{ color: item.colour }} />
@@ -463,7 +463,7 @@ export default function ClientDashboardMain({
             ] as const
           ).map((metric) => (
             <div key={metric.label} className="flex flex-col gap-1">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
+              <p className="text-[11px] font-semibold text-[var(--text-tertiary)]">
                 {metric.label}
               </p>
               <p
@@ -510,7 +510,7 @@ export default function ClientDashboardMain({
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-0.5">
+              <p className="text-[11px] font-semibold text-[var(--text-tertiary)] mb-0.5">
                 Team
               </p>
               <h2 className="text-[18px] font-semibold text-[var(--text-primary)]">
@@ -562,7 +562,7 @@ export default function ClientDashboardMain({
                       { label: "Sent", val: sp.sentThisWeek, cls: sp.sentThisWeek > 0 ? "text-[var(--text-primary)]" : "text-[var(--text-disabled)]" },
                     ].map(({ label, val, cls }) => (
                       <div key={label} className="text-center">
-                        <p className="text-[9px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)] mb-0.5">{label}</p>
+                        <p className="text-[9px] font-semibold text-[var(--text-tertiary)] mb-0.5">{label}</p>
                         <p className={`font-display text-[18px] font-semibold ${cls}`}>{val}</p>
                       </div>
                     ))}
@@ -597,7 +597,7 @@ export default function ClientDashboardMain({
                   (col, i) => (
                     <p
                       key={col}
-                      className={`text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] ${
+                      className={`text-[10px] font-semibold text-[var(--text-tertiary)] ${
                         i > 0 ? "text-center" : ""
                       }`}
                     >
@@ -670,7 +670,7 @@ export default function ClientDashboardMain({
 
           {/* PIPELINE */}
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-1">
+            <p className="text-[11px] font-semibold text-[var(--text-tertiary)] mb-1">
               Pipeline
             </p>
             <h2 className="text-[18px] font-semibold text-[var(--text-primary)] mb-5">
@@ -683,7 +683,7 @@ export default function ClientDashboardMain({
                 const pct = Math.round((count / maxPipeline) * 100);
                 return (
                   <div key={stage.key} className="flex items-center gap-3">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)] w-[80px] shrink-0">
+                    <span className="text-[11px] font-semibold text-[var(--text-tertiary)] w-[80px] shrink-0">
                       {stage.label}
                     </span>
                     <div className="flex-1 h-[5px] rounded-full bg-[var(--bg-quaternary)] overflow-hidden">
@@ -703,7 +703,7 @@ export default function ClientDashboardMain({
 
           {/* SCORE DISTRIBUTION */}
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-1">
+            <p className="text-[11px] font-semibold text-[var(--text-tertiary)] mb-1">
               Lead quality
             </p>
             <h2 className="text-[18px] font-semibold text-[var(--text-primary)] mb-5">
@@ -770,7 +770,7 @@ export default function ClientDashboardMain({
           QUOTATIONS THIS WEEK
           ============================================ */}
       <div className="ag-fade-in ag-delay-3 mb-8 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-1">
+        <p className="text-[11px] font-semibold text-[var(--text-tertiary)] mb-1">
           Quotations
         </p>
         <h2 className="text-[18px] font-semibold text-[var(--text-primary)] mb-5">
@@ -815,7 +815,7 @@ export default function ClientDashboardMain({
             >
               <div className="flex items-center gap-2 mb-2">
                 <stat.icon size={14} className={stat.colourClass} />
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
+                <p className="text-[10px] font-semibold text-[var(--text-tertiary)]">
                   {stat.label}
                 </p>
               </div>
@@ -840,7 +840,7 @@ export default function ClientDashboardMain({
 
         {/* ASSETS SENT THIS WEEK */}
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-1">
+          <p className="text-[11px] font-semibold text-[var(--text-tertiary)] mb-1">
             Engagement
           </p>
           <h2 className="text-[18px] font-semibold text-[var(--text-primary)] mb-5">
@@ -882,7 +882,7 @@ export default function ClientDashboardMain({
               >
                 <div className="flex items-center gap-2 mb-2">
                   <stat.icon size={14} className={stat.colourClass} />
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
+                  <p className="text-[10px] font-semibold text-[var(--text-tertiary)]">
                     {stat.label}
                   </p>
                 </div>
@@ -899,7 +899,7 @@ export default function ClientDashboardMain({
         {/* RECENT WINS */}
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] overflow-hidden">
           <div className="px-5 py-4 border-b border-[var(--border)]">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-0.5">
+            <p className="text-[11px] font-semibold text-[var(--text-tertiary)] mb-0.5">
               Deals
             </p>
             <h2 className="text-[18px] font-semibold text-[var(--text-primary)]">
@@ -967,7 +967,7 @@ export default function ClientDashboardMain({
           LEAD SOURCES
           ============================================ */}
       <div className="ag-fade-in ag-delay-4 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-1">
+        <p className="text-[11px] font-semibold text-[var(--text-tertiary)] mb-1">
           Sources
         </p>
         <h2 className="text-[18px] font-semibold text-[var(--text-primary)] mb-5">
@@ -982,7 +982,7 @@ export default function ClientDashboardMain({
               : GHOST_WIDTHS[source.key];
             return (
               <div key={source.key} className="flex items-center gap-3">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)] w-[90px] shrink-0">
+                <span className="text-[11px] font-semibold text-[var(--text-tertiary)] w-[90px] shrink-0">
                   {source.label}
                 </span>
                 <div className="flex-1 h-[5px] rounded-full bg-[var(--bg-quaternary)] overflow-hidden">

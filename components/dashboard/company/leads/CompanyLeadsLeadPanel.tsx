@@ -179,7 +179,7 @@ export function CompanyLeadsLeadPanel({
     <aside
       data-course-target="company-lead-detail"
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card",
+        "flex h-full min-h-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none",
         overlay &&
           "fixed inset-y-0 right-0 z-40 w-full max-w-[400px] rounded-none border-y-0 border-r-0 sm:rounded-l-[14px] sm:border-y sm:border-r",
         stacked && overlay && "inset-0 max-w-none rounded-none"
@@ -275,7 +275,7 @@ export function CompanyLeadsLeadPanel({
           <Section data-course-target="company-lead-score">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                <p className="text-[11px] font-medium text-sales-text-muted">
                   Lead score
                 </p>
                 {score == null ? (
@@ -312,7 +312,7 @@ export function CompanyLeadsLeadPanel({
           </Section>
 
           <Section>
-            <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+            <p className="mb-3 text-[11px] font-medium text-sales-text-muted">
               About this Lead
             </p>
             <div className="grid grid-cols-2 gap-x-3 gap-y-3">
@@ -361,7 +361,7 @@ export function CompanyLeadsLeadPanel({
           </Section>
 
           <Section>
-            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+            <p className="mb-2 text-[11px] font-medium text-sales-text-muted">
               Customer need
             </p>
             {data?.customerNeed ? (
@@ -372,7 +372,7 @@ export function CompanyLeadsLeadPanel({
           </Section>
 
           <Section data-course-target="company-lead-next-action">
-            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+            <p className="mb-2 text-[11px] font-medium text-sales-text-muted">
               Next action
             </p>
             {next?.hasNextAction ? (
@@ -445,7 +445,7 @@ export function CompanyLeadsLeadPanel({
 
           {notQualified && data?.notQualifiedReason ? (
             <Section>
-              <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+              <p className="mb-1 text-[11px] font-medium text-sales-text-muted">
                 Not Qualified
               </p>
               <p className="text-[13px] text-sales-text-secondary">{data.notQualifiedReason}</p>
@@ -454,7 +454,7 @@ export function CompanyLeadsLeadPanel({
 
           {data?.relatedDeal ? (
             <Section>
-              <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+              <p className="mb-2 text-[11px] font-medium text-sales-text-muted">
                 Related Deal
               </p>
               <p className="text-[13px] font-semibold text-sales-text-primary">{data.relatedDeal.name}</p>

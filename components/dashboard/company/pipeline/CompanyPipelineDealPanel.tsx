@@ -149,7 +149,7 @@ export function CompanyPipelineDealPanel({
     <aside
       data-course-target="company-pipeline-detail"
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card",
+        "flex h-full min-h-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none",
         overlay &&
           "fixed inset-y-0 right-0 z-40 w-full max-w-[400px] rounded-none border-y-0 border-r-0 sm:rounded-l-[14px] sm:border-y sm:border-r",
         stacked && overlay && "inset-0 max-w-none rounded-none"
@@ -268,7 +268,7 @@ export function CompanyPipelineDealPanel({
           </Section>
 
           <Section data-course-target="company-pipeline-next-action">
-            <p className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+            <p className="text-[11px] font-medium text-sales-text-muted">
               Next Action
             </p>
             {(data?.nextAction ?? row?.nextAction)?.hasNextAction ? (

@@ -96,7 +96,7 @@ export function ComplianceWorkspace({
   ];
 
   const table = (
-      <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+      <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none">
       <WorkspaceUnderlineTabs items={TABS} value={tab} onChange={setTab} />
 
       <div className="flex flex-col gap-2 border-b border-sales-border-subtle px-4 py-3 sm:flex-row sm:px-5">

@@ -69,7 +69,7 @@ export function ProactiveSettingsSection({
       />
 
       <div className="mt-4 border-t border-sales-border-subtle pt-4">
-        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+        <p className="mb-2 text-[11px] font-medium text-sales-text-muted">
           Follow-ups · Quotations
         </p>
         <ToggleRow
@@ -107,7 +107,7 @@ export function ProactiveSettingsSection({
       </div>
 
       <div className="mt-4 border-t border-sales-border-subtle pt-4">
-        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+        <p className="mb-2 text-[11px] font-medium text-sales-text-muted">
           Deals
         </p>
         <ToggleRow
@@ -144,7 +144,7 @@ export function ProactiveSettingsSection({
       </div>
 
       <div className="mt-4 border-t border-sales-border-subtle pt-4">
-        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+        <p className="mb-2 text-[11px] font-medium text-sales-text-muted">
           Appointments
         </p>
         <ToggleRow
@@ -173,7 +173,7 @@ export function ProactiveSettingsSection({
       </div>
 
       <div className="mt-4 border-t border-sales-border-subtle pt-4">
-        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+        <p className="mb-2 text-[11px] font-medium text-sales-text-muted">
           Response alerts · Safety
         </p>
         <ToggleRow

@@ -429,7 +429,7 @@ export function ProductInventorySection({
           ["Reorder level", inv?.reorderLevel == null ? "—" : String(inv.reorderLevel)],
         ].map(([label, value]) => (
           <div key={label} className="bg-sales-surface px-4 py-3">
-            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">{label}</div>
+            <div className="text-[11px] font-medium text-sales-text-muted">{label}</div>
             <div className="mt-1 text-[18px] font-semibold tabular-nums text-sales-text-primary">{value}</div>
           </div>
         ))}
@@ -798,7 +798,7 @@ export function ProductActivitySection({
       ) : (
         groups.map(([day, rows]) => (
           <div key={day}>
-            <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">{day}</div>
+            <div className="mb-3 text-[11px] font-semibold text-sales-text-muted">{day}</div>
             <ul className="space-y-4 border-l border-sales-border-subtle pl-4">
               {rows.map((e) => (
                 <li key={String(e.id)}>

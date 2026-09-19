@@ -117,7 +117,7 @@ export function CompanyCalendarSummary({
           <>
             <span className={cn("absolute inset-x-0 top-0 h-[2px]", card.accentClass)} aria-hidden />
             <div className="flex items-start justify-between gap-2">
-              <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              <span className="min-w-0 text-[11px] font-semibold text-sales-text-muted">
                 {card.label}
               </span>
               <span
@@ -155,7 +155,7 @@ export function CompanyCalendarSummary({
           card.orderClass,
           active ? "border-sales-brand ring-1 ring-sales-brand-border" : "border-sales-border",
           interactive &&
-            "hover:border-sales-border-strong hover:shadow-sales-card-hover focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]"
+            "hover:border-sales-border-strong hover:shadow-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]"
         );
         return interactive ? <button key={card.id} type="button" className={className} onClick={() => onAction(card.id as SummaryAction)} aria-pressed={active}>{content}</button> : <article key={card.id} className={className}>{content}</article>;
       })}

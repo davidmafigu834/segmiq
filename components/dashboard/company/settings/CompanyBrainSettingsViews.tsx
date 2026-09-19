@@ -358,7 +358,7 @@ function ProfileForm({
           ["Timezone", c.timezone],
         ].map(([label, value]) => (
           <div key={label}>
-            <dt className="text-[11px] uppercase tracking-[0.04em] text-sales-text-muted">{label}</dt>
+            <dt className="text-[11px] text-sales-text-muted">{label}</dt>
             <dd className="mt-0.5 text-[13px] text-sales-text-primary">{value || "—"}</dd>
           </div>
         ))}

@@ -74,7 +74,7 @@ export function InquiryComplianceCard({
 
   return (
     <section className="rounded-[12px] border border-sales-border bg-sales-neutral-50 p-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">Compliance</p>
+      <p className="text-[11px] font-semibold text-sales-text-muted">Compliance</p>
       {row ? (
         <>
           <p className="mt-1 text-[13px] font-medium">{row.statusLabel}</p>

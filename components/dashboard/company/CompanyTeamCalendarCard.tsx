@@ -56,7 +56,7 @@ export function CompanyTeamCalendarCard({
       <div className="px-3 py-2 sm:px-4">
         {overdue.length > 0 ? (
           <div className="mb-2.5 rounded-[8px] border border-sales-danger/20 bg-sales-danger-soft px-3 py-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-danger-fg">
+            <p className="text-[10px] font-semibold text-sales-danger-fg">
               Overdue · {overdueCount}
             </p>
             <ul className="mt-1.5 space-y-1">
