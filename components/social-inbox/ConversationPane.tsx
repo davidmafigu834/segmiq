@@ -77,7 +77,7 @@ export function ConversationPane({ session }: { session: SocialInboxSession }) {
   const isComment = item.conversationKind === "comment";
 
   return (
-    <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-sales-bg" aria-label="Active conversation">
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-sales-bg" aria-label="Active conversation">
       <ConversationHeader session={session} />
       {item.channel.startsWith("instagram") &&
       session.connections.some((c) => c.provider === "instagram" && c.status !== "connected") ? (
@@ -312,7 +312,7 @@ function Timeline({ session, isComment }: { session: SocialInboxSession; isComme
   }, [selected.messages.length, session.stickBottom, session.typingName]);
 
   return (
-    <div className="relative flex h-0 min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <InboxScrollArea
         viewportRef={scroller}
         contentClassName="px-4 py-3 pb-4"

@@ -17,14 +17,16 @@ export function InboxScrollArea({
   onScroll?: UIEventHandler<HTMLDivElement>;
 }) {
   return (
-    <div className={cn("relative h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden", className)}>
-      <div
-        ref={viewportRef}
-        className="social-inbox-scroll absolute inset-0 overflow-x-hidden overflow-y-scroll overscroll-contain"
-        onScroll={onScroll}
-      >
-        <div className={contentClassName}>{children}</div>
-      </div>
+    <div
+      ref={viewportRef}
+      className={cn(
+        "social-inbox-scroll h-0 min-h-0 flex-1 overflow-y-scroll overscroll-contain",
+        contentClassName,
+        className
+      )}
+      onScroll={onScroll}
+    >
+      {children}
     </div>
   );
 }
