@@ -125,9 +125,10 @@ function SocialInboxClient(props: {
     dealsBase: props.dealsBase,
   });
 
+  const onPaneChange = props.onPaneChange;
   useEffect(() => {
-    props.onPaneChange(session.mobilePane);
-  }, [props.onPaneChange, session.mobilePane]);
+    onPaneChange(session.mobilePane);
+  }, [onPaneChange, session.mobilePane]);
 
   return (
     <SocialInboxApp

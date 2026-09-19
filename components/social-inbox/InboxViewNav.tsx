@@ -32,7 +32,7 @@ const VIEW_META: Record<
 };
 
 export function InboxViewNav({ session }: { session: SocialInboxSession }) {
-  const { view, counts, viewsCollapsed, changeView, canViewUnassigned } = session;
+  const { viewsCollapsed, canViewUnassigned } = session;
   const focus = SOCIAL_VIEW_ORDER.filter((id) => VIEW_META[id].group === "focus");
   const messages = SOCIAL_VIEW_ORDER.filter((id) => VIEW_META[id].group === "messages");
   const ops = SOCIAL_VIEW_ORDER.filter(

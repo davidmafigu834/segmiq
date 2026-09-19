@@ -742,12 +742,12 @@ export function useSocialInboxSession(
   );
 
   const markNotSales = useCallback(
-    (_reason: string) => {
+    (reason: string) => {
       if (!selectedId) return;
       const id = selectedId;
       patchConversation(id, (item) => ({ ...item, intentBand: "cold", intentScore: 8, primaryLabel: null, unread: false }));
       setOverlay(null);
-      showFlash({ title: "Removed from sales opportunities." }, "info");
+      showFlash({ title: "Removed from sales opportunities.", description: reason }, "info");
       if (view === "hot" || view === "for_you") setSelectedId(null);
     },
     [patchConversation, selectedId, showFlash, view]
