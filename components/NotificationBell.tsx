@@ -19,10 +19,12 @@ type NotificationRow = {
     | "FB_TOKEN_EXPIRED"
     | "BACKFILL_COMPLETE"
     | "WHATSAPP_CONNECTION_ALERT"
+    | "WHATSAPP_MESSAGE"
     | "QUOTATION_ALERT"
     | "AGENT_ALERT"
     | "INVENTORY_ALERT"
-    | "COMMERCIAL_IMPORT";
+    | "COMMERCIAL_IMPORT"
+    | "SOCIAL_INBOX";
   message: string;
   read: boolean;
   lead_id: string | null;
