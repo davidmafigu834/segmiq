@@ -25,7 +25,7 @@ import {
   Tooltip,
 } from "@/components/sales/ui";
 import { cn } from "@/lib/ui/cn";
-import { channelNetworkLabel, intentBandLabel, originHeadline } from "@/lib/social-inbox/display";
+import { channelKindLabel, channelNetworkLabel, formatRelativeTime, intentBandLabel, originHeadline } from "@/lib/social-inbox/display";
 import { uniqueSignalChips } from "@/lib/social-inbox/inbox-ui";
 import { ChannelGlyph } from "./ChannelGlyph";
 import { FollowUpMenu } from "./ConversationPane";
@@ -329,11 +329,17 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
             Recent activity
           </summary>
           <ul className="mt-2 space-y-2 text-[12px] text-sales-text-secondary">
-            <li>Facebook comment · 18 Sep</li>
-            <li>Messenger conversation · 18 Sep</li>
-            {quote ? <li>Quotation {quote.id} sent · 18 Sep</li> : null}
-            {item.followUpLabel ? <li>Follow-up scheduled · 19 Sep</li> : null}
-            {intel.crm.state === "open_deal" ? <li>Deal updated · 19 Sep</li> : null}
+            {item.lastMessageAt ? (
+              <li>
+                {channelKindLabel(item.channel)} · {formatRelativeTime(item.lastMessageAt)}
+              </li>
+            ) : null}
+            {item.followUpLabel ? <li>{item.followUpLabel}</li> : null}
+            {intel.crm.state === "converted" ? <li>Converted to lead</li> : null}
+            {intel.crm.state === "open_deal" ? <li>Open deal{intel.crm.openDealName ? ` · ${intel.crm.openDealName}` : ""}</li> : null}
+            {!item.lastMessageAt && !item.followUpLabel && intel.crm.state === "none" ? (
+              <li className="text-sales-text-muted">No activity recorded yet.</li>
+            ) : null}
           </ul>
         </details>
       </InboxScrollArea>
