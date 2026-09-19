@@ -4462,43 +4462,39 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
   background: #3d548c;
 }
 
-/* Social Inbox panes: classic 14px scrollbar the pointer can drag (overrides overlay + cloud-app). */
-.social-inbox-scroll,
-.cloud-app .social-inbox-scroll,
-html[data-crm] .social-inbox-scroll {
+/* Social Inbox panes: classic always-visible scrollbar.
+   scrollbar-width/-color must stay `auto` here. The CRM themes set scrollbar-color
+   on <html> and it inherits, and any non-auto value makes Chrome drop
+   ::-webkit-scrollbar in favour of Windows' fading overlay bar. */
+.social-inbox-scroll {
   overflow-x: hidden;
   overflow-y: scroll;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
   scrollbar-width: auto;
-  scrollbar-color: rgba(16, 24, 40, 0.45) rgba(16, 24, 40, 0.08);
+  scrollbar-color: auto;
 }
-.social-inbox-scroll::-webkit-scrollbar,
-.cloud-app .social-inbox-scroll::-webkit-scrollbar,
-html[data-crm] .social-inbox-scroll::-webkit-scrollbar {
-  width: 14px !important;
-  height: 14px !important;
-  display: block !important;
+.social-inbox-scroll::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
   background: transparent;
 }
-.social-inbox-scroll::-webkit-scrollbar-track,
-.cloud-app .social-inbox-scroll::-webkit-scrollbar-track,
-html[data-crm] .social-inbox-scroll::-webkit-scrollbar-track {
-  background: color-mix(in srgb, var(--sales-text-primary) 8%, var(--sales-surface));
+html .social-inbox-scroll::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--sales-text-primary) 7%, var(--sales-surface));
   border-left: 1px solid var(--sales-border);
 }
-.social-inbox-scroll::-webkit-scrollbar-thumb,
-.cloud-app .social-inbox-scroll::-webkit-scrollbar-thumb,
-html[data-crm] .social-inbox-scroll::-webkit-scrollbar-thumb {
-  background-color: color-mix(in srgb, var(--sales-text-primary) 42%, transparent);
+html .social-inbox-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--sales-text-primary) 45%, transparent);
   border: 3px solid transparent;
   border-radius: 999px;
   background-clip: padding-box;
 }
-.social-inbox-scroll::-webkit-scrollbar-thumb:hover,
-.cloud-app .social-inbox-scroll::-webkit-scrollbar-thumb:hover,
-html[data-crm] .social-inbox-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: color-mix(in srgb, var(--sales-text-primary) 58%, transparent);
+html .social-inbox-scroll::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--sales-text-primary) 62%, transparent);
+  background-clip: padding-box;
+}
+html .social-inbox-scroll::-webkit-scrollbar-thumb:active {
+  background: color-mix(in srgb, var(--sales-text-primary) 78%, transparent);
+  background-clip: padding-box;
 }
 
 /* Typography scale (Sales Design System boards) */
