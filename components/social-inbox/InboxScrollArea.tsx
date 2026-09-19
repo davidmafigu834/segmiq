@@ -30,12 +30,15 @@ export function InboxScrollArea({
   contentClassName,
   viewportRef,
   onScroll,
+  /** Narrow panes (the collapsed views rail) can't spare the 12px. */
+  showRail = true,
 }: {
   children: ReactNode;
   className?: string;
   contentClassName?: string;
   viewportRef?: Ref<HTMLDivElement>;
   onScroll?: UIEventHandler<HTMLDivElement>;
+  showRail?: boolean;
 }) {
   const localRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<(() => void) | null>(null);
@@ -150,11 +153,11 @@ export function InboxScrollArea({
       >
         {children}
       </div>
-      <div
-        className="relative w-3 shrink-0 touch-none border-l border-sales-border bg-sales-surface-subtle"
-        onPointerDown={onRailPointerDown}
-      >
-        {thumb.scrollable ? (
+      {showRail && thumb.scrollable ? (
+        <div
+          className="relative w-3 shrink-0 touch-none border-l border-sales-border bg-sales-surface-subtle"
+          onPointerDown={onRailPointerDown}
+        >
           <div
             data-inbox-thumb
             role="scrollbar"
@@ -162,8 +165,8 @@ export function InboxScrollArea({
             className="absolute inset-x-[2px] cursor-grab rounded-full bg-sales-text-muted transition-colors hover:bg-sales-text-secondary active:cursor-grabbing active:bg-sales-text-primary"
             style={{ top: thumb.top, height: thumb.height }}
           />
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

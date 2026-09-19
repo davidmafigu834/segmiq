@@ -48,7 +48,7 @@ export function InboxViewNav({ session }: { session: SocialInboxSession }) {
         viewsCollapsed ? "w-[52px]" : "w-[208px]"
       )}
     >
-      <div className="flex h-11 shrink-0 items-center justify-end px-1.5">
+      <div className={cn("flex h-11 shrink-0 items-center px-1.5", viewsCollapsed ? "justify-center" : "justify-end")}>
         <Tooltip label={viewsCollapsed ? "Expand views" : "Collapse views"} side="right">
           <button
             type="button"
@@ -61,16 +61,16 @@ export function InboxViewNav({ session }: { session: SocialInboxSession }) {
         </Tooltip>
       </div>
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-        <InboxScrollArea contentClassName="px-1.5 pb-3">
+        <InboxScrollArea contentClassName="px-1.5 pb-3" showRail={!viewsCollapsed}>
           <Section session={session} ids={focus} />
-          <Divider collapsed={viewsCollapsed} />
+          <Divider />
           {!viewsCollapsed ? (
             <p className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
               Messages
             </p>
           ) : null}
           <Section session={session} ids={messages} />
-          <Divider collapsed={viewsCollapsed} />
+          <Divider />
           <Section session={session} ids={ops} />
         </InboxScrollArea>
       </div>
@@ -78,8 +78,8 @@ export function InboxViewNav({ session }: { session: SocialInboxSession }) {
   );
 }
 
-function Divider({ collapsed }: { collapsed: boolean }) {
-  return <div className={cn("my-2 border-t border-sales-border", collapsed ? "mx-2" : "mx-2")} />;
+function Divider() {
+  return <div className="mx-2 my-2 border-t border-sales-border" />;
 }
 
 function Section({ session, ids }: { session: SocialInboxSession; ids: SocialInboxViewId[] }) {
@@ -97,29 +97,35 @@ function ViewRow({ id, session }: { id: SocialInboxViewId; session: SocialInboxS
   const Icon = meta.icon;
   const selected = session.view === id;
   const count = session.counts[id];
+  const collapsed = session.viewsCollapsed;
   const button = (
     <button
       type="button"
       onClick={() => session.changeView(id)}
       aria-current={selected ? "page" : undefined}
       className={cn(
-        "flex w-full items-center gap-2 rounded-[8px] px-2 py-[7px] text-left text-[13px] transition-colors duration-150",
+        "relative flex w-full items-center rounded-[8px] transition-colors duration-150",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--sales-focus-outline)]",
+        collapsed ? "h-9 justify-center" : "gap-2 py-[7px] pl-3 pr-2 text-left text-[13px]",
         selected
           ? "bg-[color-mix(in_srgb,var(--sales-brand)_18%,transparent)] font-medium text-sales-text-primary"
-          : "text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary",
-        session.viewsCollapsed && "justify-center px-0"
+          : "text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
       )}
     >
+      {/* Absolute so the marker never shifts the icon off centre when collapsed. */}
       <span
         className={cn(
-          "relative inline-flex h-4 w-0.5 shrink-0 rounded-full",
+          "absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full",
           selected ? "bg-sales-brand" : "bg-transparent"
         )}
         aria-hidden
       />
-      <Icon size={15} strokeWidth={1.8} className={cn(selected ? "text-sales-text-primary" : "text-sales-text-muted")} />
-      {!session.viewsCollapsed ? (
+      <Icon
+        size={collapsed ? 17 : 15}
+        strokeWidth={1.8}
+        className={cn(selected ? "text-sales-text-primary" : "text-sales-text-muted")}
+      />
+      {!collapsed ? (
         <>
           <span className="min-w-0 flex-1 truncate">{meta.label}</span>
           <span className="tabular-nums text-[11px] text-sales-text-muted">{count}</span>
@@ -128,7 +134,7 @@ function ViewRow({ id, session }: { id: SocialInboxViewId; session: SocialInboxS
     </button>
   );
 
-  if (session.viewsCollapsed) {
+  if (collapsed) {
     return (
       <li>
         <Tooltip label={`${meta.label} · ${count}`} side="right">
