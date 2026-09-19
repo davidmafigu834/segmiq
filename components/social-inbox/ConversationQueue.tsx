@@ -229,7 +229,7 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
       className={cn(
         "h-7 rounded-full px-2.5 text-[11px] transition-colors",
         active
-          ? "bg-[color-mix(in_srgb,var(--sales-brand)_22%,transparent)] font-medium text-sales-text-primary"
+          ? "bg-sales-surface font-medium text-sales-text-primary ring-1 ring-sales-border"
           : "bg-sales-bg text-sales-text-muted hover:text-sales-text-primary"
       )}
     >
@@ -251,7 +251,7 @@ function QueueRow({ item, session }: { item: SocialQueueItem; session: SocialInb
         className={cn(
           "group relative flex cursor-pointer gap-2.5 border-b border-sales-border px-3 py-2.5 transition-colors duration-150",
           selected
-            ? "bg-[color-mix(in_srgb,var(--sales-brand)_12%,transparent)]"
+            ? "bg-[color-mix(in_srgb,var(--sales-brand)_8%,transparent)]"
             : "hover:bg-sales-surface-hover"
         )}
       >

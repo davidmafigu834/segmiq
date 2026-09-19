@@ -74,7 +74,7 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
   return (
     <aside
       className={cn(
-        "flex h-full min-h-0 w-full shrink-0 flex-col border-l border-sales-border bg-sales-surface layout:w-[340px]",
+        "flex h-full min-h-0 w-full shrink-0 flex-col overflow-hidden border-l border-sales-border bg-sales-surface layout:w-[340px]",
         session.mobilePane !== "intel" && "hidden layout:flex"
       )}
       aria-label="Sales context"
@@ -96,7 +96,7 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 pb-6">
         <div className="flex items-start gap-2.5">
           <Avatar name={item.displayName} size="md" src={item.avatarUrl} />
           <div className="min-w-0">
@@ -129,26 +129,26 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
         ) : null}
 
         <Section id="ai" label="Next best action" session={session}>
-          <div className="rounded-[10px] bg-[color-mix(in_srgb,var(--sales-brand)_12%,transparent)] px-3 py-2.5">
+            <div className="rounded-[10px] border border-sales-border border-l-[3px] border-l-sales-brand bg-sales-bg px-3 py-2.5">
             <p className="text-[13px] font-semibold text-sales-text-primary">{intel.nextAction.label}</p>
             {intel.nextAction.followUpReason ? (
               <p className="mt-1 text-[12px] text-sales-text-secondary">{intel.nextAction.followUpReason}</p>
             ) : null}
             <div className="mt-2 flex flex-wrap gap-1.5">
               {intel.nextAction.code === "assign" ? (
-                <Button size="sm" variant="primary" onClick={() => session.setOverlay("what_should_i_do")}>
+                <Button size="sm" variant="secondary" onClick={() => session.setOverlay("what_should_i_do")}>
                   Assign
                 </Button>
               ) : intel.nextAction.code === "create_quote" ? (
-                <Button size="sm" variant="primary" onClick={() => session.setOverlay("create_quote")}>
+                <Button size="sm" variant="secondary" onClick={() => session.setOverlay("create_quote")}>
                   Create quotation
                 </Button>
               ) : intel.nextAction.code === "convert_lead" ? (
-                <Button size="sm" variant="primary" onClick={() => session.setOverlay("convert_lead")}>
+                <Button size="sm" variant="secondary" onClick={() => session.setOverlay("convert_lead")}>
                   Convert to lead
                 </Button>
               ) : (
-                <Button size="sm" variant="primary" onClick={() => void session.draftWithAi()}>
+                <Button size="sm" variant="secondary" onClick={() => void session.draftWithAi()}>
                   Draft follow-up
                 </Button>
               )}

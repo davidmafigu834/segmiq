@@ -140,7 +140,7 @@ export function ComposerBar({ session }: { session: SocialInboxSession }) {
           </Button>
           <Button
             size="sm"
-            variant="primary"
+            variant={session.draft.trim() ? "primary" : "secondary"}
             disabled={!session.draft.trim() || !session.canReply}
             onClick={() => void session.sendMessage()}
           >

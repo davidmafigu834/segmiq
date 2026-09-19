@@ -137,7 +137,7 @@ export function SocialInboxApp({
         >
           <ConversationPane session={session} />
         </div>
-        <div className={cn("h-full min-h-0", session.mobilePane !== "intel" && "hidden layout:flex")}>
+        <div className={cn("flex h-full min-h-0 min-w-0 flex-col", session.mobilePane !== "intel" && "hidden layout:flex")}>
           <SalesContextPanel session={session} />
         </div>
       </div>

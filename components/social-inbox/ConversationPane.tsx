@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import {
   Avatar,
-  Badge,
   Button,
   DropdownMenu,
   DropdownMenuContent,
@@ -100,10 +99,10 @@ function ConversationHeader({ session }: { session: SocialInboxSession }) {
   const followAt = intel.nextAction.followUpAt;
 
   return (
-    <header className="flex h-[62px] shrink-0 items-center gap-3 border-b border-sales-border bg-sales-surface px-3">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-sales-border bg-sales-surface px-3">
       <button
         type="button"
-        className="flex min-w-0 items-center gap-2.5 rounded-[8px] px-1 py-1 text-left hover:bg-sales-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--sales-focus-outline)] layout:hidden"
+        className="flex shrink-0 items-center gap-2.5 rounded-[8px] px-1 py-1 text-left hover:bg-sales-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--sales-focus-outline)] layout:hidden"
         onClick={() => session.setMobilePane("queue")}
         aria-label="Back to inbox"
       >
@@ -111,7 +110,7 @@ function ConversationHeader({ session }: { session: SocialInboxSession }) {
       </button>
       <button
         type="button"
-        className="flex min-w-0 items-center gap-2.5 rounded-[8px] px-1 py-1 text-left hover:bg-sales-surface-hover"
+        className="flex min-w-0 flex-1 items-center gap-2.5 rounded-[8px] px-1 py-1 text-left hover:bg-sales-surface-hover"
         onClick={() => {
           if (session.intelCollapsed) session.toggleIntelCollapsed();
           session.setIntelSection("customer");
@@ -119,52 +118,33 @@ function ConversationHeader({ session }: { session: SocialInboxSession }) {
         }}
       >
         <Avatar name={item.displayName} size="sm" src={item.avatarUrl} />
-        <span className="min-w-0">
-          <span className="block truncate text-[14px] font-semibold text-sales-text-primary">{item.displayName}</span>
-          <span className="flex items-center gap-1.5 text-[11px] text-sales-text-muted">
-            <ChannelGlyph channel={item.channel} />
-            {channelNetworkLabel(item.channel)} {channelKindLabel(item.channel)}
-            {item.detectedProduct ? <span>· {item.detectedProduct}</span> : null}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[14px] font-semibold leading-tight text-sales-text-primary">
+            {item.displayName}
+          </span>
+          <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] text-sales-text-muted">
+            <ChannelGlyph channel={item.channel} className="shrink-0" />
+            <span className="min-w-0 truncate">
+              {channelNetworkLabel(item.channel)} {channelKindLabel(item.channel)}
+              {item.detectedProduct ? ` · ${item.detectedProduct}` : ""}
+            </span>
           </span>
         </span>
       </button>
 
-      <Popover>
-        <PopoverTrigger className="hidden rounded-[8px] px-2 py-1 text-left text-[12px] text-sales-text-muted hover:bg-sales-surface-hover sm:block">
-          {channelKindLabel(item.channel)}
-        </PopoverTrigger>
-        <PopoverContent className="w-72 p-3">
-          <p className="text-[12px] font-semibold text-sales-text-primary">
-            {channelNetworkLabel(item.channel)} {channelKindLabel(item.channel)}
-          </p>
-          <p className="mt-1 text-[12px] text-sales-text-secondary">
-            {item.channel.startsWith("instagram") ? "SegmiQ Equipment Instagram" : "SegmiQ Equipment Facebook Page"}
-          </p>
-          {item.origin?.adName || item.origin?.campaignName ? (
-            <p className="mt-2 text-[12px] text-sales-text-muted">
-              Started from {originHeadline(item) ?? "a post"}
-            </p>
-          ) : null}
-          <Button size="sm" variant="ghost" className="mt-2" onClick={() => session.setOverlay("post_preview")}>
-            View original post
-            <ExternalLink size={12} className="ml-1" />
-          </Button>
-        </PopoverContent>
-      </Popover>
-
-      <div className="ml-auto flex items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-1">
         {item.intentBand === "hot" ? (
-          <Badge tone="brand" size="sm">
+          <span className="hidden text-[12px] font-medium tabular-nums text-sales-text-secondary sm:inline">
             {item.intentScore} {intentBandLabel(item.intentBand)}
-          </Badge>
+          </span>
         ) : (
           <span className="hidden text-[12px] text-sales-text-muted sm:inline">{intentBandLabel(item.intentBand)}</span>
         )}
 
         <DropdownMenu align="end">
-          <DropdownMenuTrigger className="inline-flex h-8 items-center gap-1 rounded-[8px] px-2 text-[12px] text-sales-text-secondary hover:bg-sales-surface-hover">
-            {item.assignedToName ?? "Unassigned"}
-            <ChevronDown size={12} />
+          <DropdownMenuTrigger className="inline-flex h-8 max-w-[7.5rem] items-center gap-1 rounded-[8px] px-2 text-[12px] text-sales-text-secondary hover:bg-sales-surface-hover">
+            <span className="truncate">{item.assignedToName ?? "Unassigned"}</span>
+            <ChevronDown size={12} className="shrink-0" />
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56">
             <DropdownMenuLabel>Assigned to</DropdownMenuLabel>
@@ -262,10 +242,11 @@ function FollowUpControl({ session, followAt }: { session: SocialInboxSession; f
 
   return (
     <Popover>
-      <PopoverTrigger className="inline-flex h-8 items-center gap-1 rounded-[8px] px-2 text-[12px] text-sales-text-secondary hover:bg-sales-surface-hover">
-        <Clock3 size={13} />
-        Follow up
-      </PopoverTrigger>
+      <Tooltip label="Follow up">
+        <PopoverTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-secondary hover:bg-sales-surface-hover">
+          <Clock3 size={13} />
+        </PopoverTrigger>
+      </Tooltip>
       <PopoverContent className="w-56 p-1.5">
         <FollowUpMenu session={session} />
       </PopoverContent>
@@ -333,7 +314,7 @@ function Timeline({ session, isComment }: { session: SocialInboxSession; isComme
     <div className="relative min-h-0 flex-1">
       <div
         ref={scroller}
-        className="h-full overflow-y-auto px-4 py-3 pb-28"
+        className="h-full overflow-y-auto px-4 py-3 pb-4"
         onScroll={(e) => {
           const el = e.currentTarget;
           const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
@@ -360,6 +341,32 @@ function Timeline({ session, isComment }: { session: SocialInboxSession; isComme
         {session.typingName ? (
           <p className="mt-3 text-[12px] text-sales-text-muted">{session.typingName} is typing…</p>
         ) : null}
+        {insight && !session.insightDismissed[item.conversationId] ? (
+          <div className="mt-3 rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2">
+            <div className="flex items-start gap-2">
+              <Sparkles size={14} className="mt-0.5 shrink-0 text-sales-text-primary" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[12px] font-semibold text-sales-text-primary">{insight.title}</p>
+                <p className="text-[12px] text-sales-text-secondary">{insight.body}</p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {insight.actions.map((action) => (
+                    <Button key={action.label} size="sm" variant={action.primary ? "secondary" : "ghost"} onClick={action.onClick}>
+                      {action.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="text-sales-text-muted hover:text-sales-text-primary"
+                aria-label="Dismiss insight"
+                onClick={() => session.setInsightDismissed((s) => ({ ...s, [item.conversationId]: true }))}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
       {session.newCount > 0 ? (
         <button
@@ -373,32 +380,6 @@ function Timeline({ session, isComment }: { session: SocialInboxSession; isComme
         >
           ↓ {session.newCount} new message{session.newCount > 1 ? "s" : ""}
         </button>
-      ) : null}
-      {insight && !session.insightDismissed[item.conversationId] ? (
-        <div className="absolute inset-x-3 bottom-2 rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2 shadow-[var(--sales-btn-shadow-secondary)]">
-          <div className="flex items-start gap-2">
-            <Sparkles size={14} className="mt-0.5 text-sales-text-primary" />
-            <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-semibold text-sales-text-primary">{insight.title}</p>
-              <p className="text-[12px] text-sales-text-secondary">{insight.body}</p>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {insight.actions.map((action) => (
-                  <Button key={action.label} size="sm" variant={action.primary ? "primary" : "secondary"} onClick={action.onClick}>
-                    {action.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <button
-              type="button"
-              className="text-sales-text-muted hover:text-sales-text-primary"
-              aria-label="Dismiss insight"
-              onClick={() => session.setInsightDismissed((s) => ({ ...s, [item.conversationId]: true }))}
-            >
-              ×
-            </button>
-          </div>
-        </div>
       ) : null}
     </div>
   );
@@ -460,11 +441,6 @@ function OriginCard({ session }: { session: SocialInboxSession }) {
         {origin.caption ? (
           <span className="block truncate text-[12px] text-sales-text-muted">{origin.caption}</span>
         ) : null}
-        {origin.customerQuote ? (
-          <span className="mt-0.5 block truncate text-[12px] text-sales-text-secondary">
-            Customer commented: “{origin.customerQuote}”
-          </span>
-        ) : null}
       </span>
       <ExternalLink size={14} className="ml-auto text-sales-text-muted" />
     </button>
@@ -475,29 +451,26 @@ function PublicCommentBanner({ session }: { session: SocialInboxSession }) {
   const item = session.selected!.conversation;
   const hasPrivate = session.selected!.messages.some((m) => m.visibility === "private");
   return (
-    <div className="mt-3 rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2.5">
-      <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
-        <Globe2 size={12} /> Public comment · {channelNetworkLabel(item.channel)}
-        {originHeadline(item) ? ` · ${originHeadline(item)}` : ""}
+    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2">
+      <p className="flex min-w-0 flex-1 items-center gap-1.5 text-[12px] text-sales-text-muted">
+        <Globe2 size={12} className="shrink-0" />
+        <span className="truncate">
+          Public {channelKindLabel(item.channel).toLowerCase()}
+          {originHeadline(item) ? ` · ${originHeadline(item)}` : ""}
+        </span>
       </p>
-      <p className="mt-2 text-[13px] text-sales-text-primary">
-        <span className="font-semibold">{item.displayName}</span>
-        <span className="text-sales-text-secondary"> “{item.origin?.customerQuote ?? item.preview}”</span>
-      </p>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        <Button size="sm" variant="secondary" onClick={() => session.setComposerMode("public_reply")}>
-          Reply publicly
-        </Button>
-        <Button size="sm" variant="primary" onClick={() => session.setComposerMode("private_message")}>
-          Move to private conversation
-        </Button>
-        <Button size="sm" variant="ghost" leftIcon={<Sparkles size={13} />} onClick={() => void session.draftWithAi()}>
-          AI suggest reply
-        </Button>
-      </div>
       {hasPrivate ? (
-        <p className="mt-2 text-[12px] text-sales-text-muted">Private conversation started</p>
-      ) : null}
+        <p className="text-[12px] text-sales-text-muted">Private conversation started</p>
+      ) : (
+        <div className="flex shrink-0 flex-wrap gap-1">
+          <Button size="sm" variant="ghost" onClick={() => session.setComposerMode("public_reply")}>
+            Reply publicly
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => session.setComposerMode("private_message")}>
+            Send privately
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -533,7 +506,7 @@ function MessageRow({
             className={cn(
               "rounded-[12px] px-3 py-2 text-[14px] leading-relaxed",
               mine
-                ? "bg-[color-mix(in_srgb,var(--sales-brand)_22%,var(--sales-surface))] text-sales-text-primary"
+                ? "bg-sales-bg text-sales-text-primary"
                 : "bg-sales-surface text-sales-text-primary",
               message.visibility === "public" && "ring-1 ring-inset ring-sales-border"
             )}
@@ -567,7 +540,7 @@ function MessageRow({
               {chips.map((chip) => (
                 <span
                   key={chip}
-                  className="rounded-full bg-[color-mix(in_srgb,var(--sales-brand)_16%,transparent)] px-2 py-0.5 text-[11px] text-sales-text-primary"
+                  className="rounded-full bg-sales-bg px-2 py-0.5 text-[11px] text-sales-text-secondary"
                 >
                   {chip}
                 </span>
