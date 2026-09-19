@@ -1015,7 +1015,7 @@ function LeadTableRow({
           <p
             className={cn(
               "text-[13px]",
-              last.never ? "font-medium text-[#B54708]" : "text-sales-text-secondary"
+              last.never ? "font-medium text-sales-warning-fg" : "text-sales-text-secondary"
             )}
           >
             {last.primary}
@@ -1026,7 +1026,7 @@ function LeadTableRow({
           {row.followUpOverdue ? (
             <p className="text-[11px] font-medium text-sales-danger">Follow-up overdue</p>
           ) : row.isStale ? (
-            <p className="text-[11px] font-medium text-[#B54708]">Stale</p>
+            <p className="text-[11px] font-medium text-sales-warning-fg">Stale</p>
           ) : null}
         </div>
       </DataTableTd>

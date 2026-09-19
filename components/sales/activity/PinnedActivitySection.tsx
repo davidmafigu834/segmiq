@@ -36,8 +36,8 @@ export function PinnedActivitySection({
       aria-label="Pinned activity"
     >
       <div className="mb-2 flex items-center gap-2">
-        <Pin size={14} strokeWidth={1.8} className="text-[#B54708] dark:text-[#F6BB59]" aria-hidden />
-        <h2 className="text-[12px] font-semibold uppercase tracking-wide text-sales-text-primary">Pinned</h2>
+        <Pin size={14} strokeWidth={1.8} className="text-sales-warning-fg" aria-hidden />
+        <h2 className="text-[12px] font-semibold text-sales-text-primary">Pinned</h2>
       </div>
       <div className="divide-y divide-[rgba(245,158,11,0.12)]">
         {visible.map((item) => (

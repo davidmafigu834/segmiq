@@ -51,10 +51,10 @@ function SourceBadgeIcon({ kind }: { kind: ReturnType<typeof contactLeadSourceMe
 }
 
 function primaryButtonClass(kind: ReturnType<typeof contactLeadSourceMeta>["kind"]): string {
-  if (kind === "walk_in") return "bg-sales-brand text-[#0A0B0D] hover:opacity-90";
-  if (kind === "referral") return "bg-[#a78bfa] text-white hover:opacity-90";
-  if (kind === "landing_page") return "bg-[var(--accent)] text-[var(--accent-ink)] hover:opacity-90";
-  return "bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90";
+  if (kind === "walk_in") return "bg-sales-brand text-sales-brand-text hover:opacity-90";
+  if (kind === "referral") return "bg-sales-info text-[var(--sales-solid-ink)] hover:opacity-90";
+  if (kind === "landing_page") return "bg-sales-brand text-sales-brand-text hover:opacity-90";
+  return "bg-sales-text-primary text-sales-surface hover:opacity-90";
 }
 
 export function ContactLeadCard({
@@ -207,27 +207,27 @@ export function ContactLeadCard({
               <LeadIntentBadge score={score} label={label} variant="default" showScore />
             ) : null}
             {fit.matched ? (
-              <span className="inline-flex items-center rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-foreground)]">
+              <span className="inline-flex items-center rounded-sales-sm bg-sales-brand-soft px-2 py-0.5 text-[10px] font-semibold text-sales-brand-fg">
                 Fit
               </span>
             ) : null}
             {intakeLabel ? (
-              <span className="inline-flex items-center rounded-full border border-[rgba(212,255,79,0.35)] bg-[rgba(212,255,79,0.12)] px-2 py-0.5 text-[10px] font-semibold text-[#3d4f00] dark:text-[var(--accent-fg)]">
+              <span className="inline-flex items-center rounded-sales-sm border border-sales-brand-border bg-sales-brand-soft px-2 py-0.5 text-[10px] font-semibold text-sales-brand-fg">
                 {intakeLabel}
               </span>
             ) : null}
             {serviceChip ? (
-              <span className="inline-flex max-w-full items-center truncate rounded-full border border-[var(--border)] bg-[var(--bg-tertiary)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-secondary)]">
+              <span className="inline-flex max-w-full items-center truncate rounded-sales-sm border border-sales-border bg-sales-neutral-100 px-2 py-0.5 text-[10px] font-medium text-sales-text-secondary">
                 {serviceChip}
               </span>
             ) : null}
             {budgetChip ? (
-              <span className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--bg-tertiary)] px-2 py-0.5 font-mono text-[10px] font-medium text-[var(--text-secondary)]">
+              <span className="inline-flex items-center rounded-sales-sm border border-sales-border bg-sales-neutral-100 px-2 py-0.5 font-mono text-[10px] font-medium text-sales-text-secondary">
                 {budgetChip}
               </span>
             ) : null}
             <span
-              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${meta.badgeBgClass} ${meta.badgeBorderClass} ${meta.badgeTextClass}`}
+              className={`inline-flex items-center gap-1 rounded-sales-sm border px-2 py-0.5 text-[10px] font-medium ${meta.badgeBgClass} ${meta.badgeBorderClass} ${meta.badgeTextClass}`}
             >
               <SourceBadgeIcon kind={meta.kind} />
               {meta.badgeLabel}

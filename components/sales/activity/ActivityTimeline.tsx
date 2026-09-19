@@ -145,7 +145,7 @@ export function ActivityTimeline({
             <ol className="relative list-none space-y-0 p-0">
               {groups.map((group) => (
                 <li key={group.key} className="mb-4 last:mb-0">
-                  <h2 className="sticky top-0 z-[1] mb-2 bg-sales-surface/95 py-1 text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted backdrop-blur-sm">
+                  <h2 className="sticky top-0 z-[1] mb-2 bg-sales-surface/95 py-1 text-[11px] font-semibold text-sales-text-muted backdrop-blur-sm">
                     {group.label}
                     {group.count > 1 ? (
                       <span className="ml-1.5 tabular-nums text-sales-text-muted">· {group.count}</span>

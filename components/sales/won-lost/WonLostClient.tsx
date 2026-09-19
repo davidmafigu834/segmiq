@@ -724,7 +724,7 @@ function DealTableRow({
       selected={selected}
       className={cn(
         "cursor-pointer",
-        selected && "bg-[#F3F7E8] ring-1 ring-inset ring-[rgba(160,205,40,0.35)]"
+        selected && "bg-sales-brand-soft ring-1 ring-inset ring-sales-brand-border"
       )}
       onClick={onSelect}
       onDoubleClick={onViewLead}
@@ -813,7 +813,7 @@ function MobileDealCard({
       onClick={onSelect}
       className={cn(
         "w-full rounded-sales-md border border-sales-border-subtle bg-sales-surface p-3.5 text-left shadow-none",
-        selected && "border-[rgba(160,205,40,0.5)] bg-[#F3F7E8]"
+        selected && "border-sales-brand-border bg-sales-brand-soft"
       )}
     >
       <div className="flex items-start justify-between gap-2">

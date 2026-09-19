@@ -80,16 +80,16 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 
 function TypeIcon({ type, size = 16 }: { type: SalesTaskItem["type"]; size?: number }) {
   if (type === "whatsapp") return <SiWhatsapp size={size} color="#25D366" aria-hidden />;
-  if (type === "call") return <Phone size={size} strokeWidth={1.8} className="text-[#14B8A6]" />;
+  if (type === "call") return <Phone size={size} strokeWidth={1.8} className="text-sales-teal" />;
   if (type === "quote_review")
-    return <FileText size={size} strokeWidth={1.8} className="text-sales-warning" />;
+    return <FileText size={size} strokeWidth={1.8} className="text-sales-warning-fg" />;
   return <CalendarClock size={size} strokeWidth={1.8} className="text-sales-success" />;
 }
 
 function typeTint(type: SalesTaskItem["type"]) {
   if (type === "whatsapp") return "bg-sales-success-soft";
-  if (type === "call") return "bg-[#F0FDFA]";
-  if (type === "quote_review") return "bg-[#FFFAEB]";
+  if (type === "call") return "bg-sales-teal-soft";
+  if (type === "quote_review") return "bg-sales-warning-soft";
   return "bg-sales-success-soft";
 }
 
@@ -796,7 +796,7 @@ export function SalesTasksClient() {
                             tone === "danger"
                               ? "text-sales-danger"
                               : tone === "warning"
-                                ? "text-[#B54708]"
+                                ? "text-sales-warning-fg"
                                 : "text-sales-text-muted"
                           )}
                         >
@@ -1035,7 +1035,7 @@ function TaskTableRow({
     tone === "danger"
       ? "text-sales-danger"
       : tone === "warning"
-        ? "text-[#B54708]"
+        ? "text-sales-warning-fg"
         : "text-sales-text-secondary";
 
   return (
@@ -1191,7 +1191,7 @@ function MobileTaskCard({
               tone === "danger"
                 ? "text-sales-danger"
                 : tone === "warning"
-                  ? "text-[#B54708]"
+                  ? "text-sales-warning-fg"
                   : "text-sales-text-primary"
             )}
           >

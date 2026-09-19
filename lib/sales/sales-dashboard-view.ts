@@ -82,10 +82,10 @@ const STAGE_DEFS: Array<{
   color: string;
   statuses: string[];
 }> = [
-  { id: "new", label: "New lead", color: "#2684FF", statuses: ["NEW"] },
-  { id: "qualified", label: "Qualified", color: "#EAB308", statuses: ["CONTACTED"] },
-  { id: "proposal", label: "Proposal sent", color: "#F59E0B", statuses: ["PROPOSAL_SENT"] },
-  { id: "negotiation", label: "Negotiation", color: "#7C3AED", statuses: ["NEGOTIATING"] },
+  { id: "new", label: "New lead", color: "#2563EB", statuses: ["NEW"] },
+  { id: "qualified", label: "Qualified", color: "#F59E0B", statuses: ["CONTACTED"] },
+  { id: "proposal", label: "Proposal sent", color: "#0F766E", statuses: ["PROPOSAL_SENT"] },
+  { id: "negotiation", label: "Negotiation", color: "#B54708", statuses: ["NEGOTIATING"] },
   { id: "won", label: "Won", color: "#16A34A", statuses: ["WON"] },
 ];
 

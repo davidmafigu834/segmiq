@@ -202,7 +202,7 @@ export function DropdownMenuLabel({
   return (
     <div
       className={cn(
-        "px-3 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted",
+        "px-3 pb-1 pt-1.5 text-[11px] font-semibold text-sales-text-muted",
         className
       )}
       {...props}

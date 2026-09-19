@@ -96,7 +96,7 @@ export function FocusModeOverlay({
       </header>
 
       <div className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto px-4 py-6 sm:px-6">
-        <div className="w-full max-w-lg rounded-sales-xl border border-sales-border bg-sales-surface p-5 shadow-sales-card sm:p-6">
+        <div className="w-full max-w-lg rounded-sales-xl border border-sales-border bg-sales-surface p-5 shadow-sales-modal sm:p-6">
           {!current ? (
             <div className="text-center">
               <p className="text-[16px] font-semibold text-sales-text-primary">
@@ -119,7 +119,7 @@ export function FocusModeOverlay({
             </div>
           ) : (
             <>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              <p className="text-[11px] font-semibold text-sales-text-muted">
                 Your next action
               </p>
               <h2 className="mt-2 text-[22px] font-semibold tracking-[-0.02em] text-sales-text-primary">
@@ -135,7 +135,7 @@ export function FocusModeOverlay({
               ) : null}
 
               <div className="mt-5 rounded-[10px] border border-sales-border-subtle bg-[var(--sales-neutral-50)] px-3.5 py-3 dark:bg-[var(--sales-surface-raised)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-sales-text-muted">
+                <p className="text-[11px] font-semibold text-sales-text-muted">
                   Recommended action
                 </p>
                 <p className="mt-1 text-[15px] font-semibold text-sales-text-primary">

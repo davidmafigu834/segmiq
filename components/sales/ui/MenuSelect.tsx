@@ -187,7 +187,7 @@ export function MenuSelect<T extends string>({
                   "flex w-full min-h-10 items-center justify-between gap-3 px-3 py-2 text-left text-[13px] transition-colors",
                   opt.disabled && "cursor-not-allowed opacity-50",
                   active
-                    ? "bg-[rgba(212,255,79,0.12)] font-medium text-sales-text-primary"
+                    ? "bg-sales-brand-soft font-medium text-sales-text-primary"
                     : "font-normal text-sales-text-secondary",
                   !opt.disabled &&
                     (keyboardActive || !active) &&

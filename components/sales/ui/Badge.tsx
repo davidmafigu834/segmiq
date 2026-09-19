@@ -54,7 +54,7 @@ const solidTone: Record<BadgeTone, string> = {
   neutral: `bg-[var(--sales-neutral-500)] ${solidInk}`,
   brand: "bg-sales-brand text-[var(--sales-ink)]",
   // Amber is too light for white text in either theme.
-  warning: "bg-sales-warning text-[#4A2A02]",
+  warning: "bg-sales-warning text-sales-warning-fg",
   success: `bg-sales-success ${solidInk}`,
   danger: `bg-sales-danger ${solidInk}`,
   info: `bg-sales-info ${solidInk}`,
@@ -118,7 +118,7 @@ const dotTone: Record<StatusDotTone, string> = {
   purple: "bg-sales-purple",
   teal: "bg-sales-teal",
   busy: "bg-sales-warning",
-  away: "bg-[#EAB308]",
+  away: "bg-sales-warning",
   offline: "bg-sales-text-muted",
 };
 
@@ -271,7 +271,7 @@ export function MetaPill({
   return (
     <span
       className={cn(
-        "inline-flex max-w-full items-center gap-1 truncate rounded-full border border-sales-border",
+        "inline-flex max-w-full items-center gap-1 truncate rounded-sales-sm border border-sales-border",
         "bg-transparent px-2 py-[3px] text-[11px] font-medium leading-4 text-sales-text-secondary",
         className
       )}

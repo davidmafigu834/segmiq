@@ -60,22 +60,21 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium {
   --surface: var(--sales-surface);
   --surface-hover: var(--sales-surface-hover);
   --segmiq-canvas:
-    radial-gradient(70% 58% at 50% 32%, #08091c 0%, rgba(8, 9, 28, 0.55) 46%, transparent 74%),
-    radial-gradient(820px circle at 0% -6%, rgba(147, 51, 234, 0.36), transparent 58%),
-    radial-gradient(780px circle at 100% -8%, rgba(124, 58, 237, 0.3), transparent 56%),
-    radial-gradient(1100px circle at 50% 112%, rgba(88, 28, 135, 0.34), transparent 60%),
-    linear-gradient(165deg, #160a28 0%, #070814 42%, #0c0718 100%);
+    radial-gradient(70% 58% at 50% 32%, #081831 0%, rgba(8, 24, 49, 0.55) 46%, transparent 74%),
+    radial-gradient(820px circle at 0% -6%, rgba(77, 141, 255, 0.14), transparent 58%),
+    radial-gradient(780px circle at 100% -8%, rgba(212, 255, 79, 0.08), transparent 56%),
+    radial-gradient(1100px circle at 50% 112%, rgba(5, 15, 34, 0.9), transparent 60%),
+    linear-gradient(165deg, #050F22 0%, #040D1D 42%, #030C1C 100%);
   color: #ffffff;
 }
 
 /*
-  Navy canvas with violet edge tint — dark centre, purple glow at
-  the corners and along the floor, matching the SegmiQ atmosphere.
+  Navy canvas with restrained brand/info edge tint — no purple glow.
 */
 .sales-dashboard-premium .dashboard-canvas > .sales-mobile-scroll,
 .sales-dashboard-premium .sales-mobile-scroll {
   --segmiq-wave-band: 21.5rem;
-  background-color: #070814;
+  background-color: #050F22;
   background-image: var(--segmiq-canvas);
   background-repeat: no-repeat;
 }

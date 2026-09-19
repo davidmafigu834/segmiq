@@ -1028,9 +1028,9 @@ function QuoteTableRow({
             Version {quote.revisionNumber || 1}
           </p>
           {quote.needsFollowUp ? (
-            <p className="mt-0.5 text-[11px] font-medium text-[#B54708]">Needs follow-up</p>
+            <p className="mt-0.5 text-[11px] font-medium text-sales-warning-fg">Needs follow-up</p>
           ) : quote.expiresSoon ? (
-            <p className="mt-0.5 text-[11px] font-medium text-[#B54708]">Due soon</p>
+            <p className="mt-0.5 text-[11px] font-medium text-sales-warning-fg">Due soon</p>
           ) : null}
         </div>
       </DataTableTd>
@@ -1085,7 +1085,7 @@ function QuoteTableRow({
                 validity.tone === "danger"
                   ? "text-sales-danger"
                   : validity.tone === "warning"
-                    ? "text-[#B54708]"
+                    ? "text-sales-warning-fg"
                     : "text-sales-text-muted"
               )}
             >
@@ -1158,7 +1158,7 @@ function MobileQuoteCard({ quote, onOpen }: { quote: QuoteListRow; onOpen: () =>
             className={cn(
               "text-sales-text-primary",
               validity.tone === "danger" && "text-sales-danger",
-              validity.tone === "warning" && "text-[#B54708]"
+              validity.tone === "warning" && "text-sales-warning-fg"
             )}
           >
             {validity.primary}

@@ -310,7 +310,7 @@ export function LeadDetailPanel({
             <ChevronLeft className="h-5 w-5" strokeWidth={1.8} />
           </button>
 
-          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#F8F9FB]">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-sales-neutral-100">
             {isWhatsAppChat ? (
               <SiWhatsapp size={16} color="#25D366" aria-hidden />
             ) : isFacebook ? (
@@ -340,7 +340,7 @@ export function LeadDetailPanel({
             {!isReadOnly && !isClosed ? (
               <button
                 type="button"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] text-sales-text-muted transition-colors hover:bg-sales-surface-hover hover:text-[#F59E0B]"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] text-sales-text-muted transition-colors hover:bg-sales-surface-hover hover:text-sales-warning-fg"
                 aria-label={picked ? `Remove ${displayName} from picks` : `Save ${displayName} to picks`}
                 disabled={picking}
                 onClick={() => void togglePick()}
@@ -348,7 +348,7 @@ export function LeadDetailPanel({
                 <Star
                   size={16}
                   strokeWidth={1.8}
-                  className={picked ? "text-[#F59E0B]" : undefined}
+                  className={picked ? "text-sales-warning-fg" : undefined}
                   fill={picked ? "currentColor" : "none"}
                 />
               </button>
@@ -511,7 +511,7 @@ export function LeadDetailPanel({
               ) : null}
 
               {isWhatsAppChat ? (
-                <div className="rounded-[12px] border border-[#D1FADF] bg-[#F6FEF9] p-4">
+                <div className="rounded-[12px] border border-sales-success/25 bg-sales-success-soft p-4">
                   <p className="mb-1 text-[11px] font-medium text-[var(--success-fg,#027A48)]">
                     WhatsApp conversation
                   </p>
@@ -545,7 +545,7 @@ export function LeadDetailPanel({
               </div>
 
               {converted && (activeLead.active_deal_id || relatedDeal?.id) ? (
-                <div className="rounded-[12px] border border-[rgba(212,255,79,0.45)] bg-[rgba(212,255,79,0.1)] p-3">
+                <div className="rounded-[12px] border border-sales-brand-border bg-sales-brand-soft p-3">
                   <p className="text-[11px] font-medium text-sales-text-muted">
                     Related Deal
                   </p>
@@ -624,7 +624,7 @@ export function LeadDetailPanel({
                     )}
                   </div>
                 ) : phone ? (
-                  <a className="block min-w-0 break-all font-mono text-[15px] text-[#2684FF] underline" href={`tel:${phone}`}>
+                  <a className="block min-w-0 break-all font-mono text-[15px] text-sales-info underline" href={`tel:${phone}`}>
                     {phone}
                   </a>
                 ) : null}
@@ -650,7 +650,7 @@ export function LeadDetailPanel({
                       </p>
                       <button
                         type="button"
-                        className="mb-2 h-10 w-full rounded-[10px] border border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.12)] text-[12px] font-semibold text-sales-text-primary"
+                        className="mb-2 h-10 w-full rounded-[10px] border border-sales-brand-border bg-sales-brand-soft text-[12px] font-semibold text-sales-text-primary"
                         onClick={() => setConvertWonOpen(true)}
                       >
                         Record won customer

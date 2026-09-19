@@ -120,7 +120,7 @@ export function PremiumSheet({
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   {eyebrow ? (
-                    <p className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                    <p className="text-[11px] font-medium text-sales-text-muted">
                       {eyebrow}
                     </p>
                   ) : null}

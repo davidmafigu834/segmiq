@@ -83,7 +83,7 @@ export function Tooltip({
         role="tooltip"
         style={{ maxWidth }}
         className={cn(
-          "sales-tooltip pointer-events-none absolute z-[var(--sales-z-tooltip,110)] w-max rounded-[7px] bg-[#101828] px-2.5 py-1.5 text-[11px] font-medium leading-snug text-white shadow-sales-dropdown",
+          "sales-tooltip pointer-events-none absolute z-[var(--sales-z-tooltip,110)] w-max rounded-[7px] bg-[var(--sales-neutral-900)] px-2.5 py-1.5 text-[11px] font-medium leading-snug text-white shadow-sales-dropdown",
           side === "right"
             ? "left-[calc(100%+8px)] top-1/2 -translate-y-1/2"
             : cn("left-1/2 -translate-x-1/2", side === "top" ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"),

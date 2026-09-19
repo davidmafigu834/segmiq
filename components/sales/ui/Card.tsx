@@ -18,23 +18,23 @@ const baseSurface =
   "bg-sales-surface border border-[var(--sales-card-border,var(--sales-border-subtle))]";
 
 const variantClass: Record<SalesCardVariant, string> = {
-  standard: cn(baseSurface, "rounded-sales-lg shadow-sales-card"),
-  compact: cn(baseSurface, "rounded-sales-md shadow-sales-card"),
+  standard: cn(baseSurface, "rounded-sales-lg shadow-none"),
+  compact: cn(baseSurface, "rounded-sales-md shadow-none"),
   interactive: cn(
     baseSurface,
-    "rounded-sales-lg shadow-sales-card cursor-pointer",
+    "rounded-sales-lg shadow-none cursor-pointer",
     cardMotion,
-    "hover:-translate-y-px hover:border-sales-border-strong hover:shadow-sales-card-hover",
-    "active:translate-y-px active:shadow-sales-card",
+    "hover:-translate-y-px hover:border-sales-border-strong hover:bg-sales-surface-hover",
+    "active:translate-y-px",
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
-    "focus-visible:outline-[var(--sales-control-focus-outline,#d4ff4f)]"
+    "focus-visible:outline-[var(--sales-control-focus-outline,var(--sales-brand))]"
   ),
   selected: cn(
     "rounded-sales-lg border bg-[var(--sales-card-selected-bg)]",
     "border-[var(--sales-card-selected-border)] shadow-[var(--sales-card-selected-shadow)]"
   ),
   attention: cn(
-    "relative overflow-hidden rounded-sales-lg border border-[var(--sales-card-border,var(--sales-border-subtle))] shadow-sales-card"
+    "relative overflow-hidden rounded-sales-lg border border-[var(--sales-card-border,var(--sales-border-subtle))] shadow-none"
   ),
   flat: cn(
     "rounded-sales-lg border border-[var(--sales-card-border,var(--sales-border-subtle))] bg-sales-surface-subtle shadow-none"

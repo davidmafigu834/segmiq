@@ -557,7 +557,7 @@ export async function fetchSalespersonReports(opts: {
     { id: "NEW", label: "New", color: "#2563EB" },
     { id: "CONTACTED", label: "Contacted", color: "#16A34A" },
     { id: "NEGOTIATING", label: "Negotiating", color: "#F59E0B" },
-    { id: "PROPOSAL_SENT", label: "Proposal sent", color: "#8B5CF6" },
+    { id: "PROPOSAL_SENT", label: "Proposal sent", color: "#0F766E" },
     { id: "WON", label: "Won", color: "#16A34A" },
   ] as const;
 

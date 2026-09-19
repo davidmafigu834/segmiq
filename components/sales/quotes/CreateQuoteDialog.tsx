@@ -281,7 +281,7 @@ export function CreateQuoteDialog({
                       >
                         {t.thumbnail ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={t.thumbnail} alt="" className="mb-2 h-16 w-full rounded object-cover object-top bg-[#F3F3F3]" />
+                          <img src={t.thumbnail} alt="" className="mb-2 h-16 w-full rounded object-cover object-top bg-sales-neutral-100" />
                         ) : null}
                         <div className="flex items-center gap-2">
                           <p className="text-[13px] font-semibold">{t.name}</p>

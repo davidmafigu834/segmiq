@@ -39,7 +39,7 @@ export function ActivityIcon({
   const toneClass: Record<ActivityTone, string> = {
     neutral: "bg-sales-neutral-100 text-sales-text-secondary",
     success: "bg-sales-success-soft text-sales-success-fg",
-    info: "bg-[rgba(38,132,255,0.10)] text-[#1768C5] dark:text-[#79AEF7]",
+    info: "bg-sales-info-soft text-sales-info-fg",
     warning: "bg-sales-warning-soft text-sales-warning-fg",
     brand: "bg-sales-brand-soft text-sales-brand-fg",
     danger: "bg-sales-danger-soft text-sales-danger-fg",

@@ -48,7 +48,7 @@ function SourceIcon({ sourceKey }: { sourceKey: string }) {
   if (sourceKey === "whatsapp") return <SiWhatsapp size={14} color="#25D366" aria-hidden />;
   if (sourceKey === "facebook") return <SiFacebook size={14} color="#2684FF" aria-hidden />;
   if (sourceKey === "referral") return <Users size={14} strokeWidth={1.8} className="text-sales-text-secondary" />;
-  if (sourceKey === "website") return <Globe size={14} strokeWidth={1.8} className="text-[#F59E0B]" />;
+  if (sourceKey === "website") return <Globe size={14} strokeWidth={1.8} className="text-sales-warning-fg" />;
   return <MoreHorizontal size={14} strokeWidth={1.8} className="text-sales-text-muted" />;
 }
 
@@ -179,7 +179,7 @@ export function SalesGoalsClient() {
         <>
           {(data.lifecycle === "completed_success" || data.progress.aboveTarget > 0) &&
           data.progress.progressPct >= 100 ? (
-            <div className="flex min-h-[48px] items-center gap-3 rounded-[12px] border border-[#D1FADF] bg-[#F6FEF9] px-3.5 py-2.5">
+            <div className="flex min-h-[48px] items-center gap-3 rounded-[12px] border border-sales-success/25 bg-sales-success-soft px-3.5 py-2.5">
               <Trophy size={16} strokeWidth={1.8} className="shrink-0 text-[var(--success-fg,#027A48)]" aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-semibold text-sales-text-primary">Goal achieved</p>
@@ -260,7 +260,7 @@ export function SalesGoalsClient() {
                     Progress over time
                   </p>
                   {data.progress.achieved === 0 ? (
-                    <div className="flex h-[200px] flex-col items-center justify-center rounded-[10px] border border-dashed border-sales-border bg-[#FAFBFC] px-4 text-center">
+                    <div className="flex h-[200px] flex-col items-center justify-center rounded-[10px] border border-dashed border-sales-border bg-sales-surface-subtle px-4 text-center">
                       <p className="text-[13px] font-medium text-sales-text-primary">
                         No revenue won yet this month
                       </p>
@@ -638,7 +638,7 @@ function GoalMilestonesCard({ data }: { data: SalesGoalsPayload }) {
                 m.status === "achieved"
                   ? "bg-sales-success-soft text-sales-success-fg"
                   : m.status === "in_progress"
-                    ? "bg-[#EFF8FF] text-[#2563EB]"
+                    ? "bg-sales-info-soft text-sales-info-fg"
                     : "bg-[var(--sales-neutral-100)] text-sales-text-muted"
               )}
             >
@@ -661,7 +661,7 @@ function GoalMilestonesCard({ data }: { data: SalesGoalsPayload }) {
                   </p>
                 </>
               ) : m.status === "in_progress" ? (
-                <p className="inline-flex items-center gap-1 text-[12px] font-medium text-[#2563EB]">
+                <p className="inline-flex items-center gap-1 text-[12px] font-medium text-sales-info-fg">
                   In progress <Circle size={10} strokeWidth={2} />
                 </p>
               ) : (

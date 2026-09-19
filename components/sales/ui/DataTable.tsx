@@ -11,7 +11,7 @@ export type DataTableSortDirection = "asc" | "desc" | "none";
 export type DataTableRowDensity = "default" | "comfortable";
 
 const tableShellClass =
-  "overflow-hidden rounded-sales-xl border border-sales-border bg-sales-surface shadow-sales-card";
+  "overflow-hidden rounded-sales-xl border border-sales-border-subtle bg-sales-surface shadow-none";
 
 const rowHeightClass: Record<DataTableRowDensity, string> = {
   default: "h-[var(--sales-table-row-height,58px)]",

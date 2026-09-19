@@ -239,7 +239,7 @@ export function DailySalesIntelligencePanel({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <Target size={16} strokeWidth={1.8} className="text-sales-brand-fg" aria-hidden />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              <p className="text-[11px] font-semibold text-sales-text-muted">
                 Today&apos;s focus
               </p>
             </div>
@@ -298,7 +298,7 @@ export function DailySalesIntelligencePanel({
               <CardContent className="space-y-4 p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                    <p className="text-[11px] font-semibold text-sales-text-muted">
                       Next best action
                     </p>
                     <div className="mt-2 flex items-baseline gap-2">
@@ -324,7 +324,7 @@ export function DailySalesIntelligencePanel({
                 </div>
 
                 <div className="rounded-[10px] border border-sales-border-subtle bg-[var(--sales-neutral-50)] px-3.5 py-3 dark:bg-[var(--sales-surface-raised)]">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-sales-text-muted">
+                  <p className="text-[11px] font-semibold text-sales-text-muted">
                     Recommended action
                   </p>
                   <p className="mt-1 text-[14px] font-semibold text-sales-text-primary">
@@ -374,7 +374,7 @@ export function DailySalesIntelligencePanel({
             <Card>
               <CardContent className="p-0">
                 <div className="border-b border-sales-border-subtle px-4 py-3 sm:px-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  <p className="text-[11px] font-semibold text-sales-text-muted">
                     Up next
                   </p>
                 </div>
@@ -413,7 +413,7 @@ export function DailySalesIntelligencePanel({
         <Card className="h-fit">
           <CardContent className="space-y-4 p-4 sm:p-5">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              <p className="text-[11px] font-semibold text-sales-text-muted">
                 Today&apos;s plan
               </p>
               <Link
@@ -451,7 +451,7 @@ export function DailySalesIntelligencePanel({
 
             {plan.coverage.available || plan.coverage.coverageLabel ? (
               <div className="rounded-[10px] border border-sales-border-subtle px-3 py-2.5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-sales-text-muted">
+                <p className="text-[11px] font-semibold text-sales-text-muted">
                   Pipeline coverage
                 </p>
                 <p className="mt-1 text-[13px] font-semibold text-sales-text-primary">

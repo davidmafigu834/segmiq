@@ -174,7 +174,7 @@ export function PipelineLeadCard({
             {onLeadUpdated ? (
               <button
                 type="button"
-                className="shrink-0 rounded-md p-1 text-sales-text-muted transition-colors hover:text-[#F59E0B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
+                className="shrink-0 rounded-md p-1 text-sales-text-muted transition-colors hover:text-sales-warning-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
                 aria-label={picked ? `Remove ${name} from picks` : `Save ${name} to picks`}
                 disabled={picking}
                 onClick={togglePick}
@@ -182,7 +182,7 @@ export function PipelineLeadCard({
                 <Star
                   size={15}
                   strokeWidth={1.8}
-                  className={picked ? "text-[#F59E0B]" : undefined}
+                  className={picked ? "text-sales-warning-fg" : undefined}
                   fill={picked ? "currentColor" : "none"}
                 />
               </button>

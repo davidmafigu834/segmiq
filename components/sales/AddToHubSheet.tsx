@@ -40,12 +40,12 @@ type LookupMatch = {
 const SOURCES = ["Referral", "Walk-in", "Phone call", "WhatsApp", "Repeat customer", "Other"];
 
 const fieldClass =
-  "h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none transition-colors placeholder:text-sales-text-muted focus:border-sales-brand focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]";
+  "h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none transition-colors placeholder:text-sales-text-muted focus:border-sales-brand focus:ring-2 focus:ring-sales-brand/25";
 
 const labelClass = "text-[12px] font-medium text-sales-text-secondary";
 
 const chipActive =
-  "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.16)]";
+  "border-sales-brand-border bg-sales-brand-soft";
 const chipIdle = "border-sales-border bg-sales-surface hover:bg-sales-surface-hover";
 
 export function AddToHubSheet({
@@ -393,7 +393,7 @@ export function AddToHubSheet({
 
               {dupeBlocking && (
                 <div className="flex gap-2.5 rounded-[10px] border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.08)] p-3">
-                  <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[#F59E0B]" />
+                  <AlertTriangle size={16} className="mt-0.5 shrink-0 text-sales-warning-fg" />
                   <div className="min-w-0">
                     <p className="text-[12.5px] leading-snug text-sales-text-primary">
                       Already in your Customer Hub
@@ -415,7 +415,7 @@ export function AddToHubSheet({
                       <button
                         type="button"
                         onClick={() => setForceNew(true)}
-                        className="rounded-[8px] border border-[#F59E0B] px-2.5 py-1 text-[12px] font-medium text-[#B54708]"
+                        className="rounded-[8px] border border-sales-warning px-2.5 py-1 text-[12px] font-medium text-sales-warning-fg"
                       >
                         Add anyway
                       </button>
@@ -686,7 +686,7 @@ export function AddToHubSheet({
                       name="assign"
                       checked={assignChoice === "specific"}
                       onChange={() => setAssignChoice("specific")}
-                      className="accent-[#D4FF4F]"
+                      className="accent-sales-brand"
                     />
                     <span className="text-[13px] text-sales-text-primary">A salesperson</span>
                     {assignChoice === "specific" && (
@@ -712,7 +712,7 @@ export function AddToHubSheet({
                       name="assign"
                       checked={assignChoice === "pool"}
                       onChange={() => setAssignChoice("pool")}
-                      className="accent-[#D4FF4F]"
+                      className="accent-sales-brand"
                     />
                     <span className="text-[13px] text-sales-text-primary">
                       Team pool{" "}
@@ -725,7 +725,7 @@ export function AddToHubSheet({
                       name="assign"
                       checked={assignChoice === "auto"}
                       onChange={() => setAssignChoice("auto")}
-                      className="accent-[#D4FF4F]"
+                      className="accent-sales-brand"
                     />
                     <span className="text-[13px] text-sales-text-primary">
                       Auto{" "}
