@@ -194,7 +194,7 @@ export function ConversationQueue({ session }: { session: SocialInboxSession }) 
               session.items.length
                 ? "Try DMs or Comments to see everything imported from your Page."
                 : session.connections.some((c) => c.lastError)
-                  ? session.connections.find((c) => c.lastError)?.lastError
+                  ? session.connections.find((c) => c.lastError)?.lastError ?? undefined
                   : session.connections.some((c) => c.status !== "disconnected")
                     ? "Past Page comments and Messenger threads are imported on Refresh. New ones arrive as they happen."
                     : "You're caught up."
