@@ -3,6 +3,8 @@
  * Social Opportunity ≠ CRM Lead. A conversation can exist without becoming a lead.
  */
 
+import type { UserRole } from "@/types";
+
 export const SOCIAL_PROVIDERS = ["facebook", "instagram"] as const;
 export type SocialProvider = (typeof SOCIAL_PROVIDERS)[number];
 
@@ -248,7 +250,7 @@ export type SocialInboxWorkspace = {
 
 export type SocialInboxActor = {
   userId: string;
-  role: string;
+  role: UserRole;
   clientId: string;
   alsoSells?: boolean;
   name?: string | null;
