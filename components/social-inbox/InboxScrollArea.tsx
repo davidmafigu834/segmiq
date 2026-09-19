@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -31,7 +32,8 @@ export function InboxScrollArea({
   viewportRef?: Ref<HTMLDivElement>;
   onScroll?: UIEventHandler<HTMLDivElement>;
 }) {
-  const localRef = useRef<HTMLDivElement>(null);
+  const viewportId = useId();
+  const localRef = useRef<HTMLDivElement | null>(null);
   const metricsRef = useRef({ top: 0, height: 48, track: 0, canScroll: false });
   const dragRef = useRef<{ pointerId: number; startY: number; startTop: number } | null>(null);
   const [metrics, setMetrics] = useState(metricsRef.current);
@@ -122,6 +124,7 @@ export function InboxScrollArea({
   return (
     <div className={cn("relative h-0 min-h-0 min-w-0 flex-1 overflow-hidden", className)}>
       <div
+        id={viewportId}
         ref={setViewport}
         className="absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain pr-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         onScroll={(e) => {
@@ -133,7 +136,10 @@ export function InboxScrollArea({
       </div>
       <div
         role="scrollbar"
+        aria-controls={viewportId}
         aria-orientation="vertical"
+        aria-valuemin={0}
+        aria-valuemax={Math.max(0, Math.round(metrics.track - metrics.height))}
         aria-valuenow={Math.round(metrics.top)}
         aria-disabled={!metrics.canScroll}
         className="absolute inset-y-0 right-0 z-[2] w-4 touch-none select-none border-l border-sales-border bg-[color-mix(in_srgb,var(--sales-text-primary)_10%,var(--sales-surface))]"
