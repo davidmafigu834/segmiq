@@ -40,6 +40,7 @@ import { formatFollowUpLong, uniqueSignalChips } from "@/lib/social-inbox/inbox-
 import type { SocialMessageDto } from "@/lib/social-inbox/types";
 import { ChannelGlyph } from "./ChannelGlyph";
 import { ComposerBar } from "./ComposerBar";
+import { InboxScrollArea } from "./InboxScrollArea";
 import type { SocialInboxSession } from "./useSocialInboxSession";
 
 export function ConversationPane({ session }: { session: SocialInboxSession }) {
@@ -312,9 +313,9 @@ function Timeline({ session, isComment }: { session: SocialInboxSession; isComme
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div
-        ref={scroller}
-        className="social-inbox-scroll h-0 min-h-0 flex-1 overflow-y-scroll overscroll-contain px-4 py-3 pb-4"
+      <InboxScrollArea
+        viewportRef={scroller}
+        contentClassName="px-4 py-3 pb-4"
         onScroll={(e) => {
           const el = e.currentTarget;
           const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
@@ -367,7 +368,7 @@ function Timeline({ session, isComment }: { session: SocialInboxSession; isComme
             </div>
           </div>
         ) : null}
-      </div>
+      </InboxScrollArea>
       {session.newCount > 0 ? (
         <button
           type="button"

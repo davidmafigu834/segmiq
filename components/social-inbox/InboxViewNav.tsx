@@ -15,6 +15,7 @@ import { Tooltip } from "@/components/sales/ui";
 import { cn } from "@/lib/ui/cn";
 import { SOCIAL_VIEW_ORDER } from "@/lib/social-inbox/display";
 import type { SocialInboxViewId } from "@/lib/social-inbox/types";
+import { InboxScrollArea } from "./InboxScrollArea";
 import type { SocialInboxSession } from "./useSocialInboxSession";
 
 const VIEW_META: Record<
@@ -59,7 +60,7 @@ export function InboxViewNav({ session }: { session: SocialInboxSession }) {
           </button>
         </Tooltip>
       </div>
-      <div className="social-inbox-scroll h-0 min-h-0 flex-1 overflow-y-scroll overscroll-contain px-1.5 pb-3">
+      <InboxScrollArea contentClassName="px-1.5 pb-3">
         <Section session={session} ids={focus} />
         <Divider collapsed={viewsCollapsed} />
         {!viewsCollapsed ? (
@@ -70,7 +71,7 @@ export function InboxViewNav({ session }: { session: SocialInboxSession }) {
         <Section session={session} ids={messages} />
         <Divider collapsed={viewsCollapsed} />
         <Section session={session} ids={ops} />
-      </div>
+      </InboxScrollArea>
     </nav>
   );
 }

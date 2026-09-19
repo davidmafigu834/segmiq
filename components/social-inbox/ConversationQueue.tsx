@@ -26,6 +26,7 @@ import {
 import { EMPTY_FILTERS, uniqueSignalChips } from "@/lib/social-inbox/inbox-ui";
 import type { SocialQueueItem } from "@/lib/social-inbox/types";
 import { ChannelGlyph } from "./ChannelGlyph";
+import { InboxScrollArea } from "./InboxScrollArea";
 import type { SocialInboxSession } from "./useSocialInboxSession";
 
 export function ConversationQueue({ session }: { session: SocialInboxSession }) {
@@ -171,7 +172,7 @@ export function ConversationQueue({ session }: { session: SocialInboxSession }) 
         </div>
       ) : null}
 
-      <div className="social-inbox-scroll h-0 min-h-0 flex-1 overflow-y-scroll overscroll-contain">
+      <InboxScrollArea>
         {hydrating ? (
           <div className="px-3 py-3">
             {Array.from({ length: 7 }).map((_, i) => (
@@ -207,7 +208,7 @@ export function ConversationQueue({ session }: { session: SocialInboxSession }) 
             </div>
           ))
         )}
-      </div>
+      </InboxScrollArea>
     </section>
   );
 }

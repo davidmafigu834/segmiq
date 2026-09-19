@@ -29,6 +29,7 @@ import { channelNetworkLabel, intentBandLabel, originHeadline } from "@/lib/soci
 import { uniqueSignalChips } from "@/lib/social-inbox/inbox-ui";
 import { ChannelGlyph } from "./ChannelGlyph";
 import { FollowUpMenu } from "./ConversationPane";
+import { InboxScrollArea } from "./InboxScrollArea";
 import type { SocialInboxSession } from "./useSocialInboxSession";
 
 export function SalesContextPanel({ session }: { session: SocialInboxSession }) {
@@ -96,7 +97,7 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
         </div>
       </header>
 
-      <div className="social-inbox-scroll h-0 min-h-0 flex-1 overflow-y-scroll overscroll-contain px-3 py-3 pb-6">
+      <InboxScrollArea contentClassName="px-3 py-3 pb-6">
         <div className="flex items-start gap-2.5">
           <Avatar name={item.displayName} size="md" src={item.avatarUrl} />
           <div className="min-w-0">
@@ -354,7 +355,7 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
             {intel.crm.state === "open_deal" ? <li>Deal updated · 19 Sep</li> : null}
           </ul>
         </details>
-      </div>
+      </InboxScrollArea>
     </aside>
   );
 }
