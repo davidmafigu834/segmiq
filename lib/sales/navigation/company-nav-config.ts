@@ -13,6 +13,7 @@ import {
   FolderOpen,
   FileText,
   Globe,
+  Inbox,
   Handshake,
   LayoutDashboard,
   Landmark,
@@ -38,6 +39,7 @@ export type CompanyNavIconId =
   | "pipeline"
   | "leads"
   | "whatsapp"
+  | "socialInbox"
   | "quotations"
   | "calendar"
   | "customers"
@@ -100,6 +102,7 @@ export const COMPANY_NAV_LUCIDE: Record<Exclude<CompanyNavIconId, "whatsapp">, L
   documents: FolderOpen,
   pipeline: Columns3,
   leads: UsersRound,
+  socialInbox: Inbox,
   quotations: FileText,
   calendar: CalendarDays,
   customers: UsersRound,
@@ -225,6 +228,16 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     mobileSlot: "primary",
     mobileLabel: "WhatsApp",
     match: (p) => exactOrChild(p, "/client/inbox"),
+  },
+  {
+    id: "socialInbox",
+    label: "Social Inbox",
+    href: "/client/social-inbox",
+    icon: "socialInbox",
+    section: "company",
+    mobileSlot: "more",
+    mobileLabel: "Social",
+    match: (p) => exactOrChild(p, "/client/social-inbox"),
   },
   {
     id: "quotations",
@@ -410,6 +423,16 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     mobileSlot: "primary",
     mobileLabel: "WhatsApp",
     match: (p) => exactOrChild(p, "/client/inbox"),
+  },
+  {
+    id: "socialInbox",
+    label: "Social Inbox",
+    href: "/client/social-inbox",
+    icon: "socialInbox",
+    section: "sales",
+    mobileSlot: "more",
+    mobileLabel: "Social",
+    match: (p) => exactOrChild(p, "/client/social-inbox"),
   },
   {
     id: "marketing",

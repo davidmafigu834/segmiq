@@ -14,6 +14,7 @@ import {
   recordFirstTouchAttribution,
 } from "@/lib/real-estate/marketing-service";
 import { revealFbPageToken } from "@/lib/facebook/client-tokens";
+import { ingestSocialWebhook, type SocialWebhookPayload } from "@/lib/social-inbox/webhook";
 
 export const dynamic = "force-dynamic";
 
@@ -290,8 +291,12 @@ export async function POST(req: Request) {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  if (payload.object !== "page" && payload.object !== "whatsapp_business_account") {
-    console.error("LEADSTAQ_FB_WEBHOOK", "POST 200 (ignored object, not page/waba)", { object: payload.object });
+  if (
+    payload.object !== "page" &&
+    payload.object !== "whatsapp_business_account" &&
+    payload.object !== "instagram"
+  ) {
+    console.error("LEADSTAQ_FB_WEBHOOK", "POST 200 (ignored object, not page/waba/instagram)", { object: payload.object });
     fbLog("fb.webhook.object_mismatch", { object: payload.object });
     return new Response("OK", { status: 200 });
   }
@@ -302,13 +307,19 @@ export async function POST(req: Request) {
   });
   fbLog("fb.webhook.received", { object: payload.object, entries: payload.entry?.length ?? 0 });
 
+  if (payload.object === "page" || payload.object === "instagram") {
+    ingestSocialWebhook(payload as SocialWebhookPayload, rawBody);
+  }
+
   const supabase = createAdminClient();
 
   try {
     for (const entry of payload.entry || []) {
       for (const change of entry.changes || []) {
         if (change.field === "messages") {
-          if (change.value) await handleWhatsAppEvent(change.value);
+          if (payload.object === "whatsapp_business_account" && change.value) {
+            await handleWhatsAppEvent(change.value);
+          }
           continue;
         }
 

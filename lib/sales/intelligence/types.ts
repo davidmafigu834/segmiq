@@ -38,7 +38,10 @@ export type SalesActionReasonCode =
   | "GOAL_PIPELINE_LOW"
   | "SCHEDULED_TODAY"
   | "MANAGER_ASSIGNED"
-  | "PROSPECTING_COMMITMENT";
+  | "PROSPECTING_COMMITMENT"
+  | "SOCIAL_HIGH_INTENT"
+  | "SOCIAL_NEEDS_REPLY"
+  | "SOCIAL_FOLLOWUP_DUE";
 
 export type SalesActionOrigin =
   | "USER_CREATED"
@@ -48,9 +51,9 @@ export type SalesActionOrigin =
 
 export type FocusMode = "BUILD" | "MOVE" | "CLOSE";
 
-export type SourceEntityType = "lead" | "deal" | "quotation" | "task" | "goal" | "none";
+export type SourceEntityType = "lead" | "deal" | "quotation" | "task" | "goal" | "social_conversation" | "none";
 
-export type AvailableContactAction = "call" | "whatsapp" | "open_lead" | "add_prospect" | "log_outreach" | "schedule_follow_up" | "create_quote";
+export type AvailableContactAction = "call" | "whatsapp" | "open_lead" | "add_prospect" | "log_outreach" | "schedule_follow_up" | "create_quote" | "open_social";
 
 export type SalesActionRecommendation = {
   id: string;

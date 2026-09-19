@@ -14,6 +14,7 @@ import {
   Lock,
   Palette,
   Plug,
+  Share2,
   Shield,
   SlidersHorizontal,
   Sun,
@@ -42,6 +43,7 @@ const ICONS: Record<string, LucideIcon> = {
   shield: Shield,
   bot: Bot,
   brain: Brain,
+  share: Share2,
 };
 
 export function SettingsSectionNav({

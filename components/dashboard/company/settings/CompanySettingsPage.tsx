@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
@@ -31,6 +31,7 @@ import { AgentSettingsSection } from "./AgentSettingsViews";
 import { CompanyBrainSettingsSection } from "./CompanyBrainSettingsViews";
 import {
   IntegrationsAppsSection,
+  IntegrationsChannelsSection,
   IntegrationsWebsiteSection,
   IntegrationsWhatsAppSection,
 } from "./IntegrationsSettingsViews";
@@ -94,6 +95,7 @@ export function CompanySettingsPage({
   const hideRail =
     category === "team" ||
     (category === "integrations" && activeSection === "whatsapp") ||
+    (category === "integrations" && activeSection === "channels") ||
     (category === "integrations" && activeSection === "website") ||
     (category === "automation" && activeSection === "company-brain");
 
@@ -247,9 +249,15 @@ export function CompanySettingsPage({
                 facebookPageName={profile.facebookPageName}
                 helpEmail={helpEmail}
                 onManageWhatsApp={() => go("integrations", "whatsapp")}
+                onManageChannels={() => go("integrations", "channels")}
               />
             ) : null}
             {category === "integrations" && activeSection === "whatsapp" ? <IntegrationsWhatsAppSection /> : null}
+            {category === "integrations" && activeSection === "channels" ? (
+              <Suspense fallback={<div className="h-32" />}>
+                <IntegrationsChannelsSection />
+              </Suspense>
+            ) : null}
             {category === "integrations" && activeSection === "website" && realEstate ? (
               <IntegrationsWebsiteSection clientId={data.clientId} />
             ) : null}

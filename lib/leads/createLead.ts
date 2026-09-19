@@ -87,12 +87,14 @@ const AUTO_INBOUND_SOURCES: LeadSource[] = [
   "LANDING_PAGE",
   "WEBSITE",
   "FACEBOOK_AD",
+  "INSTAGRAM",
 ];
 const DEDUP_INBOUND_SOURCES: LeadSource[] = [
   "FACEBOOK",
   "LANDING_PAGE",
   "WEBSITE",
   "FACEBOOK_AD",
+  "INSTAGRAM",
 ];
 
 type SalespersonRow = {

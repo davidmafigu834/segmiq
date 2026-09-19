@@ -9,7 +9,8 @@ export type LeadSource =
   | "REFERRAL"
   | "WHATSAPP_INBOUND"
   | "WEBSITE"
-  | "FACEBOOK_AD";
+  | "FACEBOOK_AD"
+  | "INSTAGRAM";
 
 export type BusinessType = "trades" | "real_estate";
 
@@ -89,7 +90,8 @@ export type NotificationType =
   | "QUOTATION_ALERT"
   | "AGENT_ALERT"
   | "INVENTORY_ALERT"
-  | "COMMERCIAL_IMPORT";
+  | "COMMERCIAL_IMPORT"
+  | "SOCIAL_INBOX";
 
 export interface UserRow {
   id: string;

@@ -24,7 +24,8 @@ export type FocusPrimaryCtaKind =
   | "open"
   | "create_quote"
   | "add_prospect"
-  | "schedule";
+  | "schedule"
+  | "social";
 
 export type FocusPrimaryCta = {
   kind: FocusPrimaryCtaKind;
@@ -61,6 +62,9 @@ const URGENT_REASONS = new Set<SalesActionReasonCode>([
 const HIGH_REASONS = new Set<SalesActionReasonCode>([
   "FOLLOWUP_DUE_TODAY",
   "HIGH_INTENT_NEW_LEAD",
+  "SOCIAL_HIGH_INTENT",
+  "SOCIAL_NEEDS_REPLY",
+  "SOCIAL_FOLLOWUP_DUE",
   "QUOTE_WAITING",
   "QUOTE_VIEWED",
   "QUOTE_APPROVAL_NEEDED",
@@ -78,6 +82,11 @@ export function focusModeEmphasisLabel(mode: FocusMode): string {
 }
 
 export function entityHref(rec: SalesActionRecommendation): string {
+  const socialHref = typeof rec.metadata?.socialHref === "string" ? rec.metadata.socialHref : null;
+  if (socialHref) return socialHref;
+  if (rec.sourceEntityType === "social_conversation" && rec.sourceEntityId) {
+    return `/sales/social-inbox?conversation=${rec.sourceEntityId}`;
+  }
   const dealId =
     (typeof rec.metadata?.dealId === "string" && rec.metadata.dealId) ||
     (rec.sourceEntityType === "deal" ? rec.sourceEntityId : null);
@@ -86,6 +95,9 @@ export function entityHref(rec: SalesActionRecommendation): string {
   if (!id) return "/sales/leads";
   const source = String(rec.customer?.source ?? "");
   if (source.toUpperCase().includes("WHATSAPP")) return `/sales/inbox?lead=${id}`;
+  if (source.toUpperCase() === "INSTAGRAM" || source.toUpperCase() === "FACEBOOK") {
+    return `/sales/social-inbox`;
+  }
   return `/sales/leads?lead=${id}`;
 }
 
@@ -164,6 +176,10 @@ function pickPrimaryCta(rec: SalesActionRecommendation, href: string): FocusPrim
   const actions = new Set(rec.availableActions);
   const phone = rec.customer?.phone;
   const type: SalesActionType = rec.actionType;
+
+  if (actions.has("open_social") || rec.sourceEntityType === "social_conversation") {
+    return { kind: "social", label: rec.recommendedActionLabel || "Open Social Inbox", href };
+  }
 
   if (actions.has("add_prospect") || type === "PROSPECT_NEW_CUSTOMERS" || type === "ADD_VALID_PROSPECT") {
     return { kind: "add_prospect", label: "Add prospect", href: null };

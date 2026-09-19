@@ -43,7 +43,7 @@ export async function logLeadEvent({
   actor: Actor;
   eventType: EventType;
   eventData?: Record<string, unknown>;
-  channel?: "call" | "whatsapp" | "in_person";
+  channel?: "call" | "whatsapp" | "in_person" | "social";
   dedupeKey?: string;
   pinOnCreate?: { userId: string };
 }): Promise<void> {

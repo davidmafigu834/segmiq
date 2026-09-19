@@ -41,6 +41,17 @@ export const P = {
   WHATSAPP_CONNECTION_VIEW: "whatsapp.connection.view",
   WHATSAPP_CONNECTION_MANAGE: "whatsapp.connection.manage",
 
+  // Social Inbox (Facebook / Instagram sales workspace — not WhatsApp)
+  SOCIAL_INBOX_VIEW: "socialInbox.view",
+  SOCIAL_INBOX_REPLY: "socialInbox.reply",
+  SOCIAL_INBOX_ASSIGN: "socialInbox.assign",
+  SOCIAL_INBOX_CONVERT_LEAD: "socialInbox.convertLead",
+  SOCIAL_INBOX_CREATE_DEAL: "socialInbox.createDeal",
+  SOCIAL_INBOX_CREATE_QUOTATION: "socialInbox.createQuotation",
+  SOCIAL_INBOX_MANAGE_CHANNELS: "socialInbox.manageChannels",
+  SOCIAL_INBOX_VIEW_TEAM: "socialInbox.viewTeam",
+  SOCIAL_INBOX_MANAGE_TEAM: "socialInbox.manageTeam",
+
   // Documents (coarse; fine-grained docs catalogue remains in lib/documents)
   DOCUMENTS_READ: "documents.read",
   DOCUMENTS_UPLOAD: "documents.upload",

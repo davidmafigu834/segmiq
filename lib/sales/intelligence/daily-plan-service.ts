@@ -968,6 +968,19 @@ export async function fetchDailySalesPlan(opts: {
     actionStates: reconciledStates,
   });
 
+  const { listSocialFocusRecommendations } = await import("@/lib/social-inbox/focus");
+  const socialRecs = await listSocialFocusRecommendations({
+    clientId: opts.clientId,
+    userId: opts.userId,
+    planDate,
+  });
+  if (socialRecs.length) {
+    ranked.queue = [...socialRecs, ...ranked.queue]
+      .sort((a, b) => b.attentionScore - a.attentionScore)
+      .slice(0, 12);
+    ranked.all = [...socialRecs, ...ranked.all];
+  }
+
   const lateStageCount = signals.filter(
     (s) => s.status === "NEGOTIATING" || s.status === "PROPOSAL_SENT"
   ).length;

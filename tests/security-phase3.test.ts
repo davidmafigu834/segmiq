@@ -70,6 +70,9 @@ test("salesperson has assigned sales capabilities", () => {
   assert.equal(hasPermission(repA1, P.LEADS_ASSIGN), false);
   assert.equal(hasPermission(repA1, P.QUOTES_CREATE), true);
   assert.equal(hasPermission(repA1, P.WHATSAPP_SEND), true);
+  assert.equal(hasPermission(repA1, P.SOCIAL_INBOX_VIEW), true);
+  assert.equal(hasPermission(repA1, P.SOCIAL_INBOX_REPLY), true);
+  assert.equal(hasPermission(repA1, P.SOCIAL_INBOX_MANAGE_CHANNELS), false);
   assert.equal(hasPermission(repA1, P.AGENT_USE), true);
   assert.equal(hasPermission(repA1, P.AGENT_MANAGE), false);
 });
@@ -84,12 +87,15 @@ test("manager has org oversight without personal sales writes by default", () =>
   assert.equal(hasPermission(managerA, P.DATA_EXPORT), true);
   assert.equal(hasPermission(managerA, P.LEADS_UPDATE_ASSIGNED), false);
   assert.equal(hasPermission(managerA, P.WHATSAPP_SEND), false);
+  assert.equal(hasPermission(managerA, P.SOCIAL_INBOX_VIEW_TEAM), true);
+  assert.equal(hasPermission(managerA, P.SOCIAL_INBOX_REPLY), false);
 });
 
 test("also_sells adds personal sales write permissions", () => {
   assert.equal(hasPermission(sellingMgrA, P.LEADS_UPDATE_ASSIGNED), true);
   assert.equal(hasPermission(sellingMgrA, P.DEALS_UPDATE_ASSIGNED), true);
   assert.equal(hasPermission(sellingMgrA, P.WHATSAPP_SEND), true);
+  assert.equal(hasPermission(sellingMgrA, P.SOCIAL_INBOX_REPLY), true);
   assert.equal(hasPermission(sellingMgrA, P.TEAM_MANAGE), true);
 });
 

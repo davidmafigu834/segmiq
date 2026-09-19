@@ -147,7 +147,8 @@ export function sourceFromString(s: string): LeadSource {
     s === "REFERRAL" ||
     s === "WHATSAPP_INBOUND" ||
     s === "WEBSITE" ||
-    s === "FACEBOOK_AD"
+    s === "FACEBOOK_AD" ||
+    s === "INSTAGRAM"
   ) {
     return s;
   }

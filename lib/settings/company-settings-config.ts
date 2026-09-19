@@ -47,6 +47,7 @@ export const SETTINGS_SECTIONS: Record<SettingsCategory, SettingsSection[]> = {
   integrations: [
     { id: "apps", label: "Connected Apps", icon: "plug" },
     { id: "whatsapp", label: "WhatsApp", icon: "whatsapp" },
+    { id: "channels", label: "Channels", icon: "share" },
   ],
   automation: [
     { id: "assignment", label: "Lead Assignment", icon: "git" },

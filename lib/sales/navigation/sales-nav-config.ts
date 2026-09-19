@@ -6,6 +6,7 @@ import {
   Columns3,
   FileText,
   Handshake,
+  Inbox,
   Landmark,
   LayoutDashboard,
   ListTodo,
@@ -23,6 +24,7 @@ export type SalesNavIconId =
   | "dashboard"
   | "pipeline"
   | "whatsapp"
+  | "socialInbox"
   | "leads"
   | "quotes"
   | "calendar"
@@ -62,6 +64,7 @@ export const SALES_SIDEBAR_COLLAPSED_KEY = "segmiq-sales-sidebar-collapsed";
 export const SALES_NAV_LUCIDE: Record<Exclude<SalesNavIconId, "whatsapp">, LucideIcon> = {
   dashboard: LayoutDashboard,
   pipeline: Columns3,
+  socialInbox: Inbox,
   leads: UsersRound,
   quotes: FileText,
   calendar: CalendarDays,
@@ -117,6 +120,16 @@ export const SALES_NAVIGATION: SalesNavItemConfig[] = [
     mobileSlot: "primary",
     mobileLabel: "WhatsApp",
     match: (p) => p === "/sales/inbox" || p.startsWith("/sales/inbox/"),
+  },
+  {
+    id: "socialInbox",
+    label: "Social Inbox",
+    href: "/sales/social-inbox",
+    icon: "socialInbox",
+    section: "sales",
+    mobileSlot: "more",
+    mobileLabel: "Social",
+    match: (p) => exactOrChild(p, "/sales/social-inbox"),
   },
   {
     id: "leads",

@@ -140,6 +140,10 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
     if (n.type === "WHATSAPP_CONNECTION_ALERT") {
       return "/client/settings/integrations/whatsapp";
     }
+    if (n.type === "SOCIAL_INBOX") {
+      if (role === "CLIENT_MANAGER") return "/client/social-inbox";
+      return "/sales/social-inbox";
+    }
     if (role === "SALESPERSON") return "/sales/pipeline";
     if (role === "CLIENT_MANAGER") return "/client/leads";
     return "/dashboard/leads";
@@ -253,6 +257,8 @@ function labelForType(type: string): string {
       return "WhatsApp message";
     case "WHATSAPP_CONNECTION_ALERT":
       return "WhatsApp connection";
+    case "SOCIAL_INBOX":
+      return "Social Inbox";
     case "FOLLOW_UP_DUE":
       return "Follow-up due";
     case "FOLLOW_UP_PREP":

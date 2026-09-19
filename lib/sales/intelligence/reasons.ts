@@ -41,6 +41,9 @@ const REASON_TEMPLATES: Record<
   MANAGER_ASSIGNED: () => "Assigned by your manager and due for attention.",
   PROSPECTING_COMMITMENT: () =>
     "Your priority deal queue is clear. Create new opportunities today.",
+  SOCIAL_HIGH_INTENT: () => "A social conversation is showing buying intent.",
+  SOCIAL_NEEDS_REPLY: () => "A social customer is waiting for a reply.",
+  SOCIAL_FOLLOWUP_DUE: () => "A social follow-up is due today.",
 };
 
 export function reasonText(
