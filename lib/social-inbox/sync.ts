@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { graphCall, type GraphResult } from "@/lib/facebook/graph";
+import { graphCall } from "@/lib/facebook/graph";
 import { revealFbPageToken } from "@/lib/facebook/client-tokens";
 import { insertSocialMessage, upsertSocialConversation, upsertSocialIdentity } from "./ingest";
 import type { SocialChannel, SocialProvider } from "./types";
@@ -27,8 +27,6 @@ type GraphComment = {
   from?: GraphPerson;
   username?: string;
 };
-type GraphListPage<T> = { data?: T[]; paging?: { next?: string } };
-
 type GraphPost = {
   id?: string;
   message?: string;
@@ -162,23 +160,17 @@ async function graphList<T>(
   path: string,
   token: string,
   clientId: string,
-  pages = 2
+  _pages = 2
 ): Promise<{ items: T[]; error?: string }> {
-  const items: T[] = [];
-  let cursor: string | null = path;
-  for (let i = 0; i < pages && cursor; i++) {
-    const page: GraphResult<GraphListPage<T>> = await graphCall<GraphListPage<T>>(cursor, token, {
-      clientId,
-      timeoutMs: 20000,
-    });
-    if (!page.ok) {
-      return { items, error: page.error.message };
-    }
-    items.push(...(page.data.data ?? []));
-    const nextPage = page.data.paging?.next;
-    cursor = typeof nextPage === "string" ? nextPage : null;
+  const page = await graphCall<{ data?: unknown[] }>(path, token, {
+    clientId,
+    timeoutMs: 20000,
+  });
+  if (!page.ok) {
+    return { items: [], error: page.error.message };
   }
-  return { items };
+  const rows = Array.isArray(page.data.data) ? page.data.data : [];
+  return { items: rows as T[] };
 }
 
 function commentText(comment: GraphComment): string {
