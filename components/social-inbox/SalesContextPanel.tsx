@@ -367,7 +367,7 @@ function openSection(session: SocialInboxSession, section: "customer" | "intent"
 
 function RailButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
   return (
-    <Tooltip label={label} side="left">
+    <Tooltip label={label}>
       <button
         type="button"
         onClick={onClick}

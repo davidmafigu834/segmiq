@@ -298,16 +298,16 @@ export function FollowUpMenu({ session }: { session: SocialInboxSession }) {
       </button>
       <div className="my-1 border-t border-sales-border" />
       {[
-        ["Later today", laterToday],
-        ["Tomorrow", tomorrow],
-        ["In 3 days", three],
-        ["Next week", week],
-      ].map(([label, date]) => (
+        { label: "Later today", date: laterToday },
+        { label: "Tomorrow", date: tomorrow },
+        { label: "In 3 days", date: three },
+        { label: "Next week", date: week },
+      ].map(({ label, date }) => (
         <button
-          key={String(label)}
+          key={label}
           type="button"
           className="rounded-[6px] px-2 py-1.5 text-left text-[13px] hover:bg-sales-surface-hover"
-          onClick={() => session.setFollowUp(date as Date)}
+          onClick={() => session.setFollowUp(date)}
         >
           {label}
         </button>
