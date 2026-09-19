@@ -186,11 +186,11 @@ function WorkspaceHeader({ session, channelsHref }: { session: SocialInboxSessio
       </div>
       <div className="ml-auto flex items-center gap-1">
         {session.canViewUnassigned ? (
-          <DropdownMenu>
+          <DropdownMenu align="end">
             <DropdownMenuTrigger className="inline-flex h-8 items-center rounded-[8px] px-2 text-[12px] text-sales-text-secondary hover:bg-sales-surface-hover">
               {session.teamScope === "mine" ? "My inbox" : session.teamScope === "team" ? "Entire sales team" : session.team.find((t) => t.id === session.teamScope)?.name ?? "Team"}
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent className="w-48">
               <DropdownMenuItem onSelect={() => session.setTeamScope("mine")}>My inbox</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => session.setTeamScope("team")}>Entire sales team</DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -217,11 +217,11 @@ function WorkspaceHeader({ session, channelsHref }: { session: SocialInboxSessio
 
         <TooltipRefresh />
 
-        <DropdownMenu>
+        <DropdownMenu align="end">
           <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover">
             <MoreHorizontal size={16} />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent>
             <DropdownMenuItem onSelect={() => (window.location.href = channelsHref)}>Manage channels</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => session.setOverlay("tour")}>Show tour</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => session.changeView("converted")}>Converted</DropdownMenuItem>

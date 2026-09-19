@@ -82,11 +82,11 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-sales-border px-3">
         <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Sales context</p>
         <div className="flex items-center">
-          <DropdownMenu>
+          <DropdownMenu align="end">
             <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover">
               <MoreHorizontal size={15} />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent>
               <DropdownMenuItem onSelect={() => session.setOverlay("link_customer")}>Link customer</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => session.setOverlay("create_quote")}>Create quotation</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => session.setHistoryOpen((v) => !v)}>Recent activity</DropdownMenuItem>

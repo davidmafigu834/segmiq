@@ -161,12 +161,12 @@ function ConversationHeader({ session }: { session: SocialInboxSession }) {
           <span className="hidden text-[12px] text-sales-text-muted sm:inline">{intentBandLabel(item.intentBand)}</span>
         )}
 
-        <DropdownMenu>
+        <DropdownMenu align="end">
           <DropdownMenuTrigger className="inline-flex h-8 items-center gap-1 rounded-[8px] px-2 text-[12px] text-sales-text-secondary hover:bg-sales-surface-hover">
             {item.assignedToName ?? "Unassigned"}
             <ChevronDown size={12} />
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end">
+          <DropdownMenuContent className="w-56">
             <DropdownMenuLabel>Assigned to</DropdownMenuLabel>
             {session.team.map((member) => (
               <DropdownMenuItem key={member.id} onSelect={() => session.assignTo(member.id, member.name)}>
@@ -182,11 +182,11 @@ function ConversationHeader({ session }: { session: SocialInboxSession }) {
         <FollowUpControl session={session} followAt={followAt} />
 
         {item.crmState === "none" ? (
-          <DropdownMenu>
+          <DropdownMenu align="end">
             <DropdownMenuTrigger className="sales-btn-primary inline-flex h-8 items-center rounded-[8px] bg-sales-brand px-3 text-[12px] font-semibold text-[var(--sales-ink)]">
               Convert
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuContent className="w-52">
               <DropdownMenuItem onSelect={() => session.setOverlay("convert_lead")}>Convert to lead</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => session.setOverlay("create_deal")}>Create deal</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => session.setOverlay("link_customer")}>Link existing customer</DropdownMenuItem>
@@ -196,11 +196,11 @@ function ConversationHeader({ session }: { session: SocialInboxSession }) {
           </DropdownMenu>
         ) : null}
 
-        <DropdownMenu>
+        <DropdownMenu align="end">
           <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover">
             <MoreHorizontal size={16} />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent className="w-56">
             <DropdownMenuItem onSelect={session.markUnread}>Mark unread</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => session.setOverlay("link_customer")}>Link customer</DropdownMenuItem>
             {item.crmState === "none" ? (
