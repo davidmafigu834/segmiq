@@ -83,7 +83,7 @@ export function ConversationPane({ session }: { session: SocialInboxSession }) {
       session.connections.some((c) => c.provider === "instagram" && c.status !== "connected") ? (
         <div className="flex items-center gap-2 border-b border-sales-border bg-sales-warning-soft px-4 py-2 text-[12px] text-sales-text-primary">
           Instagram isn&apos;t syncing right now.
-          <Button size="sm" variant="secondary" onClick={() => session.reconnectChannel("instagram")}>
+          <Button size="sm" variant="secondary" onClick={() => session.reconnectChannel()}>
             Reconnect
           </Button>
         </div>

@@ -144,7 +144,7 @@ export function InboxOverlays({ session }: { session: SocialInboxSession }) {
           <p className="text-[12px] text-sales-text-muted">Last sync: {formatRelativeTime(conn.lastSyncAt)}</p>
         ) : null}
         <div className="mt-4 flex gap-2">
-          <Button size="sm" variant="secondary" onClick={() => session.reconnectChannel(provider)}>
+          <Button size="sm" variant="secondary" onClick={() => session.reconnectChannel()}>
             Reconnect
           </Button>
         </div>

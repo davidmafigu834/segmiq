@@ -807,12 +807,9 @@ export function useSocialInboxSession(
     [connections, refreshWorkspace, showFlash]
   );
 
-  const reconnectChannel = useCallback(
-    (_provider?: "facebook" | "instagram") => {
-      connectChannels();
-    },
-    [connectChannels]
-  );
+  const reconnectChannel = useCallback(() => {
+    connectChannels();
+  }, [connectChannels]);
 
   const finishTour = useCallback(() => {
     setOverlay(null);

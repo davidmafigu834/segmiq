@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -42,7 +43,8 @@ export function InboxScrollArea({
 }) {
   const localRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<(() => void) | null>(null);
-  const [thumb, setThumb] = useState({ top: 0, height: 0, scrollable: false });
+  const viewportId = useId();
+  const [thumb, setThumb] = useState({ top: 0, height: 0, scrollable: false, valueNow: 0 });
 
   const setViewport = useCallback(
     (node: HTMLDivElement | null) => {
@@ -58,13 +60,17 @@ export function InboxScrollArea({
     const track = el.clientHeight;
     const maxScroll = el.scrollHeight - track;
     if (maxScroll <= 1 || track <= 0) {
-      setThumb((prev) => (prev.scrollable || prev.height ? { top: 0, height: 0, scrollable: false } : prev));
+      setThumb((prev) => (prev.scrollable || prev.height ? { top: 0, height: 0, scrollable: false, valueNow: 0 } : prev));
       return;
     }
     const height = Math.max(MIN_THUMB, (track / el.scrollHeight) * track);
-    const top = (el.scrollTop / maxScroll) * (track - height);
+    const travel = Math.max(1, track - height);
+    const top = (el.scrollTop / maxScroll) * travel;
+    const valueNow = Math.round((el.scrollTop / maxScroll) * 100);
     setThumb((prev) =>
-      prev.top === top && prev.height === height && prev.scrollable ? prev : { top, height, scrollable: true }
+      prev.top === top && prev.height === height && prev.scrollable && prev.valueNow === valueNow
+        ? prev
+        : { top, height, scrollable: true, valueNow }
     );
   }, []);
 
@@ -144,6 +150,7 @@ export function InboxScrollArea({
   return (
     <div className={cn("flex h-0 min-h-0 min-w-0 flex-1 overflow-hidden", className)}>
       <div
+        id={viewportId}
         ref={setViewport}
         className={cn("social-inbox-scroll min-h-0 min-w-0 flex-1", contentClassName)}
         onScroll={(event) => {
@@ -161,7 +168,11 @@ export function InboxScrollArea({
           <div
             data-inbox-thumb
             role="scrollbar"
+            aria-controls={viewportId}
             aria-orientation="vertical"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={thumb.valueNow}
             className="absolute inset-x-[2px] cursor-grab rounded-full bg-sales-text-muted transition-colors hover:bg-sales-text-secondary active:cursor-grabbing active:bg-sales-text-primary"
             style={{ top: thumb.top, height: thumb.height }}
           />

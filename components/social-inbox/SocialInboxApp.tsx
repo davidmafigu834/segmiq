@@ -277,7 +277,7 @@ function ChannelHealth({ session, channelsHref }: { session: SocialInboxSession;
               </div>
             </div>
             {conn.status !== "connected" ? (
-              <Button size="sm" variant="primary" onClick={() => session.reconnectChannel(conn.provider)}>
+              <Button size="sm" variant="primary" onClick={() => session.reconnectChannel()}>
                 Reconnect
               </Button>
             ) : null}

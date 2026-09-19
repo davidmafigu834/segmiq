@@ -4,7 +4,6 @@ import type {
   SocialChannel,
   SocialConversationKind,
   SocialInboxFilters,
-  SocialInboxViewId,
   SocialIntentBand,
   SocialOrigin,
   SocialProvider,
