@@ -8,6 +8,8 @@ import { fbLog } from "@/lib/facebook/log";
 import { sealAndStoreFbTokens } from "@/lib/facebook/client-tokens";
 import { completeSocialInboxOAuth } from "@/lib/social-inbox/oauth";
 
+export const maxDuration = 60;
+
 const FB_API = getFacebookGraphBase();
 
 function redirectToFacebookTab(req: Request, clientId: string, query: Record<string, string>) {

@@ -55,7 +55,9 @@ export function matchesView(item: SocialQueueItem, view: SocialInboxViewId): boo
   switch (view) {
     case "for_you":
       if (item.crmState === "converted" && !item.unread) return false;
-      if (item.intentBand === "cold" && item.crmState === "none" && !item.followUpLabel) return false;
+      if (item.intentBand === "cold" && item.crmState === "none" && !item.followUpLabel && !item.unread) {
+        return false;
+      }
       return true;
     case "hot":
       return item.intentBand === "hot";

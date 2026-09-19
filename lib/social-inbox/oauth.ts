@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { graphCall, getFacebookGraphBase } from "@/lib/facebook/graph";
 import { sealIntegrationToken } from "@/lib/integrations/token-vault";
 import { logSocialAudit } from "./audit";
+import { syncSocialInbox } from "./sync";
 
 /**
  * Prefer the Meta redirect already allow-listed for lead ads. A second
@@ -94,7 +95,7 @@ export async function completeSocialInboxOAuth(req: Request): Promise<NextRespon
         display_name: page.name ?? null,
         page_id: page.id,
         token_sealed: sealed,
-        scopes: ["pages_messaging", "pages_manage_engagement"],
+        scopes: ["pages_messaging", "pages_read_engagement", "pages_read_user_content", "pages_manage_engagement"],
         connected_at: now,
         updated_at: now,
         last_error: null,
@@ -133,6 +134,11 @@ export async function completeSocialInboxOAuth(req: Request): Promise<NextRespon
     eventType: "channel_connected",
     metadata: { provider: "facebook", pages: pages.data.data.length },
   });
+  try {
+    await syncSocialInbox(clientId);
+  } catch (error) {
+    console.error("[social-inbox] post-connect sync", error);
+  }
   cookies().set("social_inbox_oauth_state", "", { path: "/", maxAge: 0 });
   cookies().set("social_inbox_oauth_return", "", { path: "/", maxAge: 0 });
   return NextResponse.redirect(new URL(`${settingsPath}?social=connected`, url.origin));

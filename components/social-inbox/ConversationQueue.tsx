@@ -183,10 +183,32 @@ export function ConversationQueue({ session }: { session: SocialInboxSession }) 
         ) : visibleItems.length === 0 ? (
           <EmptyState
             size="compact"
-            title="No conversations need your attention."
-            description="You're caught up."
+            title={
+              session.items.length
+                ? "Nothing in this view."
+                : session.connections.some((c) => c.status !== "disconnected")
+                  ? "No comments or messages imported yet."
+                  : "No conversations need your attention."
+            }
+            description={
+              session.items.length
+                ? "Try DMs or Comments to see everything imported from your Page."
+                : session.connections.some((c) => c.lastError)
+                  ? session.connections.find((c) => c.lastError)?.lastError
+                  : session.connections.some((c) => c.status !== "disconnected")
+                    ? "Past Page comments and Messenger threads are imported on Refresh. New ones arrive as they happen."
+                    : "You're caught up."
+            }
             action={
-              view !== "dms" ? (
+              session.items.length && view !== "dms" ? (
+                <Button size="sm" variant="secondary" onClick={() => session.changeView("dms")}>
+                  View all conversations
+                </Button>
+              ) : !session.items.length && session.connections.some((c) => c.status !== "disconnected") ? (
+                <Button size="sm" variant="secondary" onClick={() => session.changeView("comments")}>
+                  View comments
+                </Button>
+              ) : view !== "dms" ? (
                 <Button size="sm" variant="secondary" onClick={() => session.changeView("dms")}>
                   View all conversations
                 </Button>

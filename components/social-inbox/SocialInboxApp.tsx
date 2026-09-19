@@ -242,7 +242,7 @@ function TooltipRefresh({ session }: { session: SocialInboxSession }) {
       aria-label="Refresh"
       icon={<RefreshCw size={14} />}
       onClick={() => {
-        void session.refreshWorkspace().catch(() => undefined);
+        void session.refreshWorkspace({ announce: true }).catch(() => undefined);
       }}
     />
   );
@@ -272,7 +272,11 @@ function ChannelHealth({ session, channelsHref }: { session: SocialInboxSession;
               <div>
                 <p className="text-[13px] font-medium">{conn.displayName || (conn.provider === "instagram" ? "Instagram" : "Facebook")}</p>
                 <p className="text-[12px] text-sales-text-muted">
-                  {conn.status === "connected" ? "Connected" : conn.lastError ?? conn.status}
+                  {conn.lastError
+                    ? conn.lastError
+                    : conn.status === "connected"
+                      ? "Connected"
+                      : conn.status}
                 </p>
               </div>
             </div>

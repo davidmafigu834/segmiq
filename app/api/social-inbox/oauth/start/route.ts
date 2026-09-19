@@ -12,6 +12,7 @@ const FB_VERSION = process.env.FACEBOOK_API_VERSION || "v19.0";
 const SOCIAL_SCOPES = [
   "pages_show_list",
   "pages_read_engagement",
+  "pages_read_user_content",
   "pages_manage_metadata",
   "pages_messaging",
   "pages_manage_engagement",

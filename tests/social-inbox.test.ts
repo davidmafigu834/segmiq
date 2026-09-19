@@ -130,6 +130,7 @@ describe("social inbox ranking", () => {
     const converted = item({ crmState: "converted", unread: false, intentBand: "warm", intentScore: 50 });
     assert.equal(matchesView(converted, "converted"), true);
     assert.equal(matchesView(item({ intentBand: "cold", unread: false, crmState: "none" }), "for_you"), false);
+    assert.equal(matchesView(item({ intentBand: "cold", unread: true, crmState: "none" }), "for_you"), true);
     assert.equal(matchesView(item({ unread: true }), "needs_reply"), true);
     assert.equal(matchesView(item({ assignedToId: null }), "unassigned"), true);
     const indicators = computeIndicators([

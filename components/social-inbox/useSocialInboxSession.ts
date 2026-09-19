@@ -210,11 +210,45 @@ export function useSocialInboxSession(
     setCanReply(workspace.canReply);
   }, []);
 
-  const refreshWorkspace = useCallback(async () => {
-    const workspace = await apiJson<SocialInboxWorkspace>("/api/social-inbox/workspace");
-    applyWorkspace(workspace);
-    return workspace;
-  }, [applyWorkspace]);
+  const refreshWorkspace = useCallback(
+    async (opts?: { announce?: boolean }) => {
+      let syncError: string | null = null;
+      let imported = { conversations: 0, messages: 0, comments: 0 };
+      try {
+        const sync = await apiJson<{
+          conversations: number;
+          messages: number;
+          comments: number;
+          errors?: string[];
+        }>("/api/social-inbox/sync", { method: "POST" });
+        imported = sync;
+        if (sync.errors?.length) syncError = sync.errors[0] ?? null;
+      } catch (error) {
+        syncError = error instanceof Error ? error.message : "Could not import Facebook history.";
+      }
+      const workspace = await apiJson<SocialInboxWorkspace>("/api/social-inbox/workspace");
+      applyWorkspace(workspace);
+      if (opts?.announce) {
+        if (syncError) {
+          showFlash({ title: "Couldn't import all Page history", description: syncError }, "warning");
+        } else if (imported.conversations || imported.messages || imported.comments) {
+          showFlash(
+            {
+              title: "Imported Page history",
+              description: `${imported.conversations} conversations · ${imported.messages} messages · ${imported.comments} comments`,
+            },
+            "success"
+          );
+        } else {
+          showFlash({ title: "Inbox is up to date" }, "info");
+        }
+      } else if (syncError) {
+        showFlash({ title: "Couldn't import Page history", description: syncError }, "warning");
+      }
+      return workspace;
+    },
+    [applyWorkspace, showFlash]
+  );
 
   const loadConversation = useCallback(async (id: string) => {
     setDetailLoading(true);
