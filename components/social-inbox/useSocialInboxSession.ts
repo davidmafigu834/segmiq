@@ -906,6 +906,7 @@ export function useSocialInboxSession(
     draft,
     setDraft,
     draftedByAi,
+    setDraftedByAi,
     drafting,
     composerRef,
     selectedIds,
