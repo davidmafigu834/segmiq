@@ -80,12 +80,12 @@ export function CompanyWorkspaceShell({
         <div
           className={
             immersive
-              ? "relative flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col overflow-hidden sales-mobile-scroll"
+              ? "relative flex h-full min-h-0 min-w-0 w-full max-w-none flex-1 flex-col overflow-hidden sales-mobile-scroll"
               : "relative min-h-0 min-w-0 w-full max-w-none flex-1 overflow-y-auto overscroll-contain sales-mobile-scroll px-4 pb-4 pt-3 sm:px-6 layout:px-8 layout:py-6"
           }
         >
           <SegmiQDotWave />
-          <div className={immersive ? "relative flex min-h-0 flex-1 flex-col" : "relative space-y-3 layout:space-y-3"}>
+          <div className={immersive ? "relative flex h-full min-h-0 flex-1 flex-col overflow-hidden" : "relative space-y-3 layout:space-y-3"}>
             {children}
           </div>
         </div>

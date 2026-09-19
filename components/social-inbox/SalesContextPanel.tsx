@@ -74,7 +74,7 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
   return (
     <aside
       className={cn(
-        "flex h-full min-h-0 w-full shrink-0 flex-col overflow-hidden border-l border-sales-border bg-sales-surface layout:w-[340px]",
+        "flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden border-l border-sales-border bg-sales-surface layout:w-[340px]",
         session.mobilePane !== "intel" && "hidden layout:flex"
       )}
       aria-label="Sales context"
@@ -96,7 +96,7 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 pb-6">
+      <div className="inbox-scroll h-0 min-h-0 flex-1 overflow-y-scroll overscroll-contain px-3 py-3 pb-6 [scrollbar-gutter:stable]">
         <div className="flex items-start gap-2.5">
           <Avatar name={item.displayName} size="md" src={item.avatarUrl} />
           <div className="min-w-0">
