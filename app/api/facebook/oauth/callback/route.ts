@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getFacebookGraphBase } from "@/lib/facebook-graph";
 import { fbLog } from "@/lib/facebook/log";
 import { sealAndStoreFbTokens } from "@/lib/facebook/client-tokens";
+import { completeSocialInboxOAuth } from "@/lib/social-inbox/oauth";
 
 const FB_API = getFacebookGraphBase();
 
@@ -20,14 +21,19 @@ function redirectToFacebookTab(req: Request, clientId: string, query: Record<str
 }
 
 export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const state = searchParams.get("state");
+  const socialState = cookies().get("social_inbox_oauth_state")?.value;
+  if (socialState && state && socialState === state) {
+    return completeSocialInboxOAuth(req);
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.userId || session.role !== "SUPER_ADMIN") {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
-  const state = searchParams.get("state");
   const err = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
 

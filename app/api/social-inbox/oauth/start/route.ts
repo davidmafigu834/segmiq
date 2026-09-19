@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { P } from "@/lib/auth/rbac/permissions";
 import { requireSocialInbox } from "@/lib/social-inbox/api-auth";
+import { socialInboxRedirectUri } from "@/lib/social-inbox/oauth";
 
 export const dynamic = "force-dynamic";
 
@@ -40,8 +41,7 @@ export async function GET(req: Request) {
 
   const appId = process.env.FACEBOOK_APP_ID;
   const origin = new URL(req.url).origin;
-  const redirectUri =
-    process.env.SOCIAL_INBOX_OAUTH_REDIRECT_URI || `${origin}/api/social-inbox/oauth/callback`;
+  const redirectUri = socialInboxRedirectUri(origin);
   if (!appId) {
     return NextResponse.json(
       { error: "Meta app is not configured. Set FACEBOOK_APP_ID to connect Facebook and Instagram." },
