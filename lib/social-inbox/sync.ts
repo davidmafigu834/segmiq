@@ -159,8 +159,7 @@ async function runImport(
 async function graphList<T>(
   path: string,
   token: string,
-  clientId: string,
-  _pages = 2
+  clientId: string
 ): Promise<{ items: T[]; error?: string }> {
   const page = await graphCall<{ data?: unknown[] }>(path, token, {
     clientId,
@@ -305,8 +304,7 @@ async function importFacebookComments(opts: {
       const extra = await graphList<GraphComment>(
         `/${post.id}/comments?filter=stream&fields=id,message,from,created_time&limit=50`,
         opts.token,
-        opts.clientId,
-        2
+        opts.clientId
       );
       rows = extra.items;
     }
