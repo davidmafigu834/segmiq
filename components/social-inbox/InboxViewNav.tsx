@@ -60,7 +60,7 @@ export function InboxViewNav({ session }: { session: SocialInboxSession }) {
           </button>
         </Tooltip>
       </div>
-      <InboxScrollArea contentClassName="px-1.5 pb-3">
+      <InboxScrollArea contentClassName="px-1.5 pb-3" showRail={!viewsCollapsed}>
         <Section session={session} ids={focus} />
         <Divider collapsed={viewsCollapsed} />
         {!viewsCollapsed ? (

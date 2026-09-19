@@ -122,7 +122,7 @@ export function SocialInboxApp({
           </Button>
         </div>
       ) : null}
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="flex h-0 min-h-0 flex-1 overflow-hidden">
         <div className={cn("flex h-full min-h-0 overflow-hidden", session.mobilePane !== "queue" && "hidden layout:flex")}>
           <div className="hidden h-full layout:flex">
             <InboxViewNav session={session} />
@@ -131,7 +131,7 @@ export function SocialInboxApp({
         </div>
         <div
           className={cn(
-            "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+            "flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
             session.mobilePane !== "thread" && "hidden layout:flex"
           )}
         >

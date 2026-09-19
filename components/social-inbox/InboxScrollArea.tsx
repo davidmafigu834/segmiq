@@ -25,12 +25,14 @@ export function InboxScrollArea({
   contentClassName,
   viewportRef,
   onScroll,
+  showRail = true,
 }: {
   children: ReactNode;
   className?: string;
   contentClassName?: string;
   viewportRef?: Ref<HTMLDivElement>;
   onScroll?: UIEventHandler<HTMLDivElement>;
+  showRail?: boolean;
 }) {
   const viewportId = useId();
   const localRef = useRef<HTMLDivElement | null>(null);
@@ -52,7 +54,7 @@ export function InboxScrollArea({
     const track = el.clientHeight;
     const scrollHeight = el.scrollHeight;
     const canScroll = scrollHeight > track + 1;
-    const height = canScroll ? Math.max(36, (track / scrollHeight) * track) : Math.max(track, 0);
+    const height = canScroll ? Math.max(32, (track / scrollHeight) * track) : Math.min(track, 40);
     const maxTop = Math.max(0, track - height);
     const maxScroll = Math.max(1, scrollHeight - track);
     const top = canScroll ? (el.scrollTop / maxScroll) * maxTop : 0;
@@ -101,6 +103,7 @@ export function InboxScrollArea({
   }
 
   function onRailPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+    if (!metricsRef.current.canScroll) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     const rect = e.currentTarget.getBoundingClientRect();
@@ -122,11 +125,11 @@ export function InboxScrollArea({
   }
 
   return (
-    <div className={cn("relative h-0 min-h-0 min-w-0 flex-1 overflow-hidden", className)}>
+    <div className={cn("flex min-h-0 min-w-0 flex-1 overflow-hidden", className)}>
       <div
         id={viewportId}
         ref={setViewport}
-        className="absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain pr-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         onScroll={(e) => {
           sync();
           onScroll?.(e);
@@ -134,26 +137,31 @@ export function InboxScrollArea({
       >
         <div className={contentClassName}>{children}</div>
       </div>
-      <div
-        role="scrollbar"
-        aria-controls={viewportId}
-        aria-orientation="vertical"
-        aria-valuemin={0}
-        aria-valuemax={Math.max(0, Math.round(metrics.track - metrics.height))}
-        aria-valuenow={Math.round(metrics.top)}
-        aria-disabled={!metrics.canScroll}
-        className="absolute inset-y-0 right-0 z-[2] w-4 touch-none select-none border-l border-sales-border bg-[color-mix(in_srgb,var(--sales-text-primary)_10%,var(--sales-surface))]"
-        onPointerDown={onRailPointerDown}
-        onPointerMove={onRailPointerMove}
-        onPointerUp={onRailPointerUp}
-        onPointerCancel={onRailPointerUp}
-      >
+      {showRail ? (
         <div
-          data-inbox-thumb
-          className="absolute inset-x-[3px] rounded-full bg-[color-mix(in_srgb,var(--sales-text-primary)_42%,transparent)] hover:bg-[color-mix(in_srgb,var(--sales-text-primary)_58%,transparent)] active:bg-[color-mix(in_srgb,var(--sales-text-primary)_68%,transparent)]"
-          style={{ top: metrics.top, height: Math.max(metrics.height, 36), cursor: metrics.canScroll ? "grab" : "default" }}
-        />
-      </div>
+          role="scrollbar"
+          aria-controls={viewportId}
+          aria-orientation="vertical"
+          aria-valuemin={0}
+          aria-valuemax={Math.max(0, Math.round(metrics.track - metrics.height))}
+          aria-valuenow={Math.round(metrics.top)}
+          aria-disabled={!metrics.canScroll}
+          className="relative w-2.5 shrink-0 touch-none select-none border-l border-sales-border bg-sales-surface"
+          onPointerDown={onRailPointerDown}
+          onPointerMove={onRailPointerMove}
+          onPointerUp={onRailPointerUp}
+          onPointerCancel={onRailPointerUp}
+        >
+          <div
+            data-inbox-thumb
+            className={cn(
+              "absolute inset-x-[2px] rounded-full bg-sales-text-muted/70 hover:bg-sales-text-secondary",
+              metrics.canScroll ? "cursor-grab active:cursor-grabbing" : "opacity-40"
+            )}
+            style={{ top: metrics.top, height: Math.max(metrics.height, 32) }}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
