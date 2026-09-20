@@ -3,7 +3,12 @@ import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions, resolveClientMode } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { canBeImpersonated, homeForRole } from "@/lib/auth/impersonation";
+import {
+  canBeImpersonated,
+  DEFAULT_IMPERSONATION_REASON,
+  homeForRole,
+  IMPERSONATION_TTL_MS,
+} from "@/lib/auth/impersonation";
 import { setSessionToken } from "@/lib/auth/session-token";
 import {
   createUserSession,
@@ -13,26 +18,23 @@ import {
 } from "@/lib/auth/user-sessions";
 import { recordSecurityEvent } from "@/lib/auth/security-events";
 import { assertBrowserOrigin } from "@/lib/auth/origin-check";
-import { requireElevatedSession } from "@/lib/auth/step-up";
-import { isMfaEnabled } from "@/lib/auth/mfa/service";
 import { hasPermission } from "@/lib/auth/rbac/resolve";
 import { P } from "@/lib/auth/rbac/permissions";
-import { resolveSupportAccess } from "@/lib/security/support-access/guard";
 import { recordSupportAccessEvent } from "@/lib/security/support-access/audit";
 import type { ClientMode, UserRole } from "@/types";
 
 export const dynamic = "force-dynamic";
 
-/** Impersonation sessions expire after 60 minutes max. */
-const IMPERSONATION_TTL_MS = 60 * 60 * 1000;
-
 const bodySchema = z.object({
   userId: z.string().uuid(),
   reason: z
     .string()
-    .min(8, "Provide a support reason")
     .max(500)
-    .transform((s) => s.trim()),
+    .optional()
+    .transform((s) => {
+      const trimmed = s?.trim() ?? "";
+      return trimmed || DEFAULT_IMPERSONATION_REASON;
+    }),
 });
 
 export async function POST(req: Request) {
@@ -45,56 +47,27 @@ export async function POST(req: Request) {
   if (!session?.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (session.isImpersonating) {
-    return NextResponse.json({ error: "Already impersonating — stop first" }, { status: 400 });
-  }
-  if (session.role !== "SUPER_ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  if (
-    !hasPermission(
-      {
-        userId: session.userId,
-        role: session.role,
-        clientId: session.clientId,
-        alsoSells: session.alsoSells,
-        isImpersonating: false,
-      },
-      P.PLATFORM_IMPERSONATE
-    )
-  ) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
 
-  // Require MFA enrolled for the real admin (platform policy).
-  if (!(await isMfaEnabled(session.userId))) {
-    return NextResponse.json(
-      { error: "Enable two-step verification before impersonating customers" },
-      { status: 403 }
-    );
-  }
-
-  const elev = await requireElevatedSession({
-    sessionId: session.sessionId,
-    userId: session.userId,
-  });
-  if (!elev.ok) {
-    return NextResponse.json({ error: elev.error }, { status: elev.status });
+  // Hopping accounts: if already impersonating, the real admin is on the token.
+  const adminUserId =
+    session.isImpersonating && session.realUserId ? session.realUserId : session.userId;
+  if (session.isImpersonating && !session.realUserId) {
+    return NextResponse.json({ error: "Admin session invalid" }, { status: 403 });
   }
 
   let body: z.infer<typeof bodySchema>;
   try {
     body = bodySchema.parse(await req.json());
   } catch {
-    return NextResponse.json({ error: "Invalid request — userId and reason required" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request — userId required" }, { status: 400 });
   }
 
   const supabase = createAdminClient();
   const [{ data: admin }, { data: target }] = await Promise.all([
     supabase
       .from("users")
-      .select("id, name, email, role, session_version")
-      .eq("id", session.userId)
+      .select("id, name, email, role, is_active, session_version")
+      .eq("id", adminUserId)
       .maybeSingle(),
     supabase
       .from("users")
@@ -103,7 +76,20 @@ export async function POST(req: Request) {
       .maybeSingle(),
   ]);
 
-  if (!admin || admin.role !== "SUPER_ADMIN") {
+  if (!admin || admin.role !== "SUPER_ADMIN" || !admin.is_active) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  if (
+    !hasPermission(
+      {
+        userId: admin.id as string,
+        role: "SUPER_ADMIN",
+        clientId: null,
+        isImpersonating: false,
+      },
+      P.PLATFORM_IMPERSONATE
+    )
+  ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (!target) {
@@ -114,27 +100,6 @@ export async function POST(req: Request) {
   }
 
   const clientId = target.client_id as string;
-
-  // SECURITY (Phase 7): impersonation is privileged client-data access. It must
-  // sit inside an ACTIVE Support Access grant for this organisation — never a
-  // silent "login as customer" from platform admin alone.
-  const support = await resolveSupportAccess({
-    userId: session.userId,
-    role: session.role,
-    isImpersonating: false,
-    clientId,
-  });
-  if (!support.granted) {
-    return NextResponse.json(
-      {
-        error:
-          "Start Support Access for this organisation before viewing as a customer user.",
-        code: "SUPPORT_ACCESS_REQUIRED",
-      },
-      { status: 403 }
-    );
-  }
-
   const clientMode = await resolveClientMode(clientId);
   const role = target.role as UserRole;
   const adminSv = Number((admin as { session_version?: number }).session_version ?? 0);
@@ -164,7 +129,6 @@ export async function POST(req: Request) {
     },
   });
 
-  // Cap absolute expiry for impersonation sessions.
   await supabase
     .from("user_sessions")
     .update({
@@ -197,16 +161,14 @@ export async function POST(req: Request) {
       realUserId: admin.id as string,
       reason: body.reason.slice(0, 200),
       ttlMinutes: IMPERSONATION_TTL_MS / 60000,
-      supportAccessGrantId: support.grant.id,
     },
   });
 
   void recordSupportAccessEvent({
     eventType: "CLIENT_IMPERSONATION_STARTED",
     clientId,
-    grantId: support.grant.id,
-    actorUserId: session.userId,
-    actorRole: session.role,
+    actorUserId: admin.id as string,
+    actorRole: "SUPER_ADMIN",
     resourceType: "impersonation",
     resourceId: target.id as string,
     ip,

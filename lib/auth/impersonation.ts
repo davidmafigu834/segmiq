@@ -1,6 +1,10 @@
 import type { ClientMode, UserRole } from "@/types";
 import { isSuperAdminRole, normalizeUserRole } from "@/lib/auth/roles";
 
+/** Early-stage default: long enough to debug a customer workspace in one sitting. */
+export const IMPERSONATION_TTL_MS = 8 * 60 * 60 * 1000;
+export const DEFAULT_IMPERSONATION_REASON = "Platform debugging";
+
 export function homeForRole(role: UserRole | string, clientMode: ClientMode = "team"): string {
   const normalized = normalizeUserRole(role) ?? role;
   if (isSuperAdminRole(normalized)) return "/dashboard";

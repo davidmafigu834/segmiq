@@ -3,21 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2, UserRoundSearch } from "lucide-react";
-import { RequestSupportAccessModal } from "@/components/agency/support-access/RequestSupportAccessModal";
+import { DEFAULT_IMPERSONATION_REASON } from "@/lib/auth/impersonation";
 
 /**
- * Impersonation requires a recent step-up (elevated_until), not only MFA enrolled.
- * Having Google Authenticator enabled is necessary but not sufficient — the current
- * session must be re-verified with a TOTP code before this sensitive action.
- *
- * SECURITY: viewing as a customer user is client-data access. An ACTIVE Support
- * Access grant for this organisation is required first.
+ * One-click support impersonation. SUPER_ADMIN + PLATFORM_IMPERSONATE is
+ * enough — no Support Access grant, step-up, or reason prompt. Sessions stay
+ * audited and the impersonation banner can exit at any time.
  */
 export function ImpersonateButton({
   userId,
   userName,
-  organisationId,
-  organisationName,
   variant = "button",
 }: {
   userId: string;
@@ -29,127 +24,24 @@ export function ImpersonateButton({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [pendingReason, setPendingReason] = useState<string | null>(null);
-  const [totpCode, setTotpCode] = useState("");
-  const [requestAccessOpen, setRequestAccessOpen] = useState(false);
-
-  async function startImpersonation(reason: string) {
-    const res = await fetch("/api/agency/impersonate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, reason }),
-    });
-    const data = (await res.json()) as {
-      redirectTo?: string;
-      error?: string;
-      code?: string;
-    };
-    return { res, data };
-  }
-
-  async function submitStepUp(code: string): Promise<{ ok: true } | { ok: false; error: string }> {
-    const res = await fetch("/api/auth/mfa", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "step_up", totpCode: code.trim() }),
-    });
-    const data = (await res.json().catch(() => ({}))) as { error?: string; reason?: string };
-    if (!res.ok) {
-      if (data.reason === "totp_required" || data.error === "Verification failed") {
-        return { ok: false, error: "Invalid authenticator code. Try again." };
-      }
-      return {
-        ok: false,
-        error: typeof data.error === "string" ? data.error : "Could not verify authenticator",
-      };
-    }
-    return { ok: true };
-  }
-
-  async function finishImpersonation(reason: string) {
-    const { res, data } = await startImpersonation(reason);
-    if (!res.ok) {
-      if (data.code === "SUPPORT_ACCESS_REQUIRED" && organisationId) {
-        setRequestAccessOpen(true);
-        setError("Support Access is required before viewing as this user.");
-        return;
-      }
-      setError(typeof data.error === "string" ? data.error : "Could not impersonate");
-      return;
-    }
-    setPendingReason(null);
-    setTotpCode("");
-    router.push(data.redirectTo ?? "/client/dashboard");
-    router.refresh();
-  }
 
   async function handleClick() {
     if (loading) return;
-    const reason = window.prompt(
-      `Support reason for viewing as ${userName} (min 8 characters):`,
-      ""
-    );
-    if (reason == null) return;
-    const trimmed = reason.trim();
-    if (trimmed.length < 8) {
-      setError("Provide a support reason (at least 8 characters)");
-      return;
-    }
-
     setLoading(true);
     setError("");
     try {
-      const { res, data } = await startImpersonation(trimmed);
-      if (res.ok) {
-        router.push(data.redirectTo ?? "/client/dashboard");
-        router.refresh();
+      const res = await fetch("/api/agency/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, reason: DEFAULT_IMPERSONATION_REASON }),
+      });
+      const data = (await res.json()) as { redirectTo?: string; error?: string };
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : "Could not impersonate");
         return;
       }
-
-      if (data.code === "SUPPORT_ACCESS_REQUIRED") {
-        setPendingReason(trimmed);
-        if (organisationId) {
-          setRequestAccessOpen(true);
-          setError("");
-        } else {
-          setError("Start Support Access for this organisation, then try View as again.");
-        }
-        return;
-      }
-
-      if (data.error === "Step-up authentication required") {
-        setPendingReason(trimmed);
-        setTotpCode("");
-        setError("");
-        return;
-      }
-
-      setError(typeof data.error === "string" ? data.error : "Could not impersonate");
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleStepUpSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!pendingReason || loading) return;
-    const code = totpCode.trim();
-    if (code.length < 6) {
-      setError("Enter the 6-digit code from Google Authenticator");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-    try {
-      const stepped = await submitStepUp(code);
-      if (!stepped.ok) {
-        setError(stepped.error);
-        return;
-      }
-      await finishImpersonation(pendingReason);
+      router.push(data.redirectTo ?? "/client/dashboard");
+      router.refresh();
     } catch {
       setError("Something went wrong");
     } finally {
@@ -158,118 +50,20 @@ export function ImpersonateButton({
   }
 
   const label = loading ? "Starting…" : `View as ${userName}`;
-
-  const stepUpForm =
-    pendingReason != null && !requestAccessOpen ? (
-      <form
-        onSubmit={(e) => void handleStepUpSubmit(e)}
-        className="mt-2 w-full max-w-[240px] rounded-md border border-border bg-surface-card p-2.5 shadow-sm"
-      >
-        <p className="text-[11px] leading-snug text-ink-secondary">
-          Confirm with your authenticator app to start support impersonation.
-        </p>
-        <input
-          type="text"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          autoFocus
-          maxLength={12}
-          placeholder="6-digit code"
-          value={totpCode}
-          onChange={(ev) => setTotpCode(ev.target.value.replace(/\s/g, ""))}
-          className="mt-2 h-9 w-full rounded-md border border-border bg-surface-input px-2 font-mono text-[13px] text-ink-primary outline-none focus:border-[var(--accent)]"
-          aria-label="Authenticator code"
-        />
-        <div className="mt-2 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            className="text-[11px] text-ink-tertiary hover:text-ink-secondary"
-            disabled={loading}
-            onClick={() => {
-              setPendingReason(null);
-              setTotpCode("");
-              setError("");
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--accent)] px-2.5 text-[11px] font-semibold text-accent-ink disabled:opacity-60"
-          >
-            {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-            Verify &amp; continue
-          </button>
-        </div>
-      </form>
-    ) : null;
-
-  const requestModal =
-    organisationId && organisationName ? (
-      <RequestSupportAccessModal
-        open={requestAccessOpen}
-        onClose={() => {
-          setRequestAccessOpen(false);
-          setPendingReason(null);
-        }}
-        organisationId={organisationId}
-        organisationName={organisationName}
-        onGranted={(result) => {
-          setRequestAccessOpen(false);
-          if (result.status !== "ACTIVE") {
-            setPendingReason(null);
-            setError(
-              "Support Access is pending approval. You can view as this user once it is active."
-            );
-            return;
-          }
-          if (pendingReason) {
-            void finishImpersonation(pendingReason);
-          } else {
-            setError("Support Access is active. Click View as again.");
-          }
-        }}
-      />
-    ) : null;
-
-  if (variant === "link") {
-    return (
-      <span className="inline-flex flex-col items-end gap-1">
-        <button
-          type="button"
-          onClick={() => void handleClick()}
-          disabled={loading || (pendingReason != null && !requestAccessOpen)}
-          className="inline-flex items-center gap-1.5 font-mono text-[11px] text-[var(--accent)] underline-offset-2 hover:underline disabled:opacity-60"
-        >
-          {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserRoundSearch className="h-3 w-3" />}
-          {label}
-        </button>
-        {stepUpForm}
-        {error ? (
-          <span className="max-w-[240px] text-right text-[10px] text-[var(--error)]">{error}</span>
-        ) : null}
-        {requestModal}
-      </span>
-    );
-  }
+  const className =
+    variant === "link"
+      ? "inline-flex items-center gap-1.5 font-mono text-[11px] text-[var(--accent)] underline-offset-2 hover:underline disabled:opacity-60"
+      : "inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-ink-secondary transition-colors hover:bg-surface-card-alt disabled:opacity-60";
 
   return (
     <span className="inline-flex flex-col items-end gap-1">
-      <button
-        type="button"
-        onClick={() => void handleClick()}
-        disabled={loading || (pendingReason != null && !requestAccessOpen)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-ink-secondary transition-colors hover:bg-surface-card-alt disabled:opacity-60"
-      >
+      <button type="button" onClick={() => void handleClick()} disabled={loading} className={className}>
         {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserRoundSearch className="h-3 w-3" />}
         {label}
       </button>
-      {stepUpForm}
       {error ? (
         <span className="max-w-[240px] text-right text-[10px] text-[var(--error)]">{error}</span>
       ) : null}
-      {requestModal}
     </span>
   );
 }
