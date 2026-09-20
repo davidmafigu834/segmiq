@@ -56,8 +56,7 @@ type PrivilegedLeadAccess = {
  */
 export function evaluateLeadModifyAccess(
   session: AuthSession,
-  scope: LeadScope,
-  _privileged: PrivilegedLeadAccess = {}
+  scope: LeadScope
 ):
   | { allowed: true; lead: LeadScope; userId: string; role: UserRole }
   | { allowed: false; reason: string; status: 401 | 403 | 404 } {
@@ -165,11 +164,9 @@ export async function canModifyLead(
     assigned_to_id: (lead.assigned_to_id as string | null) ?? null,
   };
 
-  // SECURITY: the grant is resolved against the LEAD's organisation, so swapping
-  // a lead id for another tenant's record cannot ride an existing grant (IDOR).
-  return evaluateLeadModifyAccess(session, scope, {
-    supportAccessGranted: await hasLeadSupportAccess(session, scope.client_id),
-  });
+  // SECURITY: Super Admin writes are denied here; they go through impersonation
+  // with an active grant. Tenant mismatch still fails closed on the lead's org.
+  return evaluateLeadModifyAccess(session, scope);
 }
 
 /**
