@@ -19,7 +19,7 @@ import {
   parseMarketingTheme,
 } from "@/lib/marketing/marketing-theme";
 
-/** Homepage — Split Studio landing on navy paper with lime accent. */
+/** Homepage — official SegmiQ navy / indigo / violet atmosphere. */
 export default function LandingPage() {
   const themeCookie = cookies().get(MARKETING_THEME_STORAGE_KEY)?.value;
   const hasStoredPreference = themeCookie === "light" || themeCookie === "dark";

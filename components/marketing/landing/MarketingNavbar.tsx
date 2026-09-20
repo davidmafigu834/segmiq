@@ -1,123 +1,125 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
 import SegmiqWordmark from "@/components/marketing/SegmiqWordmark";
 import { ML } from "@/lib/marketing-links";
 
-const PRIMARY = [
+const NAV = [
   { label: "Agentic AI", href: ML.agentic },
   { label: "Company Brain", href: ML.brain },
+  { label: "Product", href: ML.crm, chevron: true },
+  { label: "Solutions", href: "/solutions/construction", chevron: true },
   { label: "Pricing", href: ML.pricing },
+  { label: "Resources", href: ML.blog, chevron: true },
+  { label: "Company", href: ML.why, chevron: true },
 ] as const;
-
-const MORE = [
-  { label: "Product", href: ML.crm },
-  { label: "Solutions", href: "/solutions/construction" },
-  { label: "Resources", href: ML.blog },
-  { label: "Company", href: ML.why },
-] as const;
-
-const MOBILE = [...PRIMARY, ...MORE] as const;
-
-function NavAnchor({
-  href,
-  className,
-  onClick,
-  children,
-}: {
-  href: string;
-  className: string;
-  onClick?: () => void;
-  children: ReactNode;
-}) {
-  if (href.startsWith("http")) {
-    return (
-      <a href={href} className={className} onClick={onClick}>
-        {children}
-      </a>
-    );
-  }
-  return (
-    <Link href={href} className={className} onClick={onClick}>
-      {children}
-    </Link>
-  );
-}
 
 export default function MarketingNavbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <>
-      <header className="segmiq-nav-pill">
-        <SegmiqWordmark href="/" theme="auto" size="md" priority />
-        <nav className="segmiq-nav-pill__links" aria-label="Primary">
-          {PRIMARY.map((item) => (
-            <NavAnchor key={item.label} href={item.href} className="">
-              {item.label}
-            </NavAnchor>
-          ))}
-          <details className="segmiq-nav-more">
-            <summary>More</summary>
-            <div className="segmiq-nav-more__panel">
-              {MORE.map((item) => (
-                <NavAnchor key={item.label} href={item.href} className="">
+    <header className="segmiq-nav sticky top-0 z-50 border-b border-[var(--marketing-border-subtle)]">
+      <div className="mx-auto flex h-[64px] max-w-[1280px] items-center justify-between px-6 sm:px-10 lg:px-12">
+        <div className="flex min-w-0 items-center gap-10 xl:gap-14">
+          <SegmiqWordmark href="/" theme="auto" size="lg" priority />
+          <nav
+            className="hidden items-center gap-7 text-[13px] font-medium text-[var(--marketing-text-label)] xl:gap-8 min-[1025px]:flex"
+            aria-label="Primary"
+          >
+            {NAV.map((item) => {
+              const className =
+                "inline-flex items-center gap-1 transition-colors hover:text-[var(--marketing-text)]";
+              const content = (
+                <>
                   {item.label}
-                </NavAnchor>
-              ))}
-            </div>
-          </details>
-        </nav>
-        <div className="ml-auto flex items-center gap-2 sm:gap-3">
+                  {"chevron" in item && item.chevron ? (
+                    <ChevronDown
+                      className="h-[13px] w-[13px] text-[var(--marketing-text-muted)]"
+                      aria-hidden
+                    />
+                  ) : null}
+                </>
+              );
+              return item.href.startsWith("http") ? (
+                <a key={item.label} href={item.href} className={className}>
+                  {content}
+                </a>
+              ) : (
+                <Link key={item.label} href={item.href} className={className}>
+                  {content}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-2.5 sm:gap-3.5">
           <Link
             href={ML.login}
-            className="hidden px-1 text-[13px] font-medium md:inline"
+            className="hidden text-[13px] font-medium text-[var(--marketing-text-label)] transition-colors hover:text-[var(--marketing-text)] md:inline"
           >
             Log in
           </Link>
           <Link
             href={ML.contact}
-            className="segmiq-btn-primary inline-flex h-9 items-center rounded-full bg-[var(--marketing-brand)] px-3.5 text-[13px] font-semibold text-[var(--marketing-brand-ink)] transition-colors hover:bg-[var(--marketing-brand-hover)] sm:px-4"
+            className="segmiq-btn-primary inline-flex h-10 items-center gap-1.5 rounded-[9px] bg-[var(--marketing-brand)] px-[18px] text-[13px] font-semibold text-[var(--marketing-brand-ink)] transition-colors hover:bg-[var(--marketing-brand-hover)]"
           >
             Book a demo
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </Link>
           <button
             type="button"
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="grid h-9 w-9 place-items-center text-[var(--marketing-text)] min-[1025px]:hidden"
+            className="-mr-1 grid h-10 w-10 place-items-center text-[var(--marketing-text)] min-[1025px]:hidden"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
-      </header>
+      </div>
 
-      <nav
-        className="segmiq-nav-mobile"
-        data-open={open ? "true" : "false"}
-        aria-label="Mobile"
+      <div
+        className={`segmiq-nav overflow-hidden border-[var(--marketing-border-subtle)] transition-[max-height] duration-300 ease-out min-[1025px]:hidden ${
+          open ? "max-h-[32rem] border-t" : "max-h-0"
+        }`}
       >
-        {MOBILE.map((item) => (
-          <NavAnchor
-            key={item.label}
-            href={item.href}
-            onClick={() => setOpen(false)}
-            className="border-b border-[var(--marketing-border-subtle)] py-3 text-[15px] font-medium text-[var(--marketing-text-label)]"
-          >
-            {item.label}
-          </NavAnchor>
-        ))}
-        <Link
-          href={ML.login}
-          onClick={() => setOpen(false)}
-          className="py-3 text-[15px] font-medium text-[var(--marketing-text-label)] md:hidden"
+        <nav
+          className="mx-auto flex max-w-[1280px] flex-col px-6 py-3 sm:px-10 lg:px-12"
+          aria-label="Mobile"
         >
-          Log in
-        </Link>
-      </nav>
-    </>
+          {NAV.map((item) =>
+            item.href.startsWith("http") ? (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="border-b border-[var(--marketing-border-subtle)] py-3 text-[15px] font-medium text-[var(--marketing-text-label)]"
+              >
+                {item.label}
+              </a>
+            ) : (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="border-b border-[var(--marketing-border-subtle)] py-3 text-[15px] font-medium text-[var(--marketing-text-label)]"
+              >
+                {item.label}
+              </Link>
+            )
+          )}
+          <Link
+            href={ML.login}
+            onClick={() => setOpen(false)}
+            className="py-3 text-[15px] font-medium text-[var(--marketing-text-label)] md:hidden"
+          >
+            Log in
+          </Link>
+        </nav>
+      </div>
+    </header>
   );
 }
