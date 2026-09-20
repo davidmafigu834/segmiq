@@ -4,6 +4,7 @@ import { Inter, Instrument_Serif, DM_Sans, DM_Serif_Display, Roboto } from "next
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
+import "../tokens.css";
 import "./segmiq-atmosphere.css";
 import "./company-dashboard.css";
 import { Providers } from "./providers";

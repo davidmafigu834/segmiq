@@ -6,7 +6,7 @@ import Image from "next/image";
  */
 export default function AgentActivityPreview() {
   return (
-    <div className="marketing-product-chrome overflow-hidden rounded-[12px] shadow-[0_18px_45px_rgba(16,24,40,0.08)]">
+    <figure className="segmiq-figure">
       <Image
         src="/segmiq/visuals/agent-activity-dashboard.webp"
         alt="SegmiQ Agent activity this morning: 14 conversations handling, 2 human needed, 6 follow-ups."
@@ -15,6 +15,6 @@ export default function AgentActivityPreview() {
         sizes="(min-width: 1024px) 480px, 92vw"
         className="h-auto w-full"
       />
-    </div>
+    </figure>
   );
 }

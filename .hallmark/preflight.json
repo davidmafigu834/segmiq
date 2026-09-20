@@ -1,0 +1,10 @@
+{
+  "scanned": "2026-09-20",
+  "framework": "Next.js 14 app router",
+  "fonts": "Inter body (next/font) + Geist display (geist/font) + Geist Mono",
+  "palette": "Navy #06152e paper, lime #d4ff4f accent, existing --marketing-* tokens",
+  "motion": "framer-motion installed; landing stays motion-cut",
+  "spacing": "4pt Hallmark scale in tokens.css; Tailwind 3 utilities on components",
+  "preserve": ["font stack", "lime accent", "navy paper", "landing routes", "copy intent"],
+  "conflict": "Landing previously used Inter for headings; display now Geist via --font-display"
+}

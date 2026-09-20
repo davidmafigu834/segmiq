@@ -6,7 +6,7 @@ import Image from "next/image";
  */
 export default function WhatsAppSalesHubPreview() {
   return (
-    <div className="overflow-hidden rounded-[12px]">
+    <figure className="segmiq-figure">
       <Image
         src="/segmiq/visuals/team-whatsapp-hub.webp"
         alt="WhatsApp Sales Hub: Chiedza Ndlovu Human needed on a discount request, SegmiQ Agent briefing ready, Take over."
@@ -15,6 +15,6 @@ export default function WhatsAppSalesHubPreview() {
         sizes="(min-width: 1280px) 560px, 92vw"
         className="h-auto w-full"
       />
-    </div>
+    </figure>
   );
 }

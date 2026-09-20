@@ -6,7 +6,7 @@ import Image from "next/image";
  */
 export default function SalesCommandCenterPreview() {
   return (
-    <div className="overflow-hidden rounded-[12px]">
+    <figure className="segmiq-figure">
       <Image
         src="/segmiq/visuals/team-command-center.webp"
         alt="Sales Command Center for Tendai: 2 Human needed, Chiedza Ndlovu discount request now, Tafadzwa Moyo quotation Q-2026-045 ready."
@@ -15,6 +15,6 @@ export default function SalesCommandCenterPreview() {
         sizes="(min-width: 1280px) 560px, 92vw"
         className="h-auto w-full"
       />
-    </div>
+    </figure>
   );
 }

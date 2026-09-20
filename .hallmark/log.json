@@ -1,5 +1,15 @@
 [
   {
+    "date": "2026-09-20",
+    "macrostructure": "Split Studio",
+    "theme": "SegmiQ landing",
+    "theme_axes": "dark / grotesk-sans / chromatic-other",
+    "enrichment": "none",
+    "nav": "N5",
+    "footer": "Ft5",
+    "brief": "Landing page anti-slop redesign"
+  },
+  {
     "date": "2026-09-14",
     "macrostructure": "Workbench",
     "theme": "Segmiq CRM",
