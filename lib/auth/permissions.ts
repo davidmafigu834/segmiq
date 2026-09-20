@@ -57,7 +57,7 @@ type PrivilegedLeadAccess = {
 export function evaluateLeadModifyAccess(
   session: AuthSession,
   scope: LeadScope,
-  privileged: PrivilegedLeadAccess = {}
+  _privileged: PrivilegedLeadAccess = {}
 ):
   | { allowed: true; lead: LeadScope; userId: string; role: UserRole }
   | { allowed: false; reason: string; status: 401 | 403 | 404 } {

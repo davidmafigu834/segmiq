@@ -86,7 +86,13 @@ async function count(
   }
 }
 
-function countFor(table: string, clientId: string, extra?: (q: any) => any) {
+type CountFilter = {
+  eq: (column: string, value: string | boolean) => CountFilter;
+  gte: (column: string, value: string) => CountFilter;
+  is: (column: string, value: null) => CountFilter;
+};
+
+function countFor(table: string, clientId: string, extra?: (q: CountFilter) => CountFilter) {
   return count(table, (t) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let q = (t as any).select("id", { count: "exact", head: true }).eq("client_id", clientId);
