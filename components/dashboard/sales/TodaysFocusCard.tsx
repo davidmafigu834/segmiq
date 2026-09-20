@@ -2,19 +2,22 @@
 
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
-import {
-  AlertCircle, ArrowRight, CalendarDays, CheckCircle2, Clock3, Crosshair,
-  ExternalLink, FileText, ListTodo, MessageCircle, MoreHorizontal, Pencil,
-  Phone, Sparkles, UserRound,
-} from "lucide-react";
+import { ArrowRight, MoreHorizontal, Pencil, Phone } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/sales/ui/DropdownMenu";
 import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
 import { cn } from "@/lib/ui/cn";
-import type { DailySalesPlanProgress, FocusModeResult, SalesActionRecommendation } from "@/lib/sales/intelligence/types";
+import type {
+  DailySalesPlanProgress,
+  FocusModeResult,
+  SalesActionRecommendation,
+} from "@/lib/sales/intelligence/types";
 import type { SalesDealAttentionItem, SalesEnquiryPriorityItem } from "@/components/dashboard/sales/types";
 import { buildFocusActionRows, type FocusActionRow } from "@/lib/sales/focus-todays-actions";
 import styles from "./TodaysFocusCard.module.css";
@@ -54,8 +57,7 @@ function PrimaryCtaButton({
   onAddProspect?: () => void;
   className?: string;
 }) {
-  const base =
-    "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-sales-md bg-sales-brand px-3.5 text-[13px] font-semibold text-sales-ink transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand";
+  const base = styles.primaryButton;
 
   if (row.primary.kind === "whatsapp" && row.phone && row.leadId) {
     return (
@@ -89,11 +91,7 @@ function PrimaryCtaButton({
 
   if (row.primary.kind === "add_prospect") {
     return (
-      <button
-        type="button"
-        className={cn(base, className)}
-        onClick={() => onAddProspect?.()}
-      >
+      <button type="button" className={cn(base, className)} onClick={() => onAddProspect?.()}>
         {row.primary.label}
       </button>
     );
@@ -137,60 +135,73 @@ function ActionRowMenu({
   );
 
   return (
-    <div className={styles.menu}><DropdownMenu align="end">
-      <DropdownMenuTrigger
-        className="inline-flex h-9 w-9 items-center justify-center rounded-sales-md text-sales-text-muted transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
-        aria-label={`More actions for ${row.customerName}`}
-        disabled={busy}
-      >
-        <MoreHorizontal size={16} strokeWidth={1.8} aria-hidden />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="min-w-[180px]">
-        <DropdownMenuItem
-          onSelect={() => {
-            window.location.href = row.href;
-          }}
+    <div className={styles.menu}>
+      <DropdownMenu align="end">
+        <DropdownMenuTrigger
+          className={styles.iconButton}
+          aria-label={`More actions for ${row.customerName}`}
+          disabled={busy}
         >
-          {row.dealId ? "Open deal" : "Open customer"}
-        </DropdownMenuItem>
-        {row.phone ? (
+          <MoreHorizontal size={16} strokeWidth={1.8} aria-hidden />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="min-w-[180px]">
           <DropdownMenuItem
             onSelect={() => {
-              window.location.href = `tel:${row.phone}`;
+              window.location.href = row.href;
             }}
           >
-            Call
+            {row.dealId ? "Open deal" : "Open customer"}
           </DropdownMenuItem>
-        ) : null}
-        {canMutate ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem disabled={busy} onSelect={() => void run("complete")}>
-              Mark done
+          {row.phone ? (
+            <DropdownMenuItem
+              onSelect={() => {
+                window.location.href = `tel:${row.phone}`;
+              }}
+            >
+              Call
             </DropdownMenuItem>
-            <DropdownMenuItem disabled={busy} onSelect={() => void run("snooze")}>
-              Snooze for later
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled={busy} onSelect={() => void run("skip")}>
-              Dismiss
-            </DropdownMenuItem>
-          </>
-        ) : null}
-      </DropdownMenuContent>
-    </DropdownMenu>{error ? <p role="alert" className={styles.error}>{error}</p> : null}</div>
+          ) : null}
+          {canMutate ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem disabled={busy} onSelect={() => void run("complete")}>
+                Mark done
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={busy} onSelect={() => void run("snooze")}>
+                Snooze for later
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={busy} onSelect={() => void run("skip")}>
+                Dismiss
+              </DropdownMenuItem>
+            </>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {error ? (
+        <p role="alert" className={styles.error}>
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
-
 function statusLabel(row: FocusActionRow): string {
   switch (row.recommendation?.reasonCode) {
-    case "QUOTE_EXPIRING": return "Quote expiring";
-    case "FOLLOWUP_OVERDUE": return "Follow-up overdue";
-    case "CUSTOMER_WAITING": return row.signal || "Waiting for your reply";
-    case "FOLLOWUP_DUE_TODAY": return "Follow-up today";
-    case "QUOTE_WAITING": return "Quote awaiting reply";
-    case "QUOTE_VIEWED": return "Quote viewed";
-    default: return row.signal || row.commercialState || "Next action";
+    case "QUOTE_EXPIRING":
+      return "Quote expiring";
+    case "FOLLOWUP_OVERDUE":
+      return "Follow-up overdue";
+    case "CUSTOMER_WAITING":
+      return row.signal || "Waiting for your reply";
+    case "FOLLOWUP_DUE_TODAY":
+      return "Follow-up today";
+    case "QUOTE_WAITING":
+      return "Quote awaiting reply";
+    case "QUOTE_VIEWED":
+      return "Quote viewed";
+    default:
+      return row.signal || row.commercialState || "Next action";
   }
 }
 
@@ -199,13 +210,22 @@ function suggestedMessage(row: FocusActionRow): string {
   if (row.recommendation?.actionType === "RESPOND_TO_CUSTOMER") {
     return `Hi ${firstName}, thank you for your message. How can I help you with the next step?`;
   }
-  const subject = row.recommendation?.actionType === "FOLLOW_UP_QUOTE"
-    ? "your quotation" : row.opportunityLabel ? `your ${row.opportunityLabel}` : "your enquiry";
+  const subject =
+    row.recommendation?.actionType === "FOLLOW_UP_QUOTE"
+      ? "your quotation"
+      : row.opportunityLabel
+        ? `your ${row.opportunityLabel}`
+        : "your enquiry";
   return `Hi ${firstName}, following up on ${subject}. Would you like to discuss the next step?`;
 }
 
-function SuggestedNextStep({
-  row, clientId, onAddProspect, draft, onDraftChange, onActionFinished,
+function ActionInspector({
+  row,
+  clientId,
+  onAddProspect,
+  draft,
+  onDraftChange,
+  onActionFinished,
 }: {
   row: FocusActionRow;
   clientId: string | null;
@@ -218,21 +238,33 @@ function SuggestedNextStep({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLTextAreaElement>(null);
-  const canMessage = Boolean(row.leadId && row.phone && row.availableActions.includes("whatsapp") && row.primary.kind !== "call");
+  const canMessage = Boolean(
+    row.leadId && row.phone && row.availableActions.includes("whatsapp") && row.primary.kind !== "call"
+  );
   const rec = row.recommendation;
-  const quoteId = rec?.sourceEntityType === "quotation" ? rec.sourceEntityId
-    : typeof rec?.metadata?.quotationId === "string" ? rec.metadata.quotationId
-    : typeof rec?.metadata?.quoteId === "string" ? rec.metadata.quoteId : null;
+  const quoteId =
+    rec?.sourceEntityType === "quotation"
+      ? rec.sourceEntityId
+      : typeof rec?.metadata?.quotationId === "string"
+        ? rec.metadata.quotationId
+        : typeof rec?.metadata?.quoteId === "string"
+          ? rec.metadata.quoteId
+          : null;
   const firstName = row.customerName.trim().split(/\s+/)[0];
-  const title = rec?.actionType === "RESPOND_TO_CUSTOMER" ? `Reply to ${firstName}`
-    : row.primary.kind === "add_prospect" ? "Build your pipeline"
-    : row.primary.kind === "create_quote" ? `Prepare a quote for ${firstName}`
-    : `Follow up with ${firstName}`;
+  const actionTitle =
+    rec?.actionType === "RESPOND_TO_CUSTOMER"
+      ? `Reply to ${firstName}`
+      : row.primary.kind === "add_prospect"
+        ? "Add a prospect"
+        : row.primary.kind === "create_quote"
+          ? `Quote ${firstName}`
+          : `Follow up with ${firstName}`;
   const commandHref = `/sales/command?prompt=${encodeURIComponent(
     `Help me draft a message for ${row.customerName}. Context: ${row.reason}${row.opportunityLabel ? ` Opportunity: ${row.opportunityLabel}.` : ""}`
   )}`;
+  const urgent = row.priority === "URGENT" || rec?.reasonCode === "CUSTOMER_WAITING";
 
-  async function reviewMessage() {
+  async function sendMessage() {
     if (busy || !draft.trim() || !row.leadId) return;
     setBusy(true);
     setError(null);
@@ -262,51 +294,72 @@ function SuggestedNextStep({
   }
 
   return (
-    <aside className={styles.suggestion} aria-label="Suggested next step">
-      <p className={styles.eyebrow}><Sparkles size={26} aria-hidden />Suggested next step</p>
-      <h3>{title}</h3>
-      <div className={styles.reasons}>
-        <h4>Why this matters</h4>
-        <p><AlertCircle size={20} aria-hidden className={row.priority === "URGENT" ? styles.dangerIcon : styles.accent} /><span>{statusLabel(row)}</span></p>
-        <p><MessageCircle size={22} aria-hidden /><span>{row.reason}</span></p>
-      </div>
+    <aside className={styles.inspector} aria-label={actionTitle}>
+      <p className={cn(styles.statusLine, urgent && styles.statusUrgent)}>{statusLabel(row)}</p>
+      <h3>{actionTitle}</h3>
+      <p className={styles.reason}>{row.reason}</p>
+      {row.opportunityLabel || row.valueLabel ? (
+        <p className={styles.dealMeta}>{[row.opportunityLabel, row.valueLabel].filter(Boolean).join(" · ")}</p>
+      ) : null}
+
       {canMessage ? (
-        <div className={styles.messageSection}>
-          <div className={styles.messageHeading}>
-            <h4>Suggested starting message</h4>
-            <Link className={styles.draftLink} href={commandHref}><Pencil size={16} aria-hidden />Draft in SegmiQ</Link>
+        <div className={styles.compose}>
+          <div className={styles.composeHead}>
+            <label htmlFor={`focus-draft-${row.id}`}>Message</label>
+            <Link className={styles.quietLink} href={commandHref}>
+              Draft with SegmiQ
+            </Link>
           </div>
           <textarea
+            id={`focus-draft-${row.id}`}
             ref={input}
-            aria-label={`Suggested message to ${row.customerName}`}
+            aria-label={`Message to ${row.customerName}`}
             className={styles.message}
             value={draft}
             readOnly={!editing}
             onChange={(event) => onDraftChange(event.target.value)}
             rows={3}
           />
-          <div className={styles.messageActions}>
-            <button type="button" className={styles.primaryButton} onClick={() => void reviewMessage()} disabled={busy || !draft.trim()}>
-              <SiWhatsapp size={20} aria-hidden />{busy ? "Sending…" : "Send WhatsApp"}
+          <div className={styles.composeActions}>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={() => void sendMessage()}
+              disabled={busy || !draft.trim()}
+            >
+              <SiWhatsapp size={16} aria-hidden />
+              {busy ? "Sending…" : "Send WhatsApp"}
             </button>
-            <button type="button" className={styles.outlineButton} onClick={() => {
-              setEditing(!editing);
-              if (!editing) requestAnimationFrame(() => input.current?.focus());
-            }}><Pencil size={20} aria-hidden />{editing ? "Done editing" : "Edit draft"}</button>
+            <button
+              type="button"
+              className={styles.ghostButton}
+              onClick={() => {
+                setEditing(!editing);
+                if (!editing) requestAnimationFrame(() => input.current?.focus());
+              }}
+            >
+              <Pencil size={14} aria-hidden />
+              {editing ? "Done" : "Edit"}
+            </button>
           </div>
-          {error ? <p className={styles.error} role="alert">{error}</p> : null}
+          {error ? (
+            <p className={styles.error} role="alert">
+              {error}
+            </p>
+          ) : null}
         </div>
       ) : (
-        <div className={styles.messageSection}>
-          <h4>Next action</h4>
-          <p className={styles.nextActionCopy}>{row.recommendation?.recommendedActionLabel || row.primary.label}</p>
-          <PrimaryCtaButton row={row} clientId={clientId} onAddProspect={onAddProspect} className={styles.primaryButton} />
+        <div className={styles.compose}>
+          <PrimaryCtaButton row={row} clientId={clientId} onAddProspect={onAddProspect} />
         </div>
       )}
-      <div className={styles.relatedLinks}>
-        {row.leadId ? <Link href={`/sales/inbox?lead=${encodeURIComponent(row.leadId)}`}>Open conversation <ExternalLink size={15} aria-hidden /></Link> : null}
+
+      <div className={styles.inspectorLinks}>
+        {row.leadId ? (
+          <Link href={`/sales/inbox?lead=${encodeURIComponent(row.leadId)}`}>Conversation</Link>
+        ) : null}
         <Link href={quoteId ? `/sales/quotes/${encodeURIComponent(quoteId)}` : row.href}>
-          {quoteId ? "View quotation" : row.dealId ? "View deal" : "View details"}<ExternalLink size={15} aria-hidden />
+          {quoteId ? "Quotation" : row.dealId ? "Deal" : "Record"}
         </Link>
       </div>
     </aside>
@@ -314,8 +367,14 @@ function SuggestedNextStep({
 }
 
 export function TodaysFocusCard({
-  focus, queue = [], progress = null, error, clientId = null, onAddProspect,
-  fallbackEnquiries = [], fallbackDeals = [],
+  focus,
+  queue = [],
+  progress = null,
+  error,
+  clientId = null,
+  onAddProspect,
+  fallbackEnquiries = [],
+  fallbackDeals = [],
 }: {
   focus: FocusModeResult | null;
   queue?: SalesActionRecommendation[];
@@ -330,106 +389,112 @@ export function TodaysFocusCard({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [localCompleted, setLocalCompleted] = useState(0);
-  const onDismissed = useCallback((id: string, action: "complete" | "snooze" | "skip") => {
-    setDismissed((previous) => new Set(previous).add(id));
-    if (action === "complete") {
-      setLocalCompleted((count) => Math.max(count, progress?.priorityCompleted ?? 0) + 1);
-    }
-  }, [progress?.priorityCompleted]);
+  const onDismissed = useCallback(
+    (id: string, action: "complete" | "snooze" | "skip") => {
+      setDismissed((previous) => new Set(previous).add(id));
+      if (action === "complete") {
+        setLocalCompleted((count) => Math.max(count, progress?.priorityCompleted ?? 0) + 1);
+      }
+    },
+    [progress?.priorityCompleted]
+  );
   const sourceRows = buildFocusActionRows(queue, {
     limit: Math.max(queue.length, fallbackEnquiries.length + fallbackDeals.length, 3),
-    fallbackEnquiries, fallbackDeals,
+    fallbackEnquiries,
+    fallbackDeals,
   });
   const remainingRows = sourceRows.filter((row) => !dismissed.has(row.id));
   const topRows = remainingRows.slice(0, 3);
   const selected = topRows.find((row) => row.id === selectedId) ?? topRows[0];
   const completed = Math.max(progress?.priorityCompleted ?? 0, localCompleted);
   const total = Math.max(progress?.priorityTotal ?? sourceRows.length, completed);
-  const percent = total > 0 ? Math.min(100, completed / total * 100) : 0;
-  const waiting = remainingRows.filter((row) => row.recommendation?.reasonCode === "CUSTOMER_WAITING" || row.recommendation?.actionType === "RESPOND_TO_CUSTOMER").length;
-  const quotes = remainingRows.filter((row) => row.recommendation?.actionType === "FOLLOW_UP_QUOTE").length;
-  const scheduled = remainingRows.filter((row) => ["COMPLETE_FOLLOW_UP", "COMPLETE_SCHEDULED_CALL", "COMPLETE_APPOINTMENT"].includes(row.recommendation?.actionType ?? "")).length;
+  const waiting = remainingRows.filter(
+    (row) =>
+      row.recommendation?.reasonCode === "CUSTOMER_WAITING" ||
+      row.recommendation?.actionType === "RESPOND_TO_CUSTOMER"
+  ).length;
 
   if (!focus && !error && sourceRows.length === 0) return null;
+
+  const ledeParts = [`${remainingRows.length} remaining`];
+  if (waiting > 0) ledeParts.push(`${waiting} waiting`);
+
   return (
-    <section className={styles.workspace} data-course-target="dashboard-todays-focus" aria-label="What should I focus on today?">
+    <section
+      className={styles.workspace}
+      data-course-target="dashboard-todays-focus"
+      aria-label="Today’s focus"
+    >
       <header className={styles.header}>
         <div className={styles.headingGroup}>
-          <span className={styles.targetIcon}><Crosshair size={32} strokeWidth={1.5} aria-hidden /></span>
-          <div><h2>What should I focus on today?</h2><p>Your next best actions, based on conversations and deals.</p></div>
+          <h2>Today</h2>
+          <p>{ledeParts.join(" · ")}</p>
         </div>
-        <Link href="/sales/command?view=focus" className={styles.outlineButton}>Ask SegmiQ <ArrowRight size={20} aria-hidden /></Link>
+        <Link href="/sales/command?view=focus" className={styles.headerLink}>
+          All actions
+        </Link>
       </header>
-      <div className={styles.summary}>
-        <span><ListTodo size={25} aria-hidden />{remainingRows.length} {remainingRows.length === 1 ? "action" : "actions"}</span>
-        <span><UserRound size={25} aria-hidden />{waiting} waiting for you</span>
-        <span><FileText size={25} aria-hidden />{quotes} {quotes === 1 ? "quote" : "quotes"} to follow up</span>
-        <span><CalendarDays size={25} aria-hidden />{scheduled} scheduled follow-ups</span>
-      </div>
+
       {selected ? (
         <div className={styles.content}>
-          <div className={styles.priorities}>
-            <div className={styles.listHeading}><h3>Start here</h3><span>Top {topRows.length}</span></div>
-            <ul className={styles.cards}>
-              {topRows.map((row, index) => {
-                const active = row.id === selected.id;
-                const waitingForReply = row.recommendation?.reasonCode === "CUSTOMER_WAITING";
-                const tone = waitingForReply || row.priority === "HIGH" ? "warning" : row.priority === "URGENT" ? "danger" : "neutral";
-                return (
-                  <li key={row.id} className={cn(styles.actionCard, active && styles.selected)}>
-                    <span className={cn(styles.avatar, styles[`avatar${index}`])} aria-hidden>
-                      {row.customerName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}
+          <ol className={styles.queue}>
+            {topRows.map((row, index) => {
+              const active = row.id === selected.id;
+              return (
+                <li key={row.id} className={cn(styles.row, active && styles.rowActive)}>
+                  <button
+                    type="button"
+                    className={styles.rowHit}
+                    aria-pressed={active}
+                    onClick={() => setSelectedId(row.id)}
+                  >
+                    <span className={styles.rank}>{index + 1}</span>
+                    <span className={styles.identity}>
+                      <span className={styles.customer}>{row.customerName}</span>
+                      <span className={styles.rowMeta}>{statusLabel(row)}</span>
                     </span>
-                    <div className={styles.cardBody}>
-                      <div className={styles.cardHeading}>
-                        <div className={styles.identity}>
-                          <button type="button" aria-pressed={active} onClick={() => setSelectedId(row.id)} className={styles.customer}>{row.customerName}</button>
-                          {row.opportunityLabel || row.valueLabel ? <p>{[row.opportunityLabel, row.valueLabel].filter(Boolean).join(" · ")}</p> : null}
-                        </div>
-                        <span className={cn(styles.status, styles[tone])}>
-                          {tone === "warning" ? <Clock3 size={18} aria-hidden /> : <AlertCircle size={18} aria-hidden />}
-                          {statusLabel(row)}
-                        </span>
-                      </div>
-                      <p className={styles.reason}>{row.reason}</p>
-                      <div className={styles.cardFooter}>
-                        <Link href={row.href} className={styles.details} aria-label={`Open details for ${row.customerName}`}>View details <ArrowRight size={18} aria-hidden /></Link>
-                        {!active ? <button type="button" className={styles.outlineButton} onClick={() => setSelectedId(row.id)}>
-                          Review action
-                        </button> : null}
-                      </div>
-                    </div>
-                    <ActionRowMenu row={row} onDismissed={onDismissed} />
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-          <SuggestedNextStep
+                  </button>
+                  <ActionRowMenu row={row} onDismissed={onDismissed} />
+                </li>
+              );
+            })}
+          </ol>
+          <ActionInspector
             key={selected.id}
             row={selected}
             clientId={clientId}
             onAddProspect={onAddProspect}
             draft={drafts[selected.id] ?? suggestedMessage(selected)}
-            onDraftChange={(message) => setDrafts((previous) => ({ ...previous, [selected.id]: message }))}
+            onDraftChange={(message) =>
+              setDrafts((previous) => ({ ...previous, [selected.id]: message }))
+            }
             onActionFinished={onDismissed}
           />
         </div>
       ) : (
         <div className={styles.empty}>
-          <CheckCircle2 size={30} aria-hidden />
-          <h3>{error ? "Priorities couldn’t load" : "You’re caught up"}</h3>
-          <p>{error ? "Open your tasks to keep working." : "No urgent sales actions need your attention right now."}</p>
-          <Link className={styles.outlineButton} href={error ? "/sales/tasks" : "/sales/pipeline"}>{error ? "Open tasks" : "Review pipeline"}<ArrowRight size={18} aria-hidden /></Link>
+          <h3>{error ? "Priorities couldn’t load" : "Nothing waiting"}</h3>
+          <p>
+            {error
+              ? "Open tasks to keep working."
+              : "No sales actions need you right now."}
+          </p>
+          <Link className={styles.headerLink} href={error ? "/sales/tasks" : "/sales/pipeline"}>
+            {error ? "Open tasks" : "Pipeline"}
+          </Link>
         </div>
       )}
+
       <footer className={styles.progressFooter} data-course-target="dashboard-sales-plan">
-        <h4>Today’s progress</h4>
-        <div className={styles.progressTrack} role="progressbar" aria-label="Today's action progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)} aria-valuetext={`${completed} of ${total} completed`}>
-          <span style={{ width: `${percent}%` }} />
-        </div>
-        <span className={styles.progressCount}>{completed} of {total} completed</span>
-        <Link className={styles.details} href="/sales/command?view=focus">View all {remainingRows.length} actions <ArrowRight size={18} aria-hidden /></Link>
+        <p>
+          <span className={styles.progressCount}>
+            {completed} of {total}
+          </span>{" "}
+          done
+        </p>
+        <Link href="/sales/command?view=focus">
+          {remainingRows.length > 3 ? `See all ${remainingRows.length}` : "See all"}
+        </Link>
       </footer>
     </section>
   );
@@ -452,17 +517,11 @@ export function TodaysSalesPlanStrip({
   return (
     <div
       data-course-target="dashboard-sales-plan"
+      data-state={state}
       className="dashboard-panel dashboard-panel--analytics flex flex-col gap-3 overflow-hidden border-0 p-4 shadow-none sm:flex-row sm:items-center sm:justify-between sm:p-5"
     >
       <div className="min-w-0">
         <div className="flex items-start gap-2">
-          {state === "complete" ? (
-            <CheckCircle2
-              size={18}
-              className="mt-0.5 shrink-0 text-sales-success"
-              aria-hidden
-            />
-          ) : null}
           <div>
             <p className="text-[14px] font-semibold text-sales-text-primary">{headline}</p>
             <p className="mt-1 text-[12px] text-sales-text-secondary">{supporting}</p>
@@ -472,7 +531,7 @@ export function TodaysSalesPlanStrip({
       {ctaLabel && ctaHref ? (
         <Link
           href={ctaHref}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-sales-bg transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-sales-bg transition-[opacity,transform] duration-150 hover:opacity-90 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
         >
           {ctaLabel}
         </Link>
