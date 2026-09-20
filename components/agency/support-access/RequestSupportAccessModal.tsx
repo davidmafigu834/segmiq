@@ -115,17 +115,22 @@ export function RequestSupportAccessModal({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-black/45 px-4 py-10 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="support-access-title"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="w-full max-w-[560px] rounded-2xl border border-border bg-surface-card shadow-[0_24px_60px_-24px_rgba(0,0,0,0.45)]">
-        <header className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+    <div className="fixed inset-0 z-[120]" role="presentation">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
+        aria-label="Close dialog"
+        onClick={onClose}
+      />
+      <div className="pointer-events-none relative flex h-full items-center justify-center p-4 sm:p-6">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="support-access-title"
+          className="pointer-events-auto flex max-h-[min(90vh,760px)] w-full max-w-[560px] flex-col overflow-hidden rounded-2xl border border-border bg-surface-card shadow-[0_24px_60px_-24px_rgba(0,0,0,0.45)]"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 py-5">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 grid h-8 w-8 place-items-center rounded-lg border border-border bg-[var(--bg-tertiary)]">
               <ShieldCheck className="h-4 w-4 text-ink-secondary" strokeWidth={1.5} aria-hidden />
@@ -152,7 +157,7 @@ export function RequestSupportAccessModal({
           </button>
         </header>
 
-        <div className="space-y-6 px-6 py-6">
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-6 py-6">
           <section>
             <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-tertiary">
               Organisation
@@ -272,7 +277,7 @@ export function RequestSupportAccessModal({
           ) : null}
         </div>
 
-        <footer className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
+        <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-border px-6 py-4">
           <Button variant="ghost" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
@@ -287,6 +292,7 @@ export function RequestSupportAccessModal({
             )}
           </Button>
         </footer>
+        </div>
       </div>
     </div>
   );

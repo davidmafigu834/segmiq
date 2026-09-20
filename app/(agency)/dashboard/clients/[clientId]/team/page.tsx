@@ -38,10 +38,15 @@ export default async function ClientTeamPage({ params }: { params: { clientId: s
         publicProfileUrl={hero.profileSlug ? getPublicLandingPageUrl(hero.profileSlug) : null}
         hero={hero}
       >
-        <p className="mb-4 font-mono text-[11px] text-ink-secondary">
-          Impersonate a team member to see their CRM portal exactly as they do.
+        <p className="mb-4 max-w-2xl text-[13px] text-[var(--text-secondary)]">
+          Viewing as a team member uses their CRM as they see it. That is customer-data
+          access, so an active Support Access session for this organisation is required first.
         </p>
-        <AgencyClientTeamTable members={members} />
+        <AgencyClientTeamTable
+          members={members}
+          organisationId={params.clientId}
+          organisationName={client.name as string}
+        />
       </ClientDetailView>
     </AgencyLayout>
   );

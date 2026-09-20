@@ -3,19 +3,27 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2, UserRoundSearch } from "lucide-react";
+import { RequestSupportAccessModal } from "@/components/agency/support-access/RequestSupportAccessModal";
 
 /**
  * Impersonation requires a recent step-up (elevated_until), not only MFA enrolled.
  * Having Google Authenticator enabled is necessary but not sufficient — the current
  * session must be re-verified with a TOTP code before this sensitive action.
+ *
+ * SECURITY: viewing as a customer user is client-data access. An ACTIVE Support
+ * Access grant for this organisation is required first.
  */
 export function ImpersonateButton({
   userId,
   userName,
+  organisationId,
+  organisationName,
   variant = "button",
 }: {
   userId: string;
   userName: string;
+  organisationId?: string;
+  organisationName?: string;
   variant?: "button" | "link";
 }) {
   const router = useRouter();
@@ -23,6 +31,7 @@ export function ImpersonateButton({
   const [error, setError] = useState("");
   const [pendingReason, setPendingReason] = useState<string | null>(null);
   const [totpCode, setTotpCode] = useState("");
+  const [requestAccessOpen, setRequestAccessOpen] = useState(false);
 
   async function startImpersonation(reason: string) {
     const res = await fetch("/api/agency/impersonate", {
@@ -30,7 +39,11 @@ export function ImpersonateButton({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, reason }),
     });
-    const data = (await res.json()) as { redirectTo?: string; error?: string };
+    const data = (await res.json()) as {
+      redirectTo?: string;
+      error?: string;
+      code?: string;
+    };
     return { res, data };
   }
 
@@ -56,6 +69,11 @@ export function ImpersonateButton({
   async function finishImpersonation(reason: string) {
     const { res, data } = await startImpersonation(reason);
     if (!res.ok) {
+      if (data.code === "SUPPORT_ACCESS_REQUIRED" && organisationId) {
+        setRequestAccessOpen(true);
+        setError("Support Access is required before viewing as this user.");
+        return;
+      }
       setError(typeof data.error === "string" ? data.error : "Could not impersonate");
       return;
     }
@@ -88,8 +106,18 @@ export function ImpersonateButton({
         return;
       }
 
+      if (data.code === "SUPPORT_ACCESS_REQUIRED") {
+        setPendingReason(trimmed);
+        if (organisationId) {
+          setRequestAccessOpen(true);
+          setError("");
+        } else {
+          setError("Start Support Access for this organisation, then try View as again.");
+        }
+        return;
+      }
+
       if (data.error === "Step-up authentication required") {
-        // MFA enrolled ≠ session elevated. Collect a fresh authenticator code.
         setPendingReason(trimmed);
         setTotpCode("");
         setError("");
@@ -132,7 +160,7 @@ export function ImpersonateButton({
   const label = loading ? "Starting…" : `View as ${userName}`;
 
   const stepUpForm =
-    pendingReason != null ? (
+    pendingReason != null && !requestAccessOpen ? (
       <form
         onSubmit={(e) => void handleStepUpSubmit(e)}
         className="mt-2 w-full max-w-[240px] rounded-md border border-border bg-surface-card p-2.5 shadow-sm"
@@ -177,20 +205,51 @@ export function ImpersonateButton({
       </form>
     ) : null;
 
+  const requestModal =
+    organisationId && organisationName ? (
+      <RequestSupportAccessModal
+        open={requestAccessOpen}
+        onClose={() => {
+          setRequestAccessOpen(false);
+          setPendingReason(null);
+        }}
+        organisationId={organisationId}
+        organisationName={organisationName}
+        onGranted={(result) => {
+          setRequestAccessOpen(false);
+          if (result.status !== "ACTIVE") {
+            setPendingReason(null);
+            setError(
+              "Support Access is pending approval. You can view as this user once it is active."
+            );
+            return;
+          }
+          if (pendingReason) {
+            void finishImpersonation(pendingReason);
+          } else {
+            setError("Support Access is active. Click View as again.");
+          }
+        }}
+      />
+    ) : null;
+
   if (variant === "link") {
     return (
       <span className="inline-flex flex-col items-end gap-1">
         <button
           type="button"
           onClick={() => void handleClick()}
-          disabled={loading || pendingReason != null}
+          disabled={loading || (pendingReason != null && !requestAccessOpen)}
           className="inline-flex items-center gap-1.5 font-mono text-[11px] text-[var(--accent)] underline-offset-2 hover:underline disabled:opacity-60"
         >
           {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserRoundSearch className="h-3 w-3" />}
           {label}
         </button>
         {stepUpForm}
-        {error ? <span className="text-[10px] text-red-500">{error}</span> : null}
+        {error ? (
+          <span className="max-w-[240px] text-right text-[10px] text-[var(--error)]">{error}</span>
+        ) : null}
+        {requestModal}
       </span>
     );
   }
@@ -200,14 +259,17 @@ export function ImpersonateButton({
       <button
         type="button"
         onClick={() => void handleClick()}
-        disabled={loading || pendingReason != null}
+        disabled={loading || (pendingReason != null && !requestAccessOpen)}
         className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-ink-secondary transition-colors hover:bg-surface-card-alt disabled:opacity-60"
       >
         {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserRoundSearch className="h-3 w-3" />}
         {label}
       </button>
       {stepUpForm}
-      {error ? <span className="text-[10px] text-red-500">{error}</span> : null}
+      {error ? (
+        <span className="max-w-[240px] text-right text-[10px] text-[var(--error)]">{error}</span>
+      ) : null}
+      {requestModal}
     </span>
   );
 }

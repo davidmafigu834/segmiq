@@ -11,7 +11,15 @@ type TeamMember = {
   email: string;
 };
 
-export function AgencyClientTeamTable({ members }: { members: TeamMember[] }) {
+export function AgencyClientTeamTable({
+  members,
+  organisationId,
+  organisationName,
+}: {
+  members: TeamMember[];
+  organisationId: string;
+  organisationName: string;
+}) {
   if (members.length === 0) {
     return <p className="px-4 py-8 text-sm text-ink-secondary">No active team members.</p>;
   }
@@ -34,7 +42,13 @@ export function AgencyClientTeamTable({ members }: { members: TeamMember[] }) {
               <td className="px-4 py-3 font-mono text-[11px]">{roleLabel(member.role)}</td>
               <td className="px-4 py-3 font-mono text-xs text-ink-secondary">{member.email}</td>
               <td className="px-4 py-3 text-right">
-                <ImpersonateButton userId={member.id} userName={member.name} variant="link" />
+                <ImpersonateButton
+                  userId={member.id}
+                  userName={member.name}
+                  organisationId={organisationId}
+                  organisationName={organisationName}
+                  variant="link"
+                />
               </td>
             </tr>
           ))}

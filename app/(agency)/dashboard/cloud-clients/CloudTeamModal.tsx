@@ -135,7 +135,12 @@ export function CloudTeamModal({
                     {ROLE_LABELS[m.role] ?? m.role}
                   </span>
                   {m.is_active ? (
-                    <ImpersonateButton userId={m.id} userName={m.name} />
+                    <ImpersonateButton
+                      userId={m.id}
+                      userName={m.name}
+                      organisationId={clientId}
+                      organisationName={clientName}
+                    />
                   ) : null}
                 </div>
               ))}
