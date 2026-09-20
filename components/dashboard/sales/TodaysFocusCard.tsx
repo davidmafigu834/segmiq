@@ -399,15 +399,16 @@ export function TodaysFocusCard({
     [progress?.priorityCompleted]
   );
   const sourceRows = buildFocusActionRows(queue, {
-    limit: Math.max(queue.length, fallbackEnquiries.length + fallbackDeals.length, 3),
+    limit: Math.max(queue.length, fallbackEnquiries.length + fallbackDeals.length, 8),
     fallbackEnquiries,
     fallbackDeals,
   });
   const remainingRows = sourceRows.filter((row) => !dismissed.has(row.id));
-  const topRows = remainingRows.slice(0, 3);
-  const selected = topRows.find((row) => row.id === selectedId) ?? topRows[0];
+  const queueRows = remainingRows.slice(0, 8);
+  const selected = queueRows.find((row) => row.id === selectedId) ?? queueRows[0];
   const completed = Math.max(progress?.priorityCompleted ?? 0, localCompleted);
   const total = Math.max(progress?.priorityTotal ?? sourceRows.length, completed);
+  const hasMoreToExplore = remainingRows.length > queueRows.length || total > remainingRows.length;
   const waiting = remainingRows.filter(
     (row) =>
       row.recommendation?.reasonCode === "CUSTOMER_WAITING" ||
@@ -437,28 +438,35 @@ export function TodaysFocusCard({
 
       {selected ? (
         <div className={styles.content}>
-          <ol className={styles.queue}>
-            {topRows.map((row, index) => {
-              const active = row.id === selected.id;
-              return (
-                <li key={row.id} className={cn(styles.row, active && styles.rowActive)}>
-                  <button
-                    type="button"
-                    className={styles.rowHit}
-                    aria-pressed={active}
-                    onClick={() => setSelectedId(row.id)}
-                  >
-                    <span className={styles.rank}>{index + 1}</span>
-                    <span className={styles.identity}>
-                      <span className={styles.customer}>{row.customerName}</span>
-                      <span className={styles.rowMeta}>{statusLabel(row)}</span>
-                    </span>
-                  </button>
-                  <ActionRowMenu row={row} onDismissed={onDismissed} />
-                </li>
-              );
-            })}
-          </ol>
+          <div className={styles.queuePane}>
+            <ol className={styles.queue}>
+              {queueRows.map((row, index) => {
+                const active = row.id === selected.id;
+                return (
+                  <li key={row.id} className={cn(styles.row, active && styles.rowActive)}>
+                    <button
+                      type="button"
+                      className={styles.rowHit}
+                      aria-pressed={active}
+                      onClick={() => setSelectedId(row.id)}
+                    >
+                      <span className={styles.rank}>{index + 1}</span>
+                      <span className={styles.identity}>
+                        <span className={styles.customer}>{row.customerName}</span>
+                        <span className={styles.rowMeta}>{statusLabel(row)}</span>
+                      </span>
+                    </button>
+                    <ActionRowMenu row={row} onDismissed={onDismissed} />
+                  </li>
+                );
+              })}
+            </ol>
+            {hasMoreToExplore ? (
+              <Link href="/sales/command?view=focus" className={styles.exploreMore}>
+                Explore more
+              </Link>
+            ) : null}
+          </div>
           <ActionInspector
             key={selected.id}
             row={selected}
@@ -492,9 +500,7 @@ export function TodaysFocusCard({
           </span>{" "}
           done
         </p>
-        <Link href="/sales/command?view=focus">
-          {remainingRows.length > 3 ? `See all ${remainingRows.length}` : "See all"}
-        </Link>
+        <Link href="/sales/command?view=focus">See all</Link>
       </footer>
     </section>
   );
