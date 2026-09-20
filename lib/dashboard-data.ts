@@ -372,7 +372,14 @@ async function loadAgencyDashboardData() {
       .select("id, status")
       .gte("created_at", lastWeekStartIso)
       .lt("created_at", lastWeekEndIso),
-    supabase.from("leads").select("id, deal_value").eq("status", "WON").gte("updated_at", monthStart),
+    // Company dashboards count deals.stage = WON by won_at. Lead status WON is
+    // legacy — converted deals stay CONVERTED_TO_DEAL on the lead row.
+    supabase
+      .from("deals")
+      .select("id, client_id, won_value")
+      .eq("stage", "WON")
+      .gte("won_at", monthStart)
+      .limit(5000),
     supabase
       .from("leads")
       .select(`id, created_at, client_id, ${LEADS_CLIENTS_EMBED} ( name, response_time_limit_hours )`)
@@ -400,7 +407,6 @@ async function loadAgencyDashboardData() {
     leadsYesterdayRes.error ??
     weekLeadsRes.error ??
     lastWeekLeadsRes.error ??
-    wonMtdRes.error ??
     newLeadsForFlagsRes.error ??
     clientsRes.error ??
     recentLeadsRaw.error ??
@@ -410,6 +416,9 @@ async function loadAgencyDashboardData() {
   if (batchErr) {
     console.error("[dashboard-data] batch 1 failed:", batchErr.message);
     return EMPTY_AGENCY_DASHBOARD;
+  }
+  if (wonMtdRes.error) {
+    console.error("[dashboard-data] deals won MTD failed:", wonMtdRes.error.message);
   }
 
   const monthLeadRows = monthLeadsAllRes.data ?? [];
@@ -470,7 +479,7 @@ async function loadAgencyDashboardData() {
   const wonRows = wonMtdRes.data ?? [];
   const dealsWonMTD = {
     count: wonRows.length,
-    valueSum: wonRows.reduce((s, r) => s + Number(r.deal_value ?? 0), 0),
+    valueSum: wonRows.reduce((s, r) => s + Number(r.won_value ?? 0), 0),
   };
 
   const avgResponseDeltaMinutes =
@@ -531,18 +540,14 @@ async function loadAgencyDashboardData() {
   const activeClients = activeClientsRes.data ?? [];
   const weekLeadsByClient = new Map<string, { id: string; status: string; created_at: string }[]>();
   const wonByClient = new Map<string, number>();
-  const [weekByClientRes, wonClientRes] = await Promise.all([
-    supabase.from("leads").select("id, status, client_id, created_at").gte("created_at", weekStartIso),
-    supabase.from("leads").select("id, client_id").eq("status", "WON").gte("updated_at", monthStart),
-  ]);
-  if (weekByClientRes.error || wonClientRes.error) {
-    console.error(
-      "[dashboard-data] batch 2 failed:",
-      weekByClientRes.error?.message ?? wonClientRes.error?.message
-    );
+  const weekByClientRes = await supabase
+    .from("leads")
+    .select("id, status, client_id, created_at")
+    .gte("created_at", weekStartIso);
+  if (weekByClientRes.error) {
+    console.error("[dashboard-data] batch 2 failed:", weekByClientRes.error.message);
   }
   const weekByClientData = weekByClientRes.data;
-  const wonClientData = wonClientRes.data;
   for (const r of weekByClientData ?? []) {
     const cid = r.client_id as string;
     if (!weekLeadsByClient.has(cid)) weekLeadsByClient.set(cid, []);
@@ -552,8 +557,9 @@ async function loadAgencyDashboardData() {
       created_at: r.created_at as string,
     });
   }
-  for (const r of wonClientData ?? []) {
-    const cid = r.client_id as string;
+  for (const r of wonRows) {
+    const cid = r.client_id as string | null;
+    if (!cid) continue;
     wonByClient.set(cid, (wonByClient.get(cid) ?? 0) + 1);
   }
 

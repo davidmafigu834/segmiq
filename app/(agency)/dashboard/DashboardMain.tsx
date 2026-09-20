@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/Table";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Building2 } from "lucide-react";
+import { formatCurrencyUsd } from "@/lib/format";
 
 function greeting(now: Date): string {
   const hour = now.getHours();
@@ -110,7 +111,11 @@ export async function DashboardMain() {
         <PlatformMetric
           label="Deals won MTD"
           value={d.dealsWonMTD.count.toLocaleString()}
-          context={d.dealsWonMTD.valueSum ? undefined : "Across organisations"}
+          context={
+            d.dealsWonMTD.valueSum > 0
+              ? formatCurrencyUsd(d.dealsWonMTD.valueSum)
+              : "Across organisations"
+          }
         />
         <PlatformMetric
           label="Contact rate"
@@ -235,6 +240,7 @@ export async function DashboardMain() {
                     <TableHead className="pl-0">Organisation</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead align="right">This week</TableHead>
+                    <TableHead align="right">Won MTD</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -255,6 +261,7 @@ export async function DashboardMain() {
                         />
                       </TableCell>
                       <TableCell align="right">{row.leadsThisWeek.toLocaleString()}</TableCell>
+                      <TableCell align="right">{row.dealsWonMtd.toLocaleString()}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
