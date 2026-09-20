@@ -36,7 +36,6 @@ export {
   requireClientDataAccess,
   assertResourceTenant,
   resolveSupportAccess,
-  scopeAuditEvent,
   type PrivilegedAccessContext,
   type PrivilegedAccessResult,
 } from "./guard";

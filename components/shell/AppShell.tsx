@@ -15,6 +15,7 @@ import type { AppShellClientRow, AppShellNavGroup, AppShellNavItem } from "./app
 import { isWhatsAppSalesHubPath } from "@/lib/sales/whatsapp-hub-nav";
 import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import { CrmSidebarResizeHandle } from "./CrmSidebarResizeHandle";
+import { useCrmSidebarLayout } from "@/lib/shell/use-crm-sidebar-layout";
 import { PlatformStatusIndicator } from "@/components/platform/PlatformStatusIndicator";
 
 export type { AppShellClientRow, AppShellNavGroup, AppShellNavItem } from "./app-shell-types";
