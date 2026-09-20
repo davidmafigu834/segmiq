@@ -4,6 +4,7 @@ import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import type { UserRole } from "@/types";
+import type { SupportAccessScope } from "@/lib/security/support-access/scopes";
 
 export const CLIENT_MANAGER_READ_ONLY = "Client managers have read-only access";
 
@@ -34,27 +35,41 @@ type AuthSession = {
   role?: UserRole | null;
   clientId?: string | null;
   alsoSells?: boolean | null;
+  isImpersonating?: boolean | null;
+};
+
+/**
+ * Platform-staff privileged access, resolved server-side from the Support Access
+ * grant store. Never derived from request input.
+ */
+type PrivilegedLeadAccess = {
+  /** An ACTIVE, unexpired, unrevoked grant for this lead's organisation with the LEADS scope. */
+  supportAccessGranted?: boolean;
 };
 
 /**
  * Pure lead ACL after the row is loaded (Phase 6.1).
  * Tenant mismatch fails closed before assignment checks.
+ *
+ * SECURITY (Phase 7): SUPER_ADMIN is not an automatic pass. Platform staff need
+ * an active Support Access grant covering this lead's organisation.
  */
 export function evaluateLeadModifyAccess(
   session: AuthSession,
-  scope: LeadScope
+  scope: LeadScope,
+  privileged: PrivilegedLeadAccess = {}
 ):
   | { allowed: true; lead: LeadScope; userId: string; role: UserRole }
   | { allowed: false; reason: string; status: 401 | 403 | 404 } {
   if (!session?.userId) {
     return { allowed: false, reason: "Unauthorized", status: 401 };
   }
-  if (session.role === "SUPER_ADMIN") {
+  if (session.role === "SUPER_ADMIN" && !session.isImpersonating) {
+    // Support Access is inspection-only. Writes go through impersonation.
     return {
-      allowed: true,
-      lead: scope,
-      userId: session.userId,
-      role: session.role,
+      allowed: false,
+      reason: "Support Access cannot modify customer records",
+      status: 403,
     };
   }
   if (session.clientId !== scope.client_id) {
@@ -80,10 +95,13 @@ export function evaluateLeadModifyAccess(
 export function evaluateLeadReadAccess(
   session: AuthSession,
   scope: LeadScope,
-  assignmentMode?: string | null
-): { ok: true } | { ok: false; status: 401 | 404 } {
+  assignmentMode?: string | null,
+  privileged: PrivilegedLeadAccess = {}
+): { ok: true } | { ok: false; status: 401 | 403 | 404 } {
   if (!session?.userId) return { ok: false, status: 401 };
-  if (session.role === "SUPER_ADMIN") return { ok: true };
+  if (session.role === "SUPER_ADMIN" && !session.isImpersonating) {
+    return privileged.supportAccessGranted ? { ok: true } : { ok: false, status: 403 };
+  }
   if (session.clientId !== scope.client_id) return { ok: false, status: 404 };
   if (session.role === "CLIENT_MANAGER") return { ok: true };
   if (canActAsSalesperson(session)) {
@@ -147,10 +165,43 @@ export async function canModifyLead(
     assigned_to_id: (lead.assigned_to_id as string | null) ?? null,
   };
 
-  return evaluateLeadModifyAccess(session, scope);
+  // SECURITY: the grant is resolved against the LEAD's organisation, so swapping
+  // a lead id for another tenant's record cannot ride an existing grant (IDOR).
+  return evaluateLeadModifyAccess(session, scope, {
+    supportAccessGranted: await hasLeadSupportAccess(session, scope.client_id),
+  });
 }
 
-/** Client-scoped resource access: super admin can touch any client; everyone else only their own. */
+/**
+ * Resolve whether platform staff currently hold LEADS-scoped Support Access for
+ * one organisation. Tenant users never reach this path.
+ */
+async function hasLeadSupportAccess(
+  session: AuthSession,
+  clientId: string,
+  scope: SupportAccessScope = "LEADS"
+): Promise<boolean> {
+  if (session.role !== "SUPER_ADMIN" || session.isImpersonating) return false;
+  if (!session.userId) return false;
+  const { resolveSupportAccess } = await import("@/lib/security/support-access/guard");
+  const access = await resolveSupportAccess({
+    userId: session.userId,
+    role: session.role,
+    isImpersonating: Boolean(session.isImpersonating),
+    clientId,
+    scope,
+  });
+  return access.granted;
+}
+
+/**
+ * Organisation *configuration* access: platform staff may administer any
+ * organisation; everyone else only their own.
+ *
+ * SECURITY: this is not authorisation for client business data. Endpoints that
+ * return leads, contacts, deals, conversations, quotations, documents or files
+ * must additionally call requireClientDataAccess (lib/security/support-access).
+ */
 export function canAccessClient(
   userRole: string,
   userClientId: string | null,
@@ -189,8 +240,13 @@ export { isCloudAdminRole } from "@/lib/auth/roles";
 /** Read access: wrong scope returns notFound (404) to avoid leaking lead existence. */
 export async function canReadLead(
   leadId: string,
-  req?: Request
-): Promise<{ ok: true } | { ok: false; status: 401 | 404 }> {
+  req?: Request,
+  /**
+   * Scope platform staff must hold for this surface. Conversation and quotation
+   * endpoints pass their own category so a LEADS-only grant cannot read them.
+   */
+  options?: { scope?: SupportAccessScope }
+): Promise<{ ok: true } | { ok: false; status: 401 | 403 | 404 }> {
   // Never fall through to getServerSession after MFA/auth denial.
   const session = (await getAuthFromRequest(req)) as AuthSession | null;
   if (!session?.userId) {
@@ -213,8 +269,12 @@ export async function canReadLead(
     assigned_to_id: (lead.assigned_to_id as string | null) ?? null,
   };
 
-  if (session.role === "SUPER_ADMIN") {
-    return { ok: true };
+  if (session.role === "SUPER_ADMIN" && !session.isImpersonating) {
+    // SECURITY: resolved against the lead's own organisation — a grant for
+    // organisation A can never unlock a record owned by organisation B.
+    return (await hasLeadSupportAccess(session, scope.client_id, options?.scope))
+      ? { ok: true }
+      : { ok: false, status: 403 };
   }
 
   if (session.clientId !== lead.client_id) {

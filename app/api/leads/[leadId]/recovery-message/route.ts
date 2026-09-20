@@ -14,7 +14,7 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const access = await canReadLead(params.leadId);
+  const access = await canReadLead(params.leadId, undefined, { scope: "AGENT_ACTIVITY" });
   if (!access.ok) {
     return NextResponse.json(
       { error: "Not found" },

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireRoles } from "@/lib/api-guards";
 import { getCompanyLeadsPageData } from "@/lib/sales/get-company-leads-page-data";
+import { requireClientDataAccess } from "@/lib/security/support-access";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,8 @@ export async function GET(req: Request) {
   if (session!.role === "CLIENT_MANAGER" && session!.clientId !== clientId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  const gate = await requireClientDataAccess({ req, clientId, scope: "LEADS", resourceType: "lead_list" });
+  if (gate.error) return gate.error;
 
   try {
     const data = await getCompanyLeadsPageData({

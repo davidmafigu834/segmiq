@@ -61,7 +61,7 @@ export default async function BillingPage() {
   }));
 
   return (
-    <AgencyLayout breadcrumb="PLATFORM / BILLING" pageTitle="Billing" titleSize="hero">
+    <AgencyLayout breadcrumb="Customers / Subscriptions" pageTitle="Subscriptions">
       <div className="space-y-6">
         <SubscribePaidClientForm clients={clientOptions} />
         <SubscriptionsListClient rows={rows} />

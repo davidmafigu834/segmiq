@@ -17,18 +17,10 @@ export default async function WhatsAppTemplatesPage() {
   const sampleOgUrl = defaultSampleOgImageUrl();
 
   return (
-    <AgencyLayout breadcrumb="PLATFORM / WHATSAPP TEMPLATES" pageTitle="WhatsApp templates">
-      <div className="ag-fade-in mb-8">
-        <p className="font-mono text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">
-          PLATFORM / WHATSAPP TEMPLATES
-        </p>
-        <h1 className="mt-1 font-display text-[28px] leading-none tracking-display text-[var(--text-primary)] md:text-[40px]">
-          Template tester
-        </h1>
-        <p className="mt-2 text-[14px] text-[var(--text-secondary)]">
-          Live templates from your Meta WABA. Send test messages to your own WhatsApp number.
-        </p>
-      </div>
+    <AgencyLayout breadcrumb="Operations / WhatsApp" pageTitle="WhatsApp">
+      <p className="mb-6 max-w-2xl text-[13px] text-[var(--text-secondary)]">
+        Live templates from your Meta WABA. Send test messages to your own WhatsApp number.
+      </p>
       <WhatsAppTemplateTester
         listError={result.ok ? null : result.error}
         templates={result.ok ? result.templates : []}

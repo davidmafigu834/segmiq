@@ -14,8 +14,8 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // canReadLead takes leadId: string — not the session user object
-  const access = await canReadLead(params.leadId);
+  // AI-generated handover narrative about the customer — AGENT_ACTIVITY scope.
+  const access = await canReadLead(params.leadId, undefined, { scope: "AGENT_ACTIVITY" });
   if (!access.ok) {
     return NextResponse.json({ error: "Not found" }, { status: access.status === 401 ? 401 : 404 });
   }

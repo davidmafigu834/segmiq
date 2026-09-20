@@ -5,6 +5,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { parseLifecycleFilter } from "@/lib/customer-hub/contact-filters";
 import { CONTACT_LIFECYCLE_LABELS, isContactLifecycle, type ContactLifecycle } from "@/lib/customer-hub/lifecycle";
 import { sanitizePostgrestSearchTerm } from "@/lib/security/postgrest-filter";
+import { hasPermission } from "@/lib/auth/rbac/resolve";
+import { P } from "@/lib/auth/rbac/permissions";
+import {
+  recordSupportAccessEvent,
+  requireClientDataAccess,
+} from "@/lib/security/support-access";
+import { isSuperAdminRole } from "@/lib/auth/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +34,30 @@ export async function GET(req: Request) {
   if (!canAccessClient(session.role, session.clientId, requestedClientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  // Mass export by platform staff needs its own permission on top of the grant.
+  if (isSuperAdminRole(session.role)) {
+    if (
+      !hasPermission(
+        {
+          userId: session.userId,
+          role: session.role,
+          clientId: session.clientId ?? null,
+          isImpersonating: false,
+        },
+        P.CLIENT_DATA_EXPORT
+      )
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+  const gate = await requireClientDataAccess({
+    req,
+    clientId: requestedClientId,
+    scope: "CUSTOMER_PROFILES",
+    resourceType: "contact_export",
+  });
+  if (gate.error) return gate.error;
 
   const lifecycle = parseLifecycleFilter(url.searchParams.get("lifecycle"));
   const q = sanitizePostgrestSearchTerm(url.searchParams.get("q") ?? "");
@@ -85,6 +116,19 @@ export async function GET(req: Request) {
         csvEscape(String(c.created_at ?? "")),
       ].join(",")
     );
+  }
+
+  if (!gate.context.isTenantMember) {
+    void recordSupportAccessEvent({
+      eventType: "CLIENT_DATA_EXPORTED",
+      clientId: requestedClientId,
+      grantId: gate.context.grant?.id ?? null,
+      actorUserId: session.userId,
+      actorRole: session.role,
+      scope: "CUSTOMER_PROFILES",
+      resourceType: "contact_export",
+      metadata: { rowCount: contacts?.length ?? 0 },
+    });
   }
 
   const filenameParts = ["contacts"];

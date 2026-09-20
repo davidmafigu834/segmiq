@@ -13,17 +13,11 @@ export default async function FollowUpRemindersAdminPage() {
   }
 
   return (
-    <AgencyLayout breadcrumb="PLATFORM / FOLLOW-UP REMINDERS" pageTitle="Follow-up reminders">
-      <div className="ag-fade-in mb-8">
-        <p className="font-mono text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">
-          PLATFORM / FOLLOW-UP REMINDERS
-        </p>
-        <h1 className="mt-1 font-display text-[28px] leading-none tracking-display text-[var(--text-primary)] md:text-[40px]">
-          Follow-up reminder test
-        </h1>
-        <p className="mt-2 text-[14px] text-[var(--text-secondary)]">
-          Preview and manually trigger WhatsApp follow-up reminders for salespeople. Timed callback reminders
-          run every 30 minutes; due, overdue, and prep reminders run once daily at 08:00 Harare (06:00 UTC).
+    <AgencyLayout breadcrumb="Operations / Jobs" pageTitle="Jobs">
+      <div className="mb-6">
+        <p className="max-w-2xl text-[13px] text-[var(--text-secondary)]">
+          Preview and manually trigger WhatsApp follow-up reminders. Timed callbacks run every 30 minutes;
+          due, overdue, and prep reminders run once daily at 08:00 Harare.
         </p>
       </div>
       <FollowUpReminderTester />

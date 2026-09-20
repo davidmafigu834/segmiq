@@ -16,12 +16,30 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const scope = url.searchParams.get("scope") || "active"; // active | closed | all
   const ownerId = url.searchParams.get("ownerId");
+  const requestedClientId = url.searchParams.get("clientId");
 
   const supabase = createAdminClient();
   let query = supabase.from("deals").select("*").order("updated_at", { ascending: false });
 
-  if (session.role === "SUPER_ADMIN") {
-    // optional filter
+  if (session.role === "SUPER_ADMIN" && !session.isImpersonating) {
+    if (!requestedClientId) {
+      return NextResponse.json(
+        {
+          error: "Organisation context is required",
+          code: "SUPPORT_ACCESS_REQUIRED",
+        },
+        { status: 400 }
+      );
+    }
+    const { requireClientDataAccess } = await import("@/lib/security/support-access");
+    const gate = await requireClientDataAccess({
+      req,
+      clientId: requestedClientId,
+      scope: "DEALS",
+      resourceType: "deal_list",
+    });
+    if (gate.error) return gate.error;
+    query = query.eq("client_id", requestedClientId);
   } else if (session.clientId) {
     query = query.eq("client_id", session.clientId);
   } else {

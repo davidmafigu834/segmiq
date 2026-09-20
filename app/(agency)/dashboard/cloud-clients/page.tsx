@@ -25,10 +25,7 @@ export default async function CloudClientsPage() {
     : "https://supabase.com/dashboard";
 
   return (
-    <AgencyLayout
-      breadcrumb="PLATFORM / CLOUD SUBSCRIPTIONS"
-      pageTitle="Cloud Subscriptions"
-    >
+    <AgencyLayout breadcrumb="Customers / Users" pageTitle="Users">
       {queryError ? (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">
           Could not load cloud clients from the database.

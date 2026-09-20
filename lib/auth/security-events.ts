@@ -53,7 +53,13 @@ export type SecurityEventType =
   | "CRM_RESET_COMPLETED"
   | "CRM_RESET_FAILED"
   | "DATA_EXPORT"
-  | "SECURITY_AUDIT_EXPORT";
+  | "SECURITY_AUDIT_EXPORT"
+  | "SUPPORT_ACCESS_REQUESTED"
+  | "SUPPORT_ACCESS_APPROVED"
+  | "SUPPORT_ACCESS_DENIED"
+  | "SUPPORT_ACCESS_STARTED"
+  | "SUPPORT_ACCESS_EXPIRED"
+  | "SUPPORT_ACCESS_REVOKED";
 
 export async function recordSecurityEvent(input: {
   eventType: SecurityEventType;

@@ -21,7 +21,7 @@ export default async function StatusIncidentsPage() {
   }
 
   return (
-    <AgencyLayout breadcrumb="PLATFORM / STATUS" pageTitle="Status incidents">
+    <AgencyLayout breadcrumb="Operations / Platform Health" pageTitle="Platform Health">
       <StatusIncidentsManager initialIncidents={incidents} />
     </AgencyLayout>
   );

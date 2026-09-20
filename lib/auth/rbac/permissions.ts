@@ -109,6 +109,18 @@ export const P = {
   PLATFORM_IMPERSONATE: "platform.impersonate",
   PLATFORM_BILLING_MANAGE: "platform.billing.manage",
   PLATFORM_SECURITY_READ: "platform.security.read",
+  PLATFORM_INTEGRATIONS_DIAGNOSE: "platform.integrations.diagnose",
+
+  // Privileged client-data access (Phase 7).
+  // These govern the Support Access workflow itself — they never grant data access.
+  SUPPORT_ACCESS_REQUEST: "platform.support.request",
+  SUPPORT_ACCESS_APPROVE: "platform.support.approve",
+  SUPPORT_ACCESS_REVOKE: "platform.support.revoke",
+  SUPPORT_ACCESS_AUDIT_READ: "platform.support.audit.read",
+  /** Mass export of one organisation's client data — stricter than viewing one record. */
+  CLIENT_DATA_EXPORT: "platform.clientData.export",
+  /** Emergency access outside the ordinary support workflow. */
+  PLATFORM_BREAK_GLASS: "platform.breakGlass",
 } as const;
 
 export type Permission = (typeof P)[keyof typeof P];
@@ -118,6 +130,57 @@ export const ALL_PERMISSIONS = Object.values(P) as Permission[];
 export const PLATFORM_PERMISSIONS: Permission[] = ALL_PERMISSIONS.filter((p) =>
   p.startsWith("platform.")
 );
+
+/**
+ * Organisation permissions that read or write a customer's business data.
+ *
+ * SECURITY (Phase 7): SUPER_ADMIN does NOT hold these by default. They are
+ * granted only for the duration of an active, scoped Support Access grant —
+ * see lib/security/support-access.
+ */
+export const CLIENT_DATA_PERMISSIONS: Permission[] = [
+  P.LEADS_READ_ASSIGNED,
+  P.LEADS_READ_ALL,
+  P.LEADS_CREATE,
+  P.LEADS_UPDATE_ASSIGNED,
+  P.LEADS_ASSIGN,
+  P.LEADS_EXPORT,
+  P.DEALS_READ_ASSIGNED,
+  P.DEALS_READ_ALL,
+  P.DEALS_CREATE,
+  P.DEALS_UPDATE_ASSIGNED,
+  P.QUOTES_READ,
+  P.QUOTES_CREATE,
+  P.QUOTES_UPDATE,
+  P.QUOTES_SEND,
+  P.QUOTES_APPROVE,
+  P.WHATSAPP_READ_ASSIGNED,
+  P.WHATSAPP_READ_ALL,
+  P.WHATSAPP_SEND,
+  P.WHATSAPP_ASSIGN,
+  P.SOCIAL_INBOX_VIEW,
+  P.SOCIAL_INBOX_REPLY,
+  P.SOCIAL_INBOX_ASSIGN,
+  P.SOCIAL_INBOX_CONVERT_LEAD,
+  P.SOCIAL_INBOX_CREATE_DEAL,
+  P.SOCIAL_INBOX_CREATE_QUOTATION,
+  P.SOCIAL_INBOX_VIEW_TEAM,
+  P.DOCUMENTS_READ,
+  P.DOCUMENTS_UPLOAD,
+  P.DOCUMENTS_MANAGE,
+  P.CALENDAR_READ_OWN,
+  P.CALENDAR_READ_TEAM,
+  P.CALENDAR_MANAGE_OWN,
+  P.AGENT_USE,
+  P.AGENT_APPROVE,
+  P.DATA_EXPORT,
+  P.ANALYTICS_READ_OWN,
+  P.ANALYTICS_READ_ALL,
+];
+
+export function isClientDataPermission(permission: Permission): boolean {
+  return CLIENT_DATA_PERMISSIONS.includes(permission);
+}
 
 export function isPermission(value: string): value is Permission {
   return (ALL_PERMISSIONS as string[]).includes(value);

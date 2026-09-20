@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { listDocumentsFiltered } from "@/lib/documents/list-service";
-import { toDocumentActor } from "@/lib/documents/service";
+import { resolveDocumentActor } from "@/lib/documents/actor";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,9 @@ export async function GET(
   const summaryOnly = url.searchParams.get("summary") === "true";
   const typesOnly = url.searchParams.get("types") === "true";
 
-  const actor = toDocumentActor(g.session);
+  const resolved = await resolveDocumentActor(req, params.clientId);
+  if (!resolved.ok) return resolved.response;
+  const actor = resolved.actor;
 
   if (typesOnly) {
     const { listDocumentTypes } = await import("@/lib/documents/service");

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireSession } from "@/lib/api-guards";
+import { requireClientDataAccess } from "@/lib/security/support-access";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,13 @@ export async function GET(req: Request) {
   if (session.role === "CLIENT_MANAGER" && session.clientId !== clientId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  const gate = await requireClientDataAccess({
+    req,
+    clientId,
+    scope: "LEADS",
+    resourceType: "lead_list",
+  });
+  if (gate.error) return gate.error;
 
   const page = Math.max(1, Number(url.searchParams.get("page") ?? "1"));
   const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") ?? String(PAGE_SIZE))));

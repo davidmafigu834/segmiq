@@ -33,7 +33,8 @@ export async function GET(
   req: Request,
   { params }: { params: { leadId: string } }
 ) {
-  const access = await canReadLead(params.leadId, req);
+  // Agent-generated customer briefings are Agent activity, not platform metadata.
+  const access = await canReadLead(params.leadId, req, { scope: "AGENT_ACTIVITY" });
   if (!access.ok) {
     return NextResponse.json({ error: "Not found" }, { status: access.status === 401 ? 401 : 404 });
   }

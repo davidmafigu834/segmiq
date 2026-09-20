@@ -51,18 +51,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (
-    !hasPermission(
-      {
-        userId: session.userId,
-        role: session.role,
-        clientId: session.clientId,
-        alsoSells: session.alsoSells,
-        isImpersonating: Boolean(session.isImpersonating),
-      },
-      P.DATA_EXPORT
-    )
-  ) {
+  const actor = {
+    userId: session.userId,
+    role: session.role,
+    clientId: session.clientId,
+    alsoSells: session.alsoSells,
+    isImpersonating: Boolean(session.isImpersonating),
+  };
+  const isPlatformStaff = session.role === "SUPER_ADMIN" && !session.isImpersonating;
+  const canExport = isPlatformStaff
+    ? hasPermission(actor, P.CLIENT_DATA_EXPORT)
+    : hasPermission(actor, P.DATA_EXPORT);
+  if (!canExport) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -78,6 +78,17 @@ export async function GET(req: Request) {
   const resolved = resolveClientId(session, url);
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+  }
+
+  if (isPlatformStaff) {
+    const { requireClientDataAccess } = await import("@/lib/security/support-access");
+    const gate = await requireClientDataAccess({
+      req,
+      clientId: resolved.clientId,
+      scope: "LEADS",
+      resourceType: "company_report_export",
+    });
+    if (gate.error) return gate.error;
   }
 
   // Org policy may disable exports

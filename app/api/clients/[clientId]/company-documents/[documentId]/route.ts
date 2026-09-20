@@ -7,6 +7,9 @@ import {
   toDocumentActor,
   updateDocumentMetadata,
 } from "@/lib/documents/service";
+import { resolveDocumentActor } from "@/lib/documents/actor";
+import { recordSupportAccessEvent } from "@/lib/security/support-access";
+import { isSuperAdminRole } from "@/lib/auth/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -37,14 +40,29 @@ export async function GET(
   const g = await requireClientAccessFromRequest(req, params.clientId);
   if ("error" in g) return g.error;
 
+  const resolved = await resolveDocumentActor(req, params.clientId);
+  if (!resolved.ok) return resolved.response;
+
   const result = await getDocumentForActor({
     clientId: params.clientId,
     documentId: params.documentId,
-    actor: toDocumentActor(g.session),
+    actor: resolved.actor,
   });
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  if (isSuperAdminRole(resolved.actor.role) && !resolved.actor.isImpersonating) {
+    void recordSupportAccessEvent({
+      eventType: "CLIENT_DOCUMENT_VIEWED",
+      clientId: params.clientId,
+      actorUserId: resolved.actor.userId,
+      actorRole: resolved.actor.role,
+      scope: "DOCUMENTS",
+      resourceType: "document",
+      resourceId: params.documentId,
+    });
   }
 
   return NextResponse.json({

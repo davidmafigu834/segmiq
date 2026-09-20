@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Activity,
   Archive,
   BarChart3,
   Bell,
@@ -18,11 +19,17 @@ import {
   Megaphone,
   MessageCircle,
   Phone,
+  Plug,
   Receipt,
+  ScrollText,
   Settings,
+  ShieldCheck,
+  Sparkles,
+  ToggleLeft,
   Trophy,
   User,
   Users,
+  Workflow,
 } from "lucide-react";
 
 export const SHELL_ICONS: Record<string, LucideIcon> = {
@@ -49,6 +56,13 @@ export const SHELL_ICONS: Record<string, LucideIcon> = {
   globe: Globe,
   cloud: Cloud,
   "file-text": FileText,
+  shield: ShieldCheck,
+  activity: Activity,
+  workflow: Workflow,
+  plug: Plug,
+  sparkles: Sparkles,
+  "scroll-text": ScrollText,
+  "toggle-left": ToggleLeft,
 };
 
 export function ShellIcon({

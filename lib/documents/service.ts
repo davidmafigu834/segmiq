@@ -895,14 +895,24 @@ export async function getDocumentVersionContent(
   return data;
 }
 
+/**
+ * Actor for tenant users.
+ *
+ * SECURITY (Phase 7): this deliberately carries no Support Access scopes, so a
+ * platform administrator built through it holds no document permissions — the
+ * default for every documents route. Routes that should honour a grant must use
+ * resolveDocumentActor (lib/documents/actor), which verifies the grant server-side.
+ */
 export function toDocumentActor(session: {
   userId: string;
   role: string;
   clientId: string | null;
+  isImpersonating?: boolean;
 }): DocumentActor {
   return {
     userId: session.userId,
     role: session.role,
     clientId: session.clientId,
+    isImpersonating: Boolean(session.isImpersonating),
   };
 }

@@ -13,7 +13,7 @@ export default async function ClientsPage() {
   const supabase = createAdminClient();
   const { data: clients, error } = await supabase
     .from("clients")
-    .select("id, name, industry, agency_managed")
+    .select("id, name, industry, agency_managed, is_active, created_at")
     .or("is_archived.is.null,is_archived.eq.false")
     .order("name");
 
@@ -28,6 +28,8 @@ export default async function ClientsPage() {
         name: c.name as string,
         industry: (c.industry as string) ?? "",
         agency_managed: Boolean((c as { agency_managed?: boolean | null }).agency_managed ?? true),
+        is_active: (c as { is_active?: boolean | null }).is_active !== false,
+        created_at: ((c as { created_at?: string | null }).created_at as string | null) ?? null,
       }))
       .sort((a, b) => {
         const aPending = isPendingSetup(a.name) ? 1 : 0;
@@ -38,9 +40,8 @@ export default async function ClientsPage() {
 
   return (
     <AgencyLayout
-      breadcrumb="PLATFORM / CLIENTS"
-      pageTitle="Clients"
-      titleSize="hero"
+      breadcrumb="Organisations"
+      pageTitle="Organisations"
       actions={<ClientsPageHeaderAction />}
     >
       <ClientsPageClient clients={rows} loadError={error?.message ?? null} />

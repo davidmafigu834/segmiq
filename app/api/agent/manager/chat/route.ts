@@ -34,9 +34,25 @@ export async function resolveManagerActor(req: Request): Promise<
   const url = new URL(req.url);
   const requested = url.searchParams.get("clientId");
   let clientId: string | null = null;
-  if (auth.role === "SUPER_ADMIN") {
+  if (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) {
     clientId = requested ?? auth.clientId;
     if (!clientId) return { ok: false, status: 400, error: "clientId required" };
+    const { resolveSupportAccess } = await import("@/lib/security/support-access/guard");
+    const access = await resolveSupportAccess({
+      userId: auth.userId,
+      role: auth.role,
+      isImpersonating: false,
+      clientId,
+      scope: "AGENT_ACTIVITY",
+    });
+    if (!access.granted) {
+      return {
+        ok: false,
+        status: 403,
+        error:
+          "This organisation's Agent Command Center is restricted. Start Support Access with the Agent activity scope.",
+      };
+    }
   } else if (auth.role === "CLIENT_MANAGER" && auth.clientId) {
     if (requested && requested !== auth.clientId) {
       return { ok: false, status: 403, error: "Forbidden" };

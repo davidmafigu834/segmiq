@@ -2,56 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PublicSlugCopy } from "@/components/clients/PublicSlugCopy";
 import { AgencyManagedToggle } from "@/components/clients/AgencyManagedToggle";
+import { PlatformStatusBadge } from "@/components/platform/PlatformStatusBadge";
 import type { ClientDetailHeroProps } from "@/lib/client-hero";
 
-const tabs = (id: string) =>
+const PRIMARY_TABS = (id: string) =>
   [
     { label: "Overview", href: `/dashboard/clients/${id}` },
-    { label: "Projects", href: `/dashboard/clients/${id}/projects` },
-    { label: "Profile Page", href: `/dashboard/clients/${id}/profile` },
-    { label: "Testimonials", href: `/dashboard/clients/${id}/testimonials` },
-    { label: "Form", href: `/dashboard/clients/${id}/form` },
-    { label: "Instant Forms", href: `/dashboard/clients/${id}/instant-forms` },
-    { label: "Team", href: `/dashboard/clients/${id}/team` },
-    { label: "Facebook", href: `/dashboard/clients/${id}/facebook` },
-    { label: "Campaigns", href: `/dashboard/clients/${id}/campaigns` },
-    { label: "Audiences", href: `/dashboard/clients/${id}/audiences` },
+    { label: "Users", href: `/dashboard/clients/${id}/team` },
+    { label: "Integrations", href: `/dashboard/clients/${id}/facebook` },
     { label: "Settings", href: `/dashboard/clients/${id}/settings` },
   ] as const;
 
-function StatusIndicator({
-  label,
-  status,
-  liveLabel,
-  draftLabel,
-  tokenExpired,
-}: {
-  label: string;
-  status: "live" | "draft" | "connected" | "disconnected" | "active" | "not_configured";
-  liveLabel: string;
-  draftLabel: string;
-  tokenExpired?: boolean;
-}) {
-  const isLive = status === "live" || status === "connected" || status === "active";
-  const dotClass = tokenExpired
-    ? "bg-[var(--error)]"
-    : isLive
-      ? "bg-[var(--success)]"
-      : "bg-[var(--text-tertiary)]";
-  const text = tokenExpired ? "Expired — reconnect" : isLive ? liveLabel : draftLabel;
-
-  return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotClass}`} />
-      <span className="text-ink-secondary">{label}</span>
-      <span className="font-medium text-ink-primary">{text}</span>
-    </div>
-  );
-}
+const MORE_TABS = (id: string) =>
+  [
+    { label: "Projects", href: `/dashboard/clients/${id}/projects` },
+    { label: "Profile page", href: `/dashboard/clients/${id}/profile` },
+    { label: "Testimonials", href: `/dashboard/clients/${id}/testimonials` },
+    { label: "Form", href: `/dashboard/clients/${id}/form` },
+    { label: "Instant forms", href: `/dashboard/clients/${id}/instant-forms` },
+    { label: "Campaigns", href: `/dashboard/clients/${id}/campaigns` },
+    { label: "Audiences", href: `/dashboard/clients/${id}/audiences` },
+  ] as const;
 
 export function ClientDetailView({
   clientId,
@@ -61,6 +37,9 @@ export function ClientDetailView({
   hero,
   agencyManaged = true,
   children,
+  organisationId,
+  statusLabel,
+  planLabel,
 }: {
   clientId: string;
   name: string;
@@ -69,88 +48,172 @@ export function ClientDetailView({
   hero: ClientDetailHeroProps;
   agencyManaged?: boolean;
   children: React.ReactNode;
+  organisationId?: string;
+  statusLabel?: string;
+  planLabel?: string;
 }) {
   const pathname = usePathname();
-  const items = tabs(clientId);
+  const primary = PRIMARY_TABS(clientId);
+  const more = MORE_TABS(clientId);
   const activeTabRef = useRef<HTMLAnchorElement | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+
+  const moreActive = more.some((t) => pathname === t.href);
 
   useEffect(() => {
     activeTabRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   }, [pathname]);
 
-  const facebookLinked = Boolean(hero.fbFormId || hero.fbPageId);
-  const facebookLiveLabel =
-    hero.fbPageName?.trim() ? hero.fbPageName : facebookLinked ? "Connected" : "Not connected";
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (!moreRef.current?.contains(e.target as Node)) setMoreOpen(false);
+    }
+    if (moreOpen) document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [moreOpen]);
 
-  const notifStatus: "active" | "not_configured" =
-    hero.notificationsEnvConfigured || Boolean(hero.twilioWhatsappOverride?.trim()) ? "active" : "not_configured";
-  const notifLive =
-    notifStatus === "active"
-      ? hero.twilioWhatsappOverride?.trim()
-        ? "Using client WhatsApp override"
-        : "Active"
-      : "Not configured";
+  const facebookLinked = Boolean(hero.fbFormId || hero.fbPageId);
 
   return (
     <div>
-      <header className="mb-10 flex flex-col gap-6 layout:flex-row layout:items-start layout:justify-between">
-        <div className="flex items-start gap-5">
+      <p className="mb-4 text-[12px] text-[var(--text-tertiary)]">
+        <Link href="/dashboard/clients" className="hover:text-[var(--text-primary)]">
+          Organisations
+        </Link>
+        <span className="mx-1.5">/</span>
+        <span className="text-[var(--text-secondary)]">{name}</span>
+      </p>
+
+      <header className="mb-6 flex flex-col gap-5 layout:flex-row layout:items-start layout:justify-between">
+        <div className="flex min-w-0 items-start gap-4">
           <ClientAvatar name={name} size="lg" />
           <div className="min-w-0">
-            <h1 className="mb-1 min-w-0 truncate font-display text-2xl tracking-display text-ink-primary md:text-3xl layout:text-4xl">{name}</h1>
-            <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-tertiary">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="truncate text-[22px] font-semibold tracking-[-0.02em] text-[var(--text-primary)] sm:text-[24px]">
+                {name}
+              </h1>
+              <PlatformStatusBadge
+                kind={statusLabel === "suspended" ? "suspended" : "active"}
+                label={statusLabel ? titleCase(statusLabel) : "Active"}
+              />
+            </div>
+            <p className="mt-1 font-mono text-[11px] text-[var(--text-tertiary)]">
+              {organisationId ?? clientId}
+            </p>
+            <p className="mt-1 text-[12px] text-[var(--text-secondary)]">
+              {planLabel ? `${planLabel} · ` : ""}
               {industry || "No industry set"}
-            </div>
-            <div className="mt-2">
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
               <AgencyManagedToggle clientId={clientId} agencyManaged={agencyManaged} />
+              {publicProfileUrl ? <PublicSlugCopy url={publicProfileUrl} /> : null}
             </div>
-            {publicProfileUrl && <PublicSlugCopy url={publicProfileUrl} />}
           </div>
         </div>
 
-        <div className="flex flex-col items-start gap-1.5 text-sm layout:items-end">
-          <StatusIndicator
-            label="Profile page"
-            status={hero.profilePublished ? "live" : "draft"}
-            liveLabel="Live"
-            draftLabel="Not published"
+        <div className="flex flex-col items-start gap-1.5 text-[12px] layout:items-end">
+          <HealthLine
+            label="Profile"
+            ok={hero.profilePublished}
+            okText="Live"
+            offText="Not published"
           />
-          <StatusIndicator
+          <HealthLine
             label="Facebook"
-            status={facebookLinked ? "connected" : "disconnected"}
-            liveLabel={facebookLiveLabel}
-            draftLabel="Not connected"
-            tokenExpired={Boolean(hero.fbTokenExpiredAt)}
-          />
-          <StatusIndicator
-            label="Notifications"
-            status={notifStatus === "active" ? "active" : "not_configured"}
-            liveLabel={notifLive}
-            draftLabel="Not configured"
+            ok={facebookLinked && !hero.fbTokenExpiredAt}
+            okText="Connected"
+            offText={hero.fbTokenExpiredAt ? "Token expired" : "Not connected"}
+            warn={Boolean(hero.fbTokenExpiredAt)}
           />
         </div>
       </header>
 
-      <nav className="flex snap-x snap-mandatory gap-1 overflow-x-auto border-b border-border scrollbar-hide">
-        {items.map((t) => {
+      <nav className="flex items-center gap-1 overflow-x-auto border-b border-[var(--border)] scrollbar-hide">
+        {primary.map((t) => {
           const active = pathname === t.href;
           return (
             <Link
               key={t.href}
               href={t.href}
               ref={active ? activeTabRef : undefined}
-              className={`relative shrink-0 snap-start whitespace-nowrap px-4 py-3 text-sm font-medium transition-colors ${
-                active ? "text-ink-primary" : "text-ink-secondary hover:text-ink-primary"
+              className={`relative shrink-0 whitespace-nowrap px-3 py-2.5 text-[13px] font-medium transition-colors ${
+                active ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
               {t.label}
-              {active ? <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-[var(--accent)]" /> : null}
+              {active ? (
+                <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-[var(--accent)]" />
+              ) : null}
             </Link>
           );
         })}
+        <div className="relative" ref={moreRef}>
+          <button
+            type="button"
+            onClick={() => setMoreOpen((v) => !v)}
+            className={`relative inline-flex items-center gap-1 px-3 py-2.5 text-[13px] font-medium ${
+              moreActive ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            }`}
+            aria-expanded={moreOpen}
+          >
+            More
+            <ChevronDown className="h-3.5 w-3.5" strokeWidth={1.5} />
+            {moreActive ? <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-[var(--accent)]" /> : null}
+          </button>
+          {moreOpen ? (
+            <div className="absolute left-0 z-20 mt-1 w-48 rounded-md border border-[var(--border)] bg-[var(--surface-dropdown)] py-1 shadow-[var(--shadow-md)]">
+              {more.map((t) => (
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  onClick={() => setMoreOpen(false)}
+                  className={`block px-3 py-1.5 text-[13px] ${
+                    pathname === t.href
+                      ? "text-[var(--text-primary)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  {t.label}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </nav>
 
-      <div className="mt-8">{children}</div>
+      <div className="mt-6">{children}</div>
     </div>
   );
+}
+
+function HealthLine({
+  label,
+  ok,
+  okText,
+  offText,
+  warn,
+}: {
+  label: string;
+  ok: boolean;
+  okText: string;
+  offText: string;
+  warn?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          warn ? "bg-[var(--warning)]" : ok ? "bg-[var(--success)]" : "bg-[var(--text-tertiary)]"
+        }`}
+        aria-hidden
+      />
+      <span className="text-[var(--text-tertiary)]">{label}</span>
+      <span className="text-[var(--text-primary)]">{ok && !warn ? okText : offText}</span>
+    </div>
+  );
+}
+
+function titleCase(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1).replaceAll("_", " ");
 }

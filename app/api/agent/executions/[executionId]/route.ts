@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
 import { evaluateLeadReadAccess } from "@/lib/auth/permissions";
 import { asRow, asRows } from "@/lib/agent/rows";
+import { requireClientDataAccess, assertResourceTenant } from "@/lib/security/support-access";
 
 export const dynamic = "force-dynamic";
 
@@ -24,13 +25,24 @@ export async function GET(req: Request, { params }: { params: { executionId: str
   const clientId = execution.client_id;
   // SECURITY: fail closed + no existence leak across tenants.
   // Impersonating SUPER_ADMIN uses effective role/clientId from resolveApiAuth.
-  const inTenant =
-    (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) || auth.clientId === clientId;
-  if (!inTenant) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) {
+    const gate = await requireClientDataAccess({
+      req,
+      clientId,
+      scope: "AGENT_ACTIVITY",
+      resourceType: "agent_execution",
+      resourceId: params.executionId,
+    });
+    if (gate.error) return gate.error;
+    const mismatch = assertResourceTenant(gate.context, clientId);
+    if (mismatch) return mismatch;
+  } else if (auth.clientId !== clientId) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
-  const isManager =
-    auth.role === "CLIENT_MANAGER" || (auth.role === "SUPER_ADMIN" && !auth.isImpersonating);
-  if (!isManager) {
+  const isPlatformStaff = auth.role === "SUPER_ADMIN" && !auth.isImpersonating;
+  const isManager = auth.role === "CLIENT_MANAGER";
+  if (!isManager && !isPlatformStaff) {
     const { data: leadRow } = await supabase
       .from("leads")
       .select("client_id, assigned_to_id")

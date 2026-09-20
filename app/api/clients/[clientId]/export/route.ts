@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRoles } from "@/lib/api-guards";
+import { hasPermission } from "@/lib/auth/rbac/resolve";
+import { P } from "@/lib/auth/rbac/permissions";
+import {
+  recordSupportAccessEvent,
+  requireClientDataAccess,
+} from "@/lib/security/support-access";
 
 export const dynamic = "force-dynamic";
 
@@ -10,9 +16,33 @@ function csvEscape(s: string | number | null | undefined): string {
   return t;
 }
 
-export async function GET(_req: Request, { params }: { params: { clientId: string } }) {
+export async function GET(req: Request, { params }: { params: { clientId: string } }) {
   const g = await requireRoles(["SUPER_ADMIN"]);
   if ("error" in g) return g.error;
+
+  // Mass export is stricter than reading one record: it needs its own platform
+  // permission on top of an active LEADS Support Access grant.
+  if (
+    !hasPermission(
+      {
+        userId: g.session.userId,
+        role: g.session.role,
+        clientId: g.session.clientId ?? null,
+        isImpersonating: false,
+      },
+      P.CLIENT_DATA_EXPORT
+    )
+  ) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const gate = await requireClientDataAccess({
+    req,
+    clientId: params.clientId,
+    scope: "LEADS",
+    resourceType: "lead_export",
+  });
+  if (gate.error) return gate.error;
 
   const supabase = createAdminClient();
   const { data: leads, error } = await supabase
@@ -42,6 +72,17 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
       ].join(",")
     );
   }
+
+  void recordSupportAccessEvent({
+    eventType: "CLIENT_DATA_EXPORTED",
+    clientId: params.clientId,
+    grantId: gate.context.grant?.id ?? null,
+    actorUserId: g.session.userId,
+    actorRole: g.session.role,
+    scope: "LEADS",
+    resourceType: "lead_export",
+    metadata: { rowCount: leads?.length ?? 0 },
+  });
 
   const csv = lines.join("\n");
   return new NextResponse(csv, {

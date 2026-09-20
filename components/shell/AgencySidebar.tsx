@@ -10,7 +10,7 @@ import { ShellIcon } from "./shell-icons";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import SegmiqMark from "@/components/brand/SegmiqMark";
 import { ExitImpersonationMenuItem } from "@/components/agency/ExitImpersonationMenuItem";
-import type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
+import type { AppShellClientRow, AppShellNavGroup, AppShellNavItem } from "./app-shell-types";
 import { isWhatsAppSalesHubPath } from "@/lib/sales/whatsapp-hub-nav";
 
 const AVATAR_TINT = [
@@ -49,6 +49,7 @@ function NavRow({
   iconOnly = false,
   nested = false,
   pathname,
+  platformConsole = false,
 }: {
   item: AppShellNavItem;
   navActive: (href: string) => boolean;
@@ -56,6 +57,7 @@ function NavRow({
   iconOnly?: boolean;
   nested?: boolean;
   pathname: string;
+  platformConsole?: boolean;
 }) {
   const isActive = navItemActive(item, pathname, navActive);
   const showLabels = mobileExpanded || (!iconOnly && !nested);
@@ -70,16 +72,20 @@ function NavRow({
       ? "justify-center px-2"
       : `justify-center px-2 layout:justify-start ${nested ? "layout:pl-9 layout:pr-3" : "layout:px-3"}`;
 
+  const activeClass = platformConsole
+    ? "bg-[var(--surface-sidebar-elevated)] text-[var(--text-on-dark)] font-medium before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:rounded-full before:bg-[var(--accent)]"
+    : "bg-[var(--accent-muted)] text-[var(--text-primary)] font-medium";
+
   return (
     <Link
       href={item.href}
       title={iconOnly && !mobileExpanded ? item.label : undefined}
-      className={`relative flex h-9 items-center gap-2.5 rounded-md py-2 transition-colors ${
+      className={`relative flex h-9 items-center gap-2.5 rounded-md py-2 transition-colors duration-150 ${
         nested ? "text-[12px]" : "text-[13px]"
       } ${rowLayout} ${
         isActive
-          ? "bg-[var(--accent-muted)] text-[var(--text-primary)] font-medium"
-          : "font-medium text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+          ? activeClass
+          : "font-medium text-[var(--text-tertiary)] hover:bg-[var(--surface-sidebar-elevated)] hover:text-[var(--text-on-dark)]"
       } `}
     >
       {!nested ? (
@@ -110,12 +116,14 @@ function NavGroup({
   mobileExpanded = false,
   iconOnly = false,
   pathname,
+  platformConsole = false,
 }: {
   item: AppShellNavItem;
   navActive: (href: string) => boolean;
   mobileExpanded?: boolean;
   iconOnly?: boolean;
   pathname: string;
+  platformConsole?: boolean;
 }) {
   const hubActive = navItemActive(item, pathname, navActive);
   const [expanded, setExpanded] = useState(() => hubActive || !item.collapsible);
@@ -140,8 +148,10 @@ function NavGroup({
           title={iconOnly && !mobileExpanded ? item.label : undefined}
           className={`relative flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-md py-2 text-[13px] transition-colors ${rowLayout} ${
             hubActive
-              ? "bg-[var(--accent-muted)] text-[var(--text-primary)] font-medium"
-              : "font-medium text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+              ? platformConsole
+                ? "bg-[var(--surface-sidebar-elevated)] text-[var(--text-on-dark)] font-medium before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:rounded-full before:bg-[var(--accent)]"
+                : "bg-[var(--accent-muted)] text-[var(--text-primary)] font-medium"
+              : "font-medium text-[var(--text-tertiary)] hover:bg-[var(--surface-sidebar-elevated)] hover:text-[var(--text-on-dark)]"
           }`}
         >
           <ShellIcon
@@ -186,6 +196,7 @@ function NavGroup({
               iconOnly={iconOnly}
               nested
               pathname={pathname}
+              platformConsole={platformConsole}
             />
           ))}
         </div>
@@ -201,6 +212,7 @@ export function AgencySidebar({
   secondaryNav,
   primarySectionLabel = "Workspace",
   secondarySectionLabel = "Tools",
+  navGroups,
   clients,
   userName,
   userRoleLabel,
@@ -211,6 +223,7 @@ export function AgencySidebar({
   iconOnly = false,
   profileHref,
   lightMode = false,
+  platformConsole = false,
 }: {
   homeHref: string;
   roleLabel: string;
@@ -218,6 +231,7 @@ export function AgencySidebar({
   secondaryNav: AppShellNavItem[];
   primarySectionLabel?: string;
   secondarySectionLabel?: string;
+  navGroups?: AppShellNavGroup[];
   clients?: AppShellClientRow[];
   userName: string;
   userRoleLabel: string;
@@ -228,6 +242,7 @@ export function AgencySidebar({
   iconOnly?: boolean;
   profileHref?: string;
   lightMode?: boolean;
+  platformConsole?: boolean;
 }) {
   const pathname = usePathname();
   const wordmarkSrc = lightMode ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
@@ -285,7 +300,7 @@ export function AgencySidebar({
                   </div>
                 ) : null}
                 <Image src={wordmarkSrc} alt="Segmiq" width={160} height={28} className="h-6 w-auto" />
-                <div className="mt-1 font-mono text-[12px] font-medium uppercase tracking-wide text-[var(--text-on-dark-dim)]">
+                <div className="mt-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--text-on-dark-dim)]">
                   {roleLabel}
                 </div>
               </>
@@ -296,6 +311,43 @@ export function AgencySidebar({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-1 pb-2 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent]">
+        {navGroups && navGroups.length > 0 ? (
+          navGroups.map((group, index) => (
+            <div key={group.label} className={index === 0 ? "" : "mt-3"}>
+              <div
+                className={`${sectionLabelClass} px-5 pb-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-disabled)]`}
+              >
+                {group.label}
+              </div>
+              <nav className={`flex flex-col gap-0.5 ${iconOnly && !mobileExpanded ? "px-1" : "px-2 layout:px-3"}`}>
+                {group.items.map((item) =>
+                  item.children?.length ? (
+                    <NavGroup
+                      key={item.href}
+                      item={item}
+                      navActive={navActive}
+                      mobileExpanded={mobileExpanded}
+                      iconOnly={iconOnly}
+                      pathname={pathname}
+                      platformConsole={platformConsole}
+                    />
+                  ) : (
+                    <NavRow
+                      key={item.href}
+                      item={item}
+                      navActive={navActive}
+                      mobileExpanded={mobileExpanded}
+                      iconOnly={iconOnly}
+                      pathname={pathname}
+                      platformConsole={platformConsole}
+                    />
+                  )
+                )}
+              </nav>
+            </div>
+          ))
+        ) : (
+          <>
         <div className={`${sectionLabelClass} px-5 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-disabled)]`}>
           {primarySectionLabel}
         </div>
@@ -309,6 +361,7 @@ export function AgencySidebar({
                 mobileExpanded={mobileExpanded}
                 iconOnly={iconOnly}
                 pathname={pathname}
+                platformConsole={platformConsole}
               />
             ) : (
               <NavRow
@@ -318,6 +371,7 @@ export function AgencySidebar({
                 mobileExpanded={mobileExpanded}
                 iconOnly={iconOnly}
                 pathname={pathname}
+                platformConsole={platformConsole}
               />
             )
           )}
@@ -341,11 +395,14 @@ export function AgencySidebar({
               mobileExpanded={mobileExpanded}
               iconOnly={iconOnly}
               pathname={pathname}
+              platformConsole={platformConsole}
             />
           ))}
         </nav>
+          </>
+        )}
 
-        {clients && clients.length > 0 && !iconOnly ? (
+        {clients && clients.length > 0 && !iconOnly && !platformConsole ? (
           <div className={`${mobileExpanded ? "block" : "hidden layout:block"} px-3 pb-2 pt-2`}>
             <div className="mt-4 mb-2 px-2 font-mono text-[12px] font-medium uppercase tracking-[0.08em] text-[var(--text-on-dark-dim)]">
               Managed clients
@@ -409,7 +466,15 @@ export function AgencySidebar({
                 href={profileHref}
                 className="block w-full px-3 py-2 text-left text-[14px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
               >
-                Profile
+                {platformConsole ? "My account" : "Profile"}
+              </Link>
+            ) : null}
+            {platformConsole ? (
+              <Link
+                href="/dashboard/settings"
+                className="block w-full px-3 py-2 text-left text-[14px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+              >
+                Preferences
               </Link>
             ) : null}
             <ExitImpersonationMenuItem className="flex w-full items-center gap-2 px-3 py-2 text-left text-[14px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-60" />

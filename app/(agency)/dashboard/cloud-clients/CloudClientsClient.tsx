@@ -201,44 +201,44 @@ export function CloudClientsClient({
   const overdueClients = clients.filter((c) => c.payment_status === "overdue");
 
   const statCard = (label: string, value: string | number, sub?: string) => (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5">
-      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">{label}</p>
-      <p className="font-display text-[28px] leading-none text-[var(--text-primary)]">{value}</p>
-      {sub && <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">{sub}</p>}
+    <div className="min-w-0 py-1">
+      <p className="text-[12px] text-[var(--text-tertiary)]">{label}</p>
+      <p className="mt-1 text-[24px] font-semibold tabular-nums tracking-[-0.03em] text-[var(--text-primary)]">
+        {value}
+      </p>
+      {sub ? <p className="mt-1 text-[12px] text-[var(--text-secondary)]">{sub}</p> : null}
     </div>
   );
 
   return (
     <div>
-      <p className="mb-6 text-[13px] text-[var(--text-tertiary)]">
-        Manage Segmiq Cloud client plans and billing for self-signup and active Cloud tenants.
+      <p className="mb-5 max-w-2xl text-[13px] text-[var(--text-secondary)]">
+        Who has platform access and which organisation they belong to.
       </p>
 
-      {/* Overdue warning banner */}
       {overdueClients.length > 0 && (
-        <div style={{ background: "rgba(232,96,44,0.08)", border: "0.5px solid rgba(232,96,44,0.2)", borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
-          <AlertTriangle style={{ color: "#E8602C", width: 16, height: 16, flexShrink: 0 }} />
-          <p style={{ fontSize: 13, color: "#E8602C", margin: 0 }}>
-            {overdueClients.length} client{overdueClients.length > 1 ? "s are" : " is"} overdue on payment.{" "}
-            <strong>{overdueClients.map((c) => c.name).join(", ")}</strong>
+        <div className="mb-5 flex items-center gap-2.5 rounded-lg border border-[var(--warning-border)] bg-[var(--warning-muted)] px-3 py-2.5 text-[13px] text-[var(--warning)]">
+          <AlertTriangle className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+          <p>
+            {overdueClients.length} organisation{overdueClients.length > 1 ? "s are" : " is"} overdue.{" "}
+            {overdueClients.map((c) => c.name).join(", ")}
           </p>
         </div>
       )}
 
-      {/* Stats row */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {statCard("Total Cloud Clients", totalClients)}
-        {statCard("Paying Clients", payingClients, "Professional or Business plan")}
-        {statCard("Est. MRR", `$${mrr.toFixed(0)}`, "Monthly recurring revenue")}
+      <div className="mb-6 grid grid-cols-2 gap-x-6 gap-y-4 border-y border-[var(--border)] py-4 sm:grid-cols-3">
+        {statCard("Organisations", totalClients)}
+        {statCard("Paying", payingClients, "Professional or Business")}
+        {statCard("Est. MRR", `$${mrr.toFixed(0)}`)}
       </div>
 
       {/* Table */}
       {clients.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-10 text-center text-[13px] text-[var(--text-tertiary)]">
+        <div className="rounded-lg border border-[var(--border)] p-10 text-center text-[13px] text-[var(--text-tertiary)]">
           No Segmiq Cloud clients found yet.
         </div>
       ) : (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] overflow-hidden">
+        <div className="rounded-lg border border-[var(--border)] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] text-[13px]">
               <thead>

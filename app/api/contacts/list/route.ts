@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { contactIdsForHubFilter, parseLifecycleFilter } from "@/lib/customer-hub/contact-filters";
 import { enrichContactsWithLeads } from "@/lib/customer-hub/enrich-contacts-with-leads";
 import { sanitizePostgrestSearchTerm } from "@/lib/security/postgrest-filter";
+import { requireClientDataAccess } from "@/lib/security/support-access";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 50;
@@ -23,6 +24,13 @@ export async function GET(req: Request) {
   if (!canAccessClient(session.role, session.clientId, requestedClientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  const gate = await requireClientDataAccess({
+    req,
+    clientId: requestedClientId,
+    scope: "CUSTOMER_PROFILES",
+    resourceType: "contact_list",
+  });
+  if (gate.error) return gate.error;
 
   const page = Math.max(1, Number(url.searchParams.get("page") ?? "1"));
   const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") ?? String(PAGE_SIZE))));

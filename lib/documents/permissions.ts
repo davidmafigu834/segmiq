@@ -25,11 +25,39 @@ function isManager(role: string): boolean {
   return role === "CLIENT_MANAGER" || role === "SUPER_ADMIN";
 }
 
+/**
+ * Documents are among the most sensitive tenant data (contracts, tender packs,
+ * identity documents, quotation PDFs). Platform staff need a verified Support
+ * Access grant covering DOCUMENTS or FILES; the role alone grants nothing, and
+ * the grant is read-only.
+ */
+function platformDocumentPermission(
+  actor: DocumentActor,
+  permission: DocumentPermission
+): boolean {
+  const scopes = actor.supportAccessScopes ?? [];
+  const canRead = scopes.includes("DOCUMENTS") || scopes.includes("FILES");
+  if (!canRead) return false;
+  switch (permission) {
+    case "documents.view":
+    case "documents.download":
+    case "documents.categories.view":
+    case "documents.versions.view":
+    case "documents.intelligence.view":
+    case "documents.obligations.view":
+      return true;
+    default:
+      return false;
+  }
+}
+
 export function hasDocumentPermission(
   actor: DocumentActor,
   permission: DocumentPermission
 ): boolean {
-  if (actor.role === "SUPER_ADMIN") return true;
+  if (actor.role === "SUPER_ADMIN" && !actor.isImpersonating) {
+    return platformDocumentPermission(actor, permission);
+  }
   if (actor.role === "CLIENT_MANAGER") {
     if (permission === "documents.permissions.manage") return true;
     return true;
@@ -63,7 +91,12 @@ export function canViewDocument(
   policy: DocumentAccessPolicyRow | null
 ): boolean {
   if (!hasDocumentPermission(actor, "documents.view")) return false;
-  if (actor.clientId !== document.client_id && actor.role !== "SUPER_ADMIN") return false;
+  if (actor.role === "SUPER_ADMIN" && !actor.isImpersonating) {
+    // SECURITY: the document must belong to the organisation the grant covers —
+    // swapping a document id for another tenant's record must fail (IDOR).
+    return actor.supportAccessClientId === document.client_id;
+  }
+  if (actor.clientId !== document.client_id) return false;
   if (isManager(actor.role)) return true;
   if (!policy) return true;
 

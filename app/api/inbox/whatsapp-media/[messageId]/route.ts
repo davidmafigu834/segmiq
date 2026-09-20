@@ -17,7 +17,9 @@ export async function GET(req: Request, { params }: { params: { messageId: strin
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const access = await canReadLead(row.lead_id as string, req);
+  // Customer media attached to a conversation — FILES scope, resolved against
+  // the owning lead's organisation so a message id cannot cross tenants.
+  const access = await canReadLead(row.lead_id as string, req, { scope: "FILES" });
   if (!access.ok) {
     return NextResponse.json({ error: "Not found" }, { status: access.status === 401 ? 401 : 404 });
   }

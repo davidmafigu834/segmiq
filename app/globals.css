@@ -125,6 +125,13 @@ body {
   --font-display: var(--font-geist-sans), Geist, ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
 
+  --admin-bg: var(--bg-primary);
+  --admin-surface: var(--surface-card);
+  --admin-surface-hover: var(--bg-tertiary);
+  --admin-border: var(--border);
+  --admin-text-primary: var(--text-primary);
+  --admin-text-secondary: var(--text-secondary);
+
   /* Dashboard categorical signals */
   --pipeline-contacted: oklch(59% 0.105 250);
   --pipeline-qualified: oklch(69% 0.115 82);

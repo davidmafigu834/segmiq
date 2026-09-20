@@ -9,6 +9,11 @@ export type AppShellNavItem = {
   children?: AppShellNavItem[];
 };
 
+export type AppShellNavGroup = {
+  label: string;
+  items: AppShellNavItem[];
+};
+
 export type AppShellClientRow = {
   id: string;
   name: string;

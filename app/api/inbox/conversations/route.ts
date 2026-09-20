@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-guards";
 import { fetchInboxConversations } from "@/lib/inbox/fetch-conversations";
+import { requireClientDataAccess } from "@/lib/security/support-access";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,13 @@ export async function GET(req: Request) {
   if (!clientId) {
     return NextResponse.json({ error: "Missing client context" }, { status: 400 });
   }
+  const gate = await requireClientDataAccess({
+    req,
+    clientId,
+    scope: "CONVERSATIONS",
+    resourceType: "conversation_list",
+  });
+  if (gate.error) return gate.error;
 
   const conversations = await fetchInboxConversations({
     role: session.role,

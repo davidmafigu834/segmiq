@@ -49,51 +49,63 @@ export async function GET(req: Request) {
   };
   const results: Row[] = [];
 
-  let leadsQ = supabase
-    .from("leads")
-    .select("id, name, phone, email, status, client_id, clients(name, slug)")
-    .eq("is_archived", false)
-    .or(`name.ilike.${pattern},phone.ilike.${pattern},email.ilike.${pattern}`)
-    .limit(8);
-
   const salesScoped = canActAsSalesperson({ userId, role, alsoSells: session.alsoSells });
 
-  // SECURITY: tenant users must always filter by client_id (fail closed).
-  // Platform SUPER_ADMIN may search across tenants intentionally.
+  /**
+   * SECURITY: platform search covers the platform — organisations, tenant ids and
+   * organisation staff. It must never become a cross-tenant customer lookup: a
+   * SegmiQ employee typing a phone number must not discover every organisation
+   * where that person appears. Customer records are reachable only through an
+   * organisation with an active Support Access grant.
+   */
   if (!isPlatformAdmin) {
     if (!clientId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    leadsQ = leadsQ.eq("client_id", clientId);
-  }
-  if (salesScoped) {
-    leadsQ = leadsQ.eq("assigned_to_id", userId);
-  }
+    let leadsQ = supabase
+      .from("leads")
+      .select("id, name, phone, email, status, client_id, clients(name, slug)")
+      .eq("is_archived", false)
+      .or(`name.ilike.${pattern},phone.ilike.${pattern},email.ilike.${pattern}`)
+      .eq("client_id", clientId)
+      .limit(8);
+    if (salesScoped) {
+      leadsQ = leadsQ.eq("assigned_to_id", userId);
+    }
 
-  const { data: leads } = await leadsQ;
-  for (const lead of leads ?? []) {
-    const cl = (lead as { clients?: { name?: string; slug?: string } | null }).clients;
-    const href = salesScoped
-      ? `/sales/leads?lead=${lead.id}`
-      : role === "CLIENT_MANAGER"
-        ? `/client/leads/pipeline?lead=${lead.id}`
-        : `/dashboard/leads?lead=${lead.id}`;
-    results.push({
-      type: "lead",
-      id: lead.id as string,
-      title: (lead.name as string | null)?.trim() || "Unnamed lead",
-      subtitle: [lead.phone, cl?.name].filter(Boolean).join(" · "),
-      meta: statusLabel(String(lead.status)),
-      href,
-    });
+    const { data: leads } = await leadsQ;
+    for (const lead of leads ?? []) {
+      const cl = (lead as { clients?: { name?: string; slug?: string } | null }).clients;
+      const href = salesScoped
+        ? `/sales/leads?lead=${lead.id}`
+        : `/client/leads/pipeline?lead=${lead.id}`;
+      results.push({
+        type: "lead",
+        id: lead.id as string,
+        title: (lead.name as string | null)?.trim() || "Unnamed lead",
+        subtitle: [lead.phone, cl?.name].filter(Boolean).join(" · "),
+        meta: statusLabel(String(lead.status)),
+        href,
+      });
+    }
   }
 
   if (isPlatformAdmin) {
+    // Tenant id lookups are part of platform operations, so an exact id matches too.
+    const idMatch = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(qRaw)
+      ? qRaw
+      : null;
     const { data: clients } = await supabase
       .from("clients")
       .select("id, name, slug, industry")
       .eq("is_archived", false)
-      .or(`name.ilike.${pattern},slug.ilike.${pattern}`)
+      .or(
+        [
+          `name.ilike.${pattern}`,
+          `slug.ilike.${pattern}`,
+          ...(idMatch ? [`id.eq.${idMatch}`] : []),
+        ].join(",")
+      )
       .limit(5);
     for (const client of clients ?? []) {
       results.push({

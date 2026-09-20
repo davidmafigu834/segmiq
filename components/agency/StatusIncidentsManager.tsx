@@ -66,7 +66,10 @@ export function StatusIncidentsManager({ initialIncidents }: { initialIncidents:
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      <p className="text-[13px] text-[var(--text-secondary)]">
+        Lightweight observability for public status incidents. Open incidents appear on the status page.
+      </p>
       <div className="flex justify-end">
         <button
           type="button"

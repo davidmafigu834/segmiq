@@ -29,7 +29,9 @@ function isSessionLogAlreadyRepresented(
 
 export async function GET(req: Request, { params }: { params: { leadId: string } }) {
   const session = await getServerSession(authOptions);
-  const access = await canReadLead(params.leadId, req);
+  // Message bodies are conversation content: platform staff need the
+  // CONVERSATIONS scope, not merely a LEADS grant.
+  const access = await canReadLead(params.leadId, req, { scope: "CONVERSATIONS" });
   if (!access.ok) {
     return NextResponse.json({ error: "Not found" }, { status: access.status === 401 ? 401 : 404 });
   }

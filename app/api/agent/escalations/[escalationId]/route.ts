@@ -30,14 +30,17 @@ export async function PATCH(req: Request, { params }: { params: { escalationId: 
   if (!escalation) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const clientId = escalation.client_id;
-  const inTenant =
-    (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) || auth.clientId === clientId;
-  if (!inTenant) {
+  if (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) {
+    return NextResponse.json(
+      { error: "Support Access cannot modify customer records" },
+      { status: 403 }
+    );
+  }
+  if (auth.clientId !== clientId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const isManager =
-    auth.role === "CLIENT_MANAGER" || (auth.role === "SUPER_ADMIN" && !auth.isImpersonating);
+  const isManager = auth.role === "CLIENT_MANAGER";
   if (!isManager) {
     const { data: lead } = await supabase
       .from("leads")

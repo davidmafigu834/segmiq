@@ -22,8 +22,17 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const requestedClient = url.searchParams.get("clientId");
   let clientId: string | null = null;
-  if (auth.role === "SUPER_ADMIN") {
+  if (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) {
     clientId = requestedClient ?? auth.clientId;
+    if (!clientId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const { requireClientDataAccess } = await import("@/lib/security/support-access");
+    const gate = await requireClientDataAccess({
+      req,
+      clientId,
+      scope: "AGENT_ACTIVITY",
+      resourceType: "agent_activity",
+    });
+    if (gate.error) return gate.error;
   } else if (auth.role === "CLIENT_MANAGER" && auth.clientId) {
     if (requestedClient && requestedClient !== auth.clientId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

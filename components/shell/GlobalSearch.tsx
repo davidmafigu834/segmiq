@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, X, Inbox, Users, Building2 } from "lucide-react";
+import { Search, X, Inbox, Users, Building2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { UserRole } from "@/types";
+import { PLATFORM_COMMAND_PAGES } from "@/components/platform/nav";
 
 type SearchResult = {
   type: "lead" | "client" | "user";
@@ -88,23 +89,42 @@ export function GlobalSearch({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      const list = role === "SUPER_ADMIN" ? results.filter((r) => r.type !== "lead") : results;
+      const actions = role === "SUPER_ADMIN" && !query.trim() ? PLATFORM_COMMAND_PAGES : [];
+      const max = query.trim() ? list.length : actions.length;
+      if (!max) return;
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        if (!results.length) return;
-        setActiveIndex((i) => Math.min(i + 1, results.length - 1));
+        setActiveIndex((i) => Math.min(i + 1, max - 1));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setActiveIndex((i) => Math.max(i - 1, 0));
-      } else if (e.key === "Enter" && results[activeIndex]) {
+      } else if (e.key === "Enter") {
         e.preventDefault();
-        router.push(results[activeIndex].href);
-        close();
+        if (!query.trim() && actions[activeIndex]) {
+          router.push(actions[activeIndex].href);
+          close();
+          return;
+        }
+        if (list[activeIndex]) {
+          router.push(list[activeIndex].href);
+          close();
+        }
       }
     },
-    [activeIndex, close, results, router]
+    [activeIndex, close, query, results, role, router]
   );
 
-  const grouped = groupResults(results);
+  const isPlatform = role === "SUPER_ADMIN";
+  const visibleResults = isPlatform ? results.filter((r) => r.type !== "lead") : results;
+  const grouped = groupResults(visibleResults, isPlatform);
+  const pageMatches = isPlatform
+    ? PLATFORM_COMMAND_PAGES.filter((p) => {
+        if (!query.trim()) return true;
+        const q = query.trim().toLowerCase();
+        return p.label.toLowerCase().includes(q) || p.hint.toLowerCase().includes(q);
+      })
+    : [];
 
   function openSearch() {
     setOpen(true);
@@ -160,7 +180,9 @@ export function GlobalSearch({
                     ? "Search leads, deals, customers, quotes..."
                     : role === "CLIENT_MANAGER"
                       ? "Search leads and team…"
-                      : "Search leads, clients, and team…")
+                      : role === "SUPER_ADMIN"
+                        ? "Search organisations, users, IDs..."
+                        : "Search leads, clients, and team…")
                 }
                 className="min-w-0 flex-1 border-0 bg-transparent text-base text-ink-primary outline-none placeholder:text-ink-tertiary"
               />
@@ -184,33 +206,99 @@ export function GlobalSearch({
 
             <div className="min-h-0 flex-1 overflow-y-auto">
               {!query ? (
-                <div className="p-6 text-center text-sm text-ink-tertiary">
-                  {role === "SALESPERSON"
-                    ? "Type to search your assigned leads."
-                    : role === "CLIENT_MANAGER"
-                      ? "Type to search leads and salespeople for your business."
-                      : "Type to search across leads, clients, and team members."}
-                  <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs">
-                    <span>
-                      <kbd className="font-mono">↑↓</kbd> navigate
-                    </span>
-                    <span>
-                      <kbd className="font-mono">↵</kbd> select
-                    </span>
-                    <span>
-                      <kbd className="font-mono">esc</kbd> close
-                    </span>
+                isPlatform ? (
+                  <div className="py-2">
+                    <div className="px-5 py-2 text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">
+                      Quick actions
+                    </div>
+                    {pageMatches.map((page, index) => (
+                      <Link
+                        key={page.href}
+                        href={page.href}
+                        onClick={() => close()}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        className={[
+                          "flex items-center gap-3 px-5 py-2.5",
+                          index === activeIndex ? "bg-surface-card-alt" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                      >
+                        <ArrowRight className="h-3.5 w-3.5 shrink-0 text-ink-tertiary" strokeWidth={1.5} />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium text-ink-primary">{page.label}</div>
+                          <div className="truncate text-xs text-ink-tertiary">{page.hint}</div>
+                        </div>
+                      </Link>
+                    ))}
+                    <div className="mt-2 flex flex-wrap items-center gap-4 px-5 pb-4 text-[11px] text-ink-tertiary">
+                      <span>
+                        <kbd className="font-mono">↑↓</kbd> navigate
+                      </span>
+                      <span>
+                        <kbd className="font-mono">↵</kbd> select
+                      </span>
+                      <span>
+                        <kbd className="font-mono">esc</kbd> close
+                      </span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-6 text-center text-sm text-ink-tertiary">
+                    {role === "SALESPERSON"
+                      ? "Type to search your assigned leads."
+                      : role === "CLIENT_MANAGER"
+                        ? "Type to search leads and salespeople for your business."
+                        : "Type to search across leads, clients, and team members."}
+                    <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs">
+                      <span>
+                        <kbd className="font-mono">↑↓</kbd> navigate
+                      </span>
+                      <span>
+                        <kbd className="font-mono">↵</kbd> select
+                      </span>
+                      <span>
+                        <kbd className="font-mono">esc</kbd> close
+                      </span>
+                    </div>
+                  </div>
+                )
               ) : null}
 
               {query && loading ? (
                 <div className="p-6 text-center text-sm text-ink-tertiary">Searching…</div>
               ) : null}
 
-              {query && !loading && results.length === 0 ? (
+              {query && !loading && visibleResults.length === 0 && pageMatches.length === 0 ? (
                 <div className="p-8 text-center">
                   <div className="text-sm text-ink-secondary">No results for &quot;{query}&quot;</div>
+                  {isPlatform ? (
+                    <p className="mt-1 text-xs text-ink-tertiary">
+                      Try another organisation name, ID or administrator.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {query && isPlatform && pageMatches.length > 0 ? (
+                <div>
+                  <div className="bg-surface-card-alt px-5 py-2 text-[11px] font-medium text-ink-tertiary">
+                    Pages
+                  </div>
+                  {pageMatches.map((page) => (
+                    <Link
+                      key={page.href}
+                      href={page.href}
+                      onClick={() => close()}
+                      className="flex items-center gap-3 border-b border-border px-5 py-3 last:border-b-0"
+                    >
+                      <ArrowRight className="h-4 w-4 shrink-0 text-ink-tertiary" strokeWidth={1.5} />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium text-ink-primary">{page.label}</div>
+                        <div className="truncate text-xs text-ink-tertiary">{page.hint}</div>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               ) : null}
 
@@ -254,13 +342,13 @@ export function GlobalSearch({
   );
 }
 
-function groupResults(results: SearchResult[]) {
+function groupResults(results: SearchResult[], platform = false) {
   const groups: Record<string, SearchResult[]> = { lead: [], client: [], user: [] };
   for (const r of results) groups[r.type].push(r);
   return [
     { type: "lead" as const, label: "Leads", items: groups.lead },
-    { type: "client" as const, label: "Clients", items: groups.client },
-    { type: "user" as const, label: "Team", items: groups.user },
+    { type: "client" as const, label: platform ? "Organisations" : "Clients", items: groups.client },
+    { type: "user" as const, label: platform ? "Users" : "Team", items: groups.user },
   ].filter((g) => g.items.length > 0);
 }
 

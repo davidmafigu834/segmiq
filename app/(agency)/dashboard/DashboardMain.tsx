@@ -1,169 +1,299 @@
-import { BarChart2 } from "lucide-react";
-import { PulseBar } from "@/components/dashboard/PulseBar";
-import { buildPulseMetrics } from "@/components/dashboard/pulse-metrics";
-import { FlagAlert } from "@/components/dashboard/FlagAlert";
-import { RecentLeadsTable } from "@/components/dashboard/RecentLeadsTable";
-import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
-import { ClientPerformanceGrid } from "@/components/dashboard/ClientPerformanceGrid";
-import { QuickActions } from "./components/QuickActions";
+import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { fetchAgencyDashboardData } from "@/lib/dashboard-data";
+import { listActiveGrantsForAdmin, effectiveGrantStatus } from "@/lib/security/support-access";
+import { listIncidents } from "@/lib/status-admin";
+import { PlatformMetric } from "@/components/platform/PlatformMetric";
+import { PlatformHealthRow, PlatformStatusBadge } from "@/components/platform/PlatformStatusBadge";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/Table";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Building2 } from "lucide-react";
 
-const PIPELINE_STAGES = [
-  { key: "NEW", label: "New", barClass: "bg-[var(--text-tertiary)]" },
-  { key: "CONTACTED", label: "Contacted", barClass: "bg-[var(--pipeline-contacted)]" },
-  { key: "QUALIFIED", label: "Qualified", barClass: "bg-[var(--pipeline-qualified)]" },
-  { key: "NEGOTIATING", label: "Negotiating", barClass: "bg-[var(--pipeline-negotiating)]" },
-  { key: "WON", label: "Won", barClass: "bg-[var(--success)]" },
-  { key: "LOST", label: "Lost", barClass: "bg-[var(--error)]" },
-];
+function greeting(now: Date): string {
+  const hour = now.getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
 
-const LEAD_SOURCE_ROWS = [
-  { key: "FACEBOOK", label: "Facebook" },
-  { key: "LANDING_PAGE", label: "Profile page" },
-  { key: "MANUAL", label: "Manual" },
-  { key: "REFERRAL", label: "Referral" },
-];
-
-const GHOST_WIDTHS: Record<string, number> = {
-  FACEBOOK: 65,
-  LANDING_PAGE: 40,
-  MANUAL: 25,
-  REFERRAL: 15,
-};
+function formatSigned(n: number, suffix = ""): string {
+  const abs = Math.abs(n);
+  const formatted = Number.isInteger(abs) ? String(abs) : abs.toFixed(1);
+  if (n > 0) return `+${formatted}${suffix}`;
+  if (n < 0) return `−${formatted}${suffix}`;
+  return `0${suffix}`;
+}
 
 export async function DashboardMain() {
-  const d = await fetchAgencyDashboardData();
+  const session = await getServerSession(authOptions);
+  const firstName = (session?.user?.name ?? "there").split(/\s+/)[0];
 
-  const totalFlagged = d.uncontactedFlags.reduce((s, r) => s + r.count, 0);
+  const [d, grants, incidents] = await Promise.all([
+    fetchAgencyDashboardData(),
+    session?.userId ? listActiveGrantsForAdmin(session.userId).catch(() => []) : Promise.resolve([]),
+    listIncidents().catch(() => []),
+  ]);
 
-  const pulse = buildPulseMetrics({
-    leadsToday: d.leadsToday,
-    leadsYesterday: d.leadsYesterday,
-    dayDeltaPct: d.dayDeltaPct,
-    leadsDeltaNeutral: d.leadsDeltaNeutral,
-    contactRate: d.contactRate,
-    contactRateDeltaPts: d.contactRateDeltaPts,
-    dealsWonCount: d.dealsWonMTD.count,
-    dealsWonValueSum: d.dealsWonMTD.valueSum,
-    avgResponseMinutes: d.avgResponseTime,
-    avgResponseDeltaMinutes: d.avgResponseDeltaMinutes,
+  const now = new Date();
+  const totalOrgs = d.clientPerf.length;
+  const activeOrgs = d.clientPerf.filter((r) => r.is_active).length;
+  const flaggedOrgs = d.clientPerf.filter((r) => r.hasFlag).length;
+  const openIncidents = incidents.filter((i) => !i.resolved_at);
+  const criticalOpen = openIncidents.some((i) => i.severity === "critical");
+  const platformKind = criticalOpen ? "error" : openIncidents.length ? "warning" : "operational";
+  const platformLabel = criticalOpen
+    ? "Incident in progress"
+    : openIncidents.length
+      ? "Needs attention"
+      : "All critical systems operational";
+  const activeSupport = grants.filter((g) => effectiveGrantStatus(g) === "ACTIVE").length;
+
+  const attention = [
+    ...d.uncontactedFlags.map((row) => ({
+      severity: "warning" as const,
+      title: `${row.count} uncontacted lead${row.count === 1 ? "" : "s"}`,
+      org: row.clientName,
+      href: "/dashboard/clients",
+      action: "Review",
+    })),
+    ...openIncidents.slice(0, 5).map((inc) => ({
+      severity: inc.severity === "critical" ? ("error" as const) : ("warning" as const),
+      title: inc.title,
+      org: inc.component_key ?? "Platform",
+      href: "/dashboard/status-incidents",
+      action: "Investigate",
+    })),
+  ].slice(0, 7);
+
+  const dateLabel = now.toLocaleDateString(undefined, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
   });
 
-  const leadSourceCounts: Record<string, number> = {
-    FACEBOOK: 0,
-    LANDING_PAGE: 0,
-    MANUAL: 0,
-    REFERRAL: 0,
-  };
-  for (const lead of d.recentLeads) {
-    const src = lead.source as string;
-    if (src in leadSourceCounts) leadSourceCounts[src]++;
-  }
-  const hasSourceData = Object.values(leadSourceCounts).some((v) => v > 0);
-  const maxSourceCount = Math.max(...Object.values(leadSourceCounts), 1);
-
   return (
-    <>
-      <QuickActions />
-
-      <div>
-        <PulseBar metrics={pulse} />
+    <div className="space-y-8 pb-8">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[15px] text-[var(--text-secondary)]">
+            {greeting(now)}, {firstName}.
+          </p>
+          <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">{dateLabel}</p>
+        </div>
+        <PlatformStatusBadge kind={platformKind} label={platformLabel} />
       </div>
 
-      {d.uncontactedFlags.length > 0 ? (
-        <FlagAlert rows={d.uncontactedFlags} totalCount={totalFlagged} href="/dashboard/leads?filter=uncontacted" />
-      ) : null}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 border-y border-[var(--border)] py-5 md:grid-cols-3 lg:grid-cols-5">
+        <PlatformMetric
+          label="Organisations"
+          value={totalOrgs.toLocaleString()}
+          context={`${activeOrgs} active`}
+        />
+        <PlatformMetric
+          label="Inbound today"
+          value={d.leadsToday.toLocaleString()}
+          context={
+            d.leadsDeltaNeutral
+              ? "Flat vs yesterday"
+              : `${formatSigned(d.dayDeltaPct, "%")} vs yesterday`
+          }
+        />
+        <PlatformMetric
+          label="Deals won MTD"
+          value={d.dealsWonMTD.count.toLocaleString()}
+          context={d.dealsWonMTD.valueSum ? undefined : "Across organisations"}
+        />
+        <PlatformMetric
+          label="Contact rate"
+          value={`${Math.round(d.contactRate)}%`}
+          context={`${formatSigned(d.contactRateDeltaPts, " pts")} vs last week`}
+        />
+        <PlatformMetric
+          label="Support access"
+          value={activeSupport.toLocaleString()}
+          context={activeSupport === 1 ? "1 active session" : "Active sessions"}
+        />
+      </div>
 
-      <section aria-label="Lead operations" className="grid items-start gap-8 border-y border-[var(--border-strong)] py-8 min-[1100px]:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] min-[1100px]:gap-0">
-        <div className="min-w-0 min-[1100px]:pr-8">
-          <RecentLeadsTable rows={d.recentLeads} agencyFooter />
-        </div>
-        <div className="min-w-0 min-[1100px]:border-l min-[1100px]:border-[var(--border)] min-[1100px]:pl-8">
-          <ActivityFeed />
-        </div>
-      </section>
-
-      <section aria-label="Pipeline and lead-source analysis" className="mt-12 grid grid-cols-1 border-y border-[var(--border-strong)] min-[800px]:grid-cols-2">
-
-        {/* Pipeline */}
-        <article className="py-7 min-[800px]:pr-8">
-          <h2 className="mb-6 font-display text-[19px] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-            Pipeline by stage
-          </h2>
-
-          {Object.values(d.pipelineByStatus).every((v) => v === 0) ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <BarChart2 className="mb-3 h-7 w-7 text-[var(--text-disabled)]" />
-              <p className="text-[13px] text-[var(--text-tertiary)]">Pipeline is empty</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {PIPELINE_STAGES.map((stage) => {
-                const count = d.pipelineByStatus[stage.key] ?? 0;
-                const max = Math.max(...Object.values(d.pipelineByStatus), 1);
-                const pct = Math.round((count / max) * 100);
-                return (
-                  <div key={stage.key} className="flex items-center gap-3">
-                    <span className="w-[90px] shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-                      {stage.label}
-                    </span>
-                    <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--bg-quaternary)]">
-                      <div
-                        className={`h-full w-full origin-left rounded-full transition-transform duration-500 ease-[var(--ease-out)] ${stage.barClass}`}
-                        style={{ transform: `scaleX(${pct / 100})` }}
-                      />
-                    </div>
-                    <span className="w-8 shrink-0 text-right font-display tabular-nums text-[17px] font-semibold text-[var(--text-primary)]">
-                      {count}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </article>
-
-        {/* Lead sources */}
-        <article className="border-t border-[var(--border)] py-7 min-[800px]:border-l min-[800px]:border-t-0 min-[800px]:pl-8">
-          <h2 className="mb-6 font-display text-[19px] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-            Leads by source
-          </h2>
-
-          <div className="flex flex-col gap-3">
-            {LEAD_SOURCE_ROWS.map((source) => {
-              const count = leadSourceCounts[source.key] ?? 0;
-              const pct = hasSourceData ? Math.round((count / maxSourceCount) * 100) : 0;
-              return (
-                <div key={source.key} className="flex items-center gap-3">
-                  <span className="w-[90px] shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-                    {source.label}
-                  </span>
-                  <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--bg-quaternary)]">
-                    <div
-                      className={`h-full w-full origin-left rounded-full bg-[var(--accent)] transition-transform duration-500 ease-[var(--ease-out)] ${hasSourceData ? "opacity-100" : "opacity-25"}`}
-                      style={{ transform: `scaleX(${(hasSourceData ? pct : GHOST_WIDTHS[source.key] ?? 0) / 100})` }}
-                    />
-                  </div>
-                  <span className="w-8 shrink-0 text-right font-display tabular-nums text-[17px] font-semibold text-[var(--text-primary)]">
-                    {hasSourceData ? count : "—"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {!hasSourceData && (
-            <p className="mt-4 text-center text-[12px] text-[var(--text-tertiary)]">
-              Lead source data will appear here
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(18rem,1fr)]">
+        <section>
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Organisation health</h2>
+            <p className="text-[12px] text-[var(--text-tertiary)]">
+              {totalOrgs} total · {activeOrgs} active · {flaggedOrgs} flagged
             </p>
+          </div>
+          {totalOrgs === 0 ? (
+            <EmptyState
+              icon={Building2}
+              title="No organisations yet"
+              description="New organisations will appear here as they join SegmiQ."
+            />
+          ) : (
+            <div className="space-y-2.5">
+              <HealthBar label="Active" value={activeOrgs} total={totalOrgs} tone="success" />
+              <HealthBar label="Needs attention" value={flaggedOrgs} total={totalOrgs} tone="warning" />
+              <HealthBar
+                label="Inactive"
+                value={Math.max(0, totalOrgs - activeOrgs)}
+                total={totalOrgs}
+                tone="neutral"
+              />
+            </div>
           )}
-        </article>
+        </section>
 
-      </section>
-
-      <div>
-        <ClientPerformanceGrid rows={d.clientPerf} />
+        <section>
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Platform health</h2>
+            <Link
+              href="/dashboard/status-incidents"
+              className="text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            >
+              View details →
+            </Link>
+          </div>
+          <div className="divide-y divide-[var(--border)]">
+            <PlatformHealthRow
+              name="Status page"
+              kind={platformKind}
+              label={openIncidents.length ? `${openIncidents.length} open` : "Operational"}
+            />
+            <PlatformHealthRow
+              name="Support access"
+              kind={activeSupport ? "attention" : "operational"}
+              label={activeSupport ? `${activeSupport} active` : "None"}
+            />
+            <PlatformHealthRow
+              name="Organisation flags"
+              kind={flaggedOrgs ? "warning" : "operational"}
+              label={flaggedOrgs ? `${flaggedOrgs} flagged` : "Clear"}
+            />
+          </div>
+        </section>
       </div>
-    </>
+
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,1fr)]">
+        <section>
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Needs attention</h2>
+          </div>
+          {attention.length === 0 ? (
+            <p className="py-6 text-[13px] text-[var(--text-tertiary)]">Nothing requires attention.</p>
+          ) : (
+            <ul className="divide-y divide-[var(--border)]">
+              {attention.map((item, i) => (
+                <li key={`${item.title}-${i}`} className="flex items-start gap-3 py-3">
+                  <span
+                    className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
+                      item.severity === "error" ? "bg-[var(--error)]" : "bg-[var(--warning)]"
+                    }`}
+                    aria-hidden
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-medium text-[var(--text-primary)]">{item.title}</p>
+                    <p className="text-[12px] text-[var(--text-tertiary)]">{item.org}</p>
+                  </div>
+                  <Link
+                    href={item.href}
+                    className="shrink-0 text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  >
+                    {item.action} →
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Organisations</h2>
+            <Link
+              href="/dashboard/clients"
+              className="text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            >
+              View all →
+            </Link>
+          </div>
+          {d.clientPerf.length === 0 ? (
+            <p className="py-6 text-[13px] text-[var(--text-tertiary)]">No organisations to show.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow isHeader>
+                    <TableHead className="pl-0">Organisation</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead align="right">This week</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {d.clientPerf.slice(0, 7).map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="pl-0">
+                        <Link
+                          href={`/dashboard/clients/${row.id}`}
+                          className="font-medium text-[var(--text-primary)] hover:underline"
+                        >
+                          {row.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <PlatformStatusBadge
+                          kind={row.hasFlag ? "attention" : row.is_active ? "active" : "suspended"}
+                          label={row.hasFlag ? "Issue" : row.is_active ? "Active" : "Inactive"}
+                        />
+                      </TableCell>
+                      <TableCell align="right">{row.leadsThisWeek.toLocaleString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function HealthBar({
+  label,
+  value,
+  total,
+  tone,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  tone: "success" | "warning" | "neutral";
+}) {
+  const pct = total === 0 ? 0 : Math.round((value / total) * 100);
+  const bar =
+    tone === "success"
+      ? "bg-[var(--accent)]"
+      : tone === "warning"
+        ? "bg-[var(--warning)]"
+        : "bg-[var(--text-tertiary)]";
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-[7.5rem] shrink-0 text-[12px] text-[var(--text-secondary)]">{label}</span>
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--bg-quaternary)]">
+        <div className={`h-full rounded-full ${bar}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-8 shrink-0 text-right font-mono text-[12px] tabular-nums text-[var(--text-primary)]">
+        {value}
+      </span>
+    </div>
   );
 }

@@ -13,11 +13,24 @@ export async function GET(req: Request, { params }: { params: { jobId: string } 
   const job = await getJob(params.jobId);
   if (!job) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const inTenant =
-    (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) || auth.clientId === job.clientId;
-  if (!inTenant) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) {
+    const { requireClientDataAccess } = await import("@/lib/security/support-access");
+    const gate = await requireClientDataAccess({
+      req,
+      clientId: job.clientId,
+      scope: "AGENT_ACTIVITY",
+      resourceType: "proactive_job",
+      resourceId: params.jobId,
+    });
+    if (gate.error) return gate.error;
+    return NextResponse.json({ job });
+  }
 
-  if (auth.role === "CLIENT_MANAGER" || (auth.role === "SUPER_ADMIN" && !auth.isImpersonating)) {
+  if (auth.clientId !== job.clientId) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  if (auth.role === "CLIENT_MANAGER") {
     return NextResponse.json({ job });
   }
 
@@ -52,16 +65,21 @@ export async function PATCH(req: Request, { params }: { params: { jobId: string 
   const job = await getJob(params.jobId);
   if (!job) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const inTenant =
-    (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) || auth.clientId === job.clientId;
-  if (!inTenant) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) {
+    return NextResponse.json(
+      { error: "Support Access cannot modify customer records" },
+      { status: 403 }
+    );
+  }
+  if (auth.clientId !== job.clientId) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
   const parsed = patchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
   if (parsed.data.action === "cancel") {
-    const isManager =
-      auth.role === "CLIENT_MANAGER" || (auth.role === "SUPER_ADMIN" && !auth.isImpersonating);
+    const isManager = auth.role === "CLIENT_MANAGER";
     if (!isManager) {
       if (!job.leadId) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });

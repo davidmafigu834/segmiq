@@ -11,13 +11,13 @@ import { GlobalSearch } from "@/components/shell/GlobalSearch";
 import { AgencySidebar } from "./AgencySidebar";
 import { AgencyHeaderClock } from "./AgencyHeaderClock";
 import { ShellIcon } from "./shell-icons";
-import type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
+import type { AppShellClientRow, AppShellNavGroup, AppShellNavItem } from "./app-shell-types";
 import { isWhatsAppSalesHubPath } from "@/lib/sales/whatsapp-hub-nav";
 import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import { CrmSidebarResizeHandle } from "./CrmSidebarResizeHandle";
-import { useCrmSidebarLayout } from "@/lib/shell/use-crm-sidebar-layout";
+import { PlatformStatusIndicator } from "@/components/platform/PlatformStatusIndicator";
 
-export type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
+export type { AppShellClientRow, AppShellNavGroup, AppShellNavItem } from "./app-shell-types";
 
 export function AppShell({
   homeHref,
@@ -26,6 +26,7 @@ export function AppShell({
   secondaryNav,
   primarySectionLabel = "Workspace",
   secondarySectionLabel = "Tools",
+  navGroups,
   clients,
   userName,
   userRoleLabel,
@@ -46,6 +47,7 @@ export function AppShell({
   profileHref,
   lightMode: lightModeProp = false,
   contentFlush = false,
+  platformConsole = false,
 }: {
   homeHref: string;
   roleLabel: string;
@@ -53,6 +55,7 @@ export function AppShell({
   secondaryNav: AppShellNavItem[];
   primarySectionLabel?: string;
   secondarySectionLabel?: string;
+  navGroups?: AppShellNavGroup[];
   clients?: AppShellClientRow[];
   userName: string;
   userRoleLabel: string;
@@ -73,6 +76,7 @@ export function AppShell({
   profileHref?: string;
   lightMode?: boolean;
   contentFlush?: boolean;
+  platformConsole?: boolean;
 }) {
   const pathname = usePathname();
   const crmTheme = useCrmThemeOptional();
@@ -111,7 +115,7 @@ export function AppShell({
     return pathname === href || pathname.startsWith(href + "/");
   }
 
-  const hideQuick = showQuickAction === false || notificationRole === "CLIENT_MANAGER";
+  const hideQuick = showQuickAction === false || notificationRole === "CLIENT_MANAGER" || platformConsole;
   const hideSearch = showWorkspaceSearch === false;
   const mobileNav =
     notificationRole === "SALESPERSON"
@@ -121,7 +125,7 @@ export function AppShell({
           primaryNav.find((item) => item.href === "/sales/pipeline"),
           primaryNav.find((item) => item.href === "/sales/quotes"),
         ].filter((item): item is AppShellNavItem => Boolean(item))
-      : primaryNav.slice(0, 4);
+      : (navGroups?.flatMap((g) => g.items) ?? primaryNav).slice(0, 4);
 
   const sidebar = (
     <AgencySidebar
@@ -131,6 +135,7 @@ export function AppShell({
       secondaryNav={secondaryNav}
       primarySectionLabel={primarySectionLabel}
       secondarySectionLabel={secondarySectionLabel}
+      navGroups={navGroups}
       clients={clients}
       userName={userName}
       userRoleLabel={userRoleLabel}
@@ -140,6 +145,7 @@ export function AppShell({
       profileHref={profileHref}
       lightMode={lightMode}
       iconOnly={sidebarResizable && sidebarCollapsed}
+      platformConsole={platformConsole}
     />
   );
   const mobileSidebar = (
@@ -150,6 +156,7 @@ export function AppShell({
       secondaryNav={secondaryNav}
       primarySectionLabel={primarySectionLabel}
       secondarySectionLabel={secondarySectionLabel}
+      navGroups={navGroups}
       clients={clients}
       userName={userName}
       userRoleLabel={userRoleLabel}
@@ -159,12 +166,13 @@ export function AppShell({
       mobileExpanded
       profileHref={profileHref}
       lightMode={lightMode}
+      platformConsole={platformConsole}
     />
   );
 
   return (
     <div
-      className={`flex bg-bg-primary ${
+      className={`flex bg-bg-primary ${platformConsole ? "platform-console" : ""} ${
         hideSidebar
           ? "h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden"
           : "min-h-screen min-h-[100svh] layout:h-[100dvh] layout:max-h-[100dvh] layout:min-h-0 layout:overflow-hidden"
@@ -231,7 +239,15 @@ export function AppShell({
             </button>
             <div className="min-w-0 flex-1" />
             <div className="flex shrink-0 items-center gap-2">
-              {!hideSearch ? <GlobalSearch role={notificationRole} /> : null}
+              {!hideSearch ? (
+                <GlobalSearch
+                  role={notificationRole}
+                  placeholder={
+                    platformConsole ? "Search organisations, users, IDs..." : undefined
+                  }
+                />
+              ) : null}
+              {platformConsole ? <PlatformStatusIndicator /> : null}
               <NotificationBell initialUnread={unreadNotifications ?? 0} role={notificationRole} />
               {!hideQuick ? (
                 notificationRole === "SUPER_ADMIN" ? (
@@ -270,17 +286,29 @@ export function AppShell({
               <Menu className="h-5 w-5" strokeWidth={1.5} />
             </button>
             <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-              <span className="hidden min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--text-tertiary)] lg:inline">
-                {breadcrumb}
-              </span>
-              <span className="hidden h-3 w-px shrink-0 bg-[var(--border)] lg:inline" aria-hidden />
+              {breadcrumb ? (
+                <>
+                  <span className="hidden min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--text-tertiary)] lg:inline">
+                    {breadcrumb}
+                  </span>
+                  <span className="hidden h-3 w-px shrink-0 bg-[var(--border)] lg:inline" aria-hidden />
+                </>
+              ) : null}
               <h1 className={`min-w-0 flex-1 truncate font-semibold tracking-[-0.01em] text-[var(--text-primary)] ${titleSize === "hero" ? "text-[16px] layout:text-[18px]" : "text-[15px] layout:text-[16px]"}`}>{pageTitle}</h1>
             </div>
             <div className="ml-auto flex shrink-0 flex-nowrap items-center gap-1.5 sm:gap-2">
               <div className="hidden items-center xl:flex">
                 <AgencyHeaderClock />
               </div>
-              {!hideSearch ? <GlobalSearch role={notificationRole} /> : null}
+              {!hideSearch ? (
+                <GlobalSearch
+                  role={notificationRole}
+                  placeholder={
+                    platformConsole ? "Search organisations, users, IDs..." : undefined
+                  }
+                />
+              ) : null}
+              {platformConsole ? <PlatformStatusIndicator /> : null}
               <NotificationBell initialUnread={unreadNotifications ?? 0} role={notificationRole} />
               {!hideQuick ? (
                 notificationRole === "SUPER_ADMIN" ? (

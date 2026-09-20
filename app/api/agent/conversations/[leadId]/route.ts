@@ -26,6 +26,7 @@ import { buildAgentActionCards } from "@/lib/agent/hub-action-cards";
 import { buildHandoffForLead, loadReIntelligenceForLead } from "@/lib/agent/real-estate/intelligence";
 import { isRealEstate } from "@/lib/terminology";
 import { asRow, asRows } from "@/lib/agent/rows";
+import { requireClientDataAccess } from "@/lib/security/support-access";
 
 export const dynamic = "force-dynamic";
 
@@ -40,17 +41,42 @@ async function resolveLeadAccess(req: Request, leadId: string) {
     .maybeSingle();
   if (!lead) return { ok: false as const, status: 404, error: "Lead not found" };
   const clientId = lead.client_id as string;
+
+  // SECURITY: platform staff need an ACTIVE Support Access grant for THIS lead's
+  // organisation with the AGENT_ACTIVITY scope. Agent context contains customer
+  // conversation content and generated summaries.
+  if (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) {
+    const gate = await requireClientDataAccess({
+      req,
+      clientId,
+      scope: "AGENT_ACTIVITY",
+      resourceType: "agent_conversation",
+      resourceId: leadId,
+    });
+    if (gate.error) return { ok: false as const, response: gate.error };
+    return { ok: true as const, auth, clientId, leadId };
+  }
+
   const allowed =
-    auth.role === "SUPER_ADMIN" ||
-    (auth.clientId === clientId &&
-      (auth.role === "CLIENT_MANAGER" || (lead.assigned_to_id as string | null) === auth.userId));
+    auth.clientId === clientId &&
+    (auth.role === "CLIENT_MANAGER" || (lead.assigned_to_id as string | null) === auth.userId);
   if (!allowed) return { ok: false as const, status: 403, error: "Forbidden" };
   return { ok: true as const, auth, clientId, leadId };
 }
 
+function leadAccessError(
+  access: { response?: NextResponse; status?: number; error?: string }
+): NextResponse {
+  if (access.response) return access.response;
+  return NextResponse.json(
+    { error: access.error ?? "Forbidden" },
+    { status: access.status ?? 403 }
+  );
+}
+
 export async function GET(req: Request, { params }: { params: { leadId: string } }) {
   const access = await resolveLeadAccess(req, params.leadId);
-  if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
+  if (!access.ok) return leadAccessError(access);
 
   const supabase = createAdminClient();
   const [state, settings, clientRow] = await Promise.all([
@@ -210,7 +236,7 @@ const actionSchema = z.object({
 
 export async function PATCH(req: Request, { params }: { params: { leadId: string } }) {
   const access = await resolveLeadAccess(req, params.leadId);
-  if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
+  if (!access.ok) return leadAccessError(access);
 
   const body = await req.json().catch(() => null);
   const parsed = actionSchema.safeParse(body);

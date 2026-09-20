@@ -6,6 +6,22 @@ type Actor = { id: string; name: string; role: UserRole };
 
 type LeadScope = { client_id: string; assigned_to_id: string | null };
 
+async function hasQuotationSupportAccess(
+  userId: string,
+  role: string,
+  clientId: string
+): Promise<boolean> {
+  const { resolveSupportAccess } = await import("@/lib/security/support-access/guard");
+  const access = await resolveSupportAccess({
+    userId,
+    role,
+    isImpersonating: false,
+    clientId,
+    scope: "QUOTATIONS",
+  });
+  return access.granted;
+}
+
 /**
  * Quotations can be created/managed by the agency admin, the client manager
  * (for any lead in their client), and the assigned salesperson. This is
@@ -41,7 +57,18 @@ export async function canManageQuotationForLead(
     role: (session.role ?? "SALESPERSON") as UserRole,
   };
 
-  if (session.role === "SUPER_ADMIN") return { allowed: true, lead: scope, actor };
+  if (session.role === "SUPER_ADMIN" && !session.isImpersonating) {
+    // SECURITY: quotation contents (pricing, customer identity, terms) are client
+    // data. Platform staff need a QUOTATIONS-scoped Support Access grant for the
+    // organisation that owns the lead — resolved from the record, not the request.
+    // Support Access is read-only: it must never send or approve a customer quote.
+    const isRead = !req || req.method === "GET" || req.method === "HEAD";
+    if (!isRead) return { allowed: false, reason: "Forbidden", status: 403 };
+    const granted = await hasQuotationSupportAccess(session.userId, session.role, scope.client_id);
+    return granted
+      ? { allowed: true, lead: scope, actor }
+      : { allowed: false, reason: "Forbidden", status: 403 };
+  }
   if (session.role === "CLIENT_MANAGER") {
     if (session.clientId !== scope.client_id) return { allowed: false, reason: "Forbidden", status: 403 };
     return { allowed: true, lead: scope, actor };

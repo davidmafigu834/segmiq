@@ -1,61 +1,43 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
+import { Lock } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
-import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  buildFilterDescription,
-  fetchFilteredLeads,
-  getStatusCounts,
-  parseLeadFilters,
-  type LeadListClient,
-} from "@/lib/leads/all-leads";
-import { AllLeadsView } from "@/components/agency/AllLeadsView";
+import { EmptyState } from "@/components/ui";
+import { isSuperAdminRole } from "@/lib/auth/roles";
 
-function flattenSearchParams(searchParams: Record<string, string | string[] | undefined>): Record<string, string | undefined> {
-  const out: Record<string, string | undefined> = {};
-  for (const [k, v] of Object.entries(searchParams)) {
-    out[k] = Array.isArray(v) ? v[0] : v;
-  }
-  return out;
-}
-
-export default async function AllLeadsPage({
-  searchParams,
-}: {
-  searchParams: Record<string, string | string[] | undefined>;
-}) {
+/**
+ * Cross-tenant lead browsing has been removed from platform administration.
+ *
+ * A SegmiQ administrator should not be able to page through every organisation's
+ * customers. Lead records are reachable only inside an organisation that has an
+ * active Support Access grant with the LEADS scope, and the APIs enforce that
+ * independently of this page.
+ */
+export default async function AllLeadsPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.userId || session.role !== "SUPER_ADMIN") {
+  if (!session?.userId || !isSuperAdminRole(session.role) || session.isImpersonating) {
     redirect("/login");
   }
 
-  const sp = flattenSearchParams(searchParams);
-  const filters = parseLeadFilters(sp);
-
-  const supabase = createAdminClient();
-  const [leadsResult, clientsRes, salesRes, counts] = await Promise.all([
-    fetchFilteredLeads(filters),
-    supabase.from("clients").select("id, name, slug, logo_url, response_time_limit_hours").order("name"),
-    supabase.from("users").select("id, name, client_id, avatar_url").eq("role", "SALESPERSON").eq("is_active", true),
-    getStatusCounts(filters),
-  ]);
-
-  const clients = (clientsRes.data ?? []) as LeadListClient[];
-  const clientNames = new Map(clients.map((c) => [c.id, c.name]));
-  const filterDescription = buildFilterDescription(filters, clientNames);
-
   return (
-    <AgencyLayout breadcrumb="PLATFORM / LEADS" pageTitle="All leads" hideShellHeader>
-      <AllLeadsView
-        initialRows={leadsResult.rows}
-        totalCount={leadsResult.totalCount}
-        clients={clients}
-        salespeople={(salesRes.data ?? []) as { id: string; name: string; client_id: string | null; avatar_url: string | null }[]}
-        counts={counts}
-        filters={filters}
-        filterDescription={filterDescription}
-      />
+    <AgencyLayout breadcrumb="Security" pageTitle="Restricted data">
+      <div className="rounded-lg border border-[var(--border)]">
+        <EmptyState
+          icon={Lock}
+          title="Client business data is restricted"
+          description="Super Admin provides operational access by default. Use Support Access when customer-data access is legitimately required."
+          action={
+            <Link
+              href="/dashboard/support-access"
+              className="text-[13px] font-medium text-[var(--text-primary)] hover:underline"
+            >
+              Request Support Access
+            </Link>
+          }
+        />
+      </div>
     </AgencyLayout>
   );
 }

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/Table";
+import { PlatformMetric } from "@/components/platform/PlatformMetric";
 import { BillingStatusBadge } from "@/components/billing/BillingStatusBadge";
 import { CRM_PLAN_LABELS, type CrmPlan } from "@/lib/billing/plans";
 import { formatMoney, formatDate } from "@/lib/billing/format";
@@ -39,6 +40,19 @@ export function SubscriptionsListClient({ rows }: { rows: SubscriptionRow[] }) {
   const [status, setStatus] = useState("all");
   const [query, setQuery] = useState("");
 
+  const summary = useMemo(() => {
+    const active = rows.filter((r) => r.status === "active").length;
+    const trial = rows.filter((r) => r.status === "trialing" || r.status === "trial").length;
+    const pastDue = rows.filter((r) => r.status === "past_due").length;
+    const mrr = rows
+      .filter((r) => r.status === "active")
+      .reduce((sum, r) => {
+        const monthly = r.billingCycle === "annual" ? r.amount / 12 : r.amount;
+        return sum + monthly;
+      }, 0);
+    return { active, trial, pastDue, mrr, currency: rows[0]?.currency ?? "USD" };
+  }, [rows]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return rows.filter((r) => {
@@ -50,6 +64,13 @@ export function SubscriptionsListClient({ rows }: { rows: SubscriptionRow[] }) {
 
   return (
     <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-y border-[var(--border)] py-4 sm:grid-cols-4">
+        <PlatformMetric label="MRR" value={formatMoney(summary.mrr, summary.currency)} />
+        <PlatformMetric label="Active subscriptions" value={summary.active.toLocaleString()} />
+        <PlatformMetric label="Trials" value={summary.trial.toLocaleString()} />
+        <PlatformMetric label="Payment issues" value={summary.pastDue.toLocaleString()} />
+      </div>
+
       <div className="flex flex-wrap gap-2">
         <Link
           href="/dashboard/billing/payments"

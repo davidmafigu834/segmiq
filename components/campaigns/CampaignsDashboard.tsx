@@ -59,12 +59,10 @@ export function CampaignsDashboard({ allClients }: { allClients: AllClient[] }) 
 
   return (
     <div>
-      <div className="mb-8 flex flex-col gap-6 layout:flex-row layout:items-start layout:justify-between">
-        <div>
-          <p className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">Agency / Campaigns</p>
-          <h1 className="font-display text-3xl leading-none tracking-display text-ink-primary sm:text-[40px]">Campaigns</h1>
-          <p className="mt-2 text-[14px] text-ink-secondary">Live performance across all connected ad accounts</p>
-        </div>
+      <div className="mb-6 flex flex-col gap-4 layout:flex-row layout:items-start layout:justify-between">
+        <p className="max-w-xl text-[13px] text-[var(--text-secondary)]">
+          Live performance across connected ad accounts.
+        </p>
         <div className="flex flex-col items-stretch gap-3 layout:items-end">
           <div className="-mx-1 flex flex-wrap items-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
             <button

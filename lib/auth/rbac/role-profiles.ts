@@ -1,4 +1,10 @@
-import { P, type Permission, PLATFORM_PERMISSIONS, ALL_PERMISSIONS } from "./permissions";
+import {
+  P,
+  type Permission,
+  PLATFORM_PERMISSIONS,
+  ALL_PERMISSIONS,
+  CLIENT_DATA_PERMISSIONS,
+} from "./permissions";
 import type { UserRole } from "@/types";
 
 /**
@@ -135,11 +141,52 @@ export function permissionsForOrgRole(
   return [];
 }
 
+/**
+ * Platform operator baseline.
+ *
+ * SECURITY (Phase 7): Super Admin means authority over the SegmiQ platform, not
+ * visibility into every customer's business. Client-data permissions are
+ * excluded here and are only added for the duration of an active, scoped
+ * Support Access grant (see permissionsForSupportAccess).
+ */
 export function permissionsForSuperAdmin(): Permission[] {
+  const clientData = new Set<string>(CLIENT_DATA_PERMISSIONS);
   return unique([
-    ...ALL_PERMISSIONS.filter((p) => !p.startsWith("platform.")),
+    ...ALL_PERMISSIONS.filter((p) => !p.startsWith("platform.") && !clientData.has(p)),
     ...PLATFORM_PERMISSIONS,
   ]);
+}
+
+/**
+ * Client-data permissions unlocked by an active Support Access grant.
+ * Scope names mirror lib/security/support-access/scopes.
+ */
+const SCOPE_PERMISSIONS: Record<string, Permission[]> = {
+  CUSTOMER_PROFILES: [P.ANALYTICS_READ_ALL],
+  LEADS: [P.LEADS_READ_ALL, P.LEADS_READ_ASSIGNED],
+  DEALS: [P.DEALS_READ_ALL, P.DEALS_READ_ASSIGNED],
+  CONVERSATIONS: [
+    P.WHATSAPP_READ_ALL,
+    P.WHATSAPP_READ_ASSIGNED,
+    P.SOCIAL_INBOX_VIEW,
+    P.SOCIAL_INBOX_VIEW_TEAM,
+  ],
+  QUOTATIONS: [P.QUOTES_READ],
+  DOCUMENTS: [P.DOCUMENTS_READ],
+  FILES: [P.DOCUMENTS_READ],
+  AGENT_ACTIVITY: [P.AGENT_USE],
+};
+
+/** Read-only elevation. Support Access never grants write or send permissions. */
+export function permissionsForSupportAccess(
+  scopes: readonly string[]
+): Permission[] {
+  const out: Permission[] = [];
+  for (const scope of scopes) {
+    const perms = SCOPE_PERMISSIONS[scope];
+    if (perms) out.push(...perms);
+  }
+  return unique(out);
 }
 
 export { ALSO_SELLS_EXTRAS, SALESPERSON_PERMS, MANAGER_BASE as MANAGER_PERMS };

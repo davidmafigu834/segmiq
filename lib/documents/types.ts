@@ -167,6 +167,15 @@ export type DocumentActor = {
   userId: string;
   role: string;
   clientId: string | null;
+  /**
+   * SECURITY (Phase 7): platform staff hold no document permissions by default.
+   * Set only from a verified Support Access grant (DOCUMENTS / FILES scope) —
+   * see lib/documents/actor.
+   */
+  supportAccessScopes?: readonly string[];
+  /** Organisation the grant above covers. Records outside it stay inaccessible. */
+  supportAccessClientId?: string | null;
+  isImpersonating?: boolean;
 };
 
 export type DuplicateMatch = {
