@@ -255,7 +255,7 @@ export function LearningConversationSheets(props: {
           <ul className="space-y-3">
             {items.map((item, index) => (
               <li key={item.id} className="rounded-[10px] border border-sales-border-subtle px-3 py-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                <p className="wa-kicker">
                   {index + 1}. {CATEGORY_LABELS[item.category as keyof typeof CATEGORY_LABELS] ?? item.category}
                 </p>
                 <p className="mt-0.5 text-[13px] font-semibold text-sales-text-primary">{item.title}</p>

@@ -15,7 +15,7 @@ import {
   MessageSquare,
   MoreVertical,
   Pencil,
-  Sparkles,
+  StickyNote,
   UserRoundPlus,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
@@ -80,11 +80,7 @@ function toDateInputValue(date: Date): string {
 }
 
 function sectionLabel(children: string) {
-  return (
-    <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#98A2B3]">
-      {children}
-    </div>
-  );
+  return <div className="wa-section-title mb-2">{children}</div>;
 }
 
 export function LeadIntelligencePanel({
@@ -341,7 +337,7 @@ export function LeadIntelligencePanel({
   const panelWidthClass = panelWidth != null ? "shrink-0" : "w-[380px] shrink-0";
 
   const panelShell = whatsappMode
-    ? `flex h-full min-h-0 ${panelWidthClass} flex-col bg-white wa-panel ${
+    ? `flex h-full min-h-0 ${panelWidthClass} flex-col bg-sales-surface wa-panel ${
         mobileFullScreen
           ? ""
           : `max-[1099px]:fixed max-[1099px]:bottom-0 max-[1099px]:right-0 ${mobileTopClass} max-[1099px]:z-40 max-[1099px]:w-[min(380px,92vw)] max-[1099px]:shadow-[-4px_0_24px_rgba(0,0,0,0.08)] max-[1099px]:transition-transform max-[1099px]:duration-200`
@@ -360,7 +356,7 @@ export function LeadIntelligencePanel({
   const panelAnimatedClass = panelAnimated ? "inbox-panel-animated" : "";
 
   const intelHeader = (
-    <div className="shrink-0 border-b border-[#E4E7EC] bg-white px-4 py-3 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top))]">
+    <div className="shrink-0 border-b border-sales-border bg-sales-surface px-4 py-3 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top))]">
       <div className="flex items-center gap-2">
         {onMobileBack ? (
           <button
@@ -373,7 +369,7 @@ export function LeadIntelligencePanel({
           </button>
         ) : null}
         <div className="min-w-0 flex-1">
-          <div className="text-[15px] font-semibold tracking-tight text-[#101828]">Lead intelligence</div>
+          <div className="text-[15px] font-semibold tracking-tight text-sales-text-primary">Lead intelligence</div>
         </div>
         <button type="button" className="wa-icon-btn !h-8 !w-8" aria-label="Lead intelligence options">
           <MoreVertical size={16} strokeWidth={1.8} />
@@ -390,7 +386,7 @@ export function LeadIntelligencePanel({
         className={`${panelShell} ${mobilePanelClass} ${panelAnimatedClass}`}
       >
         {whatsappMode ? intelHeader : null}
-        <div className="flex flex-1 items-center justify-center p-6 text-sm text-[#98A2B3]">
+        <div className="flex flex-1 items-center justify-center p-6 text-sm text-sales-text-muted">
           Select a conversation
         </div>
       </div>
@@ -442,7 +438,7 @@ export function LeadIntelligencePanel({
       className={`${panelShell} ${mobilePanelClass} ${panelAnimatedClass}`}
     >
       {intelHeader}
-      <div className="inbox-scroll min-h-0 flex-1 overflow-y-auto bg-white pb-[env(safe-area-inset-bottom)]">
+      <div className="inbox-scroll min-h-0 flex-1 overflow-y-auto bg-sales-surface pb-[env(safe-area-inset-bottom)]">
         <div className="flex flex-col">
           {/* Contact / ownership */}
           <section className="border-b border-[#F2F4F7] px-4 py-4">
@@ -454,22 +450,22 @@ export function LeadIntelligencePanel({
                 size="md"
               />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[14px] font-semibold text-[#101828]">{name}</div>
-                <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-[#667085]">
-                  <SiWhatsapp size={12} className="text-[#25D366]" aria-hidden />
+                <div className="truncate text-[14px] font-semibold text-sales-text-primary">{name}</div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-sales-text-muted">
+                  <SiWhatsapp size={12} className="text-sales-whatsapp" aria-hidden />
                   WhatsApp
                 </div>
                 {conversation.phone ? (
-                  <div className="mt-0.5 truncate text-[12px] tabular-nums text-[#98A2B3]">
+                  <div className="mt-0.5 truncate text-[12px] tabular-nums text-sales-text-muted">
                     {conversation.phone}
                   </div>
                 ) : null}
               </div>
               <div className="shrink-0 text-right">
-                <div className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">Owner</div>
-                <div className="mt-0.5 text-[12px] font-medium text-[#101828]">{ownerDisplay}</div>
-                <div className="mt-2 text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">Source</div>
-                <div className="mt-0.5 text-[12px] text-[#667085]">
+                <div className="wa-meta-label">Owner</div>
+                <div className="mt-0.5 text-[12px] font-medium text-sales-text-primary">{ownerDisplay}</div>
+                <div className="mt-2 wa-meta-label">Source</div>
+                <div className="mt-0.5 text-[12px] text-sales-text-muted">
                   {formatSource(conversation.source as string)}
                 </div>
               </div>
@@ -489,28 +485,28 @@ export function LeadIntelligencePanel({
 
           {relatedDeal ? (
             <section className="border-b border-[#F2F4F7] px-4 py-3">
-              <div className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
+              <div className="wa-meta-label">
                 Active deal
               </div>
-              <div className="mt-1 text-[14px] font-semibold text-[#101828]">{relatedDeal.name}</div>
-              <div className="mt-0.5 text-[12px] text-[#667085]">
+              <div className="mt-1 text-[14px] font-semibold text-sales-text-primary">{relatedDeal.name}</div>
+              <div className="mt-0.5 text-[12px] text-sales-text-muted">
                 {relatedDeal.stage.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
                 {" · "}
                 {relatedDeal.valueLabel}
               </div>
               <a
                 href={`/sales/deals/${relatedDeal.id}`}
-                className="mt-2 inline-flex min-h-[40px] items-center text-[12px] font-semibold text-[#101828]"
+                className="mt-2 inline-flex min-h-[40px] items-center text-[12px] font-semibold text-sales-text-primary"
               >
                 Open deal
               </a>
             </section>
           ) : (
             <section className="border-b border-[#F2F4F7] px-4 py-3">
-              <div className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
+              <div className="wa-meta-label">
                 Deal
               </div>
-              <p className="mt-1 text-[12px] text-[#667085]">No Deal yet</p>
+              <p className="mt-1 text-[12px] text-sales-text-muted">No Deal yet</p>
             </section>
           )}
 
@@ -536,7 +532,7 @@ export function LeadIntelligencePanel({
                       />
                     </svg>
                     <div className="text-center">
-                      <div className="text-[20px] font-semibold tabular-nums leading-none text-[#101828]">
+                      <div className="text-[20px] font-semibold tabular-nums leading-none text-sales-text-primary">
                         {conversation.score}
                       </div>
                       <div className="mt-0.5 text-[11px] font-semibold" style={{ color: scoreTone.text }}>
@@ -566,47 +562,47 @@ export function LeadIntelligencePanel({
                   </div>
                 </div>
                 {insight ? (
-                  <p className="mt-2.5 text-[12px] text-[#667085]">{insight}</p>
+                  <p className="mt-2.5 text-[12px] text-sales-text-muted">{insight}</p>
                 ) : null}
               </>
             ) : (
-              <p className="mt-2 text-[13px] text-[#667085]">Not enough data yet</p>
+              <p className="mt-2 text-[13px] text-sales-text-muted">Not enough data yet</p>
             )}
           </section>
 
           {/* Sales signal */}
           {salesSignal ? (
-            <section className="border-b border-[#F2F4F7] px-4 py-3.5">
+            <section className="border-b border-sales-border-subtle px-4 py-3.5">
               {sectionLabel("Sales signal")}
               <div
                 className={`mt-2 flex items-start gap-2.5 rounded-[10px] border px-3 py-2.5 ${
                   salesSignal.tone === "danger"
-                    ? "border-[#FECACA] bg-[#FEF2F2]"
+                    ? "border-sales-danger-fg/30 bg-sales-danger-soft"
                     : salesSignal.tone === "warning"
-                      ? "border-[#FED7AA] bg-[#FFFAEB]"
+                      ? "border-sales-warning-fg/30 bg-sales-warning-soft"
                       : salesSignal.tone === "success"
-                        ? "border-[#D1FADF] bg-[#ECFDF3]"
-                        : "border-[#E4E7EC] bg-[#F9FAFB]"
+                        ? "border-sales-success/30 bg-sales-success-soft"
+                        : "border-sales-border bg-sales-surface-subtle"
                 }`}
               >
                 {salesSignal.action === "reply" || salesSignal.id === "needs_reply" ? (
-                  <MessageSquare size={16} className="mt-0.5 shrink-0 text-[#B54708]" aria-hidden />
+                  <MessageSquare size={16} className="mt-0.5 shrink-0 text-sales-warning-fg" aria-hidden />
                 ) : salesSignal.action === "claim" ? (
-                  <UserRoundPlus size={16} className="mt-0.5 shrink-0 text-[#175CD3]" aria-hidden />
+                  <UserRoundPlus size={16} className="mt-0.5 shrink-0 text-sales-info" aria-hidden />
                 ) : salesSignal.action === "follow_up" ? (
-                  <Clock size={16} className="mt-0.5 shrink-0 text-[#B54708]" aria-hidden />
+                  <Clock size={16} className="mt-0.5 shrink-0 text-sales-warning-fg" aria-hidden />
                 ) : (
-                  <AlertCircle size={16} className="mt-0.5 shrink-0 text-[#667085]" aria-hidden />
+                  <AlertCircle size={16} className="mt-0.5 shrink-0 text-sales-text-muted" aria-hidden />
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-semibold text-[#101828]">{salesSignal.title}</div>
-                  <div className="mt-0.5 text-[12px] text-[#667085]">{salesSignal.detail}</div>
+                  <div className="text-[13px] font-semibold text-sales-text-primary">{salesSignal.title}</div>
+                  <div className="mt-0.5 text-[12px] text-sales-text-muted">{salesSignal.detail}</div>
                   {salesSignal.action === "claim" && canClaim && onClaim ? (
                     <button
                       type="button"
                       disabled={claiming}
                       onClick={() => onClaim(conversation.id)}
-                      className="mt-2 rounded-[8px] bg-[#D4FF4F] px-2.5 py-1.5 text-[12px] font-semibold text-[#101828] disabled:opacity-50"
+                      className="mt-2 rounded-[8px] bg-sales-brand text-sales-brand-text px-2.5 py-1.5 text-[12px] font-semibold text-sales-text-primary disabled:opacity-50"
                     >
                       {claiming ? "Claiming…" : "Claim lead"}
                     </button>
@@ -618,18 +614,18 @@ export function LeadIntelligencePanel({
 
           {/* AI briefing */}
           {summary ? (
-            <section className="border-b border-[#F2F4F7] px-4 py-3.5">
+            <section className="border-b border-sales-border-subtle px-4 py-3.5">
               <div className="flex items-center gap-2">
                 {sectionLabel("AI briefing")}
-                <span className="rounded-md bg-[#F2F4F7] px-1.5 py-0.5 text-[10px] font-semibold text-[#667085]">
+                <span className="rounded-md bg-[#F2F4F7] px-1.5 py-0.5 text-[10px] font-semibold text-sales-text-muted">
                   Beta
                 </span>
               </div>
-              <div className="mt-2 rounded-[10px] border border-[#E4E7EC] bg-[#F9FAFB] px-3 py-3">
+              <div className="mt-2 rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-3">
                 <p className="text-[13px] leading-relaxed text-[#344054]">{summary}</p>
                 {suggestion ? (
-                  <p className="mt-2 text-[12px] text-[#667085]">
-                    <span className="font-medium text-[#101828]">Recommended: </span>
+                  <p className="mt-2 text-[12px] text-sales-text-muted">
+                    <span className="font-medium text-sales-text-primary">Recommended: </span>
                     {suggestion}
                   </p>
                 ) : null}
@@ -639,7 +635,7 @@ export function LeadIntelligencePanel({
 
           {/* Qualification */}
           {(qualRows.length > 0 || conversation.tags.length > 0) ? (
-            <section className="border-b border-[#F2F4F7] px-4 py-3.5">
+            <section className="border-b border-sales-border-subtle px-4 py-3.5">
               <div className="flex items-center justify-between gap-2">
                 {sectionLabel("Qualification details")}
               </div>
@@ -651,8 +647,8 @@ export function LeadIntelligencePanel({
                 >
                   {qualRows.map((row) => (
                     <div key={`${row.label}-${row.value}`} className="min-w-0">
-                      <dt className="text-[11px] text-[#98A2B3]">{row.label}</dt>
-                      <dd className="mt-0.5 truncate text-[13px] font-medium text-[#101828]">{row.value}</dd>
+                      <dt className="text-[11px] text-sales-text-muted">{row.label}</dt>
+                      <dd className="mt-0.5 truncate text-[13px] font-medium text-sales-text-primary">{row.value}</dd>
                     </div>
                   ))}
                 </dl>
@@ -662,7 +658,7 @@ export function LeadIntelligencePanel({
                   {conversation.tags.map((t) => (
                     <span
                       key={t}
-                      className="rounded-md bg-[#F2F4F7] px-2 py-1 text-[11px] font-medium text-[#667085]"
+                      className="rounded-md bg-[#F2F4F7] px-2 py-1 text-[11px] font-medium text-sales-text-muted"
                     >
                       {t.replace(/_/g, " ")}
                     </span>
@@ -688,8 +684,8 @@ export function LeadIntelligencePanel({
                     title={stage.hint}
                     className={`rounded-[8px] border px-2.5 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-60 ${
                       isCurrent
-                        ? "border-[rgba(150,190,40,0.55)] bg-[#F4FCE8] text-[#101828]"
-                        : "border-[#E4E7EC] bg-white text-[#667085] hover:bg-[#F9FAFB]"
+                        ? "border-sales-brand bg-sales-brand-soft text-sales-text-primary"
+                        : "border-sales-border bg-sales-surface text-sales-text-muted hover:bg-sales-surface-subtle"
                     }`}
                   >
                     {busy ? "Saving…" : stage.label}
@@ -698,7 +694,7 @@ export function LeadIntelligencePanel({
               })}
             </div>
             {!canChangeStage ? (
-              <p className="mt-2 text-[11px] text-[#98A2B3]">
+              <p className="mt-2 text-[11px] text-sales-text-muted">
                 {role === "CLIENT_MANAGER"
                   ? "Managers can view stage but cannot change it here."
                   : !conversation.assignedToId
@@ -713,7 +709,7 @@ export function LeadIntelligencePanel({
             {sectionLabel("Next follow-up")}
             {followUpLabel ? (
               <p className="mt-2 text-[13px] text-[#344054]">
-                Scheduled for <span className="font-semibold text-[#101828]">{followUpLabel}</span>
+                Scheduled for <span className="font-semibold text-sales-text-primary">{followUpLabel}</span>
               </p>
             ) : null}
             {followUpContext ? (
@@ -722,8 +718,8 @@ export function LeadIntelligencePanel({
                   followUpContext.includes("overdue")
                     ? "text-[#DC2626]"
                     : followUpContext === "Due today"
-                      ? "text-[#B54708]"
-                      : "text-[#667085]"
+                      ? "text-sales-warning-fg"
+                      : "text-sales-text-muted"
                 }`}
               >
                 {followUpContext}
@@ -743,14 +739,14 @@ export function LeadIntelligencePanel({
                     className={`rounded-[10px] border px-2.5 py-2.5 text-left transition-colors disabled:opacity-50 ${
                       selected
                         ? "border-[#16A34A] bg-[#ECFDF3]"
-                        : "border-[#E4E7EC] bg-white hover:bg-[#F9FAFB]"
+                        : "border-sales-border bg-sales-surface hover:bg-sales-surface-subtle"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-[11px] font-semibold text-[#101828]">{opt.label}</span>
+                      <span className="text-[11px] font-semibold text-sales-text-primary">{opt.label}</span>
                       {selected ? <Check size={12} className="text-[#16A34A]" aria-hidden /> : null}
                     </div>
-                    <div className="mt-1 text-[11px] tabular-nums text-[#667085]">
+                    <div className="mt-1 text-[11px] tabular-nums text-sales-text-muted">
                       {format(date, "MMM d")}
                     </div>
                   </button>
@@ -765,14 +761,14 @@ export function LeadIntelligencePanel({
                 className={`rounded-[10px] border px-2.5 py-2.5 text-left transition-colors ${
                   customFollowUp
                     ? "border-[rgba(150,190,40,0.55)] bg-[#F4FCE8]"
-                    : "border-[#E4E7EC] bg-white hover:bg-[#F9FAFB]"
+                    : "border-sales-border bg-sales-surface hover:bg-sales-surface-subtle"
                 }`}
               >
-                <div className="flex items-center gap-1 text-[11px] font-semibold text-[#101828]">
+                <div className="flex items-center gap-1 text-[11px] font-semibold text-sales-text-primary">
                   <CalendarDays size={12} strokeWidth={1.8} aria-hidden />
                   Custom
                 </div>
-                <div className="mt-1 text-[11px] text-[#667085]">Pick date</div>
+                <div className="mt-1 text-[11px] text-sales-text-muted">Pick date</div>
               </button>
             </div>
             {customFollowUp ? (
@@ -782,13 +778,13 @@ export function LeadIntelligencePanel({
                   value={followUpDate}
                   min={toDateInputValue(new Date())}
                   onChange={(e) => setFollowUpDate(e.target.value)}
-                  className="flex-1 rounded-[8px] border border-[#E4E7EC] bg-white px-2 py-2 text-[13px] text-[#101828]"
+                  className="flex-1 rounded-[8px] border border-sales-border bg-sales-surface px-2 py-2 text-[13px] text-sales-text-primary"
                 />
                 <button
                   type="button"
                   disabled={!followUpDate || schedulingFollowUp}
                   onClick={() => void handleScheduleFollowUp(followUpDate)}
-                  className="rounded-[8px] bg-[#D4FF4F] px-3 py-2 text-[12px] font-semibold text-[#101828] disabled:opacity-50"
+                  className="rounded-[8px] bg-sales-brand text-sales-brand-text px-3 py-2 text-[12px] font-semibold text-sales-text-primary disabled:opacity-50"
                 >
                   {schedulingFollowUp ? "Saving…" : "Save"}
                 </button>
@@ -800,24 +796,24 @@ export function LeadIntelligencePanel({
           <section className="border-b border-[#F2F4F7] px-4 py-4">
             {sectionLabel("Quotation")}
             {hasQuote ? (
-              <div className="mt-3 rounded-[10px] border border-[#E4E7EC] bg-[#F9FAFB] p-3">
+              <div className="mt-3 rounded-[10px] border border-sales-border bg-sales-surface-subtle p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className="text-[13px] font-semibold text-[#101828]">
+                    <div className="text-[13px] font-semibold text-sales-text-primary">
                       {conversation.latestQuoteNumber
                         ? `Quote #${conversation.latestQuoteNumber}`
                         : "Quotation"}
                     </div>
                     {quoteStatus ? (
-                      <span className="mt-1 inline-flex rounded-md bg-[#ECFDF3] px-1.5 py-0.5 text-[10px] font-semibold text-[#027A48]">
+                      <span className="mt-1 inline-flex text-[12px] font-medium text-sales-success-fg">
                         {quoteStatus}
                       </span>
                     ) : null}
                   </div>
                   {quoteTotal ? (
                     <div className="text-right">
-                      <div className="text-[10px] uppercase tracking-[0.04em] text-[#98A2B3]">Total</div>
-                      <div className="text-[15px] font-semibold tabular-nums text-[#101828]">{quoteTotal}</div>
+                      <div className="wa-meta-label">Total</div>
+                      <div className="text-[15px] font-semibold tabular-nums text-sales-text-primary">{quoteTotal}</div>
                     </div>
                   ) : null}
                 </div>
@@ -826,7 +822,7 @@ export function LeadIntelligencePanel({
                     type="button"
                     onClick={() => void handleOpenQuotation(false)}
                     disabled={creatingQuote}
-                    className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#E4E7EC] bg-white px-2.5 py-1.5 text-[12px] font-medium text-[#101828] hover:bg-[#F2F4F7]"
+                    className="inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-2.5 py-1.5 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
                   >
                     <FileText size={13} />
                     View
@@ -835,14 +831,14 @@ export function LeadIntelligencePanel({
                     type="button"
                     onClick={() => void handleOpenQuotation(false)}
                     disabled={creatingQuote}
-                    className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#E4E7EC] bg-white px-2.5 py-1.5 text-[12px] font-medium text-[#101828] hover:bg-[#F2F4F7]"
+                    className="inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-2.5 py-1.5 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
                   >
                     <Pencil size={13} />
                     Edit
                   </button>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#E4E7EC] bg-white px-2.5 py-1.5 text-[12px] font-medium text-[#667085]"
+                    className="inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-2.5 py-1.5 text-[12px] font-medium text-sales-text-muted"
                     aria-label="More quotation actions"
                   >
                     <Ellipsis size={13} />
@@ -851,7 +847,7 @@ export function LeadIntelligencePanel({
               </div>
             ) : (
               <div className="mt-3">
-                <p className="text-[13px] text-[#667085]">No quotation yet</p>
+                <p className="text-[13px] text-sales-text-muted">No quotation yet</p>
                 <button
                   type="button"
                   onClick={() => void handleCreateQuotation()}
@@ -876,7 +872,7 @@ export function LeadIntelligencePanel({
                     setReassignOpen((v) => !v);
                     setHandoverOpen(false);
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#E4E7EC] bg-white px-3 py-2 text-[12px] font-medium text-[#101828] hover:bg-[#F9FAFB]"
+                  className="inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-3 py-2 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
                 >
                   <UserRoundPlus size={14} strokeWidth={1.8} />
                   Reassign
@@ -887,7 +883,7 @@ export function LeadIntelligencePanel({
                     setHandoverOpen((v) => !v);
                     setReassignOpen(true);
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#E4E7EC] bg-white px-3 py-2 text-[12px] font-medium text-[#101828] hover:bg-[#F9FAFB]"
+                  className="inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-3 py-2 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
                 >
                   <ArrowLeftRight size={14} strokeWidth={1.8} />
                   Transfer
@@ -895,9 +891,9 @@ export function LeadIntelligencePanel({
                 <button
                   type="button"
                   onClick={() => setHandoverOpen((v) => !v)}
-                  className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#E4E7EC] bg-white px-3 py-2 text-[12px] font-medium text-[#101828] hover:bg-[#F9FAFB]"
+                  className="inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-3 py-2 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
                 >
-                  <Sparkles size={14} strokeWidth={1.8} />
+                  <StickyNote size={14} strokeWidth={1.8} />
                   Add handover notes
                 </button>
               </div>
@@ -909,7 +905,7 @@ export function LeadIntelligencePanel({
                       onChange={(e) => setHandoverNotes(e.target.value)}
                       rows={2}
                       placeholder="Handover notes for the next owner…"
-                      className="w-full resize-none rounded-[8px] border border-[#E4E7EC] bg-white px-3 py-2 text-[12px] text-[#101828]"
+                      className="w-full resize-none rounded-[8px] border border-sales-border bg-sales-surface px-3 py-2 text-[12px] text-sales-text-primary"
                     />
                   ) : null}
                   <button
@@ -937,14 +933,14 @@ export function LeadIntelligencePanel({
           ) : null}
 
           {actionMessage ? (
-            <div className="px-4 pb-4 text-[12px] font-medium text-[#4D7C0F]">{actionMessage}</div>
+            <div className="px-4 pb-4 text-[12px] font-medium text-sales-success-fg">{actionMessage}</div>
           ) : null}
         </div>
       </div>
 
       {editingQuote ? (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center">
-          <div className="max-h-[min(96dvh,100dvh)] w-full max-w-4xl overflow-y-auto rounded-t-2xl border border-[#E4E7EC] bg-white p-5 sm:rounded-xl">
+          <div className="max-h-[min(96dvh,100dvh)] w-full max-w-4xl overflow-y-auto rounded-t-2xl border border-sales-border bg-sales-surface p-5 sm:rounded-xl">
             <QuotationBuilder
               quotation={editingQuote}
               clientId={clientId}

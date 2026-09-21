@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Bot, Check, Loader2, Pencil, X } from "lucide-react";
+import { Check, Loader2, Pencil, X } from "lucide-react";
 
 type SuggestedAction = { id: string; toolName: string; label: string };
 
@@ -84,10 +84,7 @@ export function AgentComposerAssist({
 
   return (
     <div className="mx-3 mb-1 rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5">
-      <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
-        <Bot size={12} className="text-sales-brand" />
-        SegmiQ Agent suggests
-      </div>
+      <div className="wa-kicker mb-1.5">Suggested reply</div>
       {draft ? (
         <p className="line-clamp-4 text-[12px] leading-relaxed text-sales-text-primary">{draft}</p>
       ) : null}

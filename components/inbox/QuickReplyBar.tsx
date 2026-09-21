@@ -9,7 +9,6 @@ import {
   LayoutGrid,
   MessageSquare,
   Star,
-  Zap,
 } from "lucide-react";
 
 export type QuickReplyAction =
@@ -88,17 +87,7 @@ export function QuickReplyBar({
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <Zap
-            size={12}
-            className={isWa ? "text-[var(--wa-accent)]" : "text-[var(--accent-fg)]"}
-          />
-          <span
-            className={
-              isWa
-                ? "text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--wa-muted)]"
-                : "text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]"
-            }
-          >
+          <span className={isWa ? "wa-kicker" : "text-[12px] font-medium text-[var(--text-tertiary)]"}>
             Quick actions
           </span>
         </div>
@@ -120,7 +109,7 @@ export function QuickReplyBar({
 
       {savedReplies.length > 0 && onSavedReply ? (
         <div className="mb-3">
-          <div className={`mb-1.5 text-[10px] font-semibold uppercase tracking-wide ${isWa ? "text-[var(--wa-muted)]" : "text-[var(--text-tertiary)]"}`}>
+          <div className={isWa ? "wa-kicker mb-1.5" : "mb-1.5 text-[12px] font-medium text-[var(--text-tertiary)]"}>
             Saved replies
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">

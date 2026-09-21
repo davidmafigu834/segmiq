@@ -137,15 +137,13 @@ export function SupportIntelligenceRail({
             <div className="min-w-0">
               <div className="truncate text-[15px] font-semibold text-sales-text-primary">{name}</div>
               <div className="mt-1 text-[12px] tabular-nums text-sales-text-secondary">{conversation.phone || "No phone"}</div>
-              <span className="mt-2 inline-flex rounded-full bg-[#EFF8FF] px-2 py-0.5 text-[10px] font-semibold text-[#175CD3]">
-                Support
-              </span>
+              <span className="mt-2 text-[12px] font-medium text-sales-info">Support</span>
             </div>
           </div>
         </section>
 
         <section className="border-b border-sales-border-subtle px-4 py-4">
-          <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">Support case</h3>
+          <h3 className="wa-section-title mb-3">Support case</h3>
           {loading ? (
             <div className="h-16 animate-pulse rounded-[10px] bg-sales-surface-hover" />
           ) : current ? (
@@ -198,19 +196,19 @@ export function SupportIntelligenceRail({
         </section>
 
         <section className="border-b border-sales-border-subtle px-4 py-4">
-          <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">Related project / completed work</h3>
+          <h3 className="wa-section-title mb-3">Related project / completed work</h3>
           <p className="text-[13px] text-sales-text-muted">No related project linked to this conversation.</p>
         </section>
 
         <section className="border-b border-sales-border-subtle px-4 py-4">
-          <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">Issue details</h3>
+          <h3 className="wa-section-title mb-3">Issue details</h3>
           <p className="text-[13px] text-sales-text-secondary">
             {conversation.lastMessage || "No issue details recorded yet."}
           </p>
         </section>
 
         <section className="border-b border-sales-border-subtle px-4 py-4">
-          <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">Support history</h3>
+          <h3 className="wa-section-title mb-3">Support history</h3>
           {cases.length === 0 ? (
             <p className="text-[13px] text-sales-text-muted">No previous support cases.</p>
           ) : (
@@ -226,17 +224,17 @@ export function SupportIntelligenceRail({
         </section>
 
         <section className="border-b border-sales-border-subtle px-4 py-4">
-          <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">Files</h3>
+          <h3 className="wa-section-title mb-3">Files</h3>
           <p className="text-[13px] text-sales-text-muted">No files attached to this case.</p>
         </section>
 
         <section className="border-b border-sales-border-subtle px-4 py-4">
-          <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">Internal activity</h3>
+          <h3 className="wa-section-title mb-3">Internal activity</h3>
           <p className="text-[13px] text-sales-text-muted">Team notes and transfers appear in the conversation timeline.</p>
         </section>
 
         <section className="px-4 py-4">
-          <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">Ownership & handover</h3>
+          <h3 className="wa-section-title mb-3">Ownership</h3>
           <div className="flex items-center gap-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sales-surface-hover text-[11px] font-semibold">
               {conversation.assignee?.name?.slice(0, 1) ?? "?"}

@@ -235,9 +235,7 @@ export function CompanyConversationInsightRail({
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="truncate text-[14px] font-semibold text-sales-text-primary">{name}</span>
                     {!isSupport ? (
-                      <span className="rounded-[5px] bg-[rgba(37,211,102,0.1)] px-1.5 py-0.5 text-[9px] font-semibold text-[#168A42]">
-                        Lead
-                      </span>
+                      <span className="text-[12px] font-medium text-sales-text-secondary">Lead</span>
                     ) : null}
                   </div>
                   <div className="mt-2 space-y-1.5 text-[11px] text-sales-text-secondary">
@@ -289,11 +287,11 @@ export function CompanyConversationInsightRail({
                   {
                     label: "Status",
                     value: statusLabel(status),
-                    tone: status === "WAITING_ON_TEAM" ? "text-[#D97706]" : undefined,
+                    tone: status === "WAITING_ON_TEAM" ? "text-sales-warning-fg" : undefined,
                   },
                 ].map((metric) => (
                   <div key={metric.label} className="min-w-0 rounded-[8px] border border-sales-border-subtle bg-sales-surface-subtle p-2.5">
-                    <div className="text-[9px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                    <div className="wa-meta-label">
                       {metric.label}
                     </div>
                     <div className={`mt-1 truncate text-[12px] font-semibold ${metric.tone ?? "text-sales-text-primary"}`}>

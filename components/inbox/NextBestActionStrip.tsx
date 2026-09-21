@@ -23,12 +23,9 @@ export function NextBestActionStrip({
   return (
     <div className="flex min-h-[44px] shrink-0 items-center gap-3 border-b border-sales-border bg-sales-surface px-3 py-1.5 sm:px-4">
       <div className="min-w-0 flex-1">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
-          {action.eyebrow}
-        </p>
         <p className="truncate text-[13px] font-semibold text-sales-text-primary">{action.title}</p>
         {action.reason && !condensed ? (
-          <p className="truncate text-[11px] text-sales-text-secondary">{action.reason}</p>
+          <p className="truncate text-[12px] text-sales-text-secondary">{action.reason}</p>
         ) : null}
       </div>
       <div className="flex shrink-0 items-center gap-1">

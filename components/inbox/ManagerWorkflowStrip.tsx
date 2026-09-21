@@ -26,7 +26,7 @@ function workflowStatus(conversation: InboxConversation): { label: string; detai
     return {
       label: "Waiting on team",
       detail: waiting ? `Customer waiting ${waiting.replace(" waiting", "")}` : "Customer is awaiting a reply",
-      tone: "text-[#D97706]",
+      tone: "text-sales-warning-fg",
     };
   }
   return {
@@ -79,9 +79,7 @@ export function ManagerWorkflowStrip({
         className="flex w-full items-center gap-2 px-3 py-1.5 text-left sm:px-4"
         aria-expanded={hydrated ? expanded : false}
       >
-        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.07em] text-sales-text-muted">
-          Team
-        </span>
+        <span className="wa-kicker shrink-0">Team</span>
         <span className={`min-w-0 flex-1 truncate text-[12px] font-medium ${status.tone}`}>{status.label}</span>
         <ChevronDown
           size={14}

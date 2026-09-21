@@ -136,7 +136,7 @@ export function AssetDrawer({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h4 className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-[0.07em] text-sales-text-muted">
+      <h4 className="wa-kicker mb-1.5 px-1">
         {title}
       </h4>
       <div className="space-y-0.5">{children}</div>

@@ -105,7 +105,7 @@ function toDateInput(date: Date): string {
 function sectionTitle(label: string, action?: ReactNode) {
   return (
     <div className="mb-3 flex items-center justify-between gap-2">
-      <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+      <h3 className="wa-section-title">
         {label}
       </h3>
       {action}
@@ -521,7 +521,7 @@ export function SalesIntelligenceRail({
         ) : isDeal && dealData ? (
           <>
             <RailSection>
-              {sectionTitle("Deal & Customer")}
+              {sectionTitle("Deal and customer")}
               <div className="flex items-start gap-3">
                 <WhatsAppAvatar
                   name={name}
@@ -547,7 +547,7 @@ export function SalesIntelligenceRail({
             </RailSection>
 
             <RailSection>
-              {sectionTitle("Commercial Details")}
+              {sectionTitle("Commercial details")}
               <dl className="-my-1.5 divide-y divide-sales-border-subtle">
                 <Fact label="Deal value" value={dealData.commercial.display} />
                 <Fact
@@ -565,7 +565,7 @@ export function SalesIntelligenceRail({
             </RailSection>
 
             <RailSection>
-              {sectionTitle("Deal Health")}
+              {sectionTitle("Deal health")}
               <div
                 className={`flex items-start gap-2.5 rounded-[10px] border px-3 py-2.5 ${
                   dealHealthLabel === "At risk"
@@ -623,7 +623,7 @@ export function SalesIntelligenceRail({
             ) : null}
 
             <RailSection courseTarget="whatsapp-deal-stage">
-              {sectionTitle("Pipeline Stage Controls")}
+              {sectionTitle("Pipeline")}
               <div className="wa-pipeline-stepper flex items-center gap-1 overflow-x-auto pb-1">
                 {DEAL_ACTIVE_STAGES.map((stage, index) => {
                   const currentIndex = DEAL_ACTIVE_STAGES.indexOf(dealData.deal.stage as (typeof DEAL_ACTIVE_STAGES)[number]);
@@ -657,7 +657,7 @@ export function SalesIntelligenceRail({
             </RailSection>
 
             <RailSection courseTarget="whatsapp-next-action">
-              {sectionTitle("Next Action")}
+              {sectionTitle("Next action")}
               {dealData.nextAction.hasNextAction ? (
                 <div className="flex items-start gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5">
                   <Clock3 size={16} className={`mt-0.5 shrink-0 ${dealData.nextAction.isOverdue ? "text-sales-danger" : "text-sales-text-label"}`} />
@@ -690,7 +690,7 @@ export function SalesIntelligenceRail({
             </RailSection>
 
             <RailSection courseTarget="whatsapp-quotation">
-              {sectionTitle("Quotation Status")}
+              {sectionTitle("Quote")}
               {quoteNumber || quoteStatus ? (
                 <div className="flex items-center gap-3 rounded-[10px] border border-sales-border bg-sales-surface-subtle p-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[9px] bg-sales-surface text-sales-text-label">
@@ -719,7 +719,7 @@ export function SalesIntelligenceRail({
             </RailSection>
 
             <RailSection>
-              {sectionTitle("Recent Activity")}
+              {sectionTitle("Recent activity")}
               {dealData.timeline.length > 0 ? (
                 <div className="space-y-3">
                   {dealData.timeline.slice(0, 5).map((item) => (
@@ -739,7 +739,7 @@ export function SalesIntelligenceRail({
 
             {canTransfer || canReassign ? (
               <RailSection>
-                {sectionTitle("Ownership & Handover")}
+                {sectionTitle("Ownership")}
                 <div className="mb-3 flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sales-surface-subtle text-[11px] font-semibold text-sales-text-secondary">
                     {ownerDisplay.slice(0, 2).toUpperCase()}
@@ -757,7 +757,7 @@ export function SalesIntelligenceRail({
                   <button
                     type="button"
                     onClick={() => setSupportTransferOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#B2DDFF] bg-[#EFF8FF] px-3 py-2 text-[12px] font-semibold text-[#175CD3] hover:bg-[#E0F2FE]"
+                    className="inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-3 py-2 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
                   >
                     Transfer to Support
                   </button>
@@ -810,8 +810,8 @@ export function SalesIntelligenceRail({
                     </div>
                     <div className="min-w-0">
                       <span
-                        className="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em]"
-                        style={{ color: scoreTone.text, background: scoreTone.bg }}
+                        className="text-[12px] font-medium"
+                        style={{ color: scoreTone.text }}
                       >
                         {conversation.scoreLabel}
                       </span>
@@ -835,12 +835,7 @@ export function SalesIntelligenceRail({
 
             {leadSummary ? (
               <RailSection>
-                {sectionTitle(
-                  "AI briefing",
-                  <span className="rounded-full bg-sales-info-soft px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.04em] text-sales-info">
-                    Beta
-                  </span>
-                )}
+                {sectionTitle("Briefing")}
                 <div className="rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-3">
                   <p className="text-[13px] leading-relaxed text-sales-text-primary">{leadSummary}</p>
                   {suggestion ? (
@@ -950,7 +945,7 @@ export function SalesIntelligenceRail({
 
             {canTransfer || canReassign ? (
               <RailSection>
-                {sectionTitle("Ownership & handover")}
+                {sectionTitle("Ownership")}
                 <button
                   type="button"
                   onClick={() => setTransferOpen(true)}

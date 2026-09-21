@@ -104,9 +104,7 @@ export function MessageBubble({ message, onTeach }: Props) {
       <div className="flex justify-center px-2 py-0.5">
         <div className="wa-timeline-card max-w-[min(92%,520px)] rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3.5 py-2.5 text-left">
           {message.systemTitle ? (
-            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
-              {message.systemTitle}
-            </div>
+            <div className="wa-kicker mb-1">{message.systemTitle}</div>
           ) : null}
           <div className="text-[12.5px] leading-snug text-sales-text-primary">{message.text}</div>
           <div className="mt-1.5 flex items-center justify-between gap-3">
@@ -130,7 +128,7 @@ export function MessageBubble({ message, onTeach }: Props) {
     return (
       <div className="flex justify-center px-2 py-0.5">
         <div className="wa-internal-note max-w-[min(88%,480px)] rounded-[10px] border border-sales-warning/30 bg-sales-warning-soft px-3.5 py-2.5 text-left">
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-warning-fg">
+          <div className="wa-kicker mb-1 text-sales-warning-fg">
             Internal note · {author} · {formatTime(message.createdAt)}
           </div>
           <div className="whitespace-pre-wrap text-[12.5px] leading-snug text-sales-text-primary">{message.text}</div>

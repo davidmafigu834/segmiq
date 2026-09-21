@@ -9,7 +9,6 @@ import {
   Loader2,
   MapPin,
   PanelRightClose,
-  Sparkles,
   UserRound,
 } from "lucide-react";
 import type { InboxConversation } from "@/lib/inbox/types";
@@ -37,7 +36,7 @@ function RailSection({ children }: { children: ReactNode }) {
 
 function sectionTitle(label: string) {
   return (
-    <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+    <h3 className="wa-section-title mb-3">
       {label}
     </h3>
   );
@@ -306,8 +305,7 @@ export function RealEstateIntelligenceRail({
             {panel?.nextBestAction ? (
               <RailSection>
                 {sectionTitle("Next best action")}
-                <div className="flex items-start gap-2 rounded-[10px] border border-sales-border bg-sales-brand-soft/40 px-3 py-2.5">
-                  <Sparkles size={14} className="mt-0.5 shrink-0 text-sales-brand" />
+                <div className="rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2.5">
                   <p className="text-[12px] font-medium text-sales-text-primary">
                     {panel.nextBestAction.label}
                   </p>

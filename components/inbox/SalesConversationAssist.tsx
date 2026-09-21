@@ -106,9 +106,7 @@ export function SalesConversationAssist({
         className="flex w-full items-center gap-2 px-3 py-1.5 text-left sm:px-4"
         aria-expanded={hydrated ? expanded : false}
       >
-        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.07em] text-sales-text-muted">
-          Selling
-        </span>
+        <span className="wa-kicker shrink-0">Next</span>
         <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-sales-text-primary">{summary}</span>
         {showQualification ? (
           <span className="shrink-0 text-[10px] tabular-nums text-sales-text-secondary">
@@ -126,9 +124,9 @@ export function SalesConversationAssist({
           {action ? (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.07em] text-sales-text-muted">
-                  {action.eyebrow}
-                </p>
+                {action.reason ? (
+                  <p className="truncate text-[12px] text-sales-text-secondary">{action.reason}</p>
+                ) : null}
                 <p className="truncate text-[12px] font-semibold text-sales-text-primary">{action.title}</p>
               </div>
               <div className="flex shrink-0 items-center gap-1">
@@ -223,7 +221,7 @@ function MissingPrompt({
       <button
         type="button"
         onClick={() => onInsert(field.suggestedQuestion!)}
-        className="mt-0.5 text-[10px] font-semibold text-[#4D7C0F] hover:underline"
+        className="mt-0.5 text-[12px] font-medium text-sales-success-fg hover:underline"
       >
         Insert question into message
       </button>

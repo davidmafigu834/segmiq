@@ -127,7 +127,7 @@ function MissingPrompt({
       <button
         type="button"
         onClick={() => onInsert(field.suggestedQuestion!)}
-        className="mt-1.5 text-[11px] font-semibold text-[#4D7C0F] hover:underline"
+        className="mt-1.5 text-[12px] font-semibold text-sales-success-fg hover:underline"
       >
         Insert into message
       </button>

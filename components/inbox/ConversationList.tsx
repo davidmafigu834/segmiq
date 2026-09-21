@@ -228,13 +228,13 @@ export function ConversationList({
                     key={key}
                     type="button"
                     onClick={() => onFilterChange(key)}
-                    className={`relative flex min-w-0 flex-1 items-center justify-center gap-1 px-1 py-2.5 text-[10px] font-medium transition-colors ${
+                    className={`relative flex min-w-0 flex-1 items-center justify-center gap-1 px-1 py-2.5 text-[12px] font-medium transition-colors ${
                       active ? "text-sales-text-primary" : "text-sales-text-secondary hover:text-sales-text-primary"
                     }`}
                   >
                     {key === "awaiting_reply" ? "Waiting" : key === "human_needed" ? "Needed" : INBOX_FILTER_LABELS[key]}
-                    <span className="text-[9px] tabular-nums text-sales-text-muted">{filterCounts[key] ?? 0}</span>
-                    {active ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#B7E432]" /> : null}
+                    <span className="text-[11px] tabular-nums text-sales-text-muted">{filterCounts[key] ?? 0}</span>
+                    {active ? <span className="absolute inset-x-2 bottom-0 h-0.5 bg-sales-brand" /> : null}
                   </button>
                 );
               })}
@@ -251,15 +251,15 @@ export function ConversationList({
                     role="tab"
                     aria-selected={activeFilter}
                     onClick={() => onFilterChange(key)}
-                    className={`relative flex min-w-0 flex-1 items-center justify-center gap-1 px-1 py-2.5 text-[10px] font-medium transition-colors ${
+                    className={`relative flex min-w-0 flex-1 items-center justify-center gap-1 px-1 py-2.5 text-[12px] font-medium transition-colors ${
                       activeFilter
                         ? "text-sales-text-primary"
                         : "text-sales-text-secondary hover:text-sales-text-primary"
                     }`}
                   >
                     {INBOX_FILTER_LABELS[key]}
-                    <span className="text-[9px] tabular-nums text-sales-text-muted">{filterCounts[key] ?? 0}</span>
-                    {activeFilter ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-sales-brand" /> : null}
+                    <span className="text-[11px] tabular-nums text-sales-text-muted">{filterCounts[key] ?? 0}</span>
+                    {activeFilter ? <span className="absolute inset-x-2 bottom-0 h-0.5 bg-sales-brand" /> : null}
                   </button>
                 );
               })}
@@ -306,12 +306,12 @@ export function ConversationList({
                           ).map((key) => (
                             <button key={key} type="button" className="flex w-full items-center justify-between px-3 py-2 text-left text-[11px] text-sales-text-primary hover:bg-sales-surface-hover" onClick={() => { onFilterChange(key); setFilterOpen(false); }}>
                               {key === "awaiting_reply" ? "Waiting on Team" : INBOX_FILTER_LABELS[key]}
-                              {filter === key ? <Check size={13} className="text-[#4D7C0F]" /> : null}
+                              {filter === key ? <Check size={13} className="text-sales-success" /> : null}
                             </button>
                           ))}
                           {companyMode ? (
                             <>
-                              <div className="my-1 border-t border-sales-border px-3 pb-1 pt-2 text-[9px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                              <div className="wa-kicker my-1 border-t border-sales-border px-3 pb-1 pt-2">
                                 Conversation type
                               </div>
                               {(
@@ -332,10 +332,10 @@ export function ConversationList({
                                   }}
                                 >
                                   <span className="truncate">{item.name}</span>
-                                  {typeFilter === item.id ? <Check size={13} className="shrink-0 text-[#4D7C0F]" /> : null}
+                                  {typeFilter === item.id ? <Check size={13} className="shrink-0 text-sales-success" /> : null}
                                 </button>
                               ))}
-                              <div className="my-1 border-t border-sales-border px-3 pb-1 pt-2 text-[9px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                              <div className="wa-kicker my-1 border-t border-sales-border px-3 pb-1 pt-2">
                                 Owner
                               </div>
                               {[
@@ -353,7 +353,7 @@ export function ConversationList({
                                   }}
                                 >
                                   <span className="truncate">{owner.name}</span>
-                                  {ownerFilter === owner.id ? <Check size={13} className="shrink-0 text-[#4D7C0F]" /> : null}
+                                  {ownerFilter === owner.id ? <Check size={13} className="shrink-0 text-sales-success" /> : null}
                                 </button>
                               ))}
                             </>

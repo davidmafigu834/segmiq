@@ -682,7 +682,7 @@ export function ChatThread({
     return (
       <div className="wa-chat-wallpaper flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6">
         <div className="wa-empty-hint max-w-sm text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[12px] border border-sales-border bg-sales-bg text-[#25D366]">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[12px] border border-sales-border bg-sales-bg text-sales-whatsapp">
             <SiWhatsapp size={24} aria-hidden />
           </div>
           <div className="mb-1.5 text-[16px] font-semibold tracking-tight text-sales-text-primary">
@@ -771,7 +771,7 @@ export function ChatThread({
                     {name}
                   </span>
                   {isWhatsApp ? (
-                    <SiWhatsapp size={14} className="shrink-0 text-[#25D366]" aria-label="WhatsApp" />
+                    <SiWhatsapp size={14} className="shrink-0 text-sales-whatsapp" aria-label="WhatsApp" />
                   ) : null}
                 </div>
                 {conversation.phone ? (
@@ -781,60 +781,34 @@ export function ChatThread({
                   </div>
                 ) : null}
                 {conversation.agentStatus === "HUMAN_NEEDED" ? (
-                  <span className="inline-flex w-fit rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                    Human needed
+                  <span className="w-fit text-[12px] font-medium text-sales-warning-fg">
+                    Needs you
                     {conversation.agentHumanNeededReason ? ` · ${conversation.agentHumanNeededReason}` : ""}
                   </span>
                 ) : conversation.agentStatus === "AI_HANDLING" ||
                   conversation.agentStatus === "WAITING_ON_CUSTOMER" ? (
-                  <span className="inline-flex w-fit rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                    SegmiQ Agent handling
-                  </span>
+                  <span className="w-fit text-[12px] font-medium text-sales-text-secondary">Agent handling</span>
                 ) : conversation.agentStatus === "PAUSED" ? (
-                  <span className="inline-flex w-fit rounded-full bg-sales-surface-subtle px-2 py-0.5 text-[10px] font-semibold text-sales-text-muted">
-                    Agent paused
-                  </span>
+                  <span className="w-fit text-[12px] font-medium text-sales-text-muted">Agent paused</span>
                 ) : null}
                 {!companyMode && salespersonHub ? (
                   <div className="hidden min-w-0 shrink-0 items-center gap-1.5 overflow-hidden min-[860px]:flex">
-                    {conversation.activeDealId ? (
-                      <>
-                        <span className="inline-flex shrink-0 rounded-full bg-sales-info-soft px-2 py-0.5 text-[10px] font-semibold text-sales-info">
-                          Deal
-                        </span>
-                        {conversation.dealStage ? (
-                          <span className="inline-flex shrink-0 rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[10px] font-semibold text-sales-text-primary">
-                            {formatDealStage(conversation.dealStage)}
-                          </span>
-                        ) : null}
-                      </>
-                    ) : (
-                      <span
-                        className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] ${
-                          isSupport
-                            ? "bg-[#EFF8FF] text-[#175CD3]"
-                            : "bg-sales-surface-subtle text-sales-text-secondary"
-                        }`}
-                      >
-                        {CONVERSATION_TYPE_LABEL[conversation.conversationType]}
-                      </span>
-                    )}
+                    <span className="truncate text-[12px] text-sales-text-secondary">
+                      {conversation.activeDealId
+                        ? conversation.dealStage
+                          ? formatDealStage(conversation.dealStage)
+                          : "Deal"
+                        : CONVERSATION_TYPE_LABEL[conversation.conversationType]}
+                    </span>
                   </div>
                 ) : !companyMode ? (
                   <div className="flex min-w-0 shrink-0 items-center gap-1.5 overflow-hidden">
                     {conversation.activeDealId ? (
-                      <>
-                        {conversation.dealStage ? (
-                          <span className="inline-flex shrink-0 rounded-full bg-sales-info-soft px-2 py-0.5 text-[10px] font-semibold text-sales-info">
-                            {formatDealStage(conversation.dealStage)}
-                          </span>
-                        ) : null}
-                        {dealLabel ? (
-                          <span className="truncate rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[10px] font-semibold tabular-nums text-sales-text-primary">
-                            {dealLabel}
-                          </span>
-                        ) : null}
-                      </>
+                      <span className="truncate text-[12px] text-sales-text-secondary">
+                        {[conversation.dealStage ? formatDealStage(conversation.dealStage) : null, dealLabel]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
                     ) : (
                       <LeadStageBadge status={conversation.status} variant="list" className="shrink-0" />
                     )}
@@ -847,8 +821,8 @@ export function ChatThread({
             {salespersonHub && !companyMode ? (
               <div className="mr-1 hidden min-w-0 items-center gap-2 text-right min-[720px]:flex">
                 <div className="min-w-0">
-                  <div className="text-[9px] uppercase tracking-[0.04em] text-sales-text-muted">Owner</div>
-                  <div className={`truncate text-[11px] font-medium ${conversation.assignee ? "text-sales-text-primary" : "text-[#D97706]"}`}>
+                  <div className="wa-meta-label">Owner</div>
+                  <div className={`truncate text-[12px] font-medium ${conversation.assignee ? "text-sales-text-primary" : "text-sales-warning-fg"}`}>
                     {conversation.assignee ? `Assigned to ${conversation.assignee.name.split(" ")[0]}` : "Unassigned"}
                   </div>
                 </div>
@@ -878,8 +852,8 @@ export function ChatThread({
                   {conversation.assignee ? initials(conversation.assignee.name) : <UserRound size={13} />}
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[8px] uppercase tracking-[0.04em] text-sales-text-muted">Owner</span>
-                  <span className={`block max-w-24 truncate text-[10.5px] font-medium ${conversation.assignee ? "text-sales-text-primary" : "text-[#D97706]"}`}>
+                  <span className="block wa-meta-label">Owner</span>
+                  <span className={`block max-w-24 truncate text-[12px] font-medium ${conversation.assignee ? "text-sales-text-primary" : "text-sales-warning-fg"}`}>
                     {conversation.assignee?.name ?? "Unassigned"}
                   </span>
                 </span>

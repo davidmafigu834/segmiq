@@ -1376,6 +1376,34 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     color: var(--text-primary);
   }
 
+  /* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: Segmiq CRM
+   * design-system: sales-tokens · designed-as-app · section: whatsapp-sales-hub
+   * pre-emit critique: P4 H5 E4 S4 R5 V3
+   */
+  .wa-kicker,
+  .wa-meta-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-style: normal;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    color: var(--sales-text-muted);
+  }
+
+  .wa-meta-label {
+    font-size: 0.6875rem;
+  }
+
+  .wa-section-title {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 650;
+    font-style: normal;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+    color: var(--sales-text-primary);
+  }
+
   /* Premium Sales Hub — uses sales design tokens (light + dark via CRM theme) */
   .sales-dashboard-premium .wa-hub-shell,
   .wa-hub-premium {
@@ -1414,14 +1442,14 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   .sales-dashboard-premium .wa-conv-row-active,
   .wa-hub-premium .wa-conv-row-active {
     background-color: var(--sales-brand-soft) !important;
-    box-shadow: inset 3px 0 0 rgba(150, 190, 40, 0.55) !important;
+    box-shadow: inset 3px 0 0 var(--sales-brand) !important;
     border-color: transparent !important;
   }
 
   .sales-dashboard-premium .wa-bubble-out,
   .wa-hub-premium .wa-bubble-out {
-    background: rgba(212, 255, 79, 0.12) !important;
-    border-color: rgba(212, 255, 79, 0.15) !important;
+    background: var(--sales-brand-soft) !important;
+    border-color: var(--sales-brand-border) !important;
     color: var(--sales-text-primary) !important;
   }
 

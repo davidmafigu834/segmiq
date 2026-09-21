@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bot, ChevronDown, Loader2, Pause, Play } from "lucide-react";
+import { ChevronDown, Loader2, Pause, Play } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,9 +65,9 @@ const MODE_LABELS: Record<AgentConversationMode, string> = {
 };
 
 const MODE_STATUS_CLASS: Record<AgentConversationMode, string> = {
-  AI_HANDLING: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  AI_COPILOT: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
-  HUMAN_ONLY: "bg-sales-neutral-100 text-sales-text-muted",
+  AI_HANDLING: "text-sales-success-fg",
+  AI_COPILOT: "text-sales-info",
+  HUMAN_ONLY: "text-sales-text-muted",
 };
 
 type MenuAction =
@@ -127,7 +127,7 @@ export function AgentConversationCard({
   const learningOnly = !data.agentEnabledForCompany && Boolean(data.learningEnabled);
   const conversationMode = data.conversationMode ?? "AI_HANDLING";
   const statusMeta = learningOnly
-    ? { label: "Not responding", className: "bg-sales-neutral-100 text-sales-text-muted" }
+    ? { label: "Not responding", className: "text-sales-text-muted" }
     : {
         label: MODE_LABELS[conversationMode],
         className: MODE_STATUS_CLASS[conversationMode],
@@ -156,19 +156,16 @@ export function AgentConversationCard({
     <section className="border-b border-sales-border-subtle px-4 py-3">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sales-brand-soft text-sales-brand">
-            <Bot size={13} />
-          </span>
-          <span className="text-[12px] font-semibold text-sales-text-primary">SegmiQ Agent</span>
-          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${statusMeta.className}`}>
+          <span className="text-[13px] font-semibold text-sales-text-primary">Agent</span>
+          <span className={`text-[12px] font-medium ${statusMeta.className}`}>
             {learningOnly ? "Not responding" : isPaused ? "Paused" : statusMeta.label}
           </span>
           {data.learningEnabled ? (
             <span
-              className="rounded-full bg-sales-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-sales-brand"
+              className="text-[12px] font-medium text-sales-text-secondary"
               title="SegmiQ is not responding to this customer. It may learn approved sales patterns from eligible human conversations."
             >
-              Learning active
+              Learning
             </span>
           ) : null}
         </div>
@@ -217,9 +214,7 @@ export function AgentConversationCard({
 
       {!learningOnly && data.agentEnabledForCompany ? (
         <div className="mt-3">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
-            Agent mode
-          </p>
+          <p className="wa-kicker mb-1.5">Agent mode</p>
           <SegmentedControl
             value={conversationMode}
             onChange={(mode) => {
@@ -247,9 +242,7 @@ export function AgentConversationCard({
 
       {data.nextProactive ? (
         <div className="mt-2 rounded-[8px] border border-sales-border-subtle bg-sales-neutral-100/60 px-2.5 py-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
-            Next Agent action
-          </p>
+          <p className="wa-kicker">Next action</p>
           <p className="mt-0.5 text-[12px] font-medium text-sales-text-primary">
             {proactiveTriggerLabel(data.nextProactive.triggerType)}
           </p>
@@ -273,7 +266,7 @@ export function AgentConversationCard({
       <dl className="mt-2 space-y-1.5 text-[11px] leading-relaxed">
         {conversation?.projectType || briefing?.customer_request ? (
           <div>
-            <dt className="text-[9px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">What they want</dt>
+            <dt className="wa-meta-label">What they want</dt>
             <dd className="text-sales-text-primary">
               {String(briefing?.customer_request ?? conversation?.projectType ?? "").trim() || "—"}
             </dd>
@@ -281,7 +274,7 @@ export function AgentConversationCard({
         ) : null}
         {conversation?.leadBudget || conversation?.leadTimeline ? (
           <div>
-            <dt className="text-[9px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">Qualification</dt>
+            <dt className="wa-meta-label">Qualification</dt>
             <dd className="text-sales-text-secondary">
               {[conversation.leadBudget, conversation.leadTimeline].filter(Boolean).join(" · ")}
             </dd>
@@ -289,7 +282,7 @@ export function AgentConversationCard({
         ) : null}
         {conversation?.dealName || conversation?.latestQuoteNumber ? (
           <div>
-            <dt className="text-[9px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">Commercial</dt>
+            <dt className="wa-meta-label">Commercial</dt>
             <dd className="text-sales-text-secondary">
               {[conversation.dealName, conversation.latestQuoteNumber].filter(Boolean).join(" · ")}
             </dd>
@@ -297,7 +290,7 @@ export function AgentConversationCard({
         ) : null}
         {lastRun?.decision_summary ? (
           <div>
-            <dt className="text-[9px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+            <dt className="wa-meta-label">
               {data.openEscalation ? "Why agent stopped" : "Latest action"}
             </dt>
             <dd className="line-clamp-3 text-sales-text-secondary">{lastRun.decision_summary}</dd>

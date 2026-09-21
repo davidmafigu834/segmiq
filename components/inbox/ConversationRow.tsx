@@ -36,7 +36,7 @@ function previewIcon(messageType: string | null | undefined) {
 }
 
 function rowContextLabel(conversation: InboxConversation): string {
-  const typeLabel = CONVERSATION_TYPE_LABEL[conversation.conversationType].toUpperCase();
+  const typeLabel = CONVERSATION_TYPE_LABEL[conversation.conversationType];
   if (conversation.conversationType === "SUPPORT") {
     const supportLabel = supportStageLabel(conversation.supportCase?.status ?? null);
     return `${typeLabel} · ${supportLabel}`;
@@ -121,33 +121,23 @@ export function ConversationRow({
                   {name}
                 </span>
                 {!companyMode && conversation.agentStatus === "HUMAN_NEEDED" ? (
-                  <span className="inline-flex rounded px-1.5 py-0.5 text-[9px] font-semibold text-amber-700 bg-amber-500/10">
-                    Human needed
-                  </span>
+                  <span className="text-[11px] font-medium text-sales-warning-fg">Needs you</span>
                 ) : !companyMode &&
                   (conversation.agentStatus === "AI_HANDLING" ||
                     conversation.agentStatus === "WAITING_ON_CUSTOMER") ? (
-                  <span className="inline-flex rounded px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-500/10">
-                    AI
-                  </span>
+                  <span className="text-[11px] font-medium text-sales-text-muted">Agent</span>
                 ) : null}
                 {companyMode ? (
                   <>
                     <ConversationTypeBadge type={conversation.conversationType} />
                     {conversation.agentStatus === "HUMAN_NEEDED" ? (
-                      <span className="inline-flex max-w-full truncate rounded px-1.5 py-0.5 text-[9px] font-semibold text-amber-700 bg-amber-500/10">
-                        Human needed
-                      </span>
+                      <span className="text-[11px] font-medium text-sales-warning-fg">Needs you</span>
                     ) : conversation.agentStatus === "AI_HANDLING" ||
                       conversation.agentStatus === "WAITING_ON_CUSTOMER" ? (
-                      <span className="inline-flex rounded px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-500/10">
-                        AI
-                      </span>
+                      <span className="text-[11px] font-medium text-sales-text-muted">Agent</span>
                     ) : null}
                     {stageBadge ? (
-                      <span className="inline-flex max-w-full truncate rounded px-1.5 py-0.5 text-[9px] font-semibold text-sales-text-secondary bg-sales-surface-subtle">
-                        {stageBadge}
-                      </span>
+                      <span className="truncate text-[11px] text-sales-text-secondary">{stageBadge}</span>
                     ) : null}
                   </>
                 ) : null}
@@ -165,7 +155,7 @@ export function ConversationRow({
           </div>
 
           {contextLabel ? (
-            <div className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+            <div className="wa-kicker mt-0.5 truncate">
               {contextLabel}
             </div>
           ) : null}
@@ -196,7 +186,7 @@ export function ConversationRow({
                   </span>
                 </div>
               ) : (
-                <span className="text-[10px] font-medium text-[#D97706]">Unassigned</span>
+                <span className="text-[11px] font-medium text-sales-warning-fg">Unassigned</span>
               )}
               {waitingLabel && conversation.conversationStatus === "OPEN" && conversation.lastMessageDirection === "inbound" ? (
                 <span className={`ml-auto shrink-0 text-[10px] font-medium tabular-nums ${waitingToneClass(waitingTone)}`}>
