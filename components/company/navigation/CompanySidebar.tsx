@@ -159,8 +159,10 @@ export function CompanySidebar({
       <div className="relative flex h-full min-h-0 flex-col bg-[var(--sales-sidebar-bg)]">
         <div
           className={cn(
-            "relative flex shrink-0 items-center",
-            collapsedMode ? "h-[68px] justify-center px-2" : "h-[72px] justify-between gap-2 px-5"
+            "relative flex shrink-0",
+            collapsedMode
+              ? "flex-col items-center gap-1 px-2 pb-2 pt-3"
+              : "h-[72px] items-center justify-between gap-2 px-5"
           )}
         >
           <Link
@@ -208,12 +210,10 @@ export function CompanySidebar({
             >
               <PanelLeftClose size={16} strokeWidth={1.8} />
             </button>
-          ) : null}
-
-          {onToggleCollapsed && collapsedMode && !drawer ? (
+          ) : onToggleCollapsed && collapsedMode ? (
             <button
               type="button"
-              className="absolute bottom-0 left-1/2 inline-flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
               aria-label="Expand sidebar"
               title="Expand sidebar"
               onClick={onToggleCollapsed}

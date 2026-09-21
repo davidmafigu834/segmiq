@@ -151,7 +151,6 @@ export function WeeklyReportDetailClient({
       unreadNotifications={unreadNotifications}
       notificationRole={notificationRole}
       whatsappBadge={whatsappBadge}
-      preferCollapsedSidebar
     >
       <header className="weekly-report-toolbar sticky top-0 z-20 -mx-4 border-b border-sales-border-subtle bg-sales-bg/92 px-4 py-2.5 backdrop-blur-sm sm:-mx-6 sm:px-6 layout:-mx-8 layout:px-8">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
