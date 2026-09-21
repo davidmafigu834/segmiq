@@ -3,6 +3,7 @@ import { formatPeriodLabel } from "./period";
 import { WEEKLY_REPORT_VERSION, WEEKLY_SALES_REPORT_TYPE } from "./types";
 import { isInFlight, isStaleInFlight } from "./status";
 import type {
+  ResponseCoverage,
   WeeklyReportAiOutput,
   WeeklyReportDetail,
   WeeklyReportListItem,
@@ -207,6 +208,7 @@ export function persistPayloadPatch(payload: WeeklyReportPayload): Record<string
       lowData: payload.lowData,
       activityVolume: payload.activityVolume,
       ai: payload.ai,
+      responseCoverage: payload.responseCoverage,
     },
     metrics_json: payload.metrics,
     insights_json: payload.insights,
@@ -339,6 +341,7 @@ function hydratePayload(row: WeeklyReportRow): WeeklyReportPayload | null {
     evidence: (row.evidence_json as WeeklyReportPayload["evidence"]) ?? [],
     lowData: Boolean(summary.lowData),
     activityVolume: Number(summary.activityVolume ?? 0),
+    responseCoverage: hydrateResponseCoverage(summary, row.metrics_json),
     comparison: (row.comparison_json as WeeklyReportPayload["comparison"]) ?? {
       previousWeek: {
         startDate: "",
@@ -349,6 +352,33 @@ function hydratePayload(row: WeeklyReportRow): WeeklyReportPayload | null {
       },
       fourWeekAverageSupported: true,
     },
+  };
+}
+
+function hydrateResponseCoverage(summary: Record<string, unknown>, metrics: unknown): ResponseCoverage {
+  const stored = summary.responseCoverage;
+  if (stored && typeof stored === "object") {
+    const row = stored as Partial<ResponseCoverage>;
+    const sla = Number(row.slaHours);
+    return {
+      contactedAverageMinutes:
+        typeof row.contactedAverageMinutes === "number" && Number.isFinite(row.contactedAverageMinutes)
+          ? row.contactedAverageMinutes
+          : null,
+      newLeads: Math.max(0, Math.round(Number(row.newLeads) || 0)),
+      contactedLeads: Math.max(0, Math.round(Number(row.contactedLeads) || 0)),
+      onTime: Math.max(0, Math.round(Number(row.onTime) || 0)),
+      missedSla: Math.max(0, Math.round(Number(row.missedSla) || 0)),
+      slaHours: Number.isFinite(sla) && sla > 0 ? sla : 2,
+    };
+  }
+  return {
+    contactedAverageMinutes: metricCurrent(metrics, "avg_first_response"),
+    newLeads: metricCurrent(metrics, "new_leads") ?? 0,
+    contactedLeads: metricCurrent(metrics, "contacted_leads") ?? 0,
+    onTime: 0,
+    missedSla: 0,
+    slaHours: 2,
   };
 }
 
