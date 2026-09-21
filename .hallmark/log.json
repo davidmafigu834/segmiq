@@ -4,6 +4,13 @@
     "macrostructure": "Workbench",
     "theme": "Segmiq CRM",
     "enrichment": "none",
+    "brief": "Company weekly report dash card: split briefing/metrics to fill unused right space"
+  },
+  {
+    "date": "2026-09-21",
+    "macrostructure": "Workbench",
+    "theme": "Segmiq CRM",
+    "enrichment": "none",
     "brief": "WhatsApp Sales Hub anti-slop: flatten copilot pills onto sales tokens"
   },
   {
