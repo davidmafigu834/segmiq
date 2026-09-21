@@ -780,9 +780,7 @@ export function WeeklyTeamReportDocument({
           ) : null}
         </View>
 
-        <View bookmark="Needs Management Attention">
-          <SectionTitle>Needs Management Attention</SectionTitle>
-        </View>
+        <SectionTitle>Needs Management Attention</SectionTitle>
         {attention.length === 0 ? (
           <View style={styles.empty} wrap={false}>
             <Text style={styles.emptyValue}>No major items this week</Text>
@@ -803,7 +801,7 @@ export function WeeklyTeamReportDocument({
           salespeople.map((person) => <PersonBlock key={person.salespersonId} person={person} currency={cover.currency} />)
         )}
 
-        <View style={{ marginTop: 8 }} bookmark="Customer Intelligence">
+        <View style={{ marginTop: 8 }}>
           <SectionTitle>What Customers Are Telling Your Team</SectionTitle>
         </View>
         {conversation.length === 0 ? (
@@ -816,7 +814,7 @@ export function WeeklyTeamReportDocument({
           conversation.map((row) => <ThemeRow key={row.id} row={row} />)
         )}
 
-        <View style={{ marginTop: 12 }} bookmark="Lost Deals">
+        <View style={{ marginTop: 12 }}>
           <SectionTitle>Lost Deals</SectionTitle>
         </View>
         {lostDeals.count === 0 ? (
@@ -869,7 +867,7 @@ export function WeeklyTeamReportDocument({
           ))
         )}
 
-        <View style={{ marginTop: 10 }} bookmark="Priorities for Next Week">
+        <View style={{ marginTop: 10 }}>
           <SectionTitle>Priorities for Next Week</SectionTitle>
         </View>
         {ai.nextWeekPriorities.length === 0 ? (
@@ -895,7 +893,7 @@ export function WeeklyTeamReportDocument({
           ))
         )}
 
-        <View style={{ marginTop: 4 }} bookmark="Sales Meeting Agenda" wrap={false}>
+        <View style={{ marginTop: 4 }} wrap={false}>
           <SectionTitle>Monday Sales Meeting</SectionTitle>
           {ai.meetingAgenda.map((item, i) => (
             <View key={i} style={styles.agendaLine}>
