@@ -572,7 +572,10 @@ export function WeeklyTeamReportDocument({
         <View style={styles.limeRail} />
         <CoverMotif />
         <View style={styles.coverBrand}>
-          {logoDataUri ? <Image style={styles.logo} src={logoDataUri} /> : null}
+          {logoDataUri ? (
+            // eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image is not HTML; org name sits beside it
+            <Image style={styles.logo} src={logoDataUri} />
+          ) : null}
           <View>
             <Text style={styles.orgName}>{cover.organisationName}</Text>
             <Text style={styles.kicker}>SegmiQ Intelligence</Text>
@@ -795,7 +798,7 @@ export function WeeklyTeamReportDocument({
         <Footer org={cover.organisationName} />
         <SectionTitle>Sales Team</SectionTitle>
         {salespeople.length === 0 ? (
-          <Text style={styles.p}>No salespeople were in this organisation's team for the week.</Text>
+          <Text style={styles.p}>{"No salespeople were in this organisation's team for the week."}</Text>
         ) : (
           salespeople.map((person) => <PersonBlock key={person.salespersonId} person={person} currency={cover.currency} />)
         )}
@@ -847,7 +850,7 @@ export function WeeklyTeamReportDocument({
         <SectionTitle>Recommended Actions</SectionTitle>
         {ai.managerRecommendations.length === 0 ? (
           <View style={styles.empty} wrap={false}>
-            <Text style={{ fontSize: 9.5 }}>No additional management actions were required from this week's data.</Text>
+            <Text style={{ fontSize: 9.5 }}>{"No additional management actions were required from this week's data."}</Text>
           </View>
         ) : (
           ai.managerRecommendations.map((row, i) => (
