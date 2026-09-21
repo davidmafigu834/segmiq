@@ -166,7 +166,7 @@ function TeamSection({ payload }: { payload: WeeklyReportPayload }) {
         {revenue?.current != null ? ` · ${formatCompactMoney(revenue.current, payload.cover.currency)}` : ""}
       </p>
       {people.length === 0 ? (
-        <p className="mt-4 text-[14px] text-sales-text-secondary">No salespeople were in this organisation's team for the week.</p>
+        <p className="mt-4 text-[14px] text-sales-text-secondary">No salespeople were in this organisation’s team for the week.</p>
       ) : (
         <div className="mt-5 divide-y divide-sales-border-subtle border-t border-sales-border-subtle">
           {people.map((person) => (
@@ -460,7 +460,7 @@ function RecommendationsSection({ payload }: { payload: WeeklyReportPayload }) {
     <section id="recommendations" className="weekly-report-section mt-12">
       <h2 className="text-[20px] font-semibold tracking-[-0.02em] text-sales-text-primary">Recommended actions</h2>
       {rows.length === 0 ? (
-        <p className="mt-4 text-[14px] text-sales-text-secondary">No additional management actions were required from this week's data.</p>
+        <p className="mt-4 text-[14px] text-sales-text-secondary">No additional management actions were required from this week’s data.</p>
       ) : (
         <ol className="mt-5 space-y-6">
           {rows.map((row, i) => (

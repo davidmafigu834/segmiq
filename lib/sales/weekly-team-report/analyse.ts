@@ -1,5 +1,5 @@
 import { DEAL_STAGE_LABEL, formatDealStage } from "@/lib/sales/deals/display";
-import { formatPeriodLabel, hourInTimezone, dayPartLabel } from "./period";
+import { formatPeriodLabel, dayPartLabel } from "./period";
 import { comparedMetric, teamMetrics } from "./metrics";
 import { LOW_ACTIVITY_THRESHOLD, MAX_ATTENTION_ITEMS } from "./config";
 import { CONVERSATION_PATTERN_DEFS } from "./conversation";

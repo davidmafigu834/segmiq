@@ -21,7 +21,7 @@ export function GenerationProgress({ status }: { status: WeeklyReportStatus }) {
   return (
     <div>
       <p className="text-[13px] font-medium text-sales-text-primary">
-        SegmiQ is analysing last week's team activity.
+        SegmiQ is analysing last week’s team activity.
       </p>
       <p className="mt-1 text-[12px] text-sales-text-muted">{generationStepLabel(status)}</p>
       <ol className="mt-3 space-y-1.5">

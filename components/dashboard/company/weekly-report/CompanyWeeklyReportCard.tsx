@@ -93,7 +93,7 @@ function FailedCard({
   return (
     <div className="px-4 py-5 layout:px-5">
       <p className="text-[12px] font-medium text-sales-text-muted">{latest.periodLabel}</p>
-      <p className="mt-2 text-[15px] font-semibold text-sales-text-primary">We could not finish this week's report</p>
+      <p className="mt-2 text-[15px] font-semibold text-sales-text-primary">We could not finish this week’s report</p>
       <p className="mt-1 max-w-[54ch] text-[13px] text-sales-text-secondary">{friendlyGenerationError(null)}</p>
       <div className="mt-4 flex flex-wrap gap-2">
         {canGenerate && onRetry ? (

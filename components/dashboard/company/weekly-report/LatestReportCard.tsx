@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Download } from "lucide-react";
-import { Button } from "@/components/sales/ui";
 import type { WeeklyReportListItem } from "@/lib/sales/weekly-team-report/types";
 import { formatCompactMoney, generatedLabel, pdfUrl } from "./format";
 import { ReadyIndicator } from "./ReportStatus";

@@ -318,7 +318,7 @@ export function WeeklyTeamReportDocument({
           <Text style={[styles.th, { width: "28%" }]}>Coaching focus</Text>
         </View>
         {salespeople.length === 0 ? (
-          <Text style={styles.p}>No salespeople were in this organisation's team for the week.</Text>
+          <Text style={styles.p}>No salespeople were in this organisation’s team for the week.</Text>
         ) : (
           salespeople.map((person) => (
             <View key={person.salespersonId} wrap={false} style={styles.tableRow}>
@@ -368,7 +368,7 @@ export function WeeklyTeamReportDocument({
         <Footer org={cover.organisationName} />
         <Text style={styles.h2}>Recommended actions</Text>
         {ai.managerRecommendations.length === 0 ? (
-          <Text style={styles.p}>No additional management actions were required from this week's data.</Text>
+          <Text style={styles.p}>No additional management actions were required from this week’s data.</Text>
         ) : (
           ai.managerRecommendations.map((row, i) => (
             <View key={i} wrap={false} style={{ flexDirection: "row", marginBottom: 10 }}>

@@ -243,7 +243,7 @@ export function WeeklyReportDetailClient({
 
       {report && !payload && report.status === "failed" ? (
         <div className="mx-auto max-w-[44rem] py-10">
-          <p className="text-[16px] font-semibold text-sales-text-primary">We could not finish this week's report</p>
+          <p className="text-[16px] font-semibold text-sales-text-primary">We could not finish this week’s report</p>
           <p className="mt-2 text-[14px] text-sales-text-secondary">{friendlyGenerationError(report.generationError)}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {canGenerate ? (
