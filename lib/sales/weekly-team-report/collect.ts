@@ -31,7 +31,7 @@ function safeName(name: string | null | undefined, fallback = "Opportunity"): st
 }
 
 async function fetchPaged<T>(
-  run: (from: number, to: number) => Promise<{ data: T[] | null; error: { message: string } | null }>,
+  run: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
   cap = 5000
 ): Promise<T[]> {
   const page = 1000;
