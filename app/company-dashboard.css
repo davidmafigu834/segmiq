@@ -875,3 +875,73 @@ html[data-crm]:not([data-crm-theme="light"])
     scroll-padding-bottom: 32px;
   }
 }
+
+/* Weekly team report — restrained intelligence chrome */
+
+@keyframes weekly-report-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.weekly-report-pulse {
+  animation: weekly-report-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weekly-report-pulse {
+    animation: none;
+  }
+}
+
+.weekly-report-ready-dot {
+  background: var(--sales-brand);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--sales-brand) 18%, transparent);
+}
+
+.weekly-report-prose {
+  max-width: 68ch;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--sales-text-secondary);
+  text-wrap: pretty;
+}
+
+.weekly-report-section {
+  scroll-margin-top: 5.5rem;
+}
+
+.weekly-report-rail-link[data-active="true"] {
+  color: var(--sales-text-primary);
+  background: color-mix(in srgb, var(--sales-brand) 14%, transparent);
+}
+
+.weekly-report-pdf-canvas {
+  background:
+    radial-gradient(1200px circle at 50% 0%, color-mix(in srgb, var(--sales-brand) 6%, transparent), transparent 55%),
+    color-mix(in srgb, var(--sales-text-primary) 4%, var(--sales-bg));
+}
+
+.weekly-report-dash-card {
+  cursor: default;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.weekly-report-dash-card:hover {
+  border-color: color-mix(in srgb, var(--sales-text-primary) 18%, var(--sales-border-subtle));
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--sales-text-primary) 7%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weekly-report-dash-card {
+    transition: none;
+  }
+}
+
+.weekly-report-toolbar {
+  scroll-margin-top: 0;
+}

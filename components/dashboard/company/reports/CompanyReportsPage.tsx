@@ -6,6 +6,7 @@ import useSWR from "swr";
 import { ErrorState, Tabs } from "@/components/sales/ui";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyReportsHeader, DateRangeControl, FiltersControl } from "./CompanyReportsHeader";
+import { CompanyWeeklyReportCardContainer } from "../CompanyWeeklyReportCard";
 import { ReportOverview } from "./ReportOverview";
 import { ReportOverviewSkeleton } from "./ReportOverviewSkeleton";
 import { ReportTabView } from "./ReportTabView";
@@ -138,6 +139,8 @@ export function CompanyReportsPage({
         avatarUrl={avatarUrl}
         onExport={exportReport}
       />
+
+      <CompanyWeeklyReportCardContainer />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Tabs

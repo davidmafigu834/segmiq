@@ -8,6 +8,7 @@ import { CompanyTeamCalendarCard } from "./CompanyTeamCalendarCard";
 import { CompanyFunnelCard } from "./CompanyFunnelCard";
 import { CompanyTeamPerformanceCard } from "./CompanyTeamPerformanceCard";
 import { CompanyDailyTeamReportCard } from "./CompanyDailyTeamReportCard";
+import { CompanyWeeklyReportCardContainer } from "./CompanyWeeklyReportCard";
 import { CompanyLeadSourcesCard } from "./CompanyLeadSourcesCard";
 import { CompanyPipelineSnapshotCard } from "./CompanyPipelineSnapshotCard";
 import { CompanyDealsAtRiskCard } from "./CompanyDealsAtRiskCard";
@@ -74,6 +75,7 @@ export function CompanyDashboard({
         <CompanyFocusAreasCard signals={data.focusAreas} viewAllHref={data.focusAreasViewAllHref} />
       </div>
 
+      <CompanyWeeklyReportCardContainer />
       <CompanyDailyTeamReportCard report={data.dailyTeamReport} />
 
       <div className="grid w-full grid-cols-1 items-start gap-2.5 layout:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] layout:gap-3">

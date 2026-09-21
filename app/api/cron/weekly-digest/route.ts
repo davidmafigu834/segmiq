@@ -6,6 +6,7 @@ import { weeklyDigestEmail } from "@/lib/email/templates/weekly-digest";
 import { buildWeeklyIntelligenceSnapshot } from "@/lib/lead-intelligence";
 import { runPerformanceAnalysisAllClients } from "@/lib/performance-intelligence";
 import { runForecastSnapshotsAllClients } from "@/lib/revenue-forecast";
+import { runWeeklyTeamReportCron } from "@/lib/sales/weekly-team-report";
 import { sendWhatsApp, isWhatsAppDeliveryConfigured } from "@/lib/messaging/provider";
 import { formatCurrencyUsd } from "@/lib/format";
 import { firstName } from "@/lib/messaging/whatsapp-vars";
@@ -214,6 +215,15 @@ export async function GET(req: Request) {
     errors.push(...forecast.errors);
   } catch (err) {
     errors.push(`Forecast snapshots failed: ${String(err)}`);
+  }
+
+  try {
+    const weeklyReports = await runWeeklyTeamReportCron();
+    console.log(
+      `[weekly-digest] Weekly team reports: scanned=${weeklyReports.scanned} generated=${weeklyReports.generated}`
+    );
+  } catch (err) {
+    errors.push(`Weekly team reports failed: ${String(err)}`);
   }
 
   return NextResponse.json({

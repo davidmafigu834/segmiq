@@ -151,6 +151,17 @@ export function isDocumentStorageKeyForClient(clientId: string, storageKey: stri
   return storageKey.startsWith(prefix) && !storageKey.includes("..");
 }
 
+/** Private Weekly Team Performance Report PDFs. */
+export function generateWeeklyTeamReportKey(clientId: string, reportId: string): string {
+  const safeReportId = reportId.replace(/[^a-zA-Z0-9-]/g, "") || "report";
+  return `clients/${clientId}/weekly-reports/${safeReportId}.pdf`;
+}
+
+export function isWeeklyTeamReportKeyForClient(clientId: string, storageKey: string): boolean {
+  const prefix = `clients/${clientId}/weekly-reports/`;
+  return storageKey.startsWith(prefix) && storageKey.endsWith(".pdf") && !storageKey.includes("..");
+}
+
 export async function putObject(
   key: string,
   body: Buffer,

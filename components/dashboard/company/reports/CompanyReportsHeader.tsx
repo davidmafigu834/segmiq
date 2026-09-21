@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addDays, format, startOfDay, subDays } from "date-fns";
-import { CalendarDays, Download, Filter } from "lucide-react";
+import { CalendarDays, Download, Filter, FileText } from "lucide-react";
 import { CompanyDashboardHeader } from "../CompanyDashboardHeader";
 import { Button } from "@/components/sales/ui";
 import {
@@ -37,6 +37,12 @@ export function CompanyReportsHeader({
       breadcrumb="Company / Reports"
       title="Reports"
       description="Track performance, measure results and make data-driven decisions."
+      titleActions={
+        <a href="/client/reports/weekly" className="sales-weekly-reports-cta inline-flex h-8 items-center gap-1.5 rounded-[8px] border border-sales-border-subtle px-3 text-[12px] font-medium text-sales-text-secondary hover:border-sales-border hover:text-sales-text-primary">
+          <FileText size={14} strokeWidth={1.8} />
+          Weekly team reports
+        </a>
+      }
       primaryAction={
         <Button variant="primary" size="md" leftIcon={<Download size={15} />} onClick={onExport}>
           Export

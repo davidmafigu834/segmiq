@@ -27,20 +27,31 @@ export async function GET(req: Request) {
 
   let { data, error } = await supabase
     .from("notifications")
-    .select("id, type, message, read, lead_id, client_id, quotation_id, created_at")
+    .select("id, type, message, read, lead_id, client_id, quotation_id, weekly_report_id, created_at")
     .eq("user_id", auth.userId)
     .order("created_at", { ascending: false })
     .limit(limit);
 
   if (error) {
-    const fallback = await supabase
+    const withQuote = await supabase
       .from("notifications")
-      .select("id, type, message, read, lead_id, client_id, created_at")
+      .select("id, type, message, read, lead_id, client_id, quotation_id, created_at")
       .eq("user_id", auth.userId)
       .order("created_at", { ascending: false })
       .limit(limit);
-    data = (fallback.data ?? []).map((row) => ({ ...row, quotation_id: null })) as typeof data;
-    error = fallback.error;
+    if (!withQuote.error) {
+      data = (withQuote.data ?? []).map((row) => ({ ...row, weekly_report_id: null })) as typeof data;
+      error = null;
+    } else {
+      const fallback = await supabase
+        .from("notifications")
+        .select("id, type, message, read, lead_id, client_id, created_at")
+        .eq("user_id", auth.userId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      data = (fallback.data ?? []).map((row) => ({ ...row, quotation_id: null, weekly_report_id: null })) as typeof data;
+      error = fallback.error;
+    }
   }
 
   if (error) {

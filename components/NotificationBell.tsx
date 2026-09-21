@@ -24,12 +24,14 @@ type NotificationRow = {
     | "AGENT_ALERT"
     | "INVENTORY_ALERT"
     | "COMMERCIAL_IMPORT"
-    | "SOCIAL_INBOX";
+    | "SOCIAL_INBOX"
+    | "WEEKLY_TEAM_REPORT";
   message: string;
   read: boolean;
   lead_id: string | null;
   client_id?: string | null;
   quotation_id?: string | null;
+  weekly_report_id?: string | null;
   created_at: string;
 };
 
@@ -145,6 +147,10 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
     if (n.type === "SOCIAL_INBOX") {
       if (role === "CLIENT_MANAGER") return "/client/social-inbox";
       return "/sales/social-inbox";
+    }
+    if (n.type === "WEEKLY_TEAM_REPORT") {
+      if (n.weekly_report_id) return `/client/reports/weekly/${n.weekly_report_id}`;
+      return "/client/reports/weekly";
     }
     if (role === "SALESPERSON") return "/sales/pipeline";
     if (role === "CLIENT_MANAGER") return "/client/leads";

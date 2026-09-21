@@ -96,6 +96,9 @@ export const P = {
   ANALYTICS_READ_OWN: "analytics.read_own",
   ANALYTICS_READ_ALL: "analytics.read_all",
   DATA_EXPORT: "data.export",
+  REPORTS_TEAM_VIEW: "reports.team.view",
+  REPORTS_TEAM_DOWNLOAD: "reports.team.download",
+  REPORTS_TEAM_GENERATE: "reports.team.generate",
   COMPLIANCE_READ: "compliance.read",
   COMPLIANCE_REVIEW: "compliance.review",
 
@@ -176,6 +179,9 @@ export const CLIENT_DATA_PERMISSIONS: Permission[] = [
   P.DATA_EXPORT,
   P.ANALYTICS_READ_OWN,
   P.ANALYTICS_READ_ALL,
+  P.REPORTS_TEAM_VIEW,
+  P.REPORTS_TEAM_DOWNLOAD,
+  P.REPORTS_TEAM_GENERATE,
 ];
 
 export function isClientDataPermission(permission: Permission): boolean {

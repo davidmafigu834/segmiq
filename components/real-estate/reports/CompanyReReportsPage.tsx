@@ -32,15 +32,20 @@ export function CompanyReReportsPage({
         </Button>
       }
       titleActions={
-        <Button
-          variant="primary"
-          size="md"
-          className="layout:hidden"
-          rightIcon={<ArrowUpRight size={15} />}
-          onClick={() => router.push("/client/leads")}
-        >
-          View inquiries
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="md" onClick={() => router.push("/client/reports/weekly")}>
+            Weekly team reports
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            className="layout:hidden"
+            rightIcon={<ArrowUpRight size={15} />}
+            onClick={() => router.push("/client/leads")}
+          >
+            View inquiries
+          </Button>
+        </div>
       }
     >
       <RealEstateReportsWorkspace clientId={clientId} />
