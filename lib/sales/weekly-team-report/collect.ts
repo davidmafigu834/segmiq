@@ -687,7 +687,8 @@ async function fetchByIds(
     if (clientId) query = query.eq("client_id", clientId);
     const { data, error } = await query;
     if (error) throw new Error(error.message);
-    rows.push(...((data ?? []) as Array<Record<string, unknown>>));
+    const batch = (data ?? []) as unknown as Array<Record<string, unknown>>;
+    rows.push(...batch);
   }
   return rows;
 }
@@ -706,7 +707,7 @@ async function fetchViewings(
       .gte("scheduled_at", start)
       .lt("scheduled_at", end);
     if (error) return [];
-    return (data ?? []) as Array<{ scheduled_at: string }>;
+    return (data ?? []) as unknown as Array<{ scheduled_at: string }>;
   } catch {
     return [];
   }
