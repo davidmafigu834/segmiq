@@ -14,6 +14,7 @@ const prioritySchema = z.object({
   pipelineValue: z.number().nonnegative().nullable(),
   ownerLabel: z.string().min(1).max(80),
   targetDate: z.string().max(40).nullable(),
+  summary: z.string().max(180).nullable().optional(),
 });
 
 const salespersonSchema = z.object({

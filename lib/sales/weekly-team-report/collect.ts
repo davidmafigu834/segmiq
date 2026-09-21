@@ -413,6 +413,7 @@ export async function collectWeeklyTeamSnapshot(opts: {
       latestEvent: "Customer replied",
       reason: "Customer replied but the salesperson has not responded.",
       recommendedAction: "Reply today.",
+      priorityTag: "Reply Today",
     }));
 
   const activityVolume =

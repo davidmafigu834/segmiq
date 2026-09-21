@@ -60,14 +60,14 @@ export function teamMetrics(current: PeriodFacts, previous: PeriodFacts): Compar
     comparedMetric("deals_lost", "Deals lost", current.dealsLost, previous.dealsLost, "count", true),
     comparedMetric("revenue_won", "Revenue won", current.revenueWon, previous.revenueWon, "money"),
     comparedMetric("pipeline_value", "Active pipeline value", current.pipelineValue, null, "money"),
-    comparedMetric(
-      "avg_first_response",
-      "Average first response",
-      current.avgFirstResponseMinutes,
-      previous.avgFirstResponseMinutes,
-      "minutes",
-      true
-    ),
+      comparedMetric(
+        "avg_first_response",
+        "Avg response among contacted",
+        current.avgFirstResponseMinutes,
+        previous.avgFirstResponseMinutes,
+        "minutes",
+        true
+      ),
     comparedMetric(
       "follow_ups_completed",
       "Follow-ups completed",

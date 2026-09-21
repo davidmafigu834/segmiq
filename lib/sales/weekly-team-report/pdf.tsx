@@ -1,5 +1,8 @@
+import React from "react";
+import { registerQuotationFonts } from "@/lib/quotations/fonts/register-roboto";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { WeeklyTeamReportDocument } from "./pdf-document";
+import { preparePayloadForPdf } from "./validate";
 import type { WeeklyReportPayload } from "./types";
 
 async function fetchLogoDataUri(logoUrl: string | null): Promise<string | null> {
@@ -18,8 +21,10 @@ async function fetchLogoDataUri(logoUrl: string | null): Promise<string | null> 
 }
 
 export async function renderWeeklyTeamReportPdf(payload: WeeklyReportPayload): Promise<Buffer> {
-  const logoDataUri = await fetchLogoDataUri(payload.cover.organisationLogoUrl);
-  const element = <WeeklyTeamReportDocument payload={payload} logoDataUri={logoDataUri} />;
+  registerQuotationFonts();
+  const prepared = preparePayloadForPdf(payload);
+  const logoDataUri = await fetchLogoDataUri(prepared.cover.organisationLogoUrl);
+  const element = <WeeklyTeamReportDocument payload={prepared} logoDataUri={logoDataUri} />;
   const buffer = await renderToBuffer(element);
   return Buffer.from(buffer);
 }

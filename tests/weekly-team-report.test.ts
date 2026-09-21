@@ -15,6 +15,8 @@ import {
   buildPipelineHealth,
   buildDeterministicInsights,
   mergeAiIntoPayload,
+  buildAttentionList,
+  funnelDropNarrative,
 } from "../lib/sales/weekly-team-report/analyse";
 import { resolvePipelineHealthConfig, DEFAULT_PIPELINE_HEALTH } from "../lib/sales/weekly-team-report/config";
 import { classifyConversationText, aggregateConversationPatterns } from "../lib/sales/weekly-team-report/conversation";
@@ -129,7 +131,7 @@ describe("weekly report period and timezone", () => {
     const week = weekFromMonday("2026-09-14", "Africa/Harare");
     assert.equal(week.startDate, "2026-09-14");
     assert.equal(week.endDate, "2026-09-20");
-    assert.equal(formatPeriodLabel(week), "14-20 September 2026");
+    assert.equal(formatPeriodLabel(week), "14–20 September 2026");
     assert.match(week.startIso, /2026-09-13T22:00:00/);
     assert.match(week.endIsoExclusive, /2026-09-20T22:00:00/);
   });
@@ -394,5 +396,184 @@ describe("weekly report facts vs interpretation", () => {
     assert.equal(snap.reassignments[0]?.fromId, "sp1");
     assert.equal(snap.reassignments[0]?.toId, "sp2");
     assert.equal(snap.clientId, "org-a");
+  });
+});
+
+describe("weekly report presentation and copy", () => {
+  it("formats currency without cents unless they are meaningful", async () => {
+    const { formatReportMoney, sanitizePdfText, metricComparison, countLabel } = await import(
+      "../lib/sales/weekly-team-report/presentation"
+    );
+    assert.equal(formatReportMoney(42310, "USD"), "USD 42,310");
+    assert.equal(formatReportMoney(1750.4, "USD"), "USD 1,750");
+    assert.equal(formatReportMoney(12.5, "USD"), "USD 12.50");
+    assert.equal(sanitizePdfText("José\u0000 Moyo\uFFFD"), "José Moyo");
+    assert.equal(countLabel(1, "conversation"), "1 conversation");
+    assert.equal(countLabel(3, "conversation"), "3 conversations");
+    const improved = metricComparison({
+      id: "avg_first_response",
+      label: "Avg response among contacted",
+      current: 3,
+      previous: 19,
+      delta: -16,
+      trend: { direction: "down", pct: -84.2, label: "-84.2%" },
+      format: "minutes",
+      invertGood: true,
+    });
+    assert.equal(improved.tone, "positive");
+    assert.match(improved.text, /Improved by 16 min/);
+    const volume = metricComparison({
+      id: "new_leads",
+      label: "New leads",
+      current: 20,
+      previous: 12,
+      delta: 8,
+      trend: { direction: "up", pct: 66.7, label: "+66.7%" },
+      format: "count",
+    });
+    assert.match(volume.text, /66\.7% higher vs last week/);
+    assert.equal(volume.tone, "positive");
+  });
+
+  it("does not treat won deals as a same-week step after quotation", () => {
+    const current = emptyPeriodFacts();
+    current.newLeads = 20;
+    current.contactedLeads = 7;
+    current.qualifiedLeads = 1;
+    current.quotationsSent = 0;
+    current.dealsWon = 1;
+    const snap = snapshot({ current });
+    const funnel = buildFunnel(snap);
+    const won = funnel.find((stage) => stage.id === "won");
+    const drop = largestFunnelDropOff(funnel);
+    assert.equal(won?.sequential, false);
+    assert.match(won?.note ?? "", /without a recorded quotation/);
+    assert.equal(drop?.id, "contacted");
+    assert.match(funnelDropNarrative(funnel) ?? "", /between New Leads and Contacted/);
+  });
+
+  it("sorts attention items with customer-waiting first", () => {
+    const snap = snapshot({
+      attentionSeed: [
+        {
+          id: "wait-d2",
+          entityKind: "deal",
+          entityId: "d2",
+          displayName: "Waiting customer",
+          salespersonId: "sp1",
+          salespersonName: "Rudo",
+          value: 800,
+          stage: "CONTACTED",
+          stageLabel: "Contacted",
+          lastActivityAt: "2026-09-20T10:00:00.000Z",
+          daysInactive: 1,
+          latestEvent: "Customer replied",
+          reason: "Customer replied but the salesperson has not responded.",
+          recommendedAction: "Reply today.",
+          priorityTag: "Reply Today",
+        },
+      ],
+      activePipeline: [
+        deal({
+          id: "d3",
+          title: "High value stalled",
+          value: 42000,
+          stage: "NEGOTIATING",
+          lastActivityAt: "2026-08-01T08:00:00.000Z",
+          nextActionAt: null,
+          createdAt: "2026-07-01T08:00:00.000Z",
+        }),
+        deal({
+          id: "d2",
+          title: "Waiting customer",
+          value: 800,
+          customerWaiting: true,
+          lastActivityAt: "2026-09-20T10:00:00.000Z",
+        }),
+      ],
+    });
+    const items = buildAttentionList(snap);
+    assert.equal(items[0]?.priorityTag, "Reply Today");
+    assert.ok(items.some((item) => item.priorityTag === "High Value" || item.displayName === "High value stalled"));
+  });
+
+  it("uses manager-facing drop-off language in fallback copy", () => {
+    const ai = buildFallbackAi(snapshot());
+    assert.equal(ai.executiveSummary.includes("fall-off sat"), false);
+    assert.match(ai.executiveSummary, /drop-off occurred between|Quotation follow-up|priority for next week/i);
+  });
+
+  it("repairs NaN and control characters before PDF render", async () => {
+    const { preparePayloadForPdf } = await import("../lib/sales/weekly-team-report/validate");
+    const payload = mergeAiIntoPayload(snapshot(), buildFallbackAi(snapshot()));
+    payload.cover.organisationName = "Ecolus\u0000 Energy";
+    payload.metrics[0]!.current = Number.NaN;
+    payload.attention[0] && (payload.attention[0].displayName = "THE\uFFFD");
+    const prepared = preparePayloadForPdf(payload);
+    assert.equal(prepared.cover.organisationName.includes("\u0000"), false);
+    assert.equal(prepared.metrics[0]?.current, null);
+    assert.equal(prepared.responseCoverage.newLeads >= 0, true);
+  });
+
+  it("renders a Unicode-safe weekly report PDF", { timeout: 60_000 }, async () => {
+    const { renderWeeklyTeamReportPdf } = await import("../lib/sales/weekly-team-report/pdf");
+    const current = emptyPeriodFacts();
+    current.newLeads = 20;
+    current.contactedLeads = 7;
+    current.qualifiedLeads = 1;
+    current.quotationsSent = 0;
+    current.dealsWon = 1;
+    current.revenueWon = 1750;
+    current.avgFirstResponseMinutes = 3;
+    current.delayedResponses = 19;
+    current.onTimeResponses = 1;
+    current.followUpsMissed = 4;
+    const previous = emptyPeriodFacts();
+    previous.newLeads = 12;
+    previous.avgFirstResponseMinutes = 19;
+    const snap = snapshot({
+      current,
+      previous,
+      organisationName: "Ecolus Energy",
+      salespeople: [
+        { id: "sp1", name: "Tinotenda Ecolus Energy", active: true, role: "SALESPERSON" },
+        { id: "sp2", name: "Benadette Tatenda Fazilahmed", active: true, role: "SALESPERSON" },
+      ],
+      activePipeline: [
+        deal({
+          id: "stalled-1",
+          title: "THE",
+          value: 4200,
+          ownerName: "Benadette Tatenda Fazilahmed",
+          stage: "NEGOTIATING",
+          lastActivityAt: "2026-09-10T08:00:00.000Z",
+          nextActionAt: null,
+          createdAt: "2026-08-01T08:00:00.000Z",
+        }),
+        deal({
+          id: "stalled-2",
+          title: "José Moyo",
+          value: 38120,
+          ownerName: "Tinotenda Ecolus Energy",
+          stage: "QUALIFIED",
+          lastActivityAt: "2026-08-20T08:00:00.000Z",
+          nextActionAt: null,
+          createdAt: "2026-07-01T08:00:00.000Z",
+        }),
+      ],
+      lostThisWeek: [],
+      conversation: {
+        scannedCount: 5,
+        truncated: false,
+        patterns: [
+          { id: "pricing", label: "Pricing concerns", count: 3, sampleIds: ["m1"] },
+          { id: "financing", label: "Payment plans", count: 1, sampleIds: ["m2"] },
+        ],
+      },
+    });
+    const payload = mergeAiIntoPayload(snap, buildFallbackAi(snap));
+    const buf = await renderWeeklyTeamReportPdf(payload);
+    assert.equal(buf.subarray(0, 4).toString(), "%PDF");
+    assert.ok(buf.length > 4000);
   });
 });

@@ -61,9 +61,22 @@ export function formatPeriodLabel(period: Pick<WeekPeriod, "startDate" | "endDat
   const endMonth = end.toLocaleDateString("en-GB", { month: "long", timeZone: "UTC" });
   const year = end.getUTCFullYear();
   if (startMonth === endMonth) {
-    return `${startDay}-${endDay} ${endMonth} ${year}`;
+    return `${startDay}–${endDay} ${endMonth} ${year}`;
   }
-  return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${year}`;
+  return `${startDay} ${startMonth} – ${endDay} ${endMonth} ${year}`;
+}
+
+export function formatCompactPeriodLabel(period: Pick<WeekPeriod, "startDate" | "endDate">): string {
+  const start = parseDateOnly(period.startDate);
+  const end = parseDateOnly(period.endDate);
+  if (!start || !end) return `${period.startDate} - ${period.endDate}`;
+  const startDay = start.getUTCDate();
+  const endDay = end.getUTCDate();
+  const startMonth = start.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });
+  const endMonth = end.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });
+  const year = end.getUTCFullYear();
+  if (startMonth === endMonth) return `${startDay}–${endDay} ${endMonth} ${year}`;
+  return `${startDay} ${startMonth} – ${endDay} ${endMonth} ${year}`;
 }
 
 export function hourInTimezone(iso: string, timezone: string): number | null {

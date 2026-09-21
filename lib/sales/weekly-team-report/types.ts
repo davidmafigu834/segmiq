@@ -54,6 +54,9 @@ export type FunnelStageResult = {
   count: number;
   conversionPct: number;
   dropOff: number;
+  sequential: boolean;
+  note: string | null;
+  bottleneck: boolean;
 };
 
 export type PipelineHealthBucketId =
@@ -72,6 +75,8 @@ export type PipelineHealthBucket = {
   causes: string[];
 };
 
+export type AttentionPriorityTag = "Reply Today" | "High Value" | "Stalled" | "Needs Review";
+
 export type AttentionItem = {
   id: string;
   entityKind: "deal" | "lead";
@@ -87,6 +92,7 @@ export type AttentionItem = {
   latestEvent: string;
   reason: string;
   recommendedAction: string;
+  priorityTag: AttentionPriorityTag | null;
 };
 
 export type SalespersonNarrative = {
@@ -112,11 +118,14 @@ export type LostDealRow = {
   reason: string;
 };
 
+export type ConversationReliability = "Low sample" | "Emerging" | "Recurring" | "Reliable pattern";
+
 export type ConversationPattern = {
   id: string;
   label: string;
   count: number;
   interpretation: string;
+  reliability: ConversationReliability;
   evidence: EvidenceRef;
 };
 
@@ -133,6 +142,7 @@ export type NextWeekPriority = {
   pipelineValue: number | null;
   ownerLabel: string;
   targetDate: string | null;
+  summary?: string | null;
 };
 
 export type PipelineHealthConfig = {
@@ -297,6 +307,15 @@ export type ReassignmentEvent = {
   at: string;
 };
 
+export type ResponseCoverage = {
+  contactedAverageMinutes: number | null;
+  newLeads: number;
+  contactedLeads: number;
+  onTime: number;
+  missedSla: number;
+  slaHours: number;
+};
+
 export type WeeklyReportPayload = {
   cover: WeeklyReportCover;
   metrics: ComparedMetric[];
@@ -306,6 +325,7 @@ export type WeeklyReportPayload = {
   pipelineHealthNarrative: string;
   attention: AttentionItem[];
   salespeople: SalespersonNarrative[];
+  responseCoverage: ResponseCoverage;
   lostDeals: {
     count: number;
     previousCount: number;

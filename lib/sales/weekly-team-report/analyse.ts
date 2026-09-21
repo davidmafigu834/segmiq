@@ -3,8 +3,15 @@ import { formatPeriodLabel, dayPartLabel } from "./period";
 import { comparedMetric, teamMetrics } from "./metrics";
 import { LOW_ACTIVITY_THRESHOLD, MAX_ATTENTION_ITEMS } from "./config";
 import { CONVERSATION_PATTERN_DEFS } from "./conversation";
+import {
+  conversationInterpretation,
+  conversationReliability,
+  countLabel,
+  sanitizePdfText,
+} from "./presentation";
 import type {
   AttentionItem,
+  AttentionPriorityTag,
   ConversationPattern,
   EvidenceRef,
   FunnelStageResult,
@@ -69,28 +76,75 @@ export function classifyDeal(
 
 export function buildFunnel(snapshot: WeeklyTeamSnapshot): FunnelStageResult[] {
   const c = snapshot.current;
-  const stages: Array<{ id: string; label: string; count: number }> = [
-    { id: "new_leads", label: "New leads", count: c.newLeads },
+  const sequential: Array<{ id: string; label: string; count: number }> = [
+    { id: "new_leads", label: "New Leads", count: c.newLeads },
     { id: "contacted", label: "Contacted", count: c.contactedLeads },
     { id: "qualified", label: "Qualified", count: c.qualifiedLeads },
     { id: "quotation", label: "Quotation", count: c.quotationsSent },
-    { id: "won", label: "Won", count: c.dealsWon },
   ];
-  return stages.map((stage, i) => {
-    const prev = i === 0 ? stage.count : stages[i - 1]!.count;
+  const mapped = sequential.map((stage, i) => {
+    const prev = i === 0 ? stage.count : sequential[i - 1]!.count;
     const conversionPct = prev <= 0 ? (stage.count > 0 ? 100 : 0) : Math.round((stage.count / prev) * 1000) / 10;
     const dropOff = Math.max(0, prev - stage.count);
-    return { ...stage, conversionPct, dropOff };
+    return {
+      ...stage,
+      conversionPct,
+      dropOff,
+      sequential: true,
+      note: null as string | null,
+      bottleneck: false,
+    };
   });
+
+  let bottleneckId: string | null = null;
+  let bestDrop = 0;
+  for (const row of mapped.slice(1)) {
+    if (row.dropOff > bestDrop) {
+      bestDrop = row.dropOff;
+      bottleneckId = row.id;
+    }
+  }
+
+  const wonNote =
+    c.dealsWon <= 0
+      ? null
+      : c.quotationsSent <= 0
+        ? "Won during reporting period, without a recorded quotation this week."
+        : "Won during reporting period. Wins may include opportunities quoted in earlier weeks.";
+
+  mapped.push({
+    id: "won",
+    label: "Won",
+    count: c.dealsWon,
+    conversionPct: 0,
+    dropOff: 0,
+    sequential: false,
+    note: wonNote,
+    bottleneck: false,
+  });
+
+  return mapped.map((stage) => ({ ...stage, bottleneck: stage.id === bottleneckId && bestDrop > 0 }));
 }
 
 export function largestFunnelDropOff(funnel: FunnelStageResult[]): FunnelStageResult | null {
   let best: FunnelStageResult | null = null;
   for (let i = 1; i < funnel.length; i++) {
     const row = funnel[i]!;
+    if (!row.sequential) continue;
     if (!best || row.dropOff > best.dropOff) best = row;
   }
   return best;
+}
+
+export function funnelDropNarrative(funnel: FunnelStageResult[]): string | null {
+  const drop = largestFunnelDropOff(funnel);
+  if (!drop || drop.dropOff <= 0) return null;
+  const index = funnel.findIndex((stage) => stage.id === drop.id);
+  const from = index > 0 ? funnel[index - 1] : null;
+  if (!from) {
+    return `The largest drop-off occurred at ${drop.label}. ${countLabel(drop.dropOff, "opportunity")} did not progress.`;
+  }
+  return `The largest drop-off occurred between ${from.label} and ${drop.label}. ${countLabel(drop.dropOff, "opportunity")} did not progress.`;
 }
 
 export function buildPipelineHealth(snapshot: WeeklyTeamSnapshot): PipelineHealthBucket[] {
@@ -139,31 +193,100 @@ export function buildPipelineHealth(snapshot: WeeklyTeamSnapshot): PipelineHealt
   });
 }
 
+function pipelineValuePercentile(snapshot: WeeklyTeamSnapshot, fraction = 0.75): number {
+  const values = snapshot.activePipeline
+    .map((deal) => deal.value ?? 0)
+    .filter((value) => value > 0)
+    .sort((a, b) => a - b);
+  if (values.length === 0) return 10_000;
+  const index = Math.min(values.length - 1, Math.max(0, Math.floor(values.length * fraction)));
+  return Math.max(values[index] ?? 10_000, 2_500);
+}
+
+function isCustomerWaiting(item: AttentionItem): boolean {
+  return (
+    item.latestEvent === "Customer replied" ||
+    item.latestEvent === "Customer waiting" ||
+    /has not responded|still waiting/i.test(item.reason)
+  );
+}
+
+function attentionTag(item: AttentionItem, highValueFloor: number): AttentionPriorityTag | null {
+  if (item.priorityTag) return item.priorityTag;
+  if (isCustomerWaiting(item)) return "Reply Today";
+  if ((item.value ?? 0) >= highValueFloor && (item.daysInactive ?? 0) >= 5) return "High Value";
+  if (/remained in/i.test(item.reason) || (item.stage === "NEGOTIATING" && (item.daysInactive ?? 0) >= 8)) {
+    return "Stalled";
+  }
+  if (/quotation delivered|quoted/i.test(item.reason) || item.latestEvent === "Quotation sent") {
+    return "Needs Review";
+  }
+  if ((item.daysInactive ?? 0) >= 5) return "Needs Review";
+  return null;
+}
+
+function attentionRank(tag: AttentionPriorityTag | null): number {
+  if (tag === "Reply Today") return 0;
+  if (tag === "High Value") return 1;
+  if (tag === "Stalled") return 2;
+  if (tag === "Needs Review") return 3;
+  return 4;
+}
+
+function mergeAttention(existing: AttentionItem, incoming: AttentionItem): AttentionItem {
+  const waiting = isCustomerWaiting(existing) || isCustomerWaiting(incoming);
+  return {
+    ...existing,
+    displayName: existing.displayName || incoming.displayName,
+    salespersonName: existing.salespersonName || incoming.salespersonName,
+    value: existing.value ?? incoming.value,
+    stageLabel:
+      existing.stageLabel && existing.stageLabel !== existing.stage ? existing.stageLabel : incoming.stageLabel,
+    daysInactive: existing.daysInactive ?? incoming.daysInactive,
+    lastActivityAt: existing.lastActivityAt ?? incoming.lastActivityAt,
+    reason: waiting ? (isCustomerWaiting(existing) ? existing.reason : incoming.reason) : existing.reason,
+    recommendedAction: waiting ? existing.recommendedAction || incoming.recommendedAction : incoming.recommendedAction,
+    latestEvent: waiting
+      ? isCustomerWaiting(existing)
+        ? existing.latestEvent
+        : incoming.latestEvent
+      : existing.latestEvent,
+    priorityTag: existing.priorityTag ?? incoming.priorityTag,
+  };
+}
+
 export function buildAttentionList(snapshot: WeeklyTeamSnapshot): AttentionItem[] {
   const asOf = snapshot.period.endIsoExclusive;
-  const items: AttentionItem[] = [...snapshot.attentionSeed];
+  const items: AttentionItem[] = snapshot.attentionSeed.map((item) => ({
+    ...item,
+    displayName: sanitizePdfText(item.displayName, "Unnamed opportunity"),
+    salespersonName: sanitizePdfText(item.salespersonName, "Unassigned"),
+    priorityTag: item.priorityTag ?? (isCustomerWaiting(item) ? "Reply Today" : null),
+  }));
 
   for (const deal of snapshot.activePipeline) {
     const bucket = classifyDeal(deal, snapshot);
-    if (bucket === "healthy") continue;
+    if (bucket === "healthy" && !deal.customerWaiting) continue;
     const daysInactive = daysBetween(deal.lastActivityAt, asOf);
     let reason = "Opportunity needs a review.";
     let recommendedAction = "Confirm the next action and owner.";
     let latestEvent = deal.nextActionLabel || "No next action recorded";
-    if (bucket === "quoted_awaiting_followup") {
-      reason = "Quotation delivered with no recorded follow-up inside the follow-up window.";
-      recommendedAction = "Call or message the customer and log the follow-up.";
-      latestEvent = "Quotation sent";
-    } else if (deal.customerWaiting) {
+    if (deal.customerWaiting) {
       reason = "Customer replied and is still waiting for a salesperson response.";
       recommendedAction = "Reply today and set the next action.";
       latestEvent = "Customer waiting";
+    } else if (bucket === "quoted_awaiting_followup") {
+      reason = "Quotation delivered with no recorded follow-up inside the follow-up window.";
+      recommendedAction = "Call or message the customer and log the follow-up.";
+      latestEvent = "Quotation sent";
     } else if (bucket === "stalled") {
       reason = `Opportunity has remained in ${formatDealStage(deal.stage)} longer than the configured threshold.`;
-      recommendedAction = "Decide whether to progress, requote, or close.";
+      recommendedAction = "Decide whether to progress, requote or close.";
     } else if (bucket === "at_risk") {
       reason = `No meaningful activity for ${daysInactive ?? snapshot.health.atRiskDays}+ days.`;
       recommendedAction = "Re-engage this week or move the opportunity out of the active pipeline.";
+    } else if (bucket === "healthy") {
+      continue;
     } else {
       reason = "Recent activity has slowed and the next action is unclear.";
       recommendedAction = "Set a dated next action.";
@@ -172,9 +295,9 @@ export function buildAttentionList(snapshot: WeeklyTeamSnapshot): AttentionItem[
       id: deal.id,
       entityKind: "deal",
       entityId: deal.id,
-      displayName: deal.title,
+      displayName: sanitizePdfText(deal.title, "Unnamed opportunity"),
       salespersonId: deal.ownerId,
-      salespersonName: deal.ownerName ?? personName(snapshot, deal.ownerId),
+      salespersonName: sanitizePdfText(deal.ownerName ?? personName(snapshot, deal.ownerId), "Unassigned"),
       value: deal.value,
       stage: deal.stage,
       stageLabel: DEAL_STAGE_LABEL[deal.stage as keyof typeof DEAL_STAGE_LABEL] ?? formatDealStage(deal.stage),
@@ -183,18 +306,30 @@ export function buildAttentionList(snapshot: WeeklyTeamSnapshot): AttentionItem[
       latestEvent,
       reason,
       recommendedAction,
+      priorityTag: null,
     });
   }
 
-  const seen = new Set<string>();
-  const unique = items.filter((item) => {
+  const merged = new Map<string, AttentionItem>();
+  for (const item of items) {
     const key = `${item.entityKind}:${item.entityId}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+    const existing = merged.get(key);
+    merged.set(key, existing ? mergeAttention(existing, item) : item);
+  }
 
-  unique.sort((a, b) => (b.value ?? 0) - (a.value ?? 0) || (b.daysInactive ?? 0) - (a.daysInactive ?? 0));
+  const highValueFloor = pipelineValuePercentile(snapshot);
+  const unique = [...merged.values()].map((item) => ({
+    ...item,
+    priorityTag: attentionTag(item, highValueFloor),
+  }));
+
+  unique.sort((a, b) => {
+    const rankDelta = attentionRank(a.priorityTag) - attentionRank(b.priorityTag);
+    if (rankDelta !== 0) return rankDelta;
+    const valueDelta = (b.value ?? 0) - (a.value ?? 0);
+    if (valueDelta !== 0) return valueDelta;
+    return (b.daysInactive ?? 0) - (a.daysInactive ?? 0);
+  });
   return unique.slice(0, MAX_ATTENTION_ITEMS);
 }
 
@@ -282,7 +417,13 @@ export function buildSalespersonNarratives(
     const aiRow = ai?.salespersonNarratives.find((n) => n.salespersonId === person.id);
     const coachingFocus =
       aiRow?.coachingFocus ||
-      (concerns[0] ? "Review the activity gap above in the next 1:1." : "Keep the current cadence and protect response time.");
+      ((current?.staleDeals ?? 0) >= 5
+        ? "Pipeline reactivation and next-action discipline."
+        : (current?.missedFollowUps ?? 0) > 0
+          ? "Follow-up cadence and dated next actions."
+          : concerns[0]
+            ? "Tighten response coverage and next-action discipline."
+            : "Keep the current cadence and protect response time.");
 
     const fallbackNarrative = buildPersonFallback(person.name, current, concerns, strengths);
 
@@ -310,7 +451,7 @@ function buildPersonFallback(
   const assigned = current?.leadsAssigned ?? 0;
   const won = current?.dealsWon ?? 0;
   const quotes = current?.quotationsSent ?? 0;
-  const lead = `${name} was assigned ${assigned} lead${assigned === 1 ? "" : "s"}, sent ${quotes} quotation${quotes === 1 ? "" : "s"}, and recorded ${won} win${won === 1 ? "" : "s"} this week.`;
+  const lead = `${name} was assigned ${countLabel(assigned, "lead")}, sent ${countLabel(quotes, "quotation")}, and recorded ${countLabel(won, "win")} this week.`;
   if (concerns[0]) return `${lead} ${concerns[0]}`;
   if (strengths[0]) return `${lead} ${strengths[0]}`;
   return lead;
@@ -319,38 +460,33 @@ function buildPersonFallback(
 export function buildConversationInsights(snapshot: WeeklyTeamSnapshot): ConversationPattern[] {
   return snapshot.conversation.patterns.map((pattern) => {
     const def = CONVERSATION_PATTERN_DEFS.find((d) => d.id === pattern.id);
+    const label = def?.label ?? pattern.label;
     return {
       id: pattern.id,
-      label: def?.label ?? pattern.label,
+      label,
       count: pattern.count,
-      interpretation:
-        pattern.count === 1
-          ? `One inbound conversation matched ${def?.label ?? pattern.label}. This should be reviewed, not treated as a team-wide pattern.`
-          : `${pattern.count} inbound conversations matched ${def?.label ?? pattern.label}. This may indicate a recurring customer question this week.` ,
+      interpretation: conversationInterpretation(label, pattern.count),
+      reliability: conversationReliability(pattern.count),
       evidence: {
         kind: "message",
         ids: pattern.sampleIds,
-        label: def?.label ?? pattern.label,
+        label,
       },
     };
   });
 }
 
 export function buildFunnelExplanation(funnel: FunnelStageResult[], snapshot: WeeklyTeamSnapshot): TaggedInsight[] {
-  const drop = largestFunnelDropOff(funnel);
   const insights: TaggedInsight[] = [];
-  if (drop && drop.dropOff > 0) {
-    const from = funnel[Math.max(0, funnel.findIndex((s) => s.id === drop.id) - 1)];
-    insights.push({
-      kind: "fact",
-      text: `The largest fall-off occurred between ${from?.label ?? "the previous stage"} and ${drop.label}. ${drop.dropOff} opportunities did not progress during the week.`,
-    });
+  const narrative = funnelDropNarrative(funnel);
+  if (narrative) {
+    insights.push({ kind: "fact", text: narrative });
   }
   const quotedIdle = snapshot.activePipeline.filter((d) => classifyDeal(d, snapshot) === "quoted_awaiting_followup");
   if (quotedIdle.length > 0) {
     insights.push({
       kind: "fact",
-      text: `${quotedIdle.length} quoted opportunit${quotedIdle.length === 1 ? "y has" : "ies have"} not received a recorded follow-up since the quotation was delivered.`,
+      text: `${countLabel(quotedIdle.length, "quoted opportunity has", "quoted opportunities have")} not received a recorded follow-up since the quotation was delivered.`,
       evidence: [{ kind: "deal", ids: quotedIdle.map((d) => d.id), label: "Quoted awaiting follow-up" }],
     });
   }
@@ -358,8 +494,12 @@ export function buildFunnelExplanation(funnel: FunnelStageResult[], snapshot: We
   if (unworkedQualified > 0) {
     insights.push({
       kind: "fact",
-      text: `${unworkedQualified} qualified opportunit${unworkedQualified === 1 ? "y did" : "ies did"} not progress to a quotation during the week.`,
+      text: `${countLabel(unworkedQualified, "qualified opportunity", "qualified opportunities")} did not receive a quotation during the week.`,
     });
+  }
+  const won = funnel.find((stage) => stage.id === "won");
+  if (won?.note) {
+    insights.push({ kind: "interpretation", text: won.note });
   }
   return insights;
 }
@@ -372,7 +512,7 @@ function delayedResponseInsight(snapshot: WeeklyTeamSnapshot): TaggedInsight | n
   const part = topHour ? dayPartLabel(Number(topHour[0])) : null;
   return {
     kind: "fact",
-    text: `The team received ${snapshot.current.newLeads} new leads. ${onTimeResponses} received a response within the ${snapshot.health.slaResponseHours}-hour target, while ${delayedResponses} experienced delayed responses.${part ? ` Most delayed responses occurred during the ${part}.` : ""}`,
+    text: `The team received ${countLabel(snapshot.current.newLeads, "new lead")}. ${countLabel(onTimeResponses, "lead")} received a response within the ${snapshot.health.slaResponseHours}-hour target, while ${countLabel(delayedResponses, "lead")} missed it.${part ? ` Most delayed responses occurred during the ${part}.` : ""}`,
   };
 }
 
@@ -383,7 +523,7 @@ export function buildDeterministicInsights(snapshot: WeeklyTeamSnapshot): Tagged
   if (quotes > 0) {
     insights.push({
       kind: "fact",
-      text: `${quotes} quotation${quotes === 1 ? " was" : "s were"} sent this week, compared with ${prevQuotes} last week.`,
+      text: `${countLabel(quotes, "quotation was", "quotations were")} sent this week, compared with ${prevQuotes} last week.`,
     });
   }
   const delayed = delayedResponseInsight(snapshot);
@@ -391,7 +531,7 @@ export function buildDeterministicInsights(snapshot: WeeklyTeamSnapshot): Tagged
   if (snapshot.current.followUpsMissed > 0) {
     insights.push({
       kind: "fact",
-      text: `${snapshot.current.followUpsMissed} follow-up task${snapshot.current.followUpsMissed === 1 ? "" : "s"} were missed during the reporting period.`,
+      text: `${countLabel(snapshot.current.followUpsMissed, "follow-up task")} ${snapshot.current.followUpsMissed === 1 ? "was" : "were"} missed during the reporting period.`,
     });
     insights.push({
       kind: "interpretation",
@@ -403,7 +543,7 @@ export function buildDeterministicInsights(snapshot: WeeklyTeamSnapshot): Tagged
     const missingReason = snapshot.lostThisWeek.filter((r) => r.reason === "Reason not recorded").length;
     insights.push({
       kind: "fact",
-      text: `${snapshot.lostThisWeek.length} opportunit${snapshot.lostThisWeek.length === 1 ? "y was" : "ies were"} marked lost${value > 0 ? `, with recorded value of ${value}` : ""}.${missingReason ? ` ${missingReason} had no recorded loss reason.` : ""}`,
+      text: `${countLabel(snapshot.lostThisWeek.length, "opportunity was", "opportunities were")} marked lost${value > 0 ? `, with recorded value of ${value}` : ""}.${missingReason ? ` ${countLabel(missingReason, "deal")} had no recorded loss reason.` : ""}`,
     });
   }
   return insights;
@@ -459,6 +599,14 @@ export function mergeAiIntoPayload(
     pipelineHealthNarrative: ai.pipelineNarrative,
     attention,
     salespeople: buildSalespersonNarratives(snapshot, ai),
+    responseCoverage: {
+      contactedAverageMinutes: snapshot.current.avgFirstResponseMinutes,
+      newLeads: snapshot.current.newLeads,
+      contactedLeads: snapshot.current.contactedLeads,
+      onTime: snapshot.current.onTimeResponses,
+      missedSla: snapshot.current.delayedResponses,
+      slaHours: snapshot.health.slaResponseHours,
+    },
     lostDeals: {
       count: snapshot.lostThisWeek.length,
       previousCount: snapshot.lostPreviousWeek.length,
