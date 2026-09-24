@@ -165,6 +165,23 @@ export function buildDemoWeeklyDetail(dataset: DemoDataset, now = new Date()): W
 
 export function buildDemoWeeklyList(dataset: DemoDataset, now = new Date()): WeeklyReportListItem[] {
   const detail = buildDemoWeeklyDetail(dataset, now);
-  const { payload: _payload, timezone: _tz, reportVersion: _v, aiStatus: _a, pdfStatus: _p, generationError: _e, ...item } = detail;
-  return [item];
+  return [
+    {
+      id: detail.id,
+      periodStartDate: detail.periodStartDate,
+      periodEndDate: detail.periodEndDate,
+      periodLabel: detail.periodLabel,
+      generatedAt: detail.generatedAt,
+      status: detail.status,
+      headline: detail.headline,
+      findingCount: detail.findingCount,
+      hasPdf: detail.hasPdf,
+      currency: detail.currency,
+      lowData: detail.lowData,
+      newLeads: detail.newLeads,
+      dealsWon: detail.dealsWon,
+      revenueWon: detail.revenueWon,
+      keyIssue: detail.keyIssue,
+    },
+  ];
 }
