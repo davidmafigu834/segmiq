@@ -6,6 +6,7 @@ import Link from "next/link";
 import { MapPin, Phone } from "lucide-react";
 import type { ReactNode } from "react";
 import SegmiqMark from "@/components/brand/SegmiqMark";
+import { SITE } from "@/lib/seo";
 
 const COLS = [
   {
@@ -205,10 +206,10 @@ export default function CloudFooter() {
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-[13px] text-[#F7F4EF]/45 sm:flex-row">
           <span>© 2026 Segmiq Cloud</span>
           <div className="flex gap-5">
-            <Link href="#" className="transition hover:text-[#F7F4EF]">
+            <Link href={`${SITE.url}/privacy`} className="transition hover:text-[#F7F4EF]">
               Privacy
             </Link>
-            <Link href="#" className="transition hover:text-[#F7F4EF]">
+            <Link href={`${SITE.url}/terms`} className="transition hover:text-[#F7F4EF]">
               Terms
             </Link>
             <a href="https://segmiq.com" className="transition hover:text-[#F7F4EF]">

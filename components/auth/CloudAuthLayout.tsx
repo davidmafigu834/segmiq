@@ -45,6 +45,12 @@ export default function CloudAuthLayout({
 
         <footer className="shrink-0 px-5 pb-4 pt-1 text-[12px] text-[var(--marketing-text-muted)] sm:px-8 lg:px-10 xl:px-14">
           <div className={`flex flex-wrap gap-x-4 gap-y-2 ${formMaxWidthClass}`}>
+            <Link href="/privacy" className="transition-colors hover:text-[var(--marketing-text)]">
+              Privacy
+            </Link>
+            <Link href="/terms" className="transition-colors hover:text-[var(--marketing-text)]">
+              Terms
+            </Link>
             <Link href="/login" className="transition-colors hover:text-[var(--marketing-text)]">
               Agency login
             </Link>

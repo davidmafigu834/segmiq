@@ -37,7 +37,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
             <Link href="/legal/terms" className="hover:text-ink-primary">
               Terms
             </Link>
-            <a href="mailto:legal@leadstaq.tech" className="hover:text-ink-primary">
+            <a href="mailto:legal@segmiq.com" className="hover:text-ink-primary">
               Contact
             </a>
           </div>

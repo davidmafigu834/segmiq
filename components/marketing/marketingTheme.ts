@@ -76,5 +76,5 @@ export const m = {
   filterOn: "bg-[#D4FF4F] text-black border-[#D4FF4F]",
   filterOff: "border-white/10 text-white/65 hover:border-white/30 hover:text-white",
   legalProse:
-    "[&_p]:text-[15px] [&_p]:leading-[1.7] [&_p]:text-white/65 [&_p]:mt-2.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mt-2.5 [&_ul]:text-[15px] [&_ul]:leading-[1.7] [&_ul]:text-white/65 [&_li]:mt-1 [&_a]:text-white [&_a]:underline [&_strong]:text-white",
+    "[&_p]:text-[15px] [&_p]:leading-[1.7] [&_p]:text-white/65 [&_p]:mt-2.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mt-2.5 [&_ul]:text-[15px] [&_ul]:leading-[1.7] [&_ul]:text-white/65 [&_li]:mt-1 [&_a]:text-white [&_a]:underline [&_strong]:text-white [&_h3]:mt-5 [&_h3]:text-[16px] [&_h3]:font-bold [&_h3]:text-white",
 } as const;

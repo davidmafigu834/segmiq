@@ -5,6 +5,7 @@ import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, ChevronRight, Eye, EyeOff, Loader2 } from "lucide-react";
+import { SITE } from "@/lib/seo";
 
 const INDUSTRIES = [
   "Construction",
@@ -331,6 +332,24 @@ export default function CloudSignupForm() {
                 "Create account"
               )}
             </button>
+
+            <p className="text-center text-[12px] leading-relaxed text-[var(--marketing-text-muted)]">
+              By creating an account you agree to the{" "}
+              <Link
+                href={`${SITE.url}/terms`}
+                className="font-semibold text-[var(--marketing-link)] hover:text-[var(--marketing-link-hover)]"
+              >
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                href={`${SITE.url}/privacy`}
+                className="font-semibold text-[var(--marketing-link)] hover:text-[var(--marketing-link-hover)]"
+              >
+                Privacy Policy
+              </Link>
+              .
+            </p>
 
             <button
               type="button"

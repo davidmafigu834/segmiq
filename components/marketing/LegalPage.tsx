@@ -12,7 +12,7 @@ export default function LegalPage({ doc }: { doc: LegalDoc }) {
           <p className={`mt-3 text-[14px] ${m.faint}`}>Last updated: {doc.lastUpdated}</p>
           <div className={`mt-5 ${m.panel} flex gap-3`}>
             <Info className={`w-[18px] h-[18px] ${m.muted} shrink-0 mt-0.5`} />
-            <p className={`text-[13px] ${m.muted}`}>This is a starting template, not legal advice. Have it reviewed by a qualified professional and tailored to your actual data practices and the laws of the markets you operate in (Zimbabwe, Zambia, South Africa, Kenya) before you publish it.</p>
+            <p className={`text-[13px] ${m.muted}`}>{doc.summary}</p>
           </div>
         </div>
       </section>

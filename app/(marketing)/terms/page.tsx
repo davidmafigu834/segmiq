@@ -5,7 +5,7 @@ import { breadcrumbLd, pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Terms of Service",
-  description: "Terms governing your use of Segmiq CRM and Segmiq Cloud.",
+  description: "Terms governing your use of Segmiq CRM, Segmiq Cloud, WhatsApp, AI features, and related apps.",
   path: "/terms",
 });
 

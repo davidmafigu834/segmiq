@@ -5,7 +5,7 @@ import { breadcrumbLd, pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Privacy Policy",
-  description: "How Segmiq collects, uses, and protects your data.",
+  description: "How Segmiq collects, uses, and protects personal information across CRM, Cloud, WhatsApp, and AI features.",
   path: "/privacy",
 });
 
