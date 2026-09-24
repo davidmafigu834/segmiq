@@ -195,7 +195,9 @@ export async function PATCH(
       });
     }
     const refreshed = await lookupDemoDeal(check.deal.client_id, params.dealId);
-    if (!refreshed.row || !refreshed.dataset) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (refreshed.mode !== "demo" || !refreshed.row || !refreshed.dataset) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
     return NextResponse.json({ deal: demoDealPayload(refreshed.dataset, refreshed.row).deal });
   }
 
