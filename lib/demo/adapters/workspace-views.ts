@@ -322,7 +322,7 @@ export function buildDemoSalesDashboard(dataset: DemoDataset, userId: string, ro
     .slice(0, 8)
     .map((item) => ({
       id: item.id,
-      kind: item.kind,
+      kind: item.kind === "note" ? "other" : item.kind,
       title: item.title,
       detail: item.detail,
       timeLabel: timeAgo(item.at),
@@ -553,7 +553,7 @@ export function buildDemoCompanyDashboard(dataset: DemoDataset): CompanySalesDas
     hasRevenueHistory: true,
     recentActivity: dataset.activities.slice(0, 8).map((item) => ({
       id: item.id,
-      kind: item.kind,
+      kind: item.kind === "note" ? "other" : item.kind,
       title: item.title,
       detail: item.detail,
       timeLabel: timeAgo(item.at),
@@ -611,7 +611,7 @@ export function buildDemoInbox(dataset: DemoDataset, userId: string, role: strin
       lastMessageType: "text",
       unread: last?.direction === "customer" ? 1 : 0,
       tags: [],
-      leadSummary: lead.customer_need,
+      leadSummary: lead.customer_need ?? null,
       breakdown: { urgency: 20, budget: 15, location: 10, productInterest: 20, engagement: 15 },
       followUpDate: lead.follow_up_date,
       createdAt: lead.created_at,
