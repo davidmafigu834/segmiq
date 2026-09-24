@@ -40,7 +40,7 @@ export function ResetDemoPanel() {
     try {
       const res = await fetch("/api/demo/reset", { method: "POST" });
       if (!res.ok) {
-        toast({ tone: "danger", title: "Demo could not be restored" });
+        toast({ tone: "error", title: "Demo could not be restored" });
         return;
       }
       toast({ tone: "success", title: "Demo workspace restored." });
