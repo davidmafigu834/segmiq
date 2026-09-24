@@ -99,6 +99,7 @@ export function buildDemoCompanyPipeline(dataset: DemoDataset, actorUserId: stri
       wonThisMonth: summary.wonCount,
       wonLastMonth: 3,
       avgDealValue: summary.activeDeals ? Math.round(summary.pipelineValue / summary.activeDeals) : null,
+      avgLabel: formatDealValue(summary.activeDeals ? Math.round(summary.pipelineValue / summary.activeDeals) : 0),
       dealsAtRisk: rows.filter((row) => row.atRisk).length,
       nextActionsDue: rows.filter((row) => row.nextAction.isOverdue || row.nextAction.urgency === "today").length,
       currencyLabel: (n) => formatDealValue(n),
