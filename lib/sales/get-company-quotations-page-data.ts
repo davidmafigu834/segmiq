@@ -173,6 +173,12 @@ export async function getCompanyQuotationsPageData({
   clientId: string;
   actor: Actor;
 }): Promise<CompanyQuotationsPageData> {
+  const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+  const demo = await loadDemoDatasetForClient(clientId);
+  if (demo) {
+    const { buildDemoCompanyQuotations } = await import("@/lib/demo/adapters/lists");
+    return buildDemoCompanyQuotations(demo, actor.role);
+  }
   if (actor.role !== "SUPER_ADMIN" && actor.clientId !== clientId) {
     throw new Error("Forbidden company quotation scope");
   }

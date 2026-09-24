@@ -10,6 +10,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (auth.clientId) {
+    const { isDemoWorkspaceId } = await import("@/lib/demo/mode");
+    if (await isDemoWorkspaceId(auth.clientId)) {
+      return NextResponse.json({ ok: true });
+    }
+  }
+
   const { error } = await createAdminClient()
     .from("notifications")
     .update({ read: true })

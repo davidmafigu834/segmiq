@@ -98,9 +98,12 @@ export function sourceBucket(raw: string | null | undefined): {
   if (s.includes("whatsapp") || s === "wa") return { key: "whatsapp", label: "WhatsApp" };
   if (s.includes("facebook") || s.includes("meta") || s === "fb" || s.includes("facebook_ad"))
     return { key: "facebook", label: "Facebook Ads" };
+  if (s.includes("instagram")) return { key: "other", label: "Instagram" };
   if (s.includes("refer")) return { key: "referral", label: "Referrals" };
   if (s.includes("web") || s.includes("site") || s.includes("landing") || s.includes("form"))
     return { key: "website", label: "Website" };
+  if (s.includes("walk")) return { key: "manual", label: "Walk-in" };
+  if (s.includes("phone")) return { key: "manual", label: "Phone" };
   if (s.includes("manual") || s.includes("event")) return { key: "manual", label: "Manual" };
   return { key: "other", label: "Other" };
 }

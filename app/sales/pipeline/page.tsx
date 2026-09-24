@@ -105,38 +105,50 @@ export default async function SalesPipelinePage() {
     );
   }
 
-  const [dealsRes, navBadges] = await Promise.all([
-    supabase
+  const navBadges = await fetchSalesNavBadges(session.userId, session.clientId ?? null);
+  const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+  const demo = session.clientId ? await loadDemoDatasetForClient(session.clientId) : null;
+
+  let dealRows: DealRow[];
+  let quotes: QuotationRow[] | null;
+  let leads: unknown[] | null;
+  if (demo) {
+    dealRows = demo.deals
+      .filter((deal) => deal.owner_id === session.userId)
+      .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
+    const dealIds = new Set(dealRows.map((deal) => deal.id));
+    const leadIds = new Set(dealRows.map((deal) => deal.originating_lead_id));
+    quotes = demo.quotations.filter((quote) => quote.deal_id && dealIds.has(quote.deal_id));
+    leads = demo.leads.filter((lead) => leadIds.has(lead.id));
+  } else {
+    const dealsRes = await supabase
       .from("deals")
       .select("*")
       .eq("owner_id", session.userId)
-      .order("updated_at", { ascending: false }),
-    fetchSalesNavBadges(session.userId, session.clientId ?? null),
-  ]);
-
-  const dealRows = (dealsRes.data ?? []) as DealRow[];
-  const dealIds = dealRows.map((d) => d.id);
-  const leadIds = [...new Set(dealRows.map((d) => d.originating_lead_id))];
-
-  const [{ data: quotes }, { data: leads }] = await Promise.all([
-    dealIds.length
-      ? supabase
-          .from("quotations")
-          .select(
-            "id, deal_id, lead_id, quote_number, total, status, sent_at, created_at, updated_at"
-          )
-          .in("deal_id", dealIds)
-      : Promise.resolve({ data: [] as unknown[] }),
-    leadIds.length
-      ? supabase
-          .from("leads")
-          .select("id, name, phone, score, source, manual_priority, form_data")
-          .in("id", leadIds)
-      : Promise.resolve({ data: [] as unknown[] }),
-  ]);
+      .order("updated_at", { ascending: false });
+    dealRows = (dealsRes.data ?? []) as DealRow[];
+    const dealIds = dealRows.map((d) => d.id);
+    const leadIds = [...new Set(dealRows.map((d) => d.originating_lead_id))];
+    const [quotesRes, leadsRes] = await Promise.all([
+      dealIds.length
+        ? supabase
+            .from("quotations")
+            .select("id, deal_id, lead_id, quote_number, total, status, sent_at, created_at, updated_at")
+            .in("deal_id", dealIds)
+        : Promise.resolve({ data: [] as unknown[] }),
+      leadIds.length
+        ? supabase
+            .from("leads")
+            .select("id, name, phone, score, source, manual_priority, form_data")
+            .in("id", leadIds)
+        : Promise.resolve({ data: [] as unknown[] }),
+    ]);
+    quotes = (quotesRes.data ?? []) as QuotationRow[];
+    leads = leadsRes.data ?? [];
+  }
 
   const quotesByDeal = new Map<string, QuotationRow[]>();
-  for (const q of (quotes ?? []) as QuotationRow[]) {
+  for (const q of quotes ?? []) {
     if (!q.deal_id) continue;
     const list = quotesByDeal.get(q.deal_id) ?? [];
     list.push(q);

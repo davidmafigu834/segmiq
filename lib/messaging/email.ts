@@ -20,6 +20,9 @@ export type SendEmailWithLogParams = {
 };
 
 export async function sendEmailWithLog(params: SendEmailWithLogParams): Promise<SendResult & { channel: "email" }> {
+  const { simulatedExternalSend } = await import("@/lib/demo/external");
+  const simulated = await simulatedExternalSend(params.context.clientId);
+  if (simulated) return { ...simulated, channel: "email" };
   const to = Array.isArray(params.mail.to) ? params.mail.to[0] : params.mail.to;
   const toEmail = typeof to === "string" ? to : to?.email;
   const recipient =

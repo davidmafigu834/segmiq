@@ -542,6 +542,12 @@ export async function getCompanySalesDashboard(opts: {
   alsoSells?: boolean;
   now?: Date;
 }): Promise<CompanySalesDashboardData> {
+  const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+  const demo = await loadDemoDatasetForClient(opts.clientId, opts.now);
+  if (demo) {
+    const { buildDemoCompanyDashboard } = await import("@/lib/demo/adapters/workspace-views");
+    return buildDemoCompanyDashboard(demo);
+  }
   const now = opts.now ?? new Date();
   const alsoSells = Boolean(opts.alsoSells);
   const clientId = opts.clientId;

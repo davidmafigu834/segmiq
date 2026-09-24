@@ -13,6 +13,7 @@ export async function GET(req: Request, { params }: { params: { quotationId: str
   const workspace = await loadQuotationWorkspace(supabase, params.quotationId, {
     role: access.actor.role,
     userId: access.actor.id,
+    clientId: access.clientId,
   });
   if (!workspace) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(workspace);

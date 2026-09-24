@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
+import { ResetDemoPanel } from "@/components/demo/ResetDemoPanel";
 import { CompanySettingsHeader } from "./CompanySettingsHeader";
 import { SettingsCategoryTabs } from "./SettingsCategoryTabs";
 import { SettingsSectionNav } from "./SettingsSectionNav";
@@ -277,7 +278,12 @@ export function CompanySettingsPage({
               <CompanyBrainSettingsSection clientId={data.clientId} toast={toast} />
             ) : null}
 
-            {category === "data" ? <CompanyDataSection /> : null}
+            {category === "data" ? (
+              <div className="space-y-4">
+                <ResetDemoPanel />
+                <CompanyDataSection />
+              </div>
+            ) : null}
 
             {category === "security" ? <SecuritySettingsPanel toast={toast} /> : null}
 

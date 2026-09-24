@@ -30,11 +30,11 @@ export default async function DealWorkspacePage({
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
 
   const supabase = createAdminClient();
-  const { data: deal } = await supabase
-    .from("deals")
-    .select("*")
-    .eq("id", params.dealId)
-    .maybeSingle();
+  const { lookupDemoDeal } = await import("@/lib/demo/acl");
+  const demoDeal = await lookupDemoDeal(session.clientId, params.dealId);
+  const { data: deal } = demoDeal.mode === "demo"
+    ? { data: demoDeal.row }
+    : await supabase.from("deals").select("*").eq("id", params.dealId).maybeSingle();
 
   if (!deal) notFound();
   const dealRow = deal as DealRow;
@@ -45,7 +45,17 @@ export default async function DealWorkspacePage({
     }
   }
 
-  const [{ data: lead }, { data: quotes }, timeline, shell] = await Promise.all([
+  const demoBundle = demoDeal.mode === "demo" && demoDeal.dataset
+    ? (await import("@/lib/demo/adapters/records")).demoDealPayload(demoDeal.dataset, dealRow)
+    : null;
+  const [{ data: lead }, { data: quotes }, timeline, shell] = demoBundle
+    ? [
+        { data: demoBundle.lead },
+        { data: demoBundle.quotes },
+        demoBundle.timeline,
+        await loadSalesShellProps(session),
+      ] as const
+    : await Promise.all([
     supabase.from("leads").select("*").eq("id", dealRow.originating_lead_id).maybeSingle(),
     supabase
       .from("quotations")

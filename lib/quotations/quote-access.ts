@@ -39,18 +39,29 @@ export async function canManageQuotationForLead(
   const session = await getAuthFromRequest(req);
   if (!session?.userId) return { allowed: false, reason: "Unauthorized", status: 401 };
 
-  const supabase = createAdminClient();
-  const { data: lead } = await supabase
-    .from("leads")
-    .select("client_id, assigned_to_id")
-    .eq("id", leadId)
-    .maybeSingle();
-  if (!lead) return { allowed: false, reason: "Not found", status: 404 };
+  const { lookupDemoLead } = await import("@/lib/demo/acl");
+  const demoLead = await lookupDemoLead(session.clientId, leadId);
+  let scope: LeadScope;
+  if (demoLead.mode === "demo") {
+    if (!demoLead.row) return { allowed: false, reason: "Not found", status: 404 };
+    scope = {
+      client_id: demoLead.row.client_id,
+      assigned_to_id: demoLead.row.assigned_to_id,
+    };
+  } else {
+    const supabase = createAdminClient();
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("client_id, assigned_to_id")
+      .eq("id", leadId)
+      .maybeSingle();
+    if (!lead) return { allowed: false, reason: "Not found", status: 404 };
+    scope = {
+      client_id: lead.client_id as string,
+      assigned_to_id: (lead.assigned_to_id as string | null) ?? null,
+    };
+  }
 
-  const scope: LeadScope = {
-    client_id: lead.client_id as string,
-    assigned_to_id: (lead.assigned_to_id as string | null) ?? null,
-  };
   const actor: Actor = {
     id: session.userId,
     name: (session as { user?: { name?: string | null } }).user?.name ?? "Unknown",
@@ -58,10 +69,6 @@ export async function canManageQuotationForLead(
   };
 
   if (session.role === "SUPER_ADMIN" && !session.isImpersonating) {
-    // SECURITY: quotation contents (pricing, customer identity, terms) are client
-    // data. Platform staff need a QUOTATIONS-scoped Support Access grant for the
-    // organisation that owns the lead — resolved from the record, not the request.
-    // Support Access is read-only: it must never send or approve a customer quote.
     const isRead = !req || req.method === "GET" || req.method === "HEAD";
     if (!isRead) return { allowed: false, reason: "Forbidden", status: 403 };
     const granted = await hasQuotationSupportAccess(session.userId, session.role, scope.client_id);
@@ -91,6 +98,22 @@ export async function canManageQuotation(
   | { allowed: true; lead: LeadScope; actor: Actor; clientId: string; leadId: string }
   | { allowed: false; reason: string; status: 401 | 403 | 404 }
 > {
+  const session = await getAuthFromRequest(req);
+  const { lookupDemoQuote } = await import("@/lib/demo/acl");
+  const demoQuote = await lookupDemoQuote(session?.clientId, quotationId);
+  if (demoQuote.mode === "demo") {
+    if (!demoQuote.row) return { allowed: false, reason: "Not found", status: 404 };
+    const inner = await canManageQuotationForLead(demoQuote.row.lead_id, req);
+    if (!inner.allowed) return inner;
+    return {
+      allowed: true,
+      lead: inner.lead,
+      actor: inner.actor,
+      clientId: demoQuote.row.client_id,
+      leadId: demoQuote.row.lead_id,
+    };
+  }
+
   const supabase = createAdminClient();
   const { data: quote } = await supabase
     .from("quotations")

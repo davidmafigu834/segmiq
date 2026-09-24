@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { BrandIcon } from "@/components/sales/ui/BrandIcon";
 import { NotificationBell } from "@/components/NotificationBell";
+import { DemoWorkspaceChip } from "@/components/demo/DemoWorkspaceChip";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
 import { SalesSidebar } from "@/components/sales/navigation/SalesSidebar";
 import { SalesBreadcrumbs } from "@/components/sales/navigation/SalesBreadcrumbs";
@@ -216,6 +217,7 @@ function SalesAppShellInner({
       {headerActions}
       <div className="hidden shrink-0 items-center gap-2 layout:flex">
         <div className="flex items-center gap-1">
+          <DemoWorkspaceChip />
           <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
           <SalesThemeToggle />
         </div>

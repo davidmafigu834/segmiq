@@ -37,6 +37,14 @@ export async function GET(req: Request) {
   const pageSize = Number(url.searchParams.get("pageSize") ?? "20") || 20;
 
   try {
+    if (session?.clientId) {
+      const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+      const demo = await loadDemoDatasetForClient(session.clientId);
+      if (demo) {
+        const { buildDemoLeadsDirectory } = await import("@/lib/demo/adapters/lists");
+        return NextResponse.json(buildDemoLeadsDirectory(demo, session.userId));
+      }
+    }
     const data = await fetchSalespersonLeadsDirectory({
       userId: session!.userId,
       period,

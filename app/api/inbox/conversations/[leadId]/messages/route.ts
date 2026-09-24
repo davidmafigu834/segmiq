@@ -36,6 +36,24 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
     return NextResponse.json({ error: "Not found" }, { status: access.status === 401 ? 401 : 404 });
   }
 
+  if (session?.clientId) {
+    const { lookupDemoLead } = await import("@/lib/demo/acl");
+    const demoLead = await lookupDemoLead(session.clientId, params.leadId);
+    if (demoLead.mode === "demo") {
+      if (!demoLead.dataset) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      const { buildDemoMessages } = await import("@/lib/demo/adapters/workspace-views");
+      const messages = buildDemoMessages(demoLead.dataset, params.leadId);
+      return NextResponse.json({
+        messages,
+        sessionOpen: true,
+        isWhatsApp: true,
+        campaignContext: null,
+        hasMore: false,
+        nextBefore: messages[0]?.createdAt ?? null,
+      });
+    }
+  }
+
   const supabase = createAdminClient();
   const url = new URL(req.url);
   const before = url.searchParams.get("before");

@@ -41,11 +41,11 @@ export default async function CompanyDealWorkspacePage({
   if (!clientId) redirect("/login");
 
   const supabase = createAdminClient();
-  const { data: deal } = await supabase
-    .from("deals")
-    .select("*")
-    .eq("id", params.dealId)
-    .maybeSingle();
+  const { lookupDemoDeal } = await import("@/lib/demo/acl");
+  const demoDeal = await lookupDemoDeal(clientId, params.dealId);
+  const { data: deal } = demoDeal.mode === "demo"
+    ? { data: demoDeal.row }
+    : await supabase.from("deals").select("*").eq("id", params.dealId).maybeSingle();
 
   if (!deal) notFound();
   const dealRow = deal as DealRow;
@@ -54,20 +54,29 @@ export default async function CompanyDealWorkspacePage({
     notFound();
   }
 
+  const demoBundle = demoDeal.mode === "demo" && demoDeal.dataset
+    ? (await import("@/lib/demo/adapters/records")).demoDealPayload(demoDeal.dataset, dealRow)
+    : null;
   const [{ data: lead }, { data: quotes }, timeline, unreadRes, userRes, clientRes, navBadges] =
     await Promise.all([
-      supabase.from("leads").select("*").eq("id", dealRow.originating_lead_id).maybeSingle(),
-      supabase
-        .from("quotations")
-        .select("*")
-        .or(
-          `deal_id.eq.${dealRow.id},and(lead_id.eq.${dealRow.originating_lead_id},deal_id.is.null)`
-        )
-        .order("created_at", { ascending: false }),
-      getDealTimeline({
-        dealId: dealRow.id,
-        originatingLeadId: dealRow.originating_lead_id,
-      }),
+      demoBundle
+        ? Promise.resolve({ data: demoBundle.lead })
+        : supabase.from("leads").select("*").eq("id", dealRow.originating_lead_id).maybeSingle(),
+      demoBundle
+        ? Promise.resolve({ data: demoBundle.quotes })
+        : supabase
+            .from("quotations")
+            .select("*")
+            .or(
+              `deal_id.eq.${dealRow.id},and(lead_id.eq.${dealRow.originating_lead_id},deal_id.is.null)`
+            )
+            .order("created_at", { ascending: false }),
+      demoBundle
+        ? Promise.resolve(demoBundle.timeline)
+        : getDealTimeline({
+            dealId: dealRow.id,
+            originatingLeadId: dealRow.originating_lead_id,
+          }),
       supabase
         .from("notifications")
         .select("*", { count: "exact", head: true })

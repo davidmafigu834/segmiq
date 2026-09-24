@@ -57,6 +57,9 @@ export type SendWhatsAppParams = {
 };
 
 export async function sendWhatsApp(params: SendWhatsAppParams): Promise<SendResult & { channel: "whatsapp" }> {
+  const { simulatedExternalSend } = await import("@/lib/demo/external");
+  const simulated = await simulatedExternalSend(params.context.clientId);
+  if (simulated) return { ...simulated, channel: "whatsapp" };
   const rawInput = (params.toOverride?.trim() || params.to?.trim() || "") || null;
   const defaultCc = (process.env.DEFAULT_COUNTRY_CODE || "US").toUpperCase() as CountryCode;
   const normalized = normalizeToE164(rawInput, defaultCc);

@@ -26,6 +26,46 @@ function applySearchFilter<T extends { or: (f: string) => T }>(query: T, q: stri
 }
 
 export async function listProducts(opts: ProductListQuery) {
+  const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+  const demo = await loadDemoDatasetForClient(opts.clientId);
+  if (demo) {
+    const page = Math.max(1, opts.page ?? 1);
+    const limit = Math.min(100, Math.max(1, opts.limit ?? 50));
+    const q = (opts.q ?? "").trim().toLowerCase();
+    let items = demo.products.filter((product) => {
+      if (!q) return true;
+      return `${product.name} ${product.sku} ${product.brand} ${product.size}`.toLowerCase().includes(q);
+    });
+    const total = items.length;
+    items = items.slice((page - 1) * limit, page * limit);
+    return {
+      items: items.map((product) => ({
+        id: product.id,
+        client_id: product.client_id,
+        item_type: product.unit === "service" ? "SERVICE" : "PRODUCT",
+        name: product.name,
+        sku: product.sku,
+        brand: product.brand,
+        category_id: null,
+        category_name: product.category,
+        status: "ACTIVE",
+        unit: product.unit,
+        selling_price: product.selling_price,
+        currency: product.currency,
+        description: product.description,
+        quotation_description: `${product.size} · demonstration price`,
+        track_inventory: product.unit !== "service",
+        on_hand: product.unit === "service" ? null : product.stock,
+        available_qty: product.unit === "service" ? null : product.stock,
+        inventory_status: product.stock > 8 ? "IN_STOCK" : product.stock > 0 ? "LOW_STOCK" : "NOT_TRACKED",
+        can_be_quoted: true,
+      })),
+      total,
+      page,
+      limit,
+      typeCounts: { all: demo.products.length, products: demo.products.filter((p) => p.unit !== "service").length, services: demo.products.filter((p) => p.unit === "service").length },
+    };
+  }
   const supabase = createAdminClient();
   const page = Math.max(1, opts.page ?? 1);
   const limit = Math.min(100, Math.max(1, opts.limit ?? 50));

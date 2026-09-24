@@ -5,6 +5,7 @@ import { CompanySidebar } from "@/components/company/navigation/CompanySidebar";
 import { CompanyMobileTopBar } from "@/components/company/navigation/CompanyMobileTopBar";
 import { CompanyBottomNav } from "@/components/company/navigation/CompanyBottomNav";
 import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
+import { DemoWorkspaceChip } from "@/components/demo/DemoWorkspaceChip";
 import { useCompanySidebarCollapsed } from "@/lib/sales/navigation/use-company-sidebar-collapsed";
 import { PresenceHeartbeat } from "@/components/sales/PresenceHeartbeat";
 import { CompanyWorkspaceProvider } from "@/components/company/CompanyWorkspaceContext";
@@ -85,6 +86,11 @@ export function CompanyWorkspaceShell({
           }
         >
           <SegmiQDotWave />
+          <div className="pointer-events-none absolute right-4 top-3 z-20 hidden layout:block">
+            <div className="pointer-events-auto">
+              <DemoWorkspaceChip />
+            </div>
+          </div>
           <div className={immersive ? "relative flex h-full min-h-0 flex-1 flex-col overflow-hidden" : "relative space-y-3 layout:space-y-3"}>
             {children}
           </div>

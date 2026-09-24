@@ -33,6 +33,13 @@ export default async function SalesSocialInboxPage() {
   if (!session.clientId) redirect("/login");
 
   const shell = await loadSalesShellProps(session);
+  const { isDemoWorkspaceId } = await import("@/lib/demo/mode");
+  const { DEMO_UNSUPPORTED } = await import("@/lib/demo/provider");
+  if (await isDemoWorkspaceId(session.clientId)) {
+    return (
+      <p className="p-6 text-sm text-sales-text-secondary">{DEMO_UNSUPPORTED}</p>
+    );
+  }
 
   return (
     <Suspense fallback={<Fallback />}>

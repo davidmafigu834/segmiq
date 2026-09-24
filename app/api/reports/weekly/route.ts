@@ -20,6 +20,14 @@ export async function GET(req: Request) {
   const access = await requireTeamReportAccess(req, "view");
   if ("error" in access) return access.error;
 
+  const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+  const demo = await loadDemoDatasetForClient(access.clientId);
+  if (demo) {
+    const { buildDemoWeeklyList } = await import("@/lib/demo/adapters/weekly");
+    const reports = buildDemoWeeklyList(demo);
+    return NextResponse.json({ reports, latest: reports[0] ?? null });
+  }
+
   const url = new URL(req.url);
   const limit = Math.min(52, Math.max(1, Number(url.searchParams.get("limit") ?? 24) || 24));
   const rows = await listReports(access.clientId, limit);
@@ -38,6 +46,22 @@ export async function POST(req: Request) {
     body = (await req.json()) as { periodStartDate?: string; force?: boolean };
   } catch {
     body = {};
+  }
+
+  const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+  const demo = await loadDemoDatasetForClient(access.clientId);
+  if (demo) {
+    const { buildDemoWeeklyList } = await import("@/lib/demo/adapters/weekly");
+    const latest = buildDemoWeeklyList(demo)[0];
+    return NextResponse.json(
+      {
+        accepted: true,
+        periodStartDate: latest?.periodStartDate ?? null,
+        periodEndDate: latest?.periodEndDate ?? null,
+        demo: true,
+      },
+      { status: 200 }
+    );
   }
 
   const timezone = resolveSalesTimezone(await resolveClientTimezone(access.clientId));

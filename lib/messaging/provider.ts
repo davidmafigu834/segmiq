@@ -24,6 +24,9 @@ export function isWhatsAppDeliveryConfigured(): boolean {
 export async function sendWhatsApp(
   params: SendWhatsAppParams
 ): Promise<SendResult & { channel: "whatsapp" }> {
+  const { simulatedExternalSend } = await import("@/lib/demo/external");
+  const simulated = await simulatedExternalSend(params.context.clientId);
+  if (simulated) return { ...simulated, channel: "whatsapp" };
   // This entry point is used by template, campaign, reminder, and notification
   // workflows. A selected Quick connection is intentionally manual-only, so
   // never let those workflows silently fall through to legacy Meta credentials.

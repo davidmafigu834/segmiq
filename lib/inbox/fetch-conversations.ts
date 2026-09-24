@@ -101,6 +101,14 @@ export async function fetchInboxConversations(opts: {
   clientId: string | null;
   alsoSells?: boolean;
 }): Promise<InboxConversation[]> {
+  if (opts.clientId) {
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const demo = await loadDemoDatasetForClient(opts.clientId);
+    if (demo) {
+      const { buildDemoInbox } = await import("@/lib/demo/adapters/workspace-views");
+      return buildDemoInbox(demo, opts.userId, opts.role);
+    }
+  }
   const supabase = createAdminClient();
   const { role, userId, clientId, alsoSells } = opts;
   const salesScoped = canActAsSalesperson({ userId, role, alsoSells });

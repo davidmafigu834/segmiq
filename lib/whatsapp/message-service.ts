@@ -102,6 +102,9 @@ export async function sendCanonicalWhatsAppText(input: {
   actorName: string;
   actorRole: string;
 }): Promise<SendResult & { channel: "whatsapp"; providerType?: string }> {
+  const { simulatedExternalSend } = await import("@/lib/demo/external");
+  const simulated = await simulatedExternalSend(input.clientId);
+  if (simulated) return { ...simulated, channel: "whatsapp", providerType: "demo" };
   const recipient = await resolveCanonicalLeadRecipient(input);
   const context: LogMessageParams = {
     userId: input.actorId,

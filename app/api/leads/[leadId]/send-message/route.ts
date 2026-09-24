@@ -17,6 +17,20 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     return NextResponse.json({ error: "Message text is required" }, { status: 400 });
   }
 
+  const { isDemoWorkspaceId } = await import("@/lib/demo/mode");
+  if (await isDemoWorkspaceId(check.lead.client_id)) {
+    const { appendDemoMutation } = await import("@/lib/demo/actions");
+    await appendDemoMutation(check.lead.client_id, {
+      type: "message",
+      leadId: params.leadId,
+      text,
+      at: new Date().toISOString(),
+      actorUserId: check.userId,
+      kind: "message",
+    });
+    return NextResponse.json({ ok: true, providerId: "demo-simulated", mode: "session" });
+  }
+
   const supabase = createAdminClient();
   const { data: actor } = await supabase
     .from("users")

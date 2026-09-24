@@ -47,6 +47,7 @@ export default async function SalesQuoteWorkspacePage({
   const initial = await loadQuotationWorkspace(supabase, params.quotationId, {
     role: access.actor.role,
     userId: access.actor.id,
+    clientId: access.clientId,
   });
 
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;

@@ -102,8 +102,17 @@ export async function loadQuotationWorkspace(
   opts: {
     role: string;
     userId: string;
+    clientId?: string | null;
   }
 ): Promise<QuotationWorkspacePayload | null> {
+  if (opts.clientId) {
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const demo = await loadDemoDatasetForClient(opts.clientId);
+    if (demo) {
+      const { demoQuotationWorkspace } = await import("@/lib/demo/adapters/records");
+      return demoQuotationWorkspace(demo, quotationId);
+    }
+  }
   const full = await loadQuotationWithItems(supabase, quotationId);
   if (!full) return null;
 

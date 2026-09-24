@@ -703,6 +703,14 @@ export async function getSalesDashboardData(opts: {
   clientId: string | null;
   now?: Date;
 }): Promise<SalesDashboardData> {
+  if (opts.clientId) {
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const demo = await loadDemoDatasetForClient(opts.clientId, opts.now);
+    if (demo) {
+      const { buildDemoSalesDashboard } = await import("@/lib/demo/adapters/workspace-views");
+      return buildDemoSalesDashboard(demo, opts.userId, "SALESPERSON");
+    }
+  }
   const now = opts.now ?? new Date();
   const todayStart = startOfLocalDay(now);
   const yesterdayStart = new Date(todayStart);

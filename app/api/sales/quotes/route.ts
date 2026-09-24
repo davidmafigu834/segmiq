@@ -26,6 +26,14 @@ export async function GET(req: Request) {
   const status: QuotesStatusFilter = isQuotesStatus(statusRaw) ? statusRaw : "all";
 
   try {
+    if (session?.clientId) {
+      const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+      const demo = await loadDemoDatasetForClient(session.clientId);
+      if (demo) {
+        const { buildDemoQuotes } = await import("@/lib/demo/adapters/lists");
+        return NextResponse.json(buildDemoQuotes(demo, session.userId));
+      }
+    }
     const data = await fetchSalespersonQuotes({
       userId: session!.userId,
       period,

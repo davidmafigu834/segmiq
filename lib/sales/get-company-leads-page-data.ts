@@ -303,6 +303,12 @@ export async function getCompanyLeadsPageData(opts: {
     alsoSells?: boolean | null;
   };
 }): Promise<CompanyLeadsPageData> {
+  const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+  const demo = await loadDemoDatasetForClient(opts.clientId);
+  if (demo) {
+    const { buildDemoCompanyLeads } = await import("@/lib/demo/adapters/lists");
+    return buildDemoCompanyLeads(demo, opts.actor.userId, opts.actor.role);
+  }
   const { clientId, actor } = opts;
   const now = new Date();
   const { period30Start, period60Start } = periodBounds(now);

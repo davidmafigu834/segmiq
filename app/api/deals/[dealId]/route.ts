@@ -28,6 +28,14 @@ export async function GET(
     );
   }
 
+  const { lookupDemoDeal } = await import("@/lib/demo/acl");
+  const demoDeal = await lookupDemoDeal(access.deal.client_id, params.dealId);
+  if (demoDeal.mode === "demo") {
+    if (!demoDeal.row || !demoDeal.dataset) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const { demoDealPayload } = await import("@/lib/demo/adapters/records");
+    return NextResponse.json(demoDealPayload(demoDeal.dataset, demoDeal.row));
+  }
+
   const supabase = createAdminClient();
   const { data: deal } = await supabase
     .from("deals")
@@ -129,6 +137,67 @@ export async function PATCH(
   }
 
   const data = parsed.data;
+
+  const { isDemoWorkspaceId } = await import("@/lib/demo/mode");
+  if (await isDemoWorkspaceId(check.deal.client_id)) {
+    const { appendDemoMutation } = await import("@/lib/demo/actions");
+    const { lookupDemoDeal } = await import("@/lib/demo/acl");
+    const { demoDealPayload } = await import("@/lib/demo/adapters/records");
+    const at = new Date().toISOString();
+    if (data.close?.outcome === "WON") {
+      await appendDemoMutation(check.deal.client_id, {
+        type: "deal.won",
+        dealId: params.dealId,
+        value: data.close.wonValue ?? 0,
+        at,
+        actorUserId: check.userId,
+      });
+    } else if (data.close?.outcome === "LOST") {
+      await appendDemoMutation(check.deal.client_id, {
+        type: "deal.lost",
+        dealId: params.dealId,
+        reason: data.close.lostReason ?? "",
+        at,
+        actorUserId: check.userId,
+      });
+    } else if (data.stage) {
+      await appendDemoMutation(check.deal.client_id, {
+        type: "deal.stage",
+        dealId: params.dealId,
+        stage: data.stage,
+        at,
+        actorUserId: check.userId,
+      });
+    } else {
+      const fieldPatch = { ...data };
+      delete fieldPatch.close;
+      delete fieldPatch.stage;
+      if (Object.keys(fieldPatch).length === 0) {
+        return NextResponse.json({ error: "No updates" }, { status: 400 });
+      }
+      if (fieldPatch.next_action_at || fieldPatch.next_action_label) {
+        await appendDemoMutation(check.deal.client_id, {
+          type: "followup.create",
+          leadId: check.deal.originating_lead_id ?? "",
+          dealId: params.dealId,
+          label: fieldPatch.next_action_label ?? "Follow up",
+          dueAt: fieldPatch.next_action_at ?? at,
+          at,
+          actorUserId: check.userId,
+        });
+      }
+      await appendDemoMutation(check.deal.client_id, {
+        type: "deal.fields",
+        dealId: params.dealId,
+        patch: fieldPatch as Partial<DealRow>,
+        at,
+        actorUserId: check.userId,
+      });
+    }
+    const refreshed = await lookupDemoDeal(check.deal.client_id, params.dealId);
+    if (!refreshed.row || !refreshed.dataset) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ deal: demoDealPayload(refreshed.dataset, refreshed.row).deal });
+  }
 
   if (data.close?.outcome === "WON") {
     const result = await closeDealWon({

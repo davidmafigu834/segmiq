@@ -28,6 +28,29 @@ export async function canReadDeal(
   const session = (await getAuthFromRequest(req)) as AuthSession | null;
   if (!session?.userId) return { ok: false, status: 401 };
 
+  const { lookupDemoDeal } = await import("@/lib/demo/acl");
+  const demoDeal = await lookupDemoDeal(session.clientId, dealId);
+  if (demoDeal.mode === "demo") {
+    if (!demoDeal.row) return { ok: false, status: 404 };
+    const scope: DealScope = {
+      client_id: demoDeal.row.client_id,
+      owner_id: demoDeal.row.owner_id,
+      originating_lead_id: demoDeal.row.originating_lead_id,
+    };
+    if (session.role === "SUPER_ADMIN") {
+      return { ok: true, deal: scope, userId: session.userId, role: session.role };
+    }
+    if (session.role === "CLIENT_MANAGER" && session.clientId === scope.client_id) {
+      return { ok: true, deal: scope, userId: session.userId, role: session.role };
+    }
+    if (canActAsSalesperson(session)) {
+      if (session.clientId !== scope.client_id) return { ok: false, status: 404 };
+      if (scope.owner_id !== session.userId) return { ok: false, status: 403 };
+      return { ok: true, deal: scope, userId: session.userId, role: session.role as UserRole };
+    }
+    return { ok: false, status: 403 };
+  }
+
   const supabase = createAdminClient();
   const { data: deal } = await supabase
     .from("deals")
@@ -82,6 +105,29 @@ export async function canModifyDeal(
   const session = (await getAuthFromRequest(req)) as AuthSession | null;
   if (!session?.userId) {
     return { allowed: false, reason: "Unauthorized", status: 401 };
+  }
+
+  const { lookupDemoDeal } = await import("@/lib/demo/acl");
+  const demoDeal = await lookupDemoDeal(session.clientId, dealId);
+  if (demoDeal.mode === "demo") {
+    if (!demoDeal.row) return { allowed: false, reason: "Not found", status: 404 };
+    const scope: DealScope = {
+      client_id: demoDeal.row.client_id,
+      owner_id: demoDeal.row.owner_id,
+      originating_lead_id: demoDeal.row.originating_lead_id,
+    };
+    if (session.role === "CLIENT_MANAGER" && !canActAsSalesperson(session)) {
+      return { allowed: false, reason: CLIENT_MANAGER_READ_ONLY, status: 403 };
+    }
+    if (session.role === "SUPER_ADMIN") {
+      return { allowed: true, deal: scope, userId: session.userId, role: session.role };
+    }
+    if (canActAsSalesperson(session)) {
+      if (session.clientId !== scope.client_id) return { allowed: false, reason: "Not found", status: 404 };
+      if (scope.owner_id !== session.userId) return { allowed: false, reason: "Forbidden", status: 403 };
+      return { allowed: true, deal: scope, userId: session.userId, role: session.role as UserRole };
+    }
+    return { allowed: false, reason: "Forbidden", status: 403 };
   }
 
   const supabase = createAdminClient();

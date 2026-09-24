@@ -13,6 +13,19 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const limit = Math.min(parseInt(searchParams.get("limit") || "15", 10) || 15, 50);
 
+  if (auth.clientId) {
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const demo = await loadDemoDatasetForClient(auth.clientId);
+    if (demo) {
+      const { demoNotificationsFor } = await import("@/lib/demo/adapters/workspace-views");
+      const rows = demoNotificationsFor(demo, auth.userId);
+      return NextResponse.json({
+        notifications: rows.slice(0, limit),
+        unreadCount: rows.filter((row) => !row.read).length,
+      });
+    }
+  }
+
   const supabase = createAdminClient();
 
   const { count: unreadCount, error: countError } = await supabase

@@ -404,6 +404,11 @@ async function loadCanonical(clientId: string): Promise<CanonicalSignals> {
 }
 
 export async function loadCompanyBrainSnapshot(clientId: string): Promise<CompanyBrainSnapshot> {
+  const { isDemoWorkspaceId } = await import("@/lib/demo/mode");
+  if (await isDemoWorkspaceId(clientId)) {
+    const { rossiCompanyBrain } = await import("@/lib/demo/industries/tyres/rossi/brain");
+    return rossiCompanyBrain(clientId);
+  }
   const supabase = createAdminClient();
   const [
     settingsRes,

@@ -148,6 +148,16 @@ export async function canModifyLead(
     return { allowed: false, reason: "Unauthorized", status: 401 };
   }
 
+  const { lookupDemoLead } = await import("@/lib/demo/acl");
+  const demoLead = await lookupDemoLead(session.clientId, leadId);
+  if (demoLead.mode === "demo") {
+    if (!demoLead.row) return { allowed: false, reason: "Not found", status: 404 };
+    return evaluateLeadModifyAccess(session, {
+      client_id: demoLead.row.client_id,
+      assigned_to_id: demoLead.row.assigned_to_id,
+    });
+  }
+
   const supabase = createAdminClient();
   const { data: lead } = await supabase
     .from("leads")
@@ -248,6 +258,17 @@ export async function canReadLead(
   const session = (await getAuthFromRequest(req)) as AuthSession | null;
   if (!session?.userId) {
     return { ok: false, status: 401 };
+  }
+
+  const { lookupDemoLead } = await import("@/lib/demo/acl");
+  const demoLead = await lookupDemoLead(session.clientId, leadId);
+  if (demoLead.mode === "demo") {
+    if (!demoLead.row) return { ok: false, status: 404 };
+    return evaluateLeadReadAccess(
+      session,
+      { client_id: demoLead.row.client_id, assigned_to_id: demoLead.row.assigned_to_id },
+      "direct"
+    );
   }
 
   const supabase = createAdminClient();

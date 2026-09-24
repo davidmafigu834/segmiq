@@ -26,6 +26,24 @@ export async function fetchSalesNavBadges(
   clientId: string | null
 ): Promise<SalesNavBadges> {
   if (!userId) return EMPTY_BADGES;
+  if (clientId) {
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const demo = await loadDemoDatasetForClient(clientId);
+    if (demo) {
+      const { buildDemoInbox } = await import("@/lib/demo/adapters/workspace-views");
+      const conversations = buildDemoInbox(demo, userId, "SALESPERSON");
+      const hot = conversations.filter((row) => row.scoreLabel === "Hot").length;
+      const needsReply = conversations.filter((row) => row.lastMessageDirection === "inbound").length;
+      const followUpDue = demo.followUps.filter((row) => demo.actors[row.ownerKey]?.id === userId && !row.completed).length;
+      return {
+        callNow: hot,
+        followUpsToday: followUpDue,
+        hotLeads: hot,
+        needsReply,
+        followUpDue,
+      };
+    }
+  }
 
   const supabase = createAdminClient();
 

@@ -147,6 +147,12 @@ export async function getCompanyPipelinePageData(opts: {
     alsoSells?: boolean | null;
   };
 }): Promise<CompanyPipelinePageData> {
+  const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+  const demo = await loadDemoDatasetForClient(opts.clientId);
+  if (demo) {
+    const { buildDemoCompanyPipeline } = await import("@/lib/demo/adapters/lists");
+    return buildDemoCompanyPipeline(demo, opts.actor.userId, opts.actor.role);
+  }
   const { clientId, actor } = opts;
   const now = new Date();
   const monthStart = startOfLocalMonth(now);

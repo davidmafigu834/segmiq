@@ -323,6 +323,12 @@ function mapCustomerRow(opts: {
 export async function getCompanyCustomersPageData(opts: {
   clientId: string;
 }): Promise<CompanyCustomersPageData> {
+  const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+  const demo = await loadDemoDatasetForClient(opts.clientId);
+  if (demo) {
+    const { buildDemoCustomers } = await import("@/lib/demo/adapters/lists");
+    return buildDemoCustomers(demo);
+  }
   const supabase = createAdminClient();
   const now = new Date();
   const currency = "USD";
@@ -423,6 +429,12 @@ export async function getCompanyCustomerDetail(opts: {
   customerId: string;
   activityLimit?: number;
 }): Promise<CompanyCustomerDetail | null> {
+  const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+  const demo = await loadDemoDatasetForClient(opts.clientId);
+  if (demo) {
+    const { buildDemoCustomerProfile } = await import("@/lib/demo/adapters/lists");
+    return buildDemoCustomerProfile(demo, opts.customerId)?.customer ?? null;
+  }
   const supabase = createAdminClient();
   const now = new Date();
   const currency = "USD";
@@ -579,6 +591,12 @@ export async function getCompanyCustomerProfileData(opts: {
   clientId: string;
   customerId: string;
 }): Promise<CompanyCustomerProfileData | null> {
+  const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+  const demo = await loadDemoDatasetForClient(opts.clientId);
+  if (demo) {
+    const { buildDemoCustomerProfile } = await import("@/lib/demo/adapters/lists");
+    return buildDemoCustomerProfile(demo, opts.customerId);
+  }
   const customer = await getCompanyCustomerDetail({ ...opts, activityLimit: 12 });
   if (!customer) return null;
   const supabase = createAdminClient();

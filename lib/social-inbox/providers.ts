@@ -48,6 +48,14 @@ export function replyModeFor(channel: SocialChannel, visibility: "public" | "pri
  * Official Meta Graph send. Never scrapes. Fails closed when credentials are missing.
  */
 export async function sendSocialMessage(req: SocialSendRequest): Promise<SocialSendResult> {
+  const { isDemoWorkspaceId } = await import("@/lib/demo/mode");
+  if (await isDemoWorkspaceId(req.clientId)) {
+    return {
+      ok: true,
+      providerMessageId: "demo-simulated",
+      mode: req.visibility === "public" ? "public_comment" : "private_dm",
+    };
+  }
   const mode = replyModeFor(req.channel, req.visibility);
   const token = await pageTokenFor(req.clientId, req.connectionId);
   if (!token) {

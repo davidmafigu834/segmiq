@@ -15,6 +15,7 @@
     "lint": "next lint",
     "seed": "npx tsx scripts/seed.ts",
     "seed:demo": "npx tsx scripts/seed-demo.ts",
+    "seed:rossi": "npx tsx scripts/seed-rossi-demo.ts",
     "seed:adlense-brain": "npx tsx scripts/seed-adlense-company-brain.ts",
     "seed:ecolus": "npx tsx scripts/seed-ecolus-energy.ts",
     "seed:templates": "npx tsx scripts/seed-templates.ts",
