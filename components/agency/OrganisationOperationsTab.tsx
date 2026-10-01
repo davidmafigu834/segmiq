@@ -1,4 +1,5 @@
 import { formatDistanceToNowStrict } from "date-fns";
+import { OrganisationTeamActivity } from "@/components/agency/OrganisationTeamActivity";
 import type {
   IntegrationHealth,
   OrganisationDiagnostics,
@@ -9,7 +10,8 @@ import type { PlatformStatusKind } from "@/components/platform/PlatformStatusBad
 
 /**
  * Normal Super Admin view of an organisation: operational information, not the
- * customer's CRM. Every figure here is an aggregate or a health state.
+ * customer's CRM. Counts and health stay aggregate. Team activity lists staff
+ * presence and work type only — never customer record names.
  */
 export function OrganisationOperationsTab({
   diagnostics,
@@ -44,6 +46,8 @@ export function OrganisationOperationsTab({
             <Field label="Last platform activity" value={relative(organisation.lastActivityAt)} />
           </dl>
         </section>
+
+        <OrganisationTeamActivity organisationId={organisation.id} />
 
         <section>
           <h2 className="mb-3 text-[15px] font-semibold text-[var(--text-primary)]">Usage this month</h2>
