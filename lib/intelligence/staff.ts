@@ -127,7 +127,7 @@ async function proposeTask(actor: WorkProjectActor, facts: ProjectFacts, text: s
     assigneeId = (data?.[0]?.id as string | undefined) ?? null;
     if (!assigneeId) return { answer: `I couldn't find ${name} on this company. I haven't created a task.`, citations: [], warnings: [], pendingActionId: null };
   }
-  const when = resolveNaturalDateTime(text, new Date(), "Africa/Harare");
+  const when = resolveNaturalDateTime(text, { timezone: "Africa/Harare" });
   const due = when?.iso ?? null;
   const title = /battery/i.test(text) ? "Check battery stock" : "Project task";
   const summary = `Create “${title}” on ${facts.number || facts.title}${name ? ` for ${name}` : ""}${when ? ` due ${when.localDate}${when.daypart ? ` ${when.daypart}` : ""}` : ""}. Nothing is saved until you approve.`;
@@ -146,7 +146,7 @@ async function proposeTask(actor: WorkProjectActor, facts: ProjectFacts, text: s
 
 async function proposeFollowUp(actor: WorkProjectActor, facts: ProjectFacts, text: string): Promise<StaffAnswer> {
   const clientId = actor.clientId as string;
-  const when = resolveNaturalDateTime(text, new Date(), "Africa/Harare");
+  const when = resolveNaturalDateTime(text, { timezone: "Africa/Harare" });
   const summary = `Schedule a sales follow-up for ${facts.contactName}${when ? ` on ${when.localDate}` : ""}. This does not create a project task. Nothing is saved until you approve.`;
   const id = await logAiAction({
     clientId,
@@ -166,7 +166,7 @@ async function proposeSchedule(actor: WorkProjectActor, facts: ProjectFacts, tex
   if (!canManageWorkProjects(actor, actor.clientId || "")) {
     return { answer: "You don't have permission to schedule an installation.", citations: citations(facts), warnings: [], pendingActionId: null };
   }
-  const when = resolveNaturalDateTime(text, new Date(), "Africa/Harare");
+  const when = resolveNaturalDateTime(text, { timezone: "Africa/Harare" });
   const summary = [
     `${facts.contactName} — ${facts.number || facts.title}`,
     when ? `Proposed start: ${when.localDate} ${when.localTime || when.daypart || ""}`.trim() : "No date was clear enough to schedule.",
