@@ -92,7 +92,7 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
     if (!result.ok) return workProjectError(result);
     return NextResponse.json(result.data);
   }
-  if (!installationId && input.action !== "create") {
+  if (!installationId) {
     return NextResponse.json({ error: "Choose an installation." }, { status: 400 });
   }
   if (input.action === "schedule") {
