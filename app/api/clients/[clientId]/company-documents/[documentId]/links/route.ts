@@ -49,7 +49,7 @@ export async function GET(
 }
 
 const createSchema = z.object({
-  entityType: z.enum(["CUSTOMER", "LEAD", "DEAL", "QUOTATION"]),
+  entityType: z.enum(["CUSTOMER", "LEAD", "DEAL", "QUOTATION", "WORK_PROJECT", "WORK_PROJECT_VISIT", "WORK_PROJECT_PAYMENT", "WORK_PROJECT_INSTALLATION"]),
   entityId: z.string().uuid(),
   linkType: z
     .enum([

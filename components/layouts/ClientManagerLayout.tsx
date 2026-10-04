@@ -121,6 +121,8 @@ export async function ClientManagerLayout({
         { href: "/client/leads", label: "Leads", icon: "users" as const },
         { href: "/client/inbox", label: "WhatsApp Sales Hub", icon: "inbox" as const },
         { href: "/client/quotations", label: "Quotations", icon: "file-text" as const },
+        { href: "/client/projects", label: "Projects", icon: "workflow" as const },
+        { href: "/client/work", label: "My work", icon: "workflow" as const },
         { href: "/client/calendar", label: "Calendar", icon: "calendar" as const },
         { href: "/client/customers", label: "Customers", icon: "users" as const },
         { href: "/client/event-capture", label: "Event Capture", icon: "calendar" as const },

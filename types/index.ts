@@ -10,7 +10,8 @@ export type LeadSource =
   | "WHATSAPP_INBOUND"
   | "WEBSITE"
   | "FACEBOOK_AD"
-  | "INSTAGRAM";
+  | "INSTAGRAM"
+  | "CUSTOMER_PORTAL";
 
 export type BusinessType = "trades" | "real_estate";
 

@@ -44,6 +44,7 @@ import { DealReadinessCard } from "@/components/sales/deals/DealReadinessCard";
 import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
 import { ConfirmDialog, LeadScoreBadge, LeadScoreGauge, useSalesToast } from "@/components/sales/ui";
 import { ConvertWonCustomerSheet } from "@/components/sales/leads/ConvertWonCustomerSheet";
+import { CreateFromDealDialog } from "@/components/work-projects/CreateFromDealDialog";
 import { getDealReadiness } from "@/lib/sales/deals/readiness";
 import { formatLeadLifecycle, formatDealStage, isLeadConverted, isLeadOpenForQualification } from "@/lib/sales/deals/display";
 import { formatCallLogHeadline } from "@/lib/call-log-display";
@@ -109,6 +110,7 @@ export function LeadDetailPanel({
   const [closingStatus, setClosingStatus] = useState(false);
   const [createDealOpen, setCreateDealOpen] = useState(false);
   const [convertWonOpen, setConvertWonOpen] = useState(false);
+  const [handoffDealId, setHandoffDealId] = useState<string | null>(null);
   const [relatedDeal, setRelatedDeal] = useState<DealRow | null>(null);
   const { toast } = useSalesToast();
   const isMobileDrawer = useMediaQuery("(max-width: 767px)");
@@ -888,8 +890,18 @@ export function LeadDetailPanel({
           onLeadUpdated?.(updatedLead);
           setLogRefresh((k) => k + 1);
           router.refresh();
+          if (businessType !== "real_estate") setHandoffDealId(deal.id);
         }}
       />
+      {handoffDealId ? (
+        <CreateFromDealDialog
+          dealId={handoffDealId}
+          projectBasePath="/sales/projects"
+          existingProjectId={null}
+          owners={[]}
+          onClose={() => setHandoffDealId(null)}
+        />
+      ) : null}
     </>
   );
 }

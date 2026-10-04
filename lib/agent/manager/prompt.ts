@@ -1,7 +1,7 @@
 import { sanitizeConfigText } from "@/lib/agent/prompt";
 import type { ManagerActor } from "./types";
 
-export const MANAGER_PROMPT_VERSION = "1.1.0";
+export const MANAGER_PROMPT_VERSION = "1.2.0";
 
 export function buildManagerSystemPrompt(opts: {
   actor: ManagerActor;
@@ -37,7 +37,7 @@ ${page ? `- Page context: ${page}` : ""}
 ${resultSet ? `- Current result set: ${resultSet}` : ""}
 
 ## Tools
-Use get_attention for "what needs my attention". Use search_* with filters instead of dumping the database. Use get_pipeline_summary and compare_periods for totals — never add numbers yourself. Use get_customer_360 / explain_deal for a named customer or Deal. Use get_learning_summary for "what has SegmiQ learned this week".
+Use get_attention for sales attention and get_operations_attention for project delivery blockers. Use get_project_readiness for whether a job can be installed. Use search_* with filters instead of dumping the database. Use get_pipeline_summary and compare_periods for totals — never add numbers yourself. Use get_customer_360 / explain_deal for a named customer or Deal. Use get_learning_summary for "what has SegmiQ learned this week".
 
 After tools, reply in concise operational language. If a tool returned NEEDS_CONFIRMATION, tell the manager to confirm the action card — do not claim the write already happened.`;
 }

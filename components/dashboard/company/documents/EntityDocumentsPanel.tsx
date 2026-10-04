@@ -8,6 +8,7 @@ import type { DocumentListItem } from "@/lib/documents/list-service";
 import { formatDocumentDate } from "@/lib/documents/format";
 import { DocumentThumbnail } from "./shared/document-ui";
 import { DocumentLifecycleBadge } from "./shared/document-badges";
+import { ShareDocumentButton } from "@/components/portal/PortalAccessPanel";
 
 export function EntityDocumentsPanel({
   clientId,
@@ -17,7 +18,7 @@ export function EntityDocumentsPanel({
   compact,
 }: {
   clientId: string;
-  entityType: "CUSTOMER" | "DEAL";
+  entityType: "CUSTOMER" | "DEAL" | "WORK_PROJECT" | "WORK_PROJECT_VISIT" | "WORK_PROJECT_PAYMENT" | "WORK_PROJECT_INSTALLATION";
   entityId: string;
   entityLabel?: string;
   compact?: boolean;
@@ -111,6 +112,9 @@ export function EntityDocumentsPanel({
                 </div>
                 <DocumentLifecycleBadge status={doc.lifecycle_status} />
               </Link>
+              {entityType === "WORK_PROJECT" ? (
+                <div className="px-2 pb-1"><ShareDocumentButton projectId={entityId} documentId={doc.id} /></div>
+              ) : null}
             </li>
           ))}
         </ul>

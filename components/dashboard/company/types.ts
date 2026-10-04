@@ -179,4 +179,12 @@ export type CompanySalesDashboardData = {
   };
   reAgentOvernight?: ReOvernightAgentSummary | null;
   reAgentTeam?: ReAgentTeamVisibilityRow[];
+  workProjects?: {
+    active: number;
+    scheduled: number;
+    inProgress: number;
+    awaitingCustomer: number;
+    onHold: number;
+    completedThisMonth: number;
+  } | null;
 };

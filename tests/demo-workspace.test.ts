@@ -175,13 +175,13 @@ describe("rendered demo views", () => {
     const now = new Date("2026-09-24T08:00:00.000Z");
     const data = dataset(now);
     const sales = buildDemoSalesDashboard(data, data.actors.tinashe.id, "SALESPERSON");
-    assert.ok(sales.plan.queue.length > 0);
+    assert.ok(sales.plan != null && sales.plan.queue.length > 0);
     const company = buildDemoCompanyDashboard(data);
     assert.ok(company);
     const pipeline = buildDemoCompanyPipeline(data, data.actors.tendai.id, "CLIENT_MANAGER");
     assert.ok(pipeline.rows.length > 0);
     const quotes = buildDemoQuotes(data, data.actors.tinashe.id);
-    assert.ok(quotes.quotes.some((row) => row.quoteNumber === "QT-1028" || row.number === "QT-1028" || JSON.stringify(row).includes("QT-1028")));
+    assert.ok(quotes.quotes.some((row) => row.quoteNumber === "QT-1028" || JSON.stringify(row).includes("QT-1028")));
     const leads = buildDemoLeadsDirectory(data, data.actors.tinashe.id);
     assert.ok(leads.leads.length > 0);
     assert.ok(leads.leads.every((row) => row.name));

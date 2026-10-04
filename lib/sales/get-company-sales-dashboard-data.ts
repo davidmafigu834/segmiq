@@ -1429,11 +1429,19 @@ export async function getCompanySalesDashboard(opts: {
 
   let reAgentOvernight = null;
   let reAgentTeam: Awaited<ReturnType<typeof import("@/lib/agent/real-estate/manager-dashboard").loadReManagerAgentDashboard>>["team"] = [];
+  let workProjects = null;
   if (isRealEstate(businessType)) {
     const { loadReManagerAgentDashboard } = await import("@/lib/agent/real-estate/manager-dashboard");
     const reDashboard = await loadReManagerAgentDashboard({ clientId });
     reAgentOvernight = reDashboard.overnight;
     reAgentTeam = reDashboard.team;
+  } else {
+    try {
+      const { loadWorkProjectSummary } = await import("@/lib/work-projects/service");
+      workProjects = await loadWorkProjectSummary(clientId);
+    } catch {
+      workProjects = null;
+    }
   }
 
   return {
@@ -1490,5 +1498,6 @@ export async function getCompanySalesDashboard(opts: {
     },
     reAgentOvernight,
     reAgentTeam,
+    workProjects,
   };
 }

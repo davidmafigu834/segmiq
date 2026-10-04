@@ -46,6 +46,7 @@ import {
 } from "@/components/sales/deals/DealDetailsEditorSheet";
 import { SalesCommandDrawer } from "@/components/sales/command/SalesCommandDrawer";
 import { EntityDocumentsPanel } from "@/components/dashboard/company/documents/EntityDocumentsPanel";
+import { CreateFromDealDialog } from "@/components/work-projects/CreateFromDealDialog";
 
 type NextActionState = {
   hasNextAction: boolean;
@@ -88,6 +89,10 @@ export function DealWorkspaceClient({
   backLabel = "Back to pipeline",
   quoteHrefMode = "sales",
   canCreateQuote = true,
+  tradesDelivery = false,
+  projectBasePath = "/sales/projects",
+  existingWorkProjectId = null,
+  projectOwners = [],
 }: {
   initialDeal: DealRow;
   lead: LeadRow | null;
@@ -102,6 +107,10 @@ export function DealWorkspaceClient({
   backLabel?: string;
   quoteHrefMode?: "sales" | "company";
   canCreateQuote?: boolean;
+  tradesDelivery?: boolean;
+  projectBasePath?: "/sales/projects" | "/client/projects";
+  existingWorkProjectId?: string | null;
+  projectOwners?: Array<{ id: string; name: string | null }>;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -123,6 +132,8 @@ export function DealWorkspaceClient({
   const [nextAction, setNextAction] = useState(initialNext);
   const [moving, setMoving] = useState(false);
   const [closeMode, setCloseMode] = useState<"won" | "lost" | null>(openClose);
+  const [handoffOpen, setHandoffOpen] = useState(false);
+  const [linkedProjectId, setLinkedProjectId] = useState<string | null>(existingWorkProjectId);
   const [wonValue, setWonValue] = useState(() =>
     commercial.kind === "amount" ? String(commercial.amount) : ""
   );
@@ -286,6 +297,7 @@ export function DealWorkspaceClient({
         await patchDeal({
           close: { outcome: "WON", wonValue: n },
         });
+        if (tradesDelivery) setHandoffOpen(true);
       } else if (closeMode === "lost") {
         if (!lostReason.trim()) {
           setCloseError("Select a lost reason.");
@@ -366,6 +378,22 @@ export function DealWorkspaceClient({
           {backLabel}
         </Link>
       </div>
+
+      {deal.stage === "WON" && tradesDelivery ? (
+        <div className="mb-4 rounded-sales-lg border border-sales-border bg-sales-surface px-4 py-3">
+          <p className="text-[13px] font-semibold text-sales-text-primary">Deal won</p>
+          <p className="mt-1 text-[13px] text-sales-text-secondary">
+            {linkedProjectId ? "A delivery project is linked to this deal." : "Ready to deliver the work?"}
+          </p>
+          <button
+            type="button"
+            className="mt-3 min-h-11 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-white"
+            onClick={() => setHandoffOpen(true)}
+          >
+            {linkedProjectId ? "Open project" : "Create project"}
+          </button>
+        </div>
+      ) : null}
 
       {/* Header */}
       <Card className="mb-4">
@@ -1066,6 +1094,17 @@ export function DealWorkspaceClient({
             conversationId: lead.id,
             ownerId: deal.owner_id,
           }}
+        />
+      ) : null}
+
+      {handoffOpen && tradesDelivery ? (
+        <CreateFromDealDialog
+          dealId={deal.id}
+          projectBasePath={projectBasePath}
+          existingProjectId={linkedProjectId}
+          owners={projectOwners}
+          onClose={() => setHandoffOpen(false)}
+          onOpen={(projectId) => setLinkedProjectId(projectId)}
         />
       ) : null}
     </div>

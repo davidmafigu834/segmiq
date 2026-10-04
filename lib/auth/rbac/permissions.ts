@@ -33,6 +33,13 @@ export const P = {
   QUOTES_APPROVE: "quotes.approve",
   QUOTES_CATALOG_MANAGE: "quotes.catalog.manage",
 
+  // Work projects (trades delivery — not Cloud portfolio projects)
+  PROJECTS_READ_ASSIGNED: "projects.read_assigned",
+  PROJECTS_READ_ALL: "projects.read_all",
+  PROJECTS_CREATE: "projects.create",
+  PROJECTS_UPDATE_ASSIGNED: "projects.update_assigned",
+  PROJECTS_MANAGE: "projects.manage",
+
   // WhatsApp
   WHATSAPP_READ_ASSIGNED: "whatsapp.read_assigned",
   WHATSAPP_READ_ALL: "whatsapp.read_all",
@@ -157,6 +164,11 @@ export const CLIENT_DATA_PERMISSIONS: Permission[] = [
   P.QUOTES_UPDATE,
   P.QUOTES_SEND,
   P.QUOTES_APPROVE,
+  P.PROJECTS_READ_ASSIGNED,
+  P.PROJECTS_READ_ALL,
+  P.PROJECTS_CREATE,
+  P.PROJECTS_UPDATE_ASSIGNED,
+  P.PROJECTS_MANAGE,
   P.WHATSAPP_READ_ASSIGNED,
   P.WHATSAPP_READ_ALL,
   P.WHATSAPP_SEND,

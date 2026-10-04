@@ -118,6 +118,8 @@ export const MANAGER_TOOL_DEFINITIONS: AgentToolDefinition[] = [
   { name: "cancel_proactive_job", description: "Cancel a scheduled Proactive evaluation.", inputSchema: { type: "object", properties: { jobId: { type: "string" } }, required: ["jobId"] } },
   { name: "search_learning", description: "Search Learning Center candidates. Use conflicts, corrections, or faqs filters. Never invent evidence counts.", inputSchema: { type: "object", properties: { conflicts: { type: "boolean" }, corrections: { type: "boolean" }, faqs: { type: "boolean" }, sinceDays: { type: "number" } } } },
   { name: "get_learning_summary", description: "Grounded summary of what SegmiQ observed from the sales team. Counts only, no fake readiness scores.", inputSchema: { type: "object", properties: { sinceDays: { type: "number" } } } },
+  { name: "get_operations_attention", description: "Deterministic operations attention: payment proofs, missing equipment, QA, commissioning, handover, and open support. Do not invent blockers.", inputSchema: { type: "object", properties: {} } },
+  { name: "get_project_readiness", description: "Whether a work project is ready to install, from payments, assessment, and equipment gaps.", inputSchema: { type: "object", properties: { projectId: { type: "string" } }, required: ["projectId"] } },
   { name: "approve_learning_candidate", description: "Approve a LOW or MEDIUM risk Learning Candidate after confirmation. High-risk commercial learning must use Learning Center.", inputSchema: { type: "object", properties: { candidateId: { type: "string" } }, required: ["candidateId"] } },
   { name: "reject_learning_candidate", description: "Reject a Learning Candidate after confirmation.", inputSchema: { type: "object", properties: { candidateId: { type: "string" }, reason: { type: "string" } }, required: ["candidateId"] } },
 ];
@@ -822,6 +824,20 @@ export async function executeManagerTool(opts: {
       },
       execute: () => runRejectLearning(actor, candidateId, reason),
     });
+  }
+
+  if (name === "get_operations_attention" || name === "get_project_readiness") {
+    const { listOperationsAttention, loadProjectFacts } = await import("@/lib/intelligence/facts");
+    const { installationReadinessAnswer, paymentAnswer } = await import("@/lib/intelligence/rules");
+    if (name === "get_operations_attention") {
+      const items = await listOperationsAttention(actor);
+      const text = items.length ? items.slice(0, 12).map((item) => `${item.title}: ${item.detail}`).join("\n") : "No operations blockers are on record.";
+      return { name, ok: true, summary: { count: items.length }, blocks: [{ type: "text", text }], phase: "Checking operations" };
+    }
+    const facts = await loadProjectFacts(actor, String(input.projectId || ""));
+    if (!facts) return { name, ok: false, summary: {}, blocks: [{ type: "status", kind: "error", message: "That project was not found." }], phase: "Project readiness" };
+    const readiness = installationReadinessAnswer(facts);
+    return { name, ok: true, summary: { ready: readiness.ready }, blocks: [{ type: "text", text: `${readiness.answer}\n${paymentAnswer(facts)}` }], phase: "Project readiness" };
   }
 
   return {

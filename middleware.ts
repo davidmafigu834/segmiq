@@ -180,6 +180,7 @@ export async function middleware(req: NextRequest) {
   if (path.startsWith("/api/onboard/")) return NextResponse.next();
   if (path.startsWith("/api/proposals/")) return NextResponse.next();
   if (path.startsWith("/api/quotes/")) return NextResponse.next();
+  if (path.startsWith("/api/portal")) return NextResponse.next();
   if (path.startsWith("/api/cron/")) {
     const secret = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const cronSecret = process.env.CRON_SECRET;
@@ -216,6 +217,9 @@ export async function middleware(req: NextRequest) {
     path.startsWith("/onboard/") ||
     path.startsWith("/proposal/") ||
     path.startsWith("/quote/") ||
+    path === "/portal" ||
+    path.startsWith("/portal/") ||
+    path.startsWith("/api/portal") ||
     path.startsWith("/l/") ||
     path.startsWith("/d/") ||
     path.startsWith("/p/") ||
@@ -429,6 +433,7 @@ function isPublicApiPath(path: string): boolean {
   if (path.startsWith("/api/onboard/")) return true;
   if (path.startsWith("/api/proposals/")) return true;
   if (path.startsWith("/api/quotes/")) return true;
+  if (path.startsWith("/api/portal")) return true;
   if (path.startsWith("/api/public/")) return true;
   if (path.startsWith("/api/cron/")) return true;
   if (path.startsWith("/api/security/csp-report")) return true;

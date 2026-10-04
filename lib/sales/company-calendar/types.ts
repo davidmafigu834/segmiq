@@ -8,9 +8,11 @@ export type CompanyCalendarEventKind =
   | "follow_up"
   | "quote_review"
   | "deal_action"
-  | "site_visit";
+  | "site_visit"
+  | "field_visit"
+  | "project_start";
 
-export type CompanyCalendarEventSource = "lead_follow_up" | "deal_next_action" | "viewing";
+export type CompanyCalendarEventSource = "lead_follow_up" | "deal_next_action" | "viewing" | "work_visit" | "work_project";
 export type CompanyCalendarRelationType = "lead" | "deal" | "customer";
 export type CompanyCalendarEventStatus =
   | "scheduled"
@@ -114,6 +116,8 @@ export const COMPANY_CALENDAR_EVENT_KINDS: CompanyCalendarEventKind[] = [
   "quote_review",
   "deal_action",
   "site_visit",
+  "field_visit",
+  "project_start",
 ];
 
 export const DEFAULT_COMPANY_CALENDAR_FILTERS: CompanyCalendarFilters = {

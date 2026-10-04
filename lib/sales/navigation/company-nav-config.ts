@@ -10,6 +10,7 @@ import {
   Columns3,
   MessageSquare,
   CreditCard,
+  FolderKanban,
   FolderOpen,
   FileText,
   Globe,
@@ -41,6 +42,8 @@ export type CompanyNavIconId =
   | "whatsapp"
   | "socialInbox"
   | "quotations"
+  | "projects"
+  | "myWork"
   | "calendar"
   | "customers"
   | "agent"
@@ -104,6 +107,8 @@ export const COMPANY_NAV_LUCIDE: Record<Exclude<CompanyNavIconId, "whatsapp">, L
   leads: UsersRound,
   socialInbox: Inbox,
   quotations: FileText,
+  projects: FolderKanban,
+  myWork: ClipboardCheck,
   calendar: CalendarDays,
   customers: UsersRound,
   agent: Bot,
@@ -248,6 +253,26 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     mobileSlot: "more",
     match: (p) =>
       exactOrChild(p, "/client/quotations") || exactOrChild(p, "/client/quote-settings"),
+  },
+  {
+    id: "projects",
+    label: "Projects",
+    href: "/client/projects",
+    icon: "projects",
+    section: "company",
+    mobileSlot: "more",
+    mobileLabel: "Projects",
+    match: (p) => exactOrChild(p, "/client/projects"),
+  },
+  {
+    id: "myWork",
+    label: "My work",
+    href: "/client/work",
+    icon: "myWork",
+    section: "company",
+    mobileSlot: "more",
+    mobileLabel: "My work",
+    match: (p) => exactOrChild(p, "/client/work"),
   },
   {
     id: "calendar",

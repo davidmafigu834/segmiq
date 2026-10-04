@@ -16,6 +16,9 @@ import {
   latestQuoteTotal,
 } from "@/lib/sales/deals";
 import type { DealRow, LeadRow, QuotationRow } from "@/types";
+import { isRealEstate } from "@/lib/terminology";
+import { companyOwners } from "@/lib/work-projects/page-data";
+import { findWorkProjectIdForDeal } from "@/lib/work-projects/service";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +74,20 @@ export default async function DealWorkspacePage({
     loadSalesShellProps(session),
   ]);
 
+  const { data: company } =
+    demoDeal.mode === "demo"
+      ? { data: null }
+      : await supabase.from("clients").select("business_type").eq("id", dealRow.client_id).maybeSingle();
+  const tradesDelivery =
+    demoDeal.mode !== "demo" &&
+    !isRealEstate((company as { business_type?: string | null } | null)?.business_type);
+  const [existingWorkProjectId, projectOwners] = tradesDelivery
+    ? await Promise.all([
+        findWorkProjectIdForDeal(dealRow.client_id, dealRow.id),
+        companyOwners(dealRow.client_id),
+      ])
+    : [null, [] as Array<{ id: string; name: string | null }>];
+
   const quoteRows = (quotes ?? []) as QuotationRow[];
   const quoteTotal = latestQuoteTotal(quoteRows);
   const commercial = getDealCommercialValue(dealRow, { latestQuoteTotal: quoteTotal });
@@ -113,6 +130,10 @@ export default async function DealWorkspacePage({
                 : null
           }
           repName={session.user?.name ?? ""}
+          tradesDelivery={tradesDelivery}
+          projectBasePath="/sales/projects"
+          existingWorkProjectId={existingWorkProjectId}
+          projectOwners={projectOwners}
         />
       </SalesAppShell>
     </Layout>

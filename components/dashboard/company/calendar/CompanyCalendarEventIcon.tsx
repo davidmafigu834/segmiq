@@ -19,6 +19,6 @@ export function CompanyCalendarEventIcon({
   if (kind === "call") return <Phone size={size} strokeWidth={1.8} aria-hidden />;
   if (kind === "quote_review") return <FileText size={size} strokeWidth={1.8} aria-hidden />;
   if (kind === "deal_action") return <Handshake size={size} strokeWidth={1.8} aria-hidden />;
-  if (kind === "site_visit") return <MapPin size={size} strokeWidth={1.8} aria-hidden />;
+  if (kind === "site_visit" || kind === "field_visit") return <MapPin size={size} strokeWidth={1.8} aria-hidden />;
   return <CalendarClock size={size} strokeWidth={1.8} aria-hidden />;
 }

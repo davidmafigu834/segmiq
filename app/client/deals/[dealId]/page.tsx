@@ -16,6 +16,9 @@ import {
   latestQuoteTotal,
 } from "@/lib/sales/deals";
 import type { DealRow, LeadRow, QuotationRow } from "@/types";
+import { isRealEstate } from "@/lib/terminology";
+import { companyOwners } from "@/lib/work-projects/page-data";
+import { findWorkProjectIdForDeal } from "@/lib/work-projects/service";
 
 export const dynamic = "force-dynamic";
 
@@ -83,9 +86,18 @@ export default async function CompanyDealWorkspacePage({
         .eq("user_id", session.userId)
         .eq("read", false),
       supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
-      supabase.from("clients").select("name, logo_url").eq("id", dealRow.client_id).maybeSingle(),
+      supabase.from("clients").select("name, logo_url, business_type").eq("id", dealRow.client_id).maybeSingle(),
       fetchSalesNavBadges(session.userId, dealRow.client_id),
     ]);
+
+  const companyRow = clientRes.data as { name?: string; logo_url?: string | null; business_type?: string | null } | null;
+  const tradesDelivery = demoDeal.mode !== "demo" && !isRealEstate(companyRow?.business_type);
+  const [existingWorkProjectId, projectOwners] = tradesDelivery
+    ? await Promise.all([
+        findWorkProjectIdForDeal(dealRow.client_id, dealRow.id),
+        companyOwners(dealRow.client_id),
+      ])
+    : [null, [] as Array<{ id: string; name: string | null }>];
 
   const quoteRows = (quotes ?? []) as QuotationRow[];
   const quoteTotal = latestQuoteTotal(quoteRows);
@@ -105,8 +117,8 @@ export default async function CompanyDealWorkspacePage({
       navClientId={dealRow.client_id}
     >
       <CompanyWorkspaceShell
-        companyName={(clientRes.data as { name?: string } | null)?.name ?? "Company"}
-        companyLogoUrl={(clientRes.data as { logo_url?: string | null } | null)?.logo_url ?? null}
+        companyName={companyRow?.name ?? "Company"}
+        companyLogoUrl={companyRow?.logo_url ?? null}
         userName={session.user?.name ?? "User"}
         avatarUrl={(userRes.data as { avatar_url?: string | null } | null)?.avatar_url ?? null}
         unreadNotifications={unreadRes.count ?? 0}
@@ -143,6 +155,10 @@ export default async function CompanyDealWorkspacePage({
           backLabel="Back to Pipeline"
           quoteHrefMode="company"
           canCreateQuote={canActAsSalesperson(session)}
+          tradesDelivery={tradesDelivery}
+          projectBasePath="/client/projects"
+          existingWorkProjectId={existingWorkProjectId}
+          projectOwners={projectOwners}
         />
       </CompanyWorkspaceShell>
     </ClientManagerLayout>

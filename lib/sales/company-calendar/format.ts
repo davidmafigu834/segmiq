@@ -55,6 +55,18 @@ export const COMPANY_CALENDAR_KIND_META: Record<
     className: "border-violet-300/70 bg-violet-50 text-violet-950 dark:border-violet-700/60 dark:bg-violet-950/35 dark:text-violet-100",
     dotClassName: "bg-violet-500",
   },
+  field_visit: {
+    label: "Field visit",
+    shortLabel: "Field",
+    className: "border-indigo-300/70 bg-indigo-50 text-indigo-950 dark:border-indigo-700/60 dark:bg-indigo-950/35 dark:text-indigo-100",
+    dotClassName: "bg-indigo-500",
+  },
+  project_start: {
+    label: "Project start",
+    shortLabel: "Project",
+    className: "border-slate-300/70 bg-slate-50 text-slate-950 dark:border-slate-600/60 dark:bg-slate-900/40 dark:text-slate-100",
+    dotClassName: "bg-slate-500",
+  },
 };
 
 function dateParts(value: Date | string, timezone: string) {

@@ -5,6 +5,7 @@ import {
   Building2,
   Columns3,
   FileText,
+  FolderKanban,
   Handshake,
   Inbox,
   Landmark,
@@ -27,6 +28,8 @@ export type SalesNavIconId =
   | "socialInbox"
   | "leads"
   | "quotes"
+  | "projects"
+  | "myWork"
   | "calendar"
   | "tasks"
   | "command"
@@ -67,6 +70,8 @@ export const SALES_NAV_LUCIDE: Record<Exclude<SalesNavIconId, "whatsapp">, Lucid
   socialInbox: Inbox,
   leads: UsersRound,
   quotes: FileText,
+  projects: FolderKanban,
+  myWork: ListTodo,
   calendar: CalendarDays,
   tasks: ListTodo,
   command: MessageSquare,
@@ -149,6 +154,26 @@ export const SALES_NAVIGATION: SalesNavItemConfig[] = [
     section: "sales",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/sales/quotes"),
+  },
+  {
+    id: "projects",
+    label: "Projects",
+    href: "/sales/projects",
+    icon: "projects",
+    section: "sales",
+    mobileSlot: "more",
+    mobileLabel: "Projects",
+    match: (p) => exactOrChild(p, "/sales/projects"),
+  },
+  {
+    id: "myWork",
+    label: "My work",
+    href: "/sales/work",
+    icon: "myWork",
+    section: "sales",
+    mobileSlot: "more",
+    mobileLabel: "My work",
+    match: (p) => exactOrChild(p, "/sales/work"),
   },
   {
     id: "calendar",
@@ -276,6 +301,7 @@ export function resolveSalesNavItems(
   };
   return items.flatMap((item) => {
     if (item.id === "quotes") return [];
+    if (item.id === "projects" || item.id === "myWork") return [];
     if (item.id === "leads") {
       return [{ ...item, label: "Inquiries" }, listingsItem, offersItem, transactionsItem];
     }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { executeFollowUpReminders } from "@/lib/follow-up-reminders";
 import { executeViewingReminders } from "@/lib/real-estate/viewing-reminders";
+import { executeVisitDayBeforeReminders } from "@/lib/work-projects/reminders";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -21,9 +22,10 @@ export async function GET(req: Request) {
   }
 
   try {
-    const [followUpCallbacks, viewingReminders] = await Promise.all([
+    const [followUpCallbacks, viewingReminders, visitReminders] = await Promise.all([
       executeFollowUpReminders({ t30Only: true }),
       executeViewingReminders(),
+      executeVisitDayBeforeReminders(),
     ]);
     const { runProactiveWorker } = await import("@/lib/agent/proactive");
     const { recoverStaleAgentConversations } = await import("@/lib/agent/stale-resume");
@@ -37,6 +39,7 @@ export async function GET(req: Request) {
       ok: true,
       followUpCallbacks,
       viewingReminders,
+      visitReminders,
       proactive,
       staleAgent,
       learning,

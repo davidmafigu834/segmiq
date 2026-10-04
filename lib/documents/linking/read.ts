@@ -56,6 +56,64 @@ async function enrichLink(
       subtitle = [data?.customer_name, data?.status].filter(Boolean).join(" · ") || row.match_reason;
       break;
     }
+    case "WORK_PROJECT": {
+      const { data } = await supabase
+        .from("work_projects")
+        .select("project_number, title, status")
+        .eq("id", row.entity_id)
+        .eq("client_id", clientId)
+        .maybeSingle();
+      label = (data?.project_number as string) ?? label;
+      subtitle = [data?.title, data?.status].filter(Boolean).join(" · ") || row.match_reason;
+      break;
+    }
+    case "WORK_PROJECT_PAYMENT": {
+      const { data } = await supabase
+        .from("work_project_payments")
+        .select("project_id, amount, status")
+        .eq("id", row.entity_id)
+        .eq("client_id", clientId)
+        .maybeSingle();
+      label = data ? `Payment ${data.amount}` : label;
+      subtitle = (data?.status as string) ?? row.match_reason;
+      if (data?.project_id) {
+        return { ...row, label, subtitle, href: `/client/projects/${data.project_id}?tab=payments` };
+      }
+      break;
+    }
+    case "WORK_PROJECT_INSTALLATION": {
+      const { data } = await supabase
+        .from("work_project_installations")
+        .select("installation_number, project_id, status")
+        .eq("id", row.entity_id)
+        .eq("client_id", clientId)
+        .maybeSingle();
+      label = (data?.installation_number as string) ?? label;
+      subtitle = (data?.status as string) ?? row.match_reason;
+      if (data?.project_id) {
+        return { ...row, label, subtitle, href: `/client/projects/${data.project_id}?tab=installation` };
+      }
+      break;
+    }
+    case "WORK_PROJECT_VISIT": {
+      const { data } = await supabase
+        .from("work_project_visits")
+        .select("title, project_id, visit_type")
+        .eq("id", row.entity_id)
+        .eq("client_id", clientId)
+        .maybeSingle();
+      label = (data?.title as string) ?? label;
+      subtitle = (data?.visit_type as string) ?? row.match_reason;
+      if (data?.project_id) {
+        return {
+          ...row,
+          label,
+          subtitle,
+          href: `/client/projects/${data.project_id}`,
+        };
+      }
+      break;
+    }
     default:
       break;
   }

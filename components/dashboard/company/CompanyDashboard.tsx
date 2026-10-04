@@ -71,6 +71,32 @@ export function CompanyDashboard({
         ))}
       </div>
 
+      {data.businessType !== "real_estate" && data.workProjects ? (
+        <section className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] px-4 py-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-[14px] font-semibold text-[var(--text-primary)]">Projects</h2>
+            <a href="/client/projects" className="text-[13px] font-semibold text-[var(--text-secondary)]">
+              View projects
+            </a>
+          </div>
+          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {[
+              ["Active", data.workProjects.active],
+              ["Scheduled", data.workProjects.scheduled],
+              ["In progress", data.workProjects.inProgress],
+              ["Awaiting customer", data.workProjects.awaitingCustomer],
+              ["On hold", data.workProjects.onHold],
+              ["Completed this month", data.workProjects.completedThisMonth],
+            ].map(([label, value]) => (
+              <div key={String(label)}>
+                <dt className="text-[11px] text-[var(--text-tertiary)]">{label}</dt>
+                <dd className="mt-1 text-[20px] font-semibold tabular-nums">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ) : null}
+
       <div className="hidden layout:block">
         <CompanyFocusAreasCard signals={data.focusAreas} viewAllHref={data.focusAreasViewAllHref} />
       </div>
