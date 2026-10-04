@@ -196,7 +196,7 @@ export async function loadProjectInstallation(actor: WorkProjectActor, projectId
   }
 
   const gaps = equipment
-    .filter((line) => line.track_inventory && quantityMissing(Number(line.quantity_required), Number(line.quantity_reserved) + Number(line.quantity_issued)) > 0)
+    .filter((line) => line.track_inventory && quantityMissing(Number(line.quantity_required), Number(line.quantity_reserved) + Number(line.quantity_issued), true) > 0)
     .map((line) => ({
       description: line.description,
       missing: quantityMissing(Number(line.quantity_required), Number(line.quantity_reserved) + Number(line.quantity_issued), true),
