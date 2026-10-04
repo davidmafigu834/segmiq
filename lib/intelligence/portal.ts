@@ -36,7 +36,7 @@ export async function answerPortalQuestion(identity: Identity, question: string,
   const text = question.trim();
   let answer = `${project.title} is at ${project.stage}. ${project.nextStep}`;
   if (/\b(paid|payment)\b/i.test(text) && !/\b(owe|balance|outstanding)\b/i.test(text)) {
-    answer = financials ? portalPaymentAnswer(financials.paid, financials.awaitingReview.reduce((sum, row) => sum + row.amount, 0), financials.currency) : "Payment amounts are not shown on this portal.";
+    answer = financials ? portalPaymentAnswer(financials.paid, (financials.awaitingReview ?? []).reduce((sum, row) => sum + row.amount, 0), financials.currency) : "Payment amounts are not shown on this portal.";
   } else if (/\b(owe|outstanding|balance)\b/i.test(text)) {
     answer = financials && financials.outstanding != null
       ? `${moneyLabel(financials.outstanding, financials.currency)} outstanding.`

@@ -81,7 +81,7 @@ export default async function PortalProjectPage({ params }: { params: { projectI
             <div><dt className="text-[#5c665f]">Outstanding</dt><dd className="mt-1 font-semibold">{money(financials.outstanding, financials.currency)}</dd></div>
           </dl>
           <ul className="mt-4 space-y-2 text-sm">
-            {financials.terms.map((term) => (
+            {(financials.terms ?? []).map((term) => (
               <li key={term.id} className="flex justify-between gap-3">
                 <span>{term.label}</span>
                 <span>{term.state} · {money(term.amount, financials.currency)}</span>
@@ -89,14 +89,14 @@ export default async function PortalProjectPage({ params }: { params: { projectI
             ))}
           </ul>
           <ul className="mt-4 space-y-2 text-sm text-[#5c665f]">
-            {financials.history.map((payment) => (
+            {(financials.history ?? []).map((payment) => (
               <li key={payment.id} className="flex items-center justify-between gap-3">
                 <span>{shortDate(payment.paidAt)} · {payment.method}{payment.reference ? ` · ${payment.reference}` : ""}</span>
                 <Link href={`/portal/projects/${project.id}/receipts/${payment.id}`} className="font-medium text-[#0f6b4c]">{money(payment.amount, financials.currency)}</Link>
               </li>
             ))}
           </ul>
-          {financials.awaitingReview.length ? <p className="mt-3 text-sm">A payment proof is waiting for the company to confirm.</p> : null}
+          {(financials.awaitingReview ?? []).length ? <p className="mt-3 text-sm">A payment proof is waiting for the company to confirm.</p> : null}
           {project.allowProof ? <div className="mt-4"><ProofForm projectId={project.id as string} currency={financials.currency} /></div> : null}
         </section>
       ) : project.financials && "paymentReceived" in project.financials ? (

@@ -9,7 +9,7 @@ export default async function PortalReceiptPage({ params }: { params: { projectI
   const identity = await requirePortal();
   const project = await getPortalProject(identity.clientId, identity.contactId, params.projectId, identity.settings);
   if (!project || !project.financials || !("history" in project.financials)) notFound();
-  const payment = project.financials.history.find((row) => row.id === params.paymentId);
+  const payment = (project.financials.history ?? []).find((row) => row.id === params.paymentId);
   if (!payment) notFound();
   return (
     <main className="mx-auto max-w-lg bg-white px-6 py-10 text-[#1a1f1c]">
