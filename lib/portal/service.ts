@@ -167,6 +167,20 @@ function whatsappLink(display: string | null | undefined) {
   return digits.length >= 8 ? `https://wa.me/${digits}` : null;
 }
 
+type PortalAmountFinancials = {
+  currency: string;
+  projectValue: number | null;
+  paid: number;
+  outstanding: number | null;
+  terms: Array<{ id: string; label: string; amount: number; state: string }>;
+  history: Array<{ id: string; amount: number; method: string; reference: string | null; paidAt: string | null }>;
+  awaitingReview: Array<{ id: string; amount: number; paidAt: string | null }>;
+};
+
+function portalAmountFinancials(input: PortalAmountFinancials): PortalAmountFinancials {
+  return input;
+}
+
 function paymentMethodLabel(method: string) {
   const labels: Record<string, string> = {
     BANK_TRANSFER: "Bank transfer",
@@ -492,21 +506,25 @@ export async function getPortalProject(clientId: string, contactId: string, proj
     site: [installation?.site_name || project.site_name, installation?.site_address || project.site_address].filter(Boolean).join(", ") || null,
     timeline,
     financials: settings.showProjectFinancials
-      ? {
+      ? portalAmountFinancials({
           currency: (project.currency as string) || "USD",
           projectValue: money.projectValue,
           paid: money.paid,
           outstanding: money.outstanding,
           terms: allocateTermPayments(terms.map((term) => ({ id: term.id, label: term.label, amount: term.computed })), money.paid),
           history: confirmed.map((row) => ({
-            id: row.id,
+            id: String(row.id),
             amount: Number(row.amount),
             method: paymentMethodLabel(String(row.payment_method || "")),
-            reference: row.reference,
-            paidAt: row.paid_at,
+            reference: row.reference == null ? null : String(row.reference),
+            paidAt: row.paid_at == null ? null : String(row.paid_at),
           })),
-          awaitingReview: pending.map((row) => ({ id: row.id, amount: Number(row.amount), paidAt: row.paid_at })),
-        }
+          awaitingReview: pending.map((row) => ({
+            id: String(row.id),
+            amount: Number(row.amount),
+            paidAt: row.paid_at == null ? null : String(row.paid_at),
+          })),
+        })
       : confirmed.length
         ? { paymentReceived: true as const }
         : null,

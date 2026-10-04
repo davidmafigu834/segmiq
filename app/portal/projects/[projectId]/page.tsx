@@ -97,7 +97,7 @@ export default async function PortalProjectPage({ params }: { params: { projectI
             ))}
           </ul>
           {(financials.awaitingReview ?? []).length ? <p className="mt-3 text-sm">A payment proof is waiting for the company to confirm.</p> : null}
-          {project.allowProof ? <div className="mt-4"><ProofForm projectId={project.id as string} currency={financials.currency} /></div> : null}
+          {project.allowProof ? <div className="mt-4"><ProofForm projectId={project.id as string} currency={financials.currency || "USD"} /></div> : null}
         </section>
       ) : project.financials && "paymentReceived" in project.financials ? (
         <section className="mt-4 rounded-3xl bg-white p-5"><p className="font-medium">Payment received</p></section>
