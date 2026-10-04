@@ -24,6 +24,7 @@ const SOURCE_LABEL: Record<LeadSource, string> = {
   REFERRAL: "Referral",
   WEBSITE: "Website",
   WHATSAPP_INBOUND: "WhatsApp",
+  CUSTOMER_PORTAL: "Customer portal",
 };
 
 const SOURCE_DOT: Record<LeadSource, string> = {
@@ -35,6 +36,7 @@ const SOURCE_DOT: Record<LeadSource, string> = {
   REFERRAL: "bg-purple-500",
   WEBSITE: "bg-cyan-500",
   WHATSAPP_INBOUND: "bg-emerald-500",
+  CUSTOMER_PORTAL: "bg-teal-700",
 };
 
 async function fetcher(url: string): Promise<AgencyReport> {
