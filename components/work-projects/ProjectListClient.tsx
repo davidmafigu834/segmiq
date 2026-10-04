@@ -8,7 +8,6 @@ import {
   WORK_PROJECT_STATUSES,
   WORK_PROJECT_WORKFLOWS,
   nextOperationalStep,
-  workProjectPriorityLabel,
   workProjectStatusLabel,
   workProjectWorkflowLabel,
   type WorkProjectStatus,

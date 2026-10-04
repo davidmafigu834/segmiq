@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { paymentGate, termAmount } from "@/lib/work-projects/commercial-rules";
+import { paymentGate } from "@/lib/work-projects/commercial-rules";
 import { canReadWorkProject, type WorkProjectActor } from "@/lib/work-projects/access";
 import { getWorkProject } from "@/lib/work-projects/service";
 import type { AttentionItem, ProjectFacts } from "@/lib/intelligence/rules";
