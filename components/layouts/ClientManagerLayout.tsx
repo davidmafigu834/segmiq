@@ -128,10 +128,36 @@ export async function ClientManagerLayout({
         { href: "/client/event-capture", label: "Event Capture", icon: "calendar" as const },
         { href: "/client/marketing", label: "Marketing", icon: "megaphone" as const },
         { href: "/client/reports", label: "Reports", icon: "bar-chart-3" as const },
+        { href: "/client/ai", label: "Intelligence", icon: "file-text" as const },
         { href: "/client/billing", label: "Billing", icon: "receipt" as const },
         ...(session?.alsoSells
           ? [{ href: "/sales/dashboard", label: "My sales", icon: "phone" as const }]
           : []),
+      ];
+
+  const navGroups = isRE
+    ? undefined
+    : [
+        {
+          label: "Sales",
+          items: primaryNav.filter((item) =>
+            ["/client/leads/pipeline", "/client/leads", "/client/inbox", "/client/quotations"].includes(item.href)
+          ),
+        },
+        {
+          label: "Delivery",
+          items: primaryNav.filter((item) => ["/client/projects", "/client/work"].includes(item.href)),
+        },
+        {
+          label: "Customers",
+          items: primaryNav.filter((item) => item.href === "/client/customers"),
+        },
+        {
+          label: "Company",
+          items: primaryNav.filter((item) =>
+            ["/client/dashboard", "/client/team", "/client/calendar", "/client/event-capture", "/client/marketing", "/client/reports", "/client/ai", "/client/billing", "/sales/dashboard"].includes(item.href)
+          ),
+        },
       ];
 
   const secondaryNav = [
@@ -178,6 +204,7 @@ export async function ClientManagerLayout({
       roleLabel="Company"
       primaryNav={primaryNav}
       secondaryNav={secondaryNav}
+      navGroups={navGroups}
       userName={session?.user?.name ?? "User"}
       userRoleLabel="Company Manager"
       breadcrumb={breadcrumb}

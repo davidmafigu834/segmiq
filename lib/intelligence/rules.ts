@@ -168,6 +168,142 @@ export function refuseInjection(): string {
   return "I can only answer from your own project, payments, installed equipment, warranties, and documents shared with you.";
 }
 
+const NAME_STOP = new Set([
+  "what", "when", "how", "which", "who", "is", "has", "have", "prepare", "draft", "create",
+  "show", "summarise", "summarize", "update", "follow", "schedule", "remind", "today",
+  "project", "installation", "customer",
+]);
+
+/** Prefer a project code or a named customer. Skip the first capitalised verb. */
+export function guessCustomerToken(text: string): string | null {
+  const code = text.match(/\b(PRJ-\d+)\b/i);
+  if (code) return code[1].toUpperCase();
+  const two = text.match(/\b([A-Z][a-z]+\s+[A-Z][a-z]+)['’]s\b/);
+  if (two && !NAME_STOP.has(two[1].split(" ")[0].toLowerCase())) return two[1];
+  const possessive = text.match(/\b([A-Z][a-z]+)['’]s\b/);
+  if (possessive && !NAME_STOP.has(possessive[1].toLowerCase())) return possessive[1];
+  const named = text.match(/\b(?:for|about|update|summarise|summarize|remind)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/);
+  if (named && !NAME_STOP.has(named[1].toLowerCase())) return named[1];
+  const words = text.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/g) ?? [];
+  return words.find((word) => !NAME_STOP.has(word.toLowerCase())) ?? null;
+}
+
+export type StaffIntent =
+  | "deny_payment_confirm"
+  | "operations_attention"
+  | "sales_focus"
+  | "create_task"
+  | "schedule_follow_up"
+  | "schedule_installation"
+  | "add_note"
+  | "draft_message"
+  | "installation_brief"
+  | "customer_update"
+  | "payment"
+  | "balance"
+  | "installation_date"
+  | "readiness"
+  | "quality"
+  | "support_brief"
+  | "policy"
+  | "summary";
+
+export function routeStaffIntent(text: string, opts: { hasProject: boolean; role: string }): StaffIntent {
+  if (/\b(confirm|mark).*(payment|paid)\b/i.test(text) || /\bpayment as confirmed\b/i.test(text)) return "deny_payment_confirm";
+  if (/\b(add|leave|record)\b/i.test(text) && /\bnote\b/i.test(text)) return "add_note";
+  if (/\b(task|remind)\b/i.test(text)) return "create_task";
+  if (/\bdraft\b/i.test(text) || /\bcustomer update\b/i.test(text)) return "customer_update";
+  if (/\bfollow up\b/i.test(text) || /\bfollow-up\b/i.test(text)) return "schedule_follow_up";
+  if (/\bschedule\b/i.test(text) && /\binstallation\b/i.test(text)) return "schedule_installation";
+  if (/\bbrief\b/i.test(text)) return "installation_brief";
+  if (/\b(qa|quality check|rework)\b/i.test(text)) return "quality";
+  if (/\bsupport\b/i.test(text) && opts.hasProject) return "support_brief";
+  if (/\b(company policy|normally|sop|company brain)\b/i.test(text)) return "policy";
+  if (/\b(paid|payment|deposit)\b/i.test(text) && !/\b(owe|outstanding|balance)\b/i.test(text)) return "payment";
+  if (/\b(owe|outstanding|balance)\b/i.test(text)) return "balance";
+  if (/\b(when|installation date|installing)\b/i.test(text)) return "installation_date";
+  if (!opts.hasProject && /\b(which|what|who|show)\b/i.test(text) && /\b(project|projects|job|jobs|installation|payment|stock|qa|handover|support|attention|focus|proof)\b/i.test(text)) {
+    if (opts.role === "SALESPERSON" && /\b(follow|customer|quote|lead)\b/i.test(text)) return "sales_focus";
+    return "operations_attention";
+  }
+  if ((opts.hasProject || guessCustomerToken(text)) && /\b(ready|blocked|missing|equipment)\b/i.test(text)) return "readiness";
+  if (!opts.hasProject && /\b(follow up|my customers|going cold|quotations)\b/i.test(text) && opts.role === "SALESPERSON") return "sales_focus";
+  if (!opts.hasProject && /\b(attention|focus|today|stock|handover|unresolved)\b/i.test(text)) {
+    return opts.role === "SALESPERSON" ? "sales_focus" : "operations_attention";
+  }
+  if (/\b(draft|whatsapp|message)\b/i.test(text)) return "draft_message";
+  return "summary";
+}
+
+export function paymentConfirmAnswer(role: string): string {
+  if (role === "SALESPERSON") return "You don't have permission to confirm customer payments.";
+  return "Confirming a customer payment stays on the payment record. I have not marked any money as received.";
+}
+
+export function qualityAnswer(outcome: string | null): string {
+  if (!outcome) return "No quality check is recorded.";
+  if (outcome === "REQUIRES_REWORK" || outcome === "FAIL") {
+    return `The latest quality check is ${outcome}. I cannot mark it as passed.`;
+  }
+  return `Latest quality check: ${outcome}.`;
+}
+
+export function warrantyExpiryAnswer(expiresAt: string | null): string {
+  if (!expiresAt) return "The warranty expiry date isn't recorded.";
+  const date = new Date(expiresAt);
+  if (Number.isNaN(date.getTime())) return "The warranty expiry date isn't recorded.";
+  const active = date.getTime() >= Date.now();
+  return active
+    ? `The warranty is active until ${date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}.`
+    : `The recorded warranty ended on ${date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}.`;
+}
+
+export function projectInsight(facts: ProjectFacts): string | null {
+  if (facts.depositSatisfied && facts.assessmentCompleted && facts.equipmentGaps.length) {
+    const gap = facts.equipmentGaps[0];
+    const item = gap && gap.missing === 1 ? `one ${gap.description}` : facts.equipmentGaps.map((row) => `${row.missing} ${row.description}`).join(", ");
+    return `Deposit is confirmed and the site assessment is complete, but ${item} is still missing. Resolve the stock shortage before scheduling installation.`;
+  }
+  if (facts.qaOutcome === "REQUIRES_REWORK" || facts.qaOutcome === "FAIL") {
+    return "The latest quality check requires rework before this installation can move on.";
+  }
+  if (!facts.installationScheduledAt && facts.depositSatisfied && facts.assessmentCompleted && facts.equipmentGaps.length === 0) {
+    return "Payment, assessment, and equipment are ready. No installation date has been confirmed yet.";
+  }
+  return null;
+}
+
+export function documentContentAnswer(snippet: string): string {
+  if (looksLikePromptInjection(snippet)) {
+    return "That document includes text asking me to ignore my rules. I am treating it as document content, and I will not follow it.";
+  }
+  const clean = snippet.replace(/\s+/g, " ").trim().slice(0, 500);
+  return clean || "I don't have readable text from a document you can see.";
+}
+
+const AMOUNT = /(?:[$£€]\s?\d[\d,]*(?:\.\d+)?)|(?:\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\b)/g;
+
+export function narrationKeepsGrounding(source: string, narrated: string): boolean {
+  const next = narrated.trim();
+  if (!next || next.length > 2500) return false;
+  if (looksLikePromptInjection(next)) return false;
+  if (/no installation date has been confirmed/i.test(source) && /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|next week)\b/i.test(next) && !/\bno installation date\b/i.test(next)) {
+    return false;
+  }
+  const allowed = new Set(source.match(AMOUNT) ?? []);
+  const used = next.match(AMOUNT) ?? [];
+  return used.every((amount) => allowed.has(amount));
+}
+
+export function stripTenantArgs(args: Record<string, unknown>): Record<string, unknown> {
+  const next = { ...args };
+  delete next.client_id;
+  delete next.clientId;
+  delete next.service_role;
+  delete next.serviceRole;
+  return next;
+}
+
 export function assertNoPrivateFacts(value: unknown): string[] {
   const banned = ["internal_notes", "internalNotes", "cost", "cost_price", "margin", "lead_score", "supplier", "on_hand", "reserved"];
   const found: string[] = [];

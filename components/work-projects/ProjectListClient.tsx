@@ -21,19 +21,6 @@ type ListItem = {
   ownerName: string | null;
 };
 
-function money(value: number | null, currency: string) {
-  if (value == null || !Number.isFinite(Number(value))) return "—";
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: currency || "USD",
-      maximumFractionDigits: 0,
-    }).format(Number(value));
-  } catch {
-    return `${currency} ${Number(value).toLocaleString()}`;
-  }
-}
-
 function dateLabel(value: string | null) {
   if (!value) return "—";
   const date = value.length <= 10 ? new Date(`${value}T00:00:00`) : new Date(value);
@@ -84,7 +71,7 @@ export function ProjectListClient({
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [loading, setLoading] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [focus, setFocus] = useState<"" | "active" | "scheduled" | "progress" | "attention" | "done">("");
 
   async function applyFilters(event?: React.FormEvent) {
     event?.preventDefault();
@@ -103,6 +90,30 @@ export function ProjectListClient({
   }
 
   const empty = items.length === 0;
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const counts = {
+    active: items.filter((item) => item.project.status !== "COMPLETED" && item.project.status !== "CANCELLED").length,
+    scheduled: items.filter((item) => item.project.status === "SCHEDULED").length,
+    progress: items.filter((item) => item.project.status === "IN_PROGRESS").length,
+    attention: items.filter((item) => {
+      const flags = projectAttention(item.project);
+      return flags.overdue || flags.startOverdue;
+    }).length,
+    done: items.filter((item) => item.project.status === "COMPLETED" && item.project.completed_at && new Date(item.project.completed_at) >= monthStart).length,
+  };
+  const visible = items.filter((item) => {
+    if (focus === "active") return item.project.status !== "COMPLETED" && item.project.status !== "CANCELLED";
+    if (focus === "scheduled") return item.project.status === "SCHEDULED";
+    if (focus === "progress") return item.project.status === "IN_PROGRESS";
+    if (focus === "attention") {
+      const flags = projectAttention(item.project);
+      return flags.overdue || flags.startOverdue;
+    }
+    if (focus === "done") return item.project.status === "COMPLETED";
+    return true;
+  });
 
   return (
     <div className="space-y-5">
@@ -114,42 +125,32 @@ export function ProjectListClient({
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="inline-flex min-h-11 items-center rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-white"
+            className="inline-flex min-h-11 items-center rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary focus-visible:ring-2 focus-visible:ring-sales-text-primary"
           >
             New project
           </button>
         ) : null}
       </div>
 
-      {operations ? (
-        <dl className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
-          {[
-            ["Today's visits", operations.visitsToday],
-            ["Upcoming assessments", operations.upcomingAssessments],
-            ["Overdue visits", operations.overdueVisits],
-            ["Overdue tasks", operations.overdueTasks],
-            ["No owner", operations.projectsWithoutOwner],
-            ["Waiting after assessment", operations.waitingAfterAssessment],
-            ["Awaiting deposit", operations.awaitingDeposit ?? 0],
-            ["Partially paid", operations.partiallyPaid ?? 0],
-            ["Ready for equipment", operations.readyForEquipment ?? 0],
-            ["Missing stock", operations.missingStock ?? 0],
-            ["Fully reserved", operations.fullyReserved ?? 0],
-            ["Installations today", operations.installationsToday ?? 0],
-            ["Installations in progress", operations.installationsInProgress ?? 0],
-            ["QA pending", operations.qaPending ?? 0],
-            ["Commissioning pending", operations.commissioningPending ?? 0],
-            ["Handover pending", operations.handoverPending ?? 0],
-            ["Ready to complete", operations.readyToComplete ?? 0],
-            ["Installation blocked", operations.installationsBlocked ?? 0],
-          ].map(([label, value]) => (
-            <div key={String(label)} className="rounded-sales-md border border-sales-border px-3 py-2">
-              <dt className="text-[11px] text-sales-text-muted">{label}</dt>
-              <dd className="text-[18px] font-semibold">{value}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
+      <div className="flex flex-wrap gap-x-6 gap-y-2 border-b border-sales-border pb-4">
+        {([
+          ["active", "Active", counts.active],
+          ["scheduled", "Scheduled", counts.scheduled],
+          ["progress", "In progress", counts.progress],
+          ["attention", "Need attention", counts.attention],
+          ["done", "Completed", counts.done],
+        ] as const).map(([key, label, value]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setFocus((current) => (current === key ? "" : key))}
+            className={`min-h-11 text-left focus-visible:ring-2 focus-visible:ring-sales-text-primary ${focus === key ? "text-sales-text-primary" : "text-sales-text-secondary"}`}
+          >
+            <span className="block text-[1.35rem] font-semibold tabular-nums text-sales-text-primary">{value}</span>
+            <span className="text-[13px]">{label}</span>
+          </button>
+        ))}
+      </div>
       {operations?.procurement?.length ? (
         <ul className="space-y-1 text-[13px] text-sales-text-secondary">
           {operations.procurement.slice(0, 6).map((row) => (
@@ -197,58 +198,40 @@ export function ProjectListClient({
       </form>
 
       {empty ? (
-        <div className="rounded-sales-lg border border-sales-border bg-sales-surface px-5 py-10">
-          <p className="text-[15px] font-semibold text-sales-text-primary">No projects yet</p>
-          <p className="mt-1 max-w-md text-[13px] text-sales-text-secondary">
-            Mark a deal won, then create a project to track delivery. Historical won deals stay as they are until you create a project.
+        <div className="py-10">
+          <p className="text-[1.25rem] font-semibold text-sales-text-primary">No delivery projects yet.</p>
+          <p className="mt-2 max-w-md text-[15px] text-sales-text-secondary">
+            When you win work, create a project to manage delivery from assessment to handover.
           </p>
         </div>
+      ) : visible.length === 0 ? (
+        <p className="py-8 text-[15px] text-sales-text-secondary">Nothing in this view.</p>
       ) : (
-        <>
-          <div className="space-y-3 md:hidden">
-            {items.map((item) => (
-              <ProjectCard key={item.project.id} item={item} href={`${basePath}/${item.project.id}`} />
-            ))}
-          </div>
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[860px] text-left text-[13px]">
-              <thead className="text-[11px] uppercase tracking-wide text-sales-text-muted">
-                <tr>
-                  {["Project", "Customer", "Type", "Status", "Owner", "Value", "Start", "Target", "Updated"].map((label) => (
-                    <th key={label} className="px-2 py-2 font-medium">{label}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => {
-                  const flags = projectAttention(item.project);
-                  return (
-                    <tr key={item.project.id} className="border-t border-sales-border-subtle">
-                      <td className="px-2 py-3">
-                        <Link href={`${basePath}/${item.project.id}`} className="font-semibold text-sales-text-primary hover:underline">
-                          {item.project.title}
-                        </Link>
-                        <p className="text-[12px] text-sales-text-muted">{item.project.project_number}</p>
-                      </td>
-                      <td className="px-2 py-3">{item.customerName || "—"}</td>
-                      <td className="px-2 py-3">{workProjectWorkflowLabel(item.project.workflow_key)}</td>
-                      <td className="px-2 py-3">
-                        {workProjectStatusLabel(item.project.status)}
-                        {flags.overdue ? <span className="ml-2 text-[12px] font-semibold text-sales-danger-fg">Overdue</span> : null}
-                        {flags.startOverdue ? <span className="ml-2 text-[12px] font-semibold text-sales-danger-fg">Start overdue</span> : null}
-                      </td>
-                      <td className="px-2 py-3">{item.ownerName || "—"}</td>
-                      <td className="px-2 py-3 tabular-nums">{money(item.project.project_value, item.project.currency)}</td>
-                      <td className="px-2 py-3">{dateLabel(item.project.planned_start_date || item.project.scheduled_start_at)}</td>
-                      <td className="px-2 py-3">{dateLabel(item.project.target_completion_date)}</td>
-                      <td className="px-2 py-3">{dateLabel(item.project.updated_at)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
+        <ul className="divide-y divide-sales-border-subtle">
+          {visible.map((item) => {
+            const flags = projectAttention(item.project);
+            const site = [item.project.site_name, item.project.site_city].filter(Boolean).join(", ");
+            const attention = flags.overdue ? "Target date has passed" : flags.startOverdue ? "Start date has passed" : null;
+            return (
+              <li key={item.project.id}>
+                <Link href={`${basePath}/${item.project.id}`} className="grid gap-2 py-5 md:grid-cols-[minmax(0,1.4fr)_minmax(12rem,0.8fr)] md:items-start">
+                  <div>
+                    <p className="text-[13px] text-sales-text-muted">{item.project.project_number}</p>
+                    <p className="mt-1 text-[1.2rem] font-semibold leading-snug text-sales-text-primary">{item.customerName || "Customer"}</p>
+                    <p className="text-[15px] text-sales-text-primary">{item.project.title}</p>
+                  </div>
+                  <div className="text-[14px]">
+                    <p className="font-semibold">{workProjectStatusLabel(item.project.status)}</p>
+                    <p className="mt-1 text-sales-text-secondary">{site || "Site not set"} · {item.ownerName || "Unassigned"}</p>
+                    <p className="text-sales-text-secondary">Target {dateLabel(item.project.target_completion_date)}</p>
+                    <p className="mt-2 text-sales-text-primary">{nextOperationalStep(item.project.status, item.project.next_step)}</p>
+                    {attention ? <p className="mt-1 font-medium">{attention}</p> : null}
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       {creating ? (
@@ -259,22 +242,6 @@ export function ProjectListClient({
         />
       ) : null}
     </div>
-  );
-}
-
-function ProjectCard({ item, href }: { item: ListItem; href: string }) {
-  const flags = projectAttention(item.project);
-  return (
-    <Link href={href} className="block rounded-sales-lg border border-sales-border bg-sales-surface p-4">
-      <p className="text-[12px] text-sales-text-muted">{item.project.project_number}</p>
-      <p className="mt-1 text-[15px] font-semibold text-sales-text-primary">{item.project.title}</p>
-      <p className="mt-1 text-[13px] text-sales-text-secondary">{item.customerName || "No customer"} · {workProjectStatusLabel(item.project.status)}</p>
-      <p className="mt-2 text-[13px] text-sales-text-secondary">
-        {money(item.project.project_value, item.project.currency)} · Target {dateLabel(item.project.target_completion_date)}
-      </p>
-      {flags.overdue ? <p className="mt-2 text-[12px] font-semibold text-sales-danger-fg">Overdue</p> : null}
-      {flags.startOverdue ? <p className="mt-1 text-[12px] font-semibold text-sales-danger-fg">Start overdue</p> : null}
-    </Link>
   );
 }
 

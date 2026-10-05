@@ -14,27 +14,29 @@ export default async function PortalSupportPage() {
   ]);
   return (
     <PortalFrame companyName={identity.companyName} logoUrl={identity.logoUrl} active="support">
-      <h1 className="text-4xl font-semibold tracking-tight">Support</h1>
-      <p className="mt-2 text-sm text-[#5c665f]">{identity.name}{identity.phone ? ` · ${identity.phone}` : ""}{identity.email ? ` · ${identity.email}` : ""}</p>
+      <h1 className="text-[2rem] font-semibold leading-tight">Support</h1>
+      <p className="mt-2 text-[15px] text-sales-text-secondary">{identity.name}{identity.phone ? ` · ${identity.phone}` : ""}{identity.email ? ` · ${identity.email}` : ""}</p>
       {identity.settings.allowSupport ? (
-        <section className="mt-6 rounded-3xl bg-white p-5">
+        <section className="mt-6">
           <SupportForm assets={assets.map((asset) => ({ id: asset.id as string, name: asset.name as string }))} />
-          {identity.whatsappHref ? <a href={identity.whatsappHref} className="mt-3 inline-block text-sm font-medium text-[#0f6b4c]">Continue on WhatsApp</a> : null}
+          {identity.whatsappHref ? <a href={identity.whatsappHref} className="mt-4 inline-flex min-h-11 items-center text-[15px] font-semibold">Continue on WhatsApp</a> : null}
         </section>
-      ) : <p className="mt-4 text-sm text-[#5c665f]">Support requests are handled directly by {identity.companyName}.</p>}
-      <ul className="mt-6 space-y-3">
-        {cases.map((item) => (
-          <li key={item.id as string} className="rounded-3xl bg-white p-5">
-            <p className="text-sm font-medium text-[#0f6b4c]">{item.status}</p>
-            <p className="mt-2 text-sm">{item.message}</p>
-            <p className="mt-2 text-xs text-[#5c665f]">{shortDate(item.createdAt as string)}</p>
-          </li>
-        ))}
-      </ul>
+      ) : <p className="mt-4 text-[16px] text-sales-text-secondary">Support requests are handled directly by {identity.companyName}.</p>}
+      {cases.length ? (
+        <ul className="mt-8 divide-y divide-sales-border">
+          {cases.map((item) => (
+            <li key={item.id as string} className="py-4">
+              <p className="text-[14px] font-medium">{String(item.status).replaceAll("_", " ")}</p>
+              <p className="mt-2 text-[15px]">{item.message}</p>
+              <p className="mt-2 text-[13px] text-sales-text-secondary">{shortDate(item.createdAt as string)}</p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {identity.settings.allowUpgradeRequests ? (
-        <section className="mt-6 rounded-3xl bg-white p-5">
-          <h2 className="text-lg font-semibold">Request maintenance or an upgrade</h2>
-          <p className="mt-1 text-sm text-[#5c665f]">Maintenance uses the form above. An upgrade starts a new conversation with the company.</p>
+        <section className="mt-8 border-t border-sales-border pt-6">
+          <h2 className="text-[1.25rem] font-semibold">Need more capacity?</h2>
+          <p className="mt-1 text-[15px] text-sales-text-secondary">Request an upgrade. Your installed system stays as it is until the company agrees the work.</p>
           <div className="mt-3"><UpgradeForm /></div>
         </section>
       ) : null}

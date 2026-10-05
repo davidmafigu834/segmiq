@@ -827,6 +827,11 @@ export async function executeManagerTool(opts: {
   }
 
   if (name === "get_operations_attention" || name === "get_project_readiness") {
+    const { intelligenceFlags } = await import("@/lib/intelligence/audit");
+    const flags = await intelligenceFlags(actor.clientId);
+    if (!flags.operations) {
+      return { name, ok: false, summary: {}, blocks: [{ type: "status", kind: "denied", message: "Operations intelligence is turned off for this company." }], phase: "Operations intelligence" };
+    }
     const { listOperationsAttention, loadProjectFacts } = await import("@/lib/intelligence/facts");
     const { installationReadinessAnswer, paymentAnswer } = await import("@/lib/intelligence/rules");
     if (name === "get_operations_attention") {

@@ -86,7 +86,7 @@ export function AgentComposerAssist({
     <div className="mx-3 mb-1 rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5">
       <div className="wa-kicker mb-1.5">Suggested reply</div>
       {draft ? (
-        <p className="line-clamp-4 text-[12px] leading-relaxed text-sales-text-primary">{draft}</p>
+        <p className="text-[15px] leading-6 text-sales-text-primary">{draft}</p>
       ) : null}
       {suggestions.length ? (
         <ul className="mt-1.5 flex flex-wrap gap-1">
@@ -109,7 +109,7 @@ export function AgentComposerAssist({
                 type="button"
                 disabled={busy !== null}
                 onClick={() => onEditDraft(draft)}
-                className="inline-flex h-7 items-center gap-1 rounded-[7px] border border-sales-border bg-sales-surface px-2 text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+                className="inline-flex min-h-11 items-center gap-1 rounded-sales-md bg-segmiq-lime px-3 text-[14px] font-semibold text-sales-text-primary"
               >
                 <Pencil size={11} /> Edit
               </button>
@@ -117,7 +117,7 @@ export function AgentComposerAssist({
                 type="button"
                 disabled={busy !== null}
                 onClick={() => void patch("send_draft")}
-                className="inline-flex h-7 items-center gap-1 rounded-[7px] bg-sales-brand px-2 text-[10px] font-semibold text-sales-brand-text"
+                className="inline-flex min-h-11 items-center gap-1 rounded-sales-md border border-sales-border px-3 text-[14px] font-semibold text-sales-text-primary"
               >
                 {busy === "send" ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
                 Send
@@ -126,7 +126,7 @@ export function AgentComposerAssist({
                 type="button"
                 disabled={busy !== null}
                 onClick={() => void patch("reject_draft")}
-                className="inline-flex h-7 items-center gap-1 rounded-[7px] px-2 text-[10px] font-medium text-sales-text-secondary hover:bg-sales-surface-hover"
+                className="inline-flex min-h-11 items-center gap-1 rounded-sales-md px-3 text-[14px] font-medium text-sales-text-secondary"
               >
                 {busy === "reject" ? <Loader2 size={11} className="animate-spin" /> : <X size={11} />}
                 Dismiss
@@ -138,7 +138,7 @@ export function AgentComposerAssist({
               type="button"
               disabled={busy !== null}
               onClick={() => void patch("apply_suggestions")}
-              className="inline-flex h-7 items-center gap-1 rounded-[7px] border border-sales-border bg-sales-surface px-2 text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+              className="inline-flex min-h-11 items-center gap-1 rounded-sales-md border border-sales-border bg-sales-surface px-3 text-[14px] font-medium text-sales-text-primary"
             >
               {busy === "apply" ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
               Apply actions

@@ -83,6 +83,121 @@ export async function loadProjectFacts(actor: WorkProjectActor, projectId: strin
   };
 }
 
+export async function resolveProjectQuery(actor: WorkProjectActor, token: string): Promise<Array<{ projectId: string; label: string }>> {
+  if (!actor.clientId) return [];
+  if (/^PRJ-\d+$/i.test(token)) {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("work_projects")
+      .select("id, title, project_number, contact_id")
+      .eq("client_id", actor.clientId)
+      .ilike("project_number", token)
+      .neq("status", "CANCELLED")
+      .limit(5);
+    const matches = [];
+    for (const project of data ?? []) {
+      const loaded = await getWorkProject(actor, project.id as string);
+      if (!loaded.ok || !canReadWorkProject(actor, loaded.data.scope)) continue;
+      matches.push({
+        projectId: project.id as string,
+        label: `${project.project_number || project.title}`,
+      });
+    }
+    return matches;
+  }
+  return resolveProjectsByName(actor, token);
+}
+
+export async function companyTimezone(clientId: string): Promise<string> {
+  const supabase = createAdminClient();
+  const { data } = await supabase.from("clients").select("timezone").eq("id", clientId).maybeSingle();
+  return (data?.timezone as string | undefined) || "Africa/Harare";
+}
+
+export async function loadLeadFacts(actor: WorkProjectActor, leadId: string) {
+  if (!actor.clientId) return null;
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("leads")
+    .select("id, name, status, follow_up_date, score, assigned_to_id")
+    .eq("id", leadId)
+    .eq("client_id", actor.clientId)
+    .maybeSingle();
+  if (!data) return null;
+  if (actor.role === "SALESPERSON" && data.assigned_to_id !== actor.userId) return null;
+  return {
+    leadId: data.id as string,
+    name: (data.name as string | null) || "Customer",
+    status: (data.status as string | null) || "Unknown",
+    followUp: (data.follow_up_date as string | null) ?? null,
+    score: data.score == null ? null : num(data.score),
+  };
+}
+
+export function leadSummary(lead: { name: string; status: string; followUp: string | null; score: number | null }): string {
+  const follow = lead.followUp ? `Follow-up is set for ${lead.followUp}.` : "No follow-up date is scheduled.";
+  const score = lead.score == null ? "No score is recorded." : `Score on record: ${lead.score}.`;
+  return `${lead.name} is ${lead.status}. ${follow} ${score}`;
+}
+
+export async function listSalesFocus(actor: WorkProjectActor): Promise<AttentionItem[]> {
+  if (!actor.clientId) return [];
+  const supabase = createAdminClient();
+  let query = supabase
+    .from("leads")
+    .select("id, name, follow_up_date, score, status, assigned_to_id")
+    .eq("client_id", actor.clientId)
+    .order("follow_up_date", { ascending: true })
+    .limit(80);
+  if (actor.role === "SALESPERSON") query = query.eq("assigned_to_id", actor.userId);
+  const { data } = await query;
+  const nowIso = new Date().toISOString();
+  const items: AttentionItem[] = [];
+  for (const row of data ?? []) {
+    const follow = row.follow_up_date as string | null;
+    if (row.status === "WON" || row.status === "LOST") continue;
+    if (follow && follow.slice(0, 10) < nowIso.slice(0, 10)) {
+      items.push({
+        kind: "FOLLOW_UP",
+        title: (row.name as string) || "Customer",
+        detail: "Follow-up is overdue and no later date replaces it",
+        projectId: row.id as string,
+      });
+    } else if (num(row.score) >= 70 && !follow) {
+      items.push({
+        kind: "HOT_LEAD",
+        title: (row.name as string) || "Customer",
+        detail: "High score and no follow-up scheduled",
+        projectId: row.id as string,
+      });
+    }
+  }
+  return items.slice(0, 12);
+}
+
+export async function loadSupportBrief(actor: WorkProjectActor, projectId: string): Promise<string | null> {
+  const facts = await loadProjectFacts(actor, projectId);
+  if (!facts) return null;
+  const supabase = createAdminClient();
+  const { data: cases } = await supabase
+    .from("support_cases")
+    .select("status, reason, created_at")
+    .eq("client_id", actor.clientId)
+    .eq("work_project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+  const lines = [
+    `Support brief`,
+    `Customer: ${facts.contactName}`,
+    `Project: ${facts.number || facts.title}`,
+    facts.installationStatus ? `Installation: ${facts.installationStatus}` : "Installation: not recorded",
+    facts.commissioningCompleted ? "Commissioning: complete" : "Commissioning: not recorded as complete",
+  ];
+  if (!cases?.length) lines.push("Support history: no cases linked to this project.");
+  else lines.push(...cases.map((row) => `Case ${row.status}: ${row.reason || "No reason recorded"}`));
+  return lines.join("\n");
+}
+
 export async function resolveProjectsByName(actor: WorkProjectActor, name: string): Promise<Array<{ projectId: string; label: string }>> {
   if (!actor.clientId) return [];
   const supabase = createAdminClient();

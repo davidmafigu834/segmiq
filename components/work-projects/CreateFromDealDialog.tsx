@@ -105,9 +105,10 @@ export function CreateFromDealDialog({
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 sm:items-center">
       <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-sales-xl bg-sales-surface p-5 sm:rounded-sales-xl">
         <p className="text-[13px] font-medium text-sales-text-secondary">Deal won</p>
-        <h2 className="mt-1 text-[18px] font-semibold text-sales-text-primary">
-          {solar ? "Create solar project" : "Ready to deliver the work?"}
+        <h2 className="mt-1 text-[1.75rem] font-semibold leading-tight text-sales-text-primary">
+          {draft?.customerName || "Ready to deliver the work?"}
         </h2>
+        <p className="mt-1 text-[15px] text-sales-text-secondary">{solar ? "Create the solar delivery project." : "Create a project to manage delivery from assessment to handover."}</p>
         {loading ? <p className="mt-4 text-[13px] text-sales-text-secondary">Loading the won deal…</p> : null}
         {draft ? (
           <div className="mt-4 space-y-2 text-[13px] text-sales-text-secondary">
@@ -125,7 +126,7 @@ export function CreateFromDealDialog({
         {openId ? (
           <button
             type="button"
-            className="mt-5 min-h-11 w-full rounded-sales-md bg-sales-text-primary text-[13px] font-semibold text-white"
+            className="mt-5 min-h-11 w-full rounded-sales-md bg-segmiq-lime text-[15px] font-semibold text-sales-text-primary"
             onClick={() => router.push(`${projectBasePath}/${openId}`)}
           >
             Open project
@@ -158,7 +159,7 @@ export function CreateFromDealDialog({
               <input type="date" value={target} onChange={(e) => setTarget(e.target.value)} className="mt-1 block min-h-11 w-full rounded-sales-md border border-sales-border px-3 text-[13px]" />
             </label>
             {error ? <p className="mt-3 text-[13px] text-sales-danger-fg">{error}</p> : null}
-            <button type="button" disabled={saving || !title.trim()} onClick={() => void create()} className="mt-5 min-h-11 w-full rounded-sales-md bg-sales-text-primary text-[13px] font-semibold text-white disabled:opacity-50">
+            <button type="button" disabled={saving || !title.trim()} onClick={() => void create()} className="mt-5 min-h-11 w-full rounded-sales-md bg-segmiq-lime text-[15px] font-semibold text-sales-text-primary disabled:opacity-50">
               {saving ? "Creating…" : "Create project"}
             </button>
           </>

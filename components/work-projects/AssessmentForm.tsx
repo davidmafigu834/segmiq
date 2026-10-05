@@ -102,16 +102,21 @@ export function AssessmentForm({
   }
 
   return (
-    <div className="space-y-4">
-      <Link href={`${basePath}/${projectId}`} className="text-[13px] font-medium text-sales-text-secondary">Back to project</Link>
-      <h1 className="text-[22px] font-semibold">Site assessment</h1>
-      <div className="flex gap-2 overflow-x-auto">
-        {SECTIONS.map((item) => (
-          <button key={item} type="button" onClick={() => setSection(item)} className={`min-h-11 shrink-0 rounded-full px-4 text-[13px] font-semibold ${section === item ? "bg-sales-text-primary text-white" : "bg-sales-surface text-sales-text-secondary"}`}>
-            {item}
-          </button>
-        ))}
+    <div className="space-y-6">
+      <Link href={`${basePath}/${projectId}`} className="inline-flex min-h-11 items-center text-[14px] font-medium text-sales-text-secondary">Back to project</Link>
+      <div>
+        <p className="text-[13px] text-sales-text-secondary">Site assessment</p>
+        <h1 className="mt-1 text-[2rem] font-semibold leading-tight">Record the site</h1>
       </div>
+      <div className="lg:grid lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-10">
+        <nav className="flex gap-2 overflow-x-auto border-b border-sales-border lg:flex-col lg:gap-0 lg:overflow-visible lg:border-0" aria-label="Assessment sections">
+          {SECTIONS.map((item, index) => (
+            <button key={item} type="button" onClick={() => setSection(item)} className={`min-h-11 shrink-0 whitespace-nowrap px-1 text-left text-[14px] font-semibold lg:px-0 ${section === item ? "text-sales-text-primary" : "text-sales-text-secondary"}`}>
+              <span className="mr-2 tabular-nums text-sales-text-muted">{index + 1}</span>{item}
+            </button>
+          ))}
+        </nav>
+        <div className="mt-5 space-y-4 lg:mt-0">
       {section === "Site" ? (
         <div className="space-y-3">
           <Field label="Installation address" value={data.site.address ?? ""} onChange={(value) => patch("site", { ...data.site, address: value })} />
@@ -160,19 +165,29 @@ export function AssessmentForm({
                   {SOLAR_PHOTO_CATEGORIES.map((item) => <option key={item} value={item}>{SOLAR_PHOTO_CATEGORY_LABEL[item]}</option>)}
                 </select>
               </label>
-              <input type="file" accept="image/*" capture="environment" className="block w-full text-[13px]" onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void upload(file);
-              }} />
+              <label className="flex min-h-24 cursor-pointer items-center justify-center rounded-sales-md border border-dashed border-sales-border text-[16px] font-semibold">
+                Add photo
+                <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void upload(file);
+                }} />
+              </label>
+              <ul className="space-y-1 text-[15px]">
+                {SOLAR_PHOTO_CATEGORIES.map((item) => {
+                  const count = data.photos.filter((photo) => photo.category === item).length;
+                  return count ? <li key={item}>{SOLAR_PHOTO_CATEGORY_LABEL[item]} · {count}</li> : null;
+                })}
+              </ul>
             </>
           ) : <p className="text-[13px] text-sales-text-secondary">Documents are not enabled, so photos cannot be stored for this company.</p>}
           <p className="text-[13px] text-sales-text-secondary">{data.photos.length} photo{data.photos.length === 1 ? "" : "s"} attached</p>
         </div>
       ) : null}
       {section === "Outcome" ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
+          <Summary data={data} />
           {(["suitable", "technical_review", "another_visit", "site_issue", "other"] as const).map((item) => (
-            <label key={item} className="flex min-h-11 items-center gap-2 text-[14px]">
+            <label key={item} className="flex min-h-11 items-center gap-2 text-[15px]">
               <input type="radio" name="outcome" checked={data.outcome === item} onChange={() => patch("outcome", item)} />
               {solarOutcomeLabel(item)}
             </label>
@@ -180,11 +195,19 @@ export function AssessmentForm({
           <Area label="Notes" value={data.outcomeNotes ?? ""} onChange={(value) => patch("outcomeNotes", value)} />
         </div>
       ) : null}
-      {error ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
-      {saved ? <p className="text-[13px] text-sales-text-secondary">{saved}</p> : null}
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <button type="button" disabled={busy} onClick={() => void save(false)} className="min-h-11 rounded-sales-md border border-sales-border px-4 text-[13px] font-semibold">Save draft</button>
-        <button type="button" disabled={busy} onClick={() => void save(true)} className="min-h-11 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-white">Complete assessment</button>
+      {error ? <p className="text-[14px] text-sales-danger-fg" role="alert">{error}</p> : null}
+      {saved ? <p className="text-[14px] text-sales-text-secondary">{saved}</p> : null}
+        </div>
+      </div>
+      <div className="sticky bottom-0 z-20 border-t border-sales-border bg-sales-surface py-3">
+        <div className="mx-auto flex max-w-3xl gap-2">
+          <button type="button" disabled={busy} onClick={() => void save(false)} className="min-h-11 flex-1 rounded-sales-md border border-sales-border px-4 text-[14px] font-semibold">Save draft</button>
+          {section === "Outcome" ? (
+            <button type="button" disabled={busy} onClick={() => void save(true)} className="min-h-11 flex-1 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary">Complete assessment</button>
+          ) : (
+            <button type="button" onClick={() => setSection(SECTIONS[SECTIONS.indexOf(section) + 1])} className="min-h-11 flex-1 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary">Continue</button>
+          )}
+        </div>
       </div>
       {completed && projectStatus === "SITE_ASSESSMENT" ? (
         <div className="rounded-sales-lg border border-sales-border p-4">
@@ -281,34 +304,63 @@ function Loads({
   notes: string;
   onNotes: (value: string) => void;
 }) {
+  const presets = ["Lights", "Fridge", "Wi-Fi", "TV", "Borehole", "Air conditioning", "Geyser"];
   const [name, setName] = useState("");
   const [watts, setWatts] = useState("");
-  const [essential, setEssential] = useState(true);
+  function find(label: string) {
+    return data.loads.find((load) => load.name.toLowerCase() === label.toLowerCase());
+  }
+  function toggle(label: string) {
+    const current = find(label);
+    if (current) onChange(data.loads.filter((load) => load !== current));
+    else onChange([...data.loads, { name: label, quantity: 1, watts: null, essential: true, notes: null }]);
+  }
+  function setWattsFor(label: string, value: string) {
+    onChange(data.loads.map((load) => load.name.toLowerCase() === label.toLowerCase() ? { ...load, watts: value.trim() ? Number(value) : null } : load));
+  }
+  const custom = data.loads.filter((load) => !presets.some((label) => label.toLowerCase() === load.name.toLowerCase()));
   return (
-    <div className="space-y-3">
-      <ul className="space-y-2">
-        {data.loads.map((load, index) => (
-          <li key={`${load.name}-${index}`} className="flex items-center justify-between gap-2 text-[14px]">
-            <span>{load.essential ? "Essential" : "Optional"} · {load.name}{load.watts != null ? ` · ${load.watts}W` : ""}</span>
-            <button type="button" className="min-h-11 px-2 text-[12px]" onClick={() => onChange(data.loads.filter((_, item) => item !== index))}>Remove</button>
-          </li>
-        ))}
+    <div className="space-y-4">
+      <p className="text-[16px] font-semibold">What needs to stay powered?</p>
+      <ul className="space-y-1">
+        {presets.map((label) => {
+          const selected = Boolean(find(label));
+          return (
+            <li key={label}>
+              <label className="flex min-h-11 items-center gap-3 text-[15px]">
+                <input type="checkbox" checked={selected} onChange={() => toggle(label)} />
+                {label}
+              </label>
+              {selected ? (
+                <label className="mb-2 ml-7 block text-[13px] text-sales-text-secondary">
+                  Watts, if known
+                  <input inputMode="numeric" value={find(label)?.watts ?? ""} onChange={(event) => setWattsFor(label, event.target.value)} className="mt-1 block min-h-11 w-full max-w-xs rounded-sales-md border border-sales-border px-3 text-[15px] text-sales-text-primary" />
+                </label>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
-      <div className="grid gap-2">
-        <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Load, for example borehole pump" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[14px]" />
-        <input value={watts} onChange={(event) => setWatts(event.target.value)} placeholder="Watts, if known" inputMode="numeric" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[14px]" />
-        <label className="flex min-h-11 items-center gap-2 text-[14px]"><input type="checkbox" checked={essential} onChange={(event) => setEssential(event.target.checked)} /> Essential</label>
+      {custom.map((load, index) => (
+        <div key={`${load.name}-${index}`} className="flex items-center justify-between gap-3 text-[15px]">
+          <span>{load.name}{load.watts != null ? ` · ${load.watts}W` : ""}</span>
+          <button type="button" className="min-h-11 px-2 text-[14px]" onClick={() => onChange(data.loads.filter((item) => item !== load))}>Remove</button>
+        </div>
+      ))}
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_8rem_auto]">
+        <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Another load" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[15px]" />
+        <input value={watts} onChange={(event) => setWatts(event.target.value)} placeholder="Watts" inputMode="numeric" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[15px]" />
         <button
           type="button"
-          className="min-h-11 rounded-sales-md border border-sales-border text-[13px] font-semibold"
+          className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[14px] font-semibold"
           onClick={() => {
             if (!name.trim()) return;
-            onChange([...data.loads, { name: name.trim(), quantity: 1, watts: watts.trim() ? Number(watts) : null, essential, notes: null }]);
+            onChange([...data.loads, { name: name.trim(), quantity: 1, watts: watts.trim() ? Number(watts) : null, essential: true, notes: null }]);
             setName("");
             setWatts("");
           }}
         >
-          Add load
+          Add
         </button>
       </div>
       <Area label="Other load notes" value={notes} onChange={onNotes} />

@@ -16,35 +16,24 @@ function money(value: number | null, currency: string) {
 }
 
 export function ProjectCommercialSummary({ commercial }: { commercial: ProjectCommercialSnapshot }) {
-  const trackedRequired = commercial.equipment.filter((row) => row.tracked).reduce((sum, row) => sum + row.required, 0);
-  const trackedReserved = commercial.equipment.filter((row) => row.tracked).reduce((sum, row) => sum + row.reserved, 0);
-  const missing = commercial.equipment.filter((row) => row.missing > 0);
-  return (
-    <section className="space-y-3">
-      {commercial.attention.length ? (
-        <ul className="space-y-1 text-[13px] font-medium text-sales-danger-fg">
-          {commercial.attention.map((line) => <li key={line}>{line}</li>)}
-        </ul>
-      ) : null}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div>
-          <p className="text-[12px] text-sales-text-muted">Payment</p>
-          <p className="mt-1 text-[14px] font-medium">{money(commercial.received, commercial.currency)} / {money(commercial.projectValue, commercial.currency)} received</p>
-          <p className="text-[13px] text-sales-text-secondary">{commercial.readiness.commercial}</p>
-        </div>
-        <div>
-          <p className="text-[12px] text-sales-text-muted">Equipment</p>
-          <p className="mt-1 text-[14px] font-medium">{commercial.readiness.equipment === "Not required" ? "Not required" : `${trackedReserved} / ${trackedRequired} reserved`}</p>
-          <p className="text-[13px] text-sales-text-secondary">{missing[0] ? `${missing[0].missing} ${missing[0].description} missing` : commercial.readiness.equipment}</p>
-        </div>
-        <div>
-          <p className="text-[12px] text-sales-text-muted">Next step</p>
-          <p className="mt-1 text-[14px] font-medium">{commercial.readiness.nextStep}</p>
-        </div>
-      </div>
-      {commercial.quoteDiffers ? <p className="text-[13px] font-medium">Project equipment differs from the accepted quotation.</p> : null}
-    </section>
-  );
+  if (!commercial.quoteDiffers) return null;
+  return <p className="text-[15px]">Project equipment differs from the accepted quotation. The quotation was not changed.</p>;
+}
+
+function paymentWord(status: string) {
+  const words: Record<string, string> = {
+    NOT_REQUIRED: "Not required",
+    AWAITING_PAYMENT: "Awaiting payment",
+    PARTIALLY_PAID: "Partially paid",
+    PAID: "Paid",
+    OVERPAID: "Overpaid",
+    REFUNDED: "Refunded",
+    PARTIALLY_REFUNDED: "Partially refunded",
+    PENDING: "Pending confirmation",
+    CONFIRMED: "Confirmed",
+    REVERSED: "Reversed",
+  };
+  return words[status] || status.replaceAll("_", " ");
 }
 
 export function ProjectPaymentsPanel({
@@ -52,11 +41,13 @@ export function ProjectPaymentsPanel({
   clientId,
   commercial,
   documentsEnabled,
+  customerName,
 }: {
   projectId: string;
   clientId: string;
   commercial: ProjectCommercialSnapshot;
   documentsEnabled: boolean;
+  customerName?: string;
 }) {
   const router = useRouter();
   const [amount, setAmount] = useState("");
@@ -66,6 +57,7 @@ export function ProjectPaymentsPanel({
   const [termId, setTermId] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
+  const [confirming, setConfirming] = useState<string | null>(null);
 
   async function post(url: string, body: unknown) {
     const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -80,12 +72,12 @@ export function ProjectPaymentsPanel({
 
   return (
     <div className="space-y-6">
-      <dl className="grid gap-3 sm:grid-cols-4">
-        <div><dt className="text-[12px] text-sales-text-muted">Project total</dt><dd className="text-[18px] font-semibold">{money(commercial.projectValue, commercial.currency)}</dd></div>
-        <div><dt className="text-[12px] text-sales-text-muted">Received</dt><dd className="text-[18px] font-semibold">{money(commercial.received, commercial.currency)}</dd></div>
-        <div><dt className="text-[12px] text-sales-text-muted">Outstanding</dt><dd className="text-[18px] font-semibold">{money(commercial.outstanding, commercial.currency)}</dd></div>
-        <div><dt className="text-[12px] text-sales-text-muted">Status</dt><dd className="text-[18px] font-semibold">{commercial.paymentStatus.replaceAll("_", " ")}</dd></div>
+      <dl className="grid gap-6 sm:grid-cols-3">
+        <div><dt className="text-[13px] text-sales-text-secondary">Project value</dt><dd className="mt-1 text-[1.75rem] font-semibold tabular-nums">{money(commercial.projectValue, commercial.currency)}</dd></div>
+        <div><dt className="text-[13px] text-sales-text-secondary">Received</dt><dd className="mt-1 text-[1.75rem] font-semibold tabular-nums">{money(commercial.received, commercial.currency)}</dd></div>
+        <div><dt className="text-[13px] text-sales-text-secondary">Outstanding</dt><dd className="mt-1 text-[1.75rem] font-semibold tabular-nums">{money(commercial.outstanding, commercial.currency)}</dd></div>
       </dl>
+      <p className="text-[15px] text-sales-text-secondary">{paymentWord(commercial.paymentStatus)}</p>
       {commercial.canManage ? (
         <div className="flex flex-wrap gap-2">
           <button type="button" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[13px] font-semibold" onClick={() => void post(`/api/work-projects/${projectId}/payment-terms`, { action: "import" })}>Import payment schedule</button>
@@ -94,12 +86,15 @@ export function ProjectPaymentsPanel({
       ) : null}
       <section>
         <h3 className="text-[15px] font-semibold">Milestones</h3>
-        {commercial.terms.length === 0 ? <p className="mt-1 text-[13px] text-sales-text-secondary">No payment schedule yet.</p> : null}
-        <ul className="mt-2 space-y-2">
+        {commercial.terms.length === 0 ? <p className="mt-2 text-[15px] text-sales-text-secondary">No payment schedule yet.</p> : null}
+        <ul className="mt-3 divide-y divide-sales-border-subtle">
           {commercial.terms.map((term) => (
-            <li key={term.id} className="rounded-sales-md border border-sales-border px-3 py-2 text-[13px]">
-              <span className="font-medium">{term.label}</span> · {money(term.resolvedAmount, commercial.currency)} · {term.satisfied ? "Paid" : "Pending"}
-              {term.overdue ? " · Overdue" : ""}
+            <li key={term.id} className="flex items-baseline justify-between gap-4 py-3">
+              <div>
+                <p className="text-[16px] font-semibold">{term.label}</p>
+                <p className="mt-1 text-[14px] text-sales-text-secondary">{term.satisfied ? "Paid" : term.overdue ? "Overdue" : "Pending"}</p>
+              </div>
+              <p className="text-[16px] font-semibold tabular-nums">{money(term.resolvedAmount, commercial.currency)}</p>
             </li>
           ))}
         </ul>
@@ -115,29 +110,53 @@ export function ProjectPaymentsPanel({
           notes: notes || null,
         });
       }}>
-        <h3 className="sm:col-span-2 text-[15px] font-semibold">Record payment</h3>
-        <input required type="number" min="0.01" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Amount" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[13px]" />
-        <input required type="datetime-local" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[13px]" />
-        <select value={method} onChange={(event) => setMethod(event.target.value)} className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[13px]">
-          {PAYMENT_METHODS.map((item) => <option key={item} value={item}>{item.replaceAll("_", " ")}</option>)}
-        </select>
-        <select value={termId} onChange={(event) => setTermId(event.target.value)} className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[13px]">
-          <option value="">Apply to milestone</option>
-          {commercial.terms.map((term) => <option key={term.id} value={term.id}>{term.label}</option>)}
-        </select>
-        <input value={reference} onChange={(event) => setReference(event.target.value)} placeholder="Reference" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[13px]" />
-        <input value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Notes" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[13px]" />
-        <button type="submit" className="min-h-11 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-white">Record as pending</button>
+        <h3 className="sm:col-span-2 text-[1.15rem] font-semibold">Record payment</h3>
+        <label className="text-[13px] text-sales-text-secondary">Amount
+          <input required type="number" min="0.01" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} className="mt-1 block min-h-11 w-full rounded-sales-md border border-sales-border px-3 text-[15px] text-sales-text-primary" />
+        </label>
+        <label className="text-[13px] text-sales-text-secondary">Date
+          <input required type="datetime-local" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} className="mt-1 block min-h-11 w-full rounded-sales-md border border-sales-border px-3 text-[15px] text-sales-text-primary" />
+        </label>
+        <label className="text-[13px] text-sales-text-secondary">Method
+          <select value={method} onChange={(event) => setMethod(event.target.value)} className="mt-1 block min-h-11 w-full rounded-sales-md border border-sales-border px-3 text-[15px] text-sales-text-primary">
+            {PAYMENT_METHODS.map((item) => <option key={item} value={item}>{item.replaceAll("_", " ")}</option>)}
+          </select>
+        </label>
+        <label className="text-[13px] text-sales-text-secondary">Milestone
+          <select value={termId} onChange={(event) => setTermId(event.target.value)} className="mt-1 block min-h-11 w-full rounded-sales-md border border-sales-border px-3 text-[15px] text-sales-text-primary">
+            <option value="">Not applied to a milestone</option>
+            {commercial.terms.map((term) => <option key={term.id} value={term.id}>{term.label}</option>)}
+          </select>
+        </label>
+        <label className="text-[13px] text-sales-text-secondary">Reference
+          <input value={reference} onChange={(event) => setReference(event.target.value)} className="mt-1 block min-h-11 w-full rounded-sales-md border border-sales-border px-3 text-[15px] text-sales-text-primary" />
+        </label>
+        <label className="text-[13px] text-sales-text-secondary">Notes
+          <input value={notes} onChange={(event) => setNotes(event.target.value)} className="mt-1 block min-h-11 w-full rounded-sales-md border border-sales-border px-3 text-[15px] text-sales-text-primary" />
+        </label>
+        <button type="submit" className="min-h-11 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary sm:col-span-2 sm:w-fit">Record payment</button>
+        <p className="text-[13px] text-sales-text-secondary sm:col-span-2">Recorded payments stay pending until a manager confirms them.</p>
       </form>
       <section>
         <h3 className="text-[15px] font-semibold">History</h3>
         <ul className="mt-2 space-y-2">
           {commercial.payments.map((payment) => (
-            <li key={payment.id} className="rounded-sales-md border border-sales-border px-3 py-3 text-[13px]">
-              <p className="font-medium">{money(Number(payment.amount), payment.currency)} · {payment.status} · {payment.payment_method.replaceAll("_", " ")}</p>
+            <li key={payment.id} className="border-b border-sales-border-subtle py-4 text-[14px]">
+              <p className="text-[16px] font-semibold">{money(Number(payment.amount), payment.currency)}</p>
+              <p className="mt-1 text-sales-text-secondary">{paymentWord(payment.status)} · {payment.payment_method.replaceAll("_", " ")}</p>
               <p className="text-sales-text-secondary">{new Date(payment.paid_at).toLocaleString()} {payment.reference ? `· ${payment.reference}` : ""} {payment.proofCount ? "· Proof attached" : ""}</p>
-              {commercial.canManage && payment.status === "PENDING" ? (
-                <button type="button" className="mt-2 min-h-11 font-semibold underline" onClick={() => void post(`/api/work-projects/${projectId}/payments/${payment.id}`, { action: "confirm" })}>Confirm payment</button>
+              {commercial.canManage && payment.status === "PENDING" && confirming !== payment.id ? (
+                <button type="button" className="mt-3 min-h-11 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary" onClick={() => setConfirming(payment.id)}>Review payment</button>
+              ) : null}
+              {confirming === payment.id ? (
+                <div className="mt-3 max-w-md">
+                  <p className="text-[16px] font-semibold">Confirm {money(Number(payment.amount), payment.currency)}?</p>
+                  <p className="mt-1 text-sales-text-secondary">This will count the payment toward {customerName || "this customer"}&apos;s project balance.</p>
+                  <div className="mt-3 flex gap-2">
+                    <button type="button" className="min-h-11 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary" onClick={() => { setConfirming(null); void post(`/api/work-projects/${projectId}/payments/${payment.id}`, { action: "confirm" }); }}>Confirm payment</button>
+                    <button type="button" className="min-h-11 rounded-sales-md border border-sales-border px-4 text-[14px]" onClick={() => setConfirming(null)}>Cancel</button>
+                  </div>
+                </div>
               ) : null}
               {commercial.canManage && payment.status === "CONFIRMED" ? (
                 <button type="button" className="mt-2 min-h-11 font-semibold underline" onClick={() => {
@@ -146,9 +165,9 @@ export function ProjectPaymentsPanel({
                 }}>Reverse payment</button>
               ) : null}
               {documentsEnabled ? (
-                <label className="mt-2 block text-[12px]">
-                  Attach proof
-                  <input type="file" accept="image/*,.pdf" className="mt-1 block w-full text-[13px]" onChange={(event) => {
+                <label className="mt-3 flex min-h-16 cursor-pointer items-center justify-center rounded-sales-md border border-dashed border-sales-border text-[15px] font-semibold">
+                  Add proof
+                  <input type="file" accept="image/*,.pdf" className="sr-only" onChange={(event) => {
                     const file = event.target.files?.[0];
                     if (!file) return;
                     void uploadCompanyDocument(clientId, file).then((uploaded) => {
@@ -199,15 +218,25 @@ export function ProjectEquipmentPanel({
   }
 
   const missing = commercial.equipment.filter((row) => row.missing > 0);
+  const procurement = missing.filter((row) => row.supplierName || row.leadTimeDays != null);
   return (
-    <div className="space-y-5">
-      {commercial.quoteDiffers ? <p className="text-[13px] font-medium">Project equipment differs from the accepted quotation. The quotation was not changed.</p> : null}
-      {missing.length ? (
+    <div className="space-y-6">
+      <div>
+        <p className="text-[13px] text-sales-text-secondary">Equipment readiness</p>
+        <p className="mt-1 text-[1.5rem] font-semibold">{commercial.readiness.equipment}</p>
+        {missing.length ? <p className="mt-1 text-[15px]">{missing.length === 1 ? "1 item missing" : `${missing.length} items missing`}</p> : null}
+      </div>
+      {commercial.quoteDiffers ? <p className="text-[14px]">Project equipment differs from the accepted quotation. The quotation was not changed.</p> : null}
+      {procurement.length ? (
         <section>
-          <h3 className="text-[15px] font-semibold">Procurement required</h3>
-          <ul className="mt-2 space-y-1 text-[13px]">
-            {missing.map((row) => (
-              <li key={row.id}>{row.missing} × {row.description}{row.supplierName ? ` · ${row.supplierName}` : ""}{row.supplierSku ? ` · ${row.supplierSku}` : ""}{row.leadTimeDays != null ? ` · ${row.leadTimeDays} days` : ""}</li>
+          <h3 className="text-[1.05rem] font-semibold">Needs procurement</h3>
+          <ul className="mt-2 space-y-2 text-[15px]">
+            {procurement.map((row) => (
+              <li key={row.id}>
+                {row.missing} × {row.description}
+                {row.supplierName ? <span className="block text-[14px] text-sales-text-secondary">Preferred supplier: {row.supplierName}</span> : null}
+                {row.leadTimeDays != null ? <span className="block text-[14px] text-sales-text-secondary">Lead time: {row.leadTimeDays} days</span> : null}
+              </li>
             ))}
           </ul>
         </section>
@@ -219,29 +248,26 @@ export function ProjectEquipmentPanel({
             <option value="">Stock location</option>
             {commercial.locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
           </select>
-          <button type="button" className="min-h-11 rounded-sales-md bg-sales-text-primary px-3 text-[13px] font-semibold text-white" onClick={() => void post({ action: "reserve", locationId })}>Reserve available equipment</button>
+          <button type="button" className="min-h-11 rounded-sales-md bg-segmiq-lime px-3 text-[14px] font-semibold text-sales-text-primary" onClick={() => void post({ action: "reserve", locationId })}>Reserve available equipment</button>
           <button type="button" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[13px] font-semibold" onClick={() => void post({ action: "release", equipmentId: null })}>Release reservation</button>
         </div>
       ) : null}
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-[13px]">
-          <thead className="text-[11px] uppercase tracking-wide text-sales-text-muted">
-            <tr>{["Item", "Required", "Available", "Reserved", "Missing", "Status"].map((label) => <th key={label} className="px-2 py-2 font-medium">{label}</th>)}</tr>
-          </thead>
-          <tbody>
-            {commercial.equipment.map((row) => (
-              <tr key={row.id} className="border-t border-sales-border">
-                <td className="px-2 py-2">{row.description}{row.cost != null ? ` · cost ${row.cost}` : ""}</td>
-                <td className="px-2 py-2">{row.required}</td>
-                <td className="px-2 py-2">{row.tracked ? row.available : "—"}</td>
-                <td className="px-2 py-2">{row.tracked ? row.reserved : "—"}</td>
-                <td className="px-2 py-2">{row.tracked ? row.missing : "—"}</td>
-                <td className="px-2 py-2">{row.status.replaceAll("_", " ")}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {commercial.equipment.length === 0 ? <p className="text-[15px] text-sales-text-secondary">No equipment list yet.</p> : null}
+      <ul className="divide-y divide-sales-border-subtle">
+        {commercial.equipment.map((row) => (
+          <li key={row.id} className="py-4">
+            <div className="flex items-baseline justify-between gap-4">
+              <p className="text-[16px] font-semibold">{row.description}</p>
+              <p className="text-[14px] font-medium">{!row.tracked ? "Not tracked" : row.missing > 0 ? `${row.missing} missing` : row.reserved >= row.required ? "Ready" : "Short"}</p>
+            </div>
+            <dl className="mt-2 grid grid-cols-3 gap-3 text-[14px]">
+              <div><dt className="text-sales-text-secondary">Required</dt><dd className="font-semibold tabular-nums">{row.required}</dd></div>
+              <div><dt className="text-sales-text-secondary">Available</dt><dd className="font-semibold tabular-nums">{row.tracked ? row.available : "—"}</dd></div>
+              <div><dt className="text-sales-text-secondary">Reserved</dt><dd className="font-semibold tabular-nums">{row.tracked ? row.reserved : "—"}</dd></div>
+            </dl>
+          </li>
+        ))}
+      </ul>
       {commercial.canManage ? (
         <form className="flex flex-wrap gap-2" onSubmit={(event) => {
           event.preventDefault();
@@ -252,8 +278,8 @@ export function ProjectEquipmentPanel({
           <button type="submit" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[13px] font-semibold">Add item</button>
         </form>
       ) : null}
-      {error ? <p className="text-[13px] text-sales-danger-fg">{error}</p> : null}
-      <p className="text-[12px] text-sales-text-muted">Reserving stock does not remove it from on hand. Issuing equipment happens in a later phase. Cancelling a project does not release stock until you confirm it here.</p>
+      {error ? <p className="text-[14px] text-sales-danger-fg">{error}</p> : null}
+      <p className="text-[13px] text-sales-text-secondary">Reserving stock keeps it available for this project. Issue it from Delivery when the installation starts. Cancelling a project does not release stock until you confirm it here.</p>
     </div>
   );
 }

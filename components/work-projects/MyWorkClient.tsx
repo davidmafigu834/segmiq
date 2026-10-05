@@ -38,6 +38,13 @@ function bucket(start: string | null, overdue: boolean) {
   return "Upcoming";
 }
 
+function clock(value: string | null) {
+  if (!value) return "Time not set";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Time not set";
+  return date.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" });
+}
+
 export function MyWorkClient({
   tasks,
   visits,
@@ -72,13 +79,16 @@ export function MyWorkClient({
         return (
           <section key={group}>
             <h2 className="text-[15px] font-semibold">{group}</h2>
-            {rows.length === 0 ? <p className="mt-1 text-[13px] text-sales-text-secondary">Nothing here.</p> : null}
-            <ul className="mt-2 space-y-2">
+            {rows.length === 0 ? <p className="mt-2 text-[15px] text-sales-text-secondary">{group === "Today" ? "Nothing scheduled today." : group === "Overdue" ? "Nothing overdue." : "Nothing coming up."}</p> : null}
+            <ul className="mt-3 divide-y divide-sales-border-subtle">
               {rows.map((item) => (
                 <li key={item.id}>
-                  <Link href={item.href} className="block min-h-11 rounded-sales-md border border-sales-border px-3 py-3">
-                    <p className="text-[14px] font-medium">{item.title}</p>
-                    <p className="mt-1 text-[13px] text-sales-text-secondary">{item.detail}</p>
+                  <Link href={item.href} className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-3 py-4">
+                    <p className="text-[15px] font-semibold tabular-nums">{clock(item.when)}</p>
+                    <div>
+                      <p className="text-[16px] font-semibold">{item.title}</p>
+                      <p className="mt-1 text-[14px] text-sales-text-secondary">{item.detail}</p>
+                    </div>
                   </Link>
                 </li>
               ))}

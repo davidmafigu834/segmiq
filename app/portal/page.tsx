@@ -13,19 +13,23 @@ export default async function PortalHomePage() {
   if (projects.length === 1) redirect(`/portal/projects/${projects[0].id}`);
   return (
     <PortalFrame companyName={identity.companyName} logoUrl={identity.logoUrl} active="home">
-      <h1 className="text-4xl font-semibold tracking-tight">{greeting(identity.name)}</h1>
-      <p className="mt-3 text-base text-[#5c665f]">Your projects with {identity.companyName}.</p>
-      <div className="mt-8 space-y-3">
-        {projects.length ? projects.map((project) => (
-          <Link key={project.id} href={`/portal/projects/${project.id}`} className="block rounded-3xl bg-white p-5 shadow-sm">
-            <p className="text-lg font-semibold">{project.title}</p>
-            <p className="mt-1 text-sm text-[#0f6b4c]">{project.stage}</p>
-            <p className="mt-3 text-sm text-[#5c665f]">{project.nextStep}</p>
-          </Link>
-        )) : (
-          <p className="rounded-3xl bg-white p-5 text-sm text-[#5c665f]">No projects are available on this portal yet.</p>
-        )}
-      </div>
+      <h1 className="text-[2rem] font-semibold leading-tight">{greeting(identity.name)}</h1>
+      <p className="mt-3 text-[16px] text-sales-text-secondary">Your projects with {identity.companyName}.</p>
+      {projects.length ? (
+        <ul className="mt-8 divide-y divide-sales-border">
+          {projects.map((project) => (
+            <li key={project.id}>
+              <Link href={`/portal/projects/${project.id}`} className="block py-5">
+                <p className="text-[1.25rem] font-semibold">{project.title}</p>
+                <p className="mt-1 text-[16px]">{project.stage}</p>
+                <p className="mt-2 text-[15px] text-sales-text-secondary">{project.nextStep}</p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-8 text-[16px] text-sales-text-secondary">No projects are available on this portal yet.</p>
+      )}
     </PortalFrame>
   );
 }

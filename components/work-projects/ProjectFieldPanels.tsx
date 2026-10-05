@@ -14,7 +14,6 @@ import {
   workProjectVisitStatusLabel,
   workProjectVisitTypeLabel,
 } from "@/lib/work-projects/constants";
-import { solarLoadSummary, solarOutcomeLabel } from "@/lib/work-projects/field-rules";
 import type { ProjectFieldSnapshot } from "@/lib/work-projects/field-service";
 
 function when(value: string | null) {
@@ -35,35 +34,14 @@ export function ProjectFieldSummary({
   basePath: string;
   projectId: string;
 }) {
-  const nextVisit = field.visits.find((visit) => visit.status === "SCHEDULED" && visit.scheduledStartAt);
-  const latest = [...field.assessments].reverse().find((row) => row.status === "COMPLETED") ?? field.assessments.at(-1);
-  const openTasks = field.tasks.filter((task) => task.status !== "COMPLETED" && task.status !== "CANCELLED").length;
+  if (projectStatus !== "SITE_ASSESSMENT" || !field.canManageTeam) return null;
   return (
-    <section className="space-y-3">
-      {field.attention.length ? (
-        <ul className="space-y-1 text-[13px] font-medium text-sales-danger-fg">
-          {field.attention.map((line) => <li key={line}>{line}</li>)}
-        </ul>
+    <section>
+      {projectStatus === "SITE_ASSESSMENT" && field.canManageTeam ? (
+        <Link href={`${basePath}/${projectId}?tab=visits`} className="inline-flex min-h-11 items-center text-[15px] font-semibold">
+          Schedule site assessment
+        </Link>
       ) : null}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div>
-          <p className="text-[12px] text-sales-text-muted">Next visit</p>
-          <p className="mt-1 text-[14px] font-medium">{nextVisit ? `${workProjectVisitTypeLabel(nextVisit.visitType)} · ${when(nextVisit.scheduledStartAt)}` : "None scheduled"}</p>
-          {nextVisit?.siteAddress ? <p className="text-[13px] text-sales-text-secondary">{nextVisit.siteAddress}</p> : null}
-        </div>
-        <div>
-          <p className="text-[12px] text-sales-text-muted">Assessment</p>
-          <p className="mt-1 text-[14px] font-medium">{latest ? latest.status === "COMPLETED" ? "Completed" : "Draft" : "Not started"}</p>
-          {latest?.data ? <p className="text-[13px] text-sales-text-secondary">{solarOutcomeLabel(latest.data.outcome) || solarLoadSummary(latest.data) || "—"}</p> : null}
-        </div>
-        <div>
-          <p className="text-[12px] text-sales-text-muted">Open tasks</p>
-          <p className="mt-1 text-[14px] font-medium">{openTasks}</p>
-          {projectStatus === "SITE_ASSESSMENT" && field.canManageTeam ? (
-            <Link href={`${basePath}/${projectId}?tab=visits`} className="mt-1 inline-flex min-h-11 items-center text-[13px] font-semibold underline">Schedule site assessment</Link>
-          ) : null}
-        </div>
-      </div>
     </section>
   );
 }
@@ -113,39 +91,39 @@ export function ProjectTasksPanel({
   return (
     <div className="space-y-5">
       {field.canManageTeam ? (
-        <form onSubmit={(event) => void createTask(event)} className="grid gap-2 sm:grid-cols-[1fr_160px_180px_auto]">
-          <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Task" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[13px]" />
-          <select value={type} onChange={(event) => setType(event.target.value)} className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[13px]">
+        <form onSubmit={(event) => void createTask(event)} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_11rem_auto]">
+          <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Task" aria-label="Task" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[15px]" />
+          <select value={type} onChange={(event) => setType(event.target.value)} aria-label="Task type" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[15px]">
             {WORK_PROJECT_TASK_TYPES.map((item) => <option key={item} value={item}>{workProjectTaskTypeLabel(item)}</option>)}
           </select>
-          <select value={assignee} onChange={(event) => setAssignee(event.target.value)} className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[13px]">
+          <select value={assignee} onChange={(event) => setAssignee(event.target.value)} aria-label="Assignee" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[15px]">
             <option value="">Unassigned</option>
             {members.map((member) => <option key={member.userId} value={member.userId}>{member.name || "Team member"}</option>)}
           </select>
-          <button className="min-h-11 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-white" type="submit">Add task</button>
+          <button className="min-h-11 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary" type="submit">Add task</button>
         </form>
       ) : null}
-      {error ? <p className="text-[13px] text-sales-danger-fg">{error}</p> : null}
+      {error ? <p className="text-[14px] text-sales-danger-fg">{error}</p> : null}
+      {field.tasks.length === 0 ? <p className="text-[16px] text-sales-text-secondary">Nothing to do here.</p> : null}
       {groups.map((status) => {
         const rows = field.tasks.filter((task) => task.status === status);
         if (!rows.length) return null;
         return (
           <section key={status}>
-            <h3 className="text-[13px] font-semibold">{workProjectTaskStatusLabel(status)}</h3>
-            <ul className="mt-2 space-y-2">
+            <h3 className="text-[15px] font-semibold">{workProjectTaskStatusLabel(status)}</h3>
+            <ul className="mt-1 divide-y divide-sales-border-subtle">
               {rows.map((task) => (
-                <li key={task.id} className="rounded-sales-md border border-sales-border px-3 py-3">
-                  <p className="text-[14px] font-medium">{task.title}</p>
-                  <p className="mt-1 text-[12px] text-sales-text-secondary">
-                    {workProjectTaskTypeLabel(task.taskType)} · {task.assigneeName || "Unassigned"}
-                    {task.dueAt ? ` · Due ${when(task.dueAt)}` : ""}
-                    {task.overdue ? " · Overdue" : ""}
-                  </p>
+                <li key={task.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
+                  <div>
+                    <p className="text-[16px] font-semibold">{task.title}</p>
+                    <p className="mt-1 text-[14px] text-sales-text-secondary">
+                      {task.assigneeName || "Unassigned"}
+                      {task.dueAt ? ` · Due ${when(task.dueAt)}` : ""}
+                      {task.overdue ? " · Overdue" : ""}
+                    </p>
+                  </div>
                   {status !== "COMPLETED" ? (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {status !== "IN_PROGRESS" ? <button type="button" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[12px] font-semibold" onClick={() => void setStatus(task.id, "IN_PROGRESS")}>Start</button> : null}
-                      <button type="button" className="min-h-11 rounded-sales-md border border-sales-border px-3 text-[12px] font-semibold" onClick={() => void setStatus(task.id, "COMPLETED")}>Complete</button>
-                    </div>
+                    <button type="button" className="min-h-11 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary" onClick={() => void setStatus(task.id, "COMPLETED")}>Complete</button>
                   ) : null}
                 </li>
               ))}
@@ -217,12 +195,12 @@ export function ProjectVisitsPanel({
   return (
     <div className="space-y-5">
       {field.canManageTeam ? (
-        <button type="button" className="min-h-11 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-white" onClick={() => setOpen((value) => !value)}>
+        <button type="button" className="min-h-11 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary" onClick={() => setOpen((value) => !value)}>
           {suggestAssessment ? "Schedule site assessment" : "Schedule visit"}
         </button>
       ) : null}
       {open ? (
-        <form onSubmit={(event) => void schedule(event)} className="space-y-3 rounded-sales-lg border border-sales-border p-4">
+        <form onSubmit={(event) => void schedule(event)} className="max-w-lg space-y-3 border-t border-sales-border pt-4">
           <label className="block text-[12px] font-medium">Visit type
             <select value={visitType} onChange={(event) => setVisitType(event.target.value)} className="mt-1 block min-h-11 w-full rounded-sales-md border border-sales-border px-3 text-[13px]">
               {WORK_PROJECT_VISIT_TYPES.map((item) => <option key={item} value={item}>{workProjectVisitTypeLabel(item)}</option>)}
@@ -251,23 +229,26 @@ export function ProjectVisitsPanel({
             Notify customer on WhatsApp
           </label>
           {error ? <p className="text-[13px] text-sales-danger-fg">{error}</p> : null}
-          <button type="submit" className="min-h-11 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-white">Confirm visit</button>
+          <button type="submit" className="min-h-11 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary">Schedule visit</button>
         </form>
       ) : null}
       {notice ? <p className="text-[13px] text-sales-text-secondary">{notice}</p> : null}
-      {groups.map(([label, rows]) => (
+      {groups.map(([label, rows]) => {
+        if (!rows.length && label !== "Upcoming") return null;
+        return (
         <section key={label}>
-          <h3 className="text-[13px] font-semibold">{label}</h3>
-          {rows.length === 0 ? <p className="mt-1 text-[13px] text-sales-text-secondary">None</p> : null}
-          <ul className="mt-2 space-y-2">
+          <h3 className="text-[15px] font-semibold">{label}</h3>
+          {rows.length === 0 ? <p className="mt-2 text-[15px] text-sales-text-secondary">No site visits scheduled.</p> : null}
+          <ul className="mt-1 divide-y divide-sales-border-subtle">
             {rows.map((visit) => (
-              <li key={visit.id} className="rounded-sales-md border border-sales-border px-3 py-3">
-                <p className="text-[14px] font-medium">{workProjectVisitTypeLabel(visit.visitType)}</p>
-                <p className="mt-1 text-[13px] text-sales-text-secondary">{when(visit.scheduledStartAt)} · {visit.siteAddress || "Site not set"}</p>
-                <p className="mt-1 text-[13px] text-sales-text-secondary">{workProjectVisitStatusLabel(visit.status)} · {visit.assigneeNames.join(", ") || "Unassigned"}{visit.overdue ? " · Visit overdue" : ""}</p>
-                {visit.outcomeSummary ? <p className="mt-1 text-[13px]">{visit.outcomeSummary}</p> : null}
+              <li key={visit.id} className="py-4">
+                <p className="text-[16px] font-semibold">{workProjectVisitTypeLabel(visit.visitType)}</p>
+                <p className="mt-1 text-[15px]">{when(visit.scheduledStartAt)}</p>
+                <p className="text-[14px] text-sales-text-secondary">{visit.siteAddress || "Site not set"} · {visit.assigneeNames.join(", ") || "Unassigned"}</p>
+                <p className="mt-1 text-[14px] text-sales-text-secondary">{workProjectVisitStatusLabel(visit.status)}{visit.overdue ? " · Overdue" : ""}</p>
+                {visit.outcomeSummary ? <p className="mt-1 text-[15px]">{visit.outcomeSummary}</p> : null}
                 {visit.visitType === "SITE_ASSESSMENT" ? (
-                  <Link href={`${basePath}/${projectId}/visits/${visit.id}`} className="mt-2 inline-flex min-h-11 items-center text-[13px] font-semibold underline">
+                  <Link href={`${basePath}/${projectId}/visits/${visit.id}`} className="mt-2 inline-flex min-h-11 items-center text-[15px] font-semibold">
                     {visit.canEditAssessment ? "Open assessment" : "View assessment"}
                   </Link>
                 ) : null}
@@ -275,8 +256,8 @@ export function ProjectVisitsPanel({
             ))}
           </ul>
         </section>
-      ))}
-      <p className="text-[12px] text-sales-text-muted">Installation is a visit type only. Installation execution is not part of this release.</p>
+        );
+      })}
       <VisitCancel projectId={projectId} visits={field.visits} canManage={field.canManageTeam} />
       <VisitReschedule projectId={projectId} visits={field.visits} canManage={field.canManageTeam} />
     </div>

@@ -37,6 +37,7 @@ import { SendAssetPanel } from "@/components/leads/SendAssetPanel";
 import { QuotationsPanel } from "@/components/leads/QuotationsPanel";
 import { HandoverBanner } from "@/components/leads/HandoverBanner";
 import { LeadBriefing } from "@/components/leads/LeadBriefing";
+import { AskSegmiq } from "@/components/intelligence/AskSegmiq";
 import { DealValueEditor } from "@/components/leads/DealValueEditor";
 import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
 import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
@@ -531,6 +532,7 @@ export function LeadDetailPanel({
               ) : null}
 
               <LeadBriefing leadId={activeLead.id} />
+              <AskSegmiq leadId={activeLead.id} />
               <LeadIntelligenceCard
                 leadId={activeLead.id}
                 canReprocess={role === "SUPER_ADMIN" || role === "CLIENT_MANAGER"}

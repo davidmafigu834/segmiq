@@ -1,11 +1,13 @@
 "use client";
 
 import { type HTMLAttributes, type ReactNode, useEffect, useState } from "react";
+import Link from "next/link";
 import { BriefcaseBusiness, CalendarDays, ExternalLink, Mail, MapPin, MoreHorizontal, Phone, ReceiptText, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { cn } from "@/lib/ui/cn";
 import { Avatar, Badge, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, ErrorState, IconButton, Skeleton } from "@/components/sales/ui";
 import { EntityDocumentsPanel } from "@/components/dashboard/company/documents/EntityDocumentsPanel";
+import { workProjectStatusLabel } from "@/lib/work-projects/constants";
 import type { CompanyCustomerActivity, CompanyCustomerDetail, CompanyCustomerRow } from "./types";
 
 function Section({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
@@ -55,6 +57,7 @@ export function CompanyCustomerDetailPanel({ row, detail, loading, error, onRetr
   const data = detail;
   const contactId = data?.id ?? row?.id ?? null;
   const [assets, setAssets] = useState<Array<{ id: string; name: string; assetType: string; quantity: number; siteName: string | null; installedAt: string | null; parentAssetId: string | null }>>([]);
+  const [projects, setProjects] = useState<Array<{ id: string; project_number: string; title: string; status: string }>>([]);
   const [portalNote, setPortalNote] = useState("");
   useEffect(() => {
     if (!contactId) return;
@@ -63,6 +66,13 @@ export function CompanyCustomerDetailPanel({ row, detail, loading, error, onRetr
       .then((response) => response.json())
       .then((payload) => { if (!cancelled) setAssets(payload.assets ?? []); })
       .catch(() => { if (!cancelled) setAssets([]); });
+    void fetch("/api/work-projects")
+      .then((response) => response.json())
+      .then((payload) => {
+        const rows = (payload.projects ?? []) as Array<{ project: { id: string; project_number: string; title: string; status: string; contact_id: string | null } }>;
+        if (!cancelled) setProjects(rows.filter((row) => row.project.contact_id === contactId).map((row) => row.project));
+      })
+      .catch(() => { if (!cancelled) setProjects([]); });
     return () => { cancelled = true; };
   }, [contactId]);
   const name = data?.name ?? row?.name ?? "Customer";
@@ -75,7 +85,8 @@ export function CompanyCustomerDetailPanel({ row, detail, loading, error, onRetr
       <Section><div className="grid grid-cols-2 gap-x-4 gap-y-3"><Value label="Total Deals" value={data?.totalDeals ?? row?.totalDeals ?? 0} strong /><Value label="Active Pipeline Value" value={(data?.activePipelineUnknownCount ?? row?.activePipelineUnknownCount ?? 0) > 0 && (data?.activePipelineKnown ?? row?.activePipelineKnown ?? 0) === 0 ? "Not estimated" : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(data?.activePipelineKnown ?? row?.activePipelineKnown ?? 0)} strong /><Value label="Won Deals" value={data?.wonDeals ?? row?.wonDeals ?? 0} strong /><Value label="Won Value" value={data?.customerValueLabel ?? row?.customerValueLabel ?? "—"} strong /></div>{(data?.activePipelineUnknownCount ?? row?.activePipelineUnknownCount ?? 0) > 0 ? <p className="mt-3 text-[11px] text-sales-text-muted">{data?.activePipelineUnknownCount ?? row?.activePipelineUnknownCount} active Deal{(data?.activePipelineUnknownCount ?? row?.activePipelineUnknownCount) === 1 ? "" : "s"} awaiting an estimate.</p> : null}</Section>
       <Section><h3 className="mb-3 text-[12px] font-semibold text-sales-text-primary">Recent Activity</h3>{data?.recentActivity?.length ? <div className="space-y-3">{data.recentActivity.map((activity) => <div key={activity.id} className="flex gap-2.5"><ActivityIcon activity={activity} /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><p className="text-[12px] font-medium text-sales-text-primary">{activity.title}</p><span className="shrink-0 text-[10px] text-sales-text-muted">{activity.timeLabel}</span></div>{activity.detail ? <p className="mt-0.5 line-clamp-2 text-[11px] text-sales-text-secondary">{activity.detail}</p> : null}</div></div>)}</div> : <p className="text-[12px] text-sales-text-muted">No meaningful interactions recorded yet.</p>}<button type="button" className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-sales-info-fg hover:underline" onClick={onViewDetails}>View all activities <span aria-hidden>→</span></button></Section>
       {contactId ? <Section><h3 className="mb-2 text-[12px] font-semibold text-sales-text-primary">Customer portal</h3><button type="button" className="min-h-11 rounded-sales-md bg-sales-text-primary px-3 text-[13px] font-medium text-white" onClick={() => { setPortalNote(""); void fetch(`/api/contacts/${contactId}/portal`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "invite" }) }).then(async (response) => { const payload = await response.json(); setPortalNote(response.ok ? payload.link || "Portal access sent." : payload.error || "Portal access could not be sent."); }).catch(() => setPortalNote("Portal access could not be sent.")); }}>Send portal access</button>{portalNote ? <p className="mt-2 break-all text-[12px] text-sales-text-secondary">{portalNote}</p> : null}</Section> : null}
-      {assets.length ? <Section><h3 className="mb-3 text-[12px] font-semibold text-sales-text-primary">Installed systems</h3><div className="space-y-2">{assets.filter((asset) => !asset.parentAssetId).map((asset) => <div key={asset.id}><p className="text-[13px] font-medium text-sales-text-primary">{asset.name}</p><p className="text-[12px] text-sales-text-secondary">{assets.filter((child) => child.parentAssetId === asset.id).map((child) => `${child.quantity} × ${child.name}`).join(", ") || asset.assetType}</p>{asset.installedAt ? <p className="text-[11px] text-sales-text-muted">Installed {new Date(asset.installedAt).toLocaleDateString()}</p> : null}{asset.siteName ? <p className="text-[11px] text-sales-text-muted">{asset.siteName}</p> : null}</div>)}</div></Section> : null}
+      {projects.length ? <Section><h3 className="mb-3 text-[15px] font-semibold text-sales-text-primary">Projects</h3><ul className="divide-y divide-sales-border-subtle">{projects.map((project) => <li key={project.id}><Link href={`/client/projects/${project.id}`} className="block py-3"><p className="text-[13px] text-sales-text-muted">{project.project_number}</p><p className="text-[16px] font-semibold text-sales-text-primary">{project.title}</p><p className="text-[14px] text-sales-text-secondary">{workProjectStatusLabel(project.status)}</p></Link></li>)}</ul></Section> : null}
+      {assets.length ? <Section><h3 className="mb-3 text-[15px] font-semibold text-sales-text-primary">Installed systems</h3><div className="space-y-2">{assets.filter((asset) => !asset.parentAssetId).map((asset) => <div key={asset.id}><p className="text-[16px] font-semibold text-sales-text-primary">{asset.name}</p><p className="text-[14px] text-sales-text-secondary">{assets.filter((child) => child.parentAssetId === asset.id).map((child) => `${child.quantity} × ${child.name}`).join(", ") || asset.assetType}</p>{asset.installedAt ? <p className="text-[13px] text-sales-text-muted">Installed {new Date(asset.installedAt).toLocaleDateString()}</p> : null}{asset.siteName ? <p className="text-[13px] text-sales-text-muted">{asset.siteName}</p> : null}</div>)}</div></Section> : null}
       {clientId && (data?.id ?? row?.id) ? <Section><EntityDocumentsPanel clientId={clientId} entityType="CUSTOMER" entityId={data?.id ?? row!.id} entityLabel={name} compact /></Section> : null}
     </div><div className="flex gap-2 border-t border-sales-border-subtle p-4"><Button variant="secondary" size="md" className="flex-1" onClick={onViewDetails}>View full details</Button><Button variant="primary" size="md" className="flex-1" onClick={onViewDeals}>View Deals ({data?.totalDeals ?? row?.totalDeals ?? 0})</Button></div></>}
   </aside>;

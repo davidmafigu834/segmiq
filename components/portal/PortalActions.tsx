@@ -9,7 +9,7 @@ export function LogoutButton() {
   return (
     <button
       type="button"
-      className="text-sm text-[#5c665f]"
+      className="min-h-11 text-[14px] font-medium text-sales-text-secondary"
       onClick={async () => {
         await fetch("/api/portal/logout", { method: "POST" });
         router.push("/portal/enter");
@@ -67,7 +67,7 @@ export function EnterForm({ token }: { token: string | null }) {
             inputMode="tel"
             autoComplete="tel"
             required
-            className="mt-2 block min-h-12 w-full rounded-2xl border border-[#e4ddd0] bg-white px-4 text-base"
+            className="mt-2 block min-h-12 w-full rounded-sales-md border border-sales-border bg-sales-surface px-4 text-[16px]"
           />
         </label>
       )}
@@ -80,12 +80,12 @@ export function EnterForm({ token }: { token: string | null }) {
             inputMode="numeric"
             autoComplete="one-time-code"
             required
-            className="mt-2 block min-h-12 w-full rounded-2xl border border-[#e4ddd0] bg-white px-4 text-base tracking-[0.3em]"
+            className="mt-2 block min-h-12 w-full rounded-sales-md border border-sales-border bg-sales-surface px-4 text-[16px] tracking-[0.3em]"
           />
         </label>
       ) : null}
-      {error ? <p className="text-sm text-[#8a3b2d]">{error}</p> : null}
-      <button type="submit" disabled={busy} className="min-h-12 w-full rounded-full bg-[#0f6b4c] text-sm font-semibold text-white">
+      {error ? <p className="text-[14px] text-sales-danger-fg">{error}</p> : null}
+      <button type="submit" disabled={busy} className="min-h-12 w-full rounded-sales-md bg-segmiq-lime text-[15px] font-semibold text-sales-text-primary">
         {sent ? "Open portal" : "Send code"}
       </button>
     </form>
@@ -117,19 +117,28 @@ export function ProofForm({ projectId, currency }: { projectId: string; currency
         router.refresh();
       }}
     >
-      <input name="amount" type="number" min="0.01" step="0.01" required placeholder={`Amount (${currency})`} className="min-h-12 w-full rounded-2xl border border-[#e4ddd0] bg-white px-4" />
-      <select name="method" className="min-h-12 w-full rounded-2xl border border-[#e4ddd0] bg-white px-4">
+      <label className="block text-[14px] text-sales-text-secondary">Amount
+        <input name="amount" type="number" min="0.01" step="0.01" required className="mt-1 min-h-12 w-full rounded-sales-md border border-sales-border bg-sales-surface px-4 text-[16px] text-sales-text-primary" />
+      </label>
+      <label className="block text-[14px] text-sales-text-secondary">Method
+      <select name="method" className="mt-1 min-h-12 w-full rounded-sales-md border border-sales-border bg-sales-surface px-4 text-[16px] text-sales-text-primary">
         <option value="BANK_TRANSFER">Bank transfer</option>
         <option value="MOBILE_MONEY">Mobile money</option>
         <option value="CASH">Cash</option>
         <option value="CARD">Card</option>
         <option value="OTHER">Other</option>
       </select>
-      <input name="reference" placeholder="Reference, if you have one" className="min-h-12 w-full rounded-2xl border border-[#e4ddd0] bg-white px-4" />
-      <input name="file" type="file" required accept="image/*,.pdf" className="block w-full text-sm" />
-      {error ? <p className="text-sm text-[#8a3b2d]">{error}</p> : null}
-      {done ? <p className="text-sm text-[#0f6b4c]">Sent for review. It will show as received once the company confirms it.</p> : null}
-      <button type="submit" disabled={busy} className="min-h-12 w-full rounded-full bg-[#1a1f1c] text-sm font-semibold text-white">
+      </label>
+      <label className="block text-[14px] text-sales-text-secondary">Reference
+        <input name="reference" className="mt-1 min-h-12 w-full rounded-sales-md border border-sales-border bg-sales-surface px-4 text-[16px] text-sales-text-primary" />
+      </label>
+      <label className="flex min-h-24 cursor-pointer items-center justify-center rounded-sales-md border border-dashed border-sales-border text-[16px] font-semibold">
+        Add proof
+        <input name="file" type="file" required accept="image/*,.pdf" className="sr-only" />
+      </label>
+      {error ? <p className="text-[14px] text-sales-danger-fg">{error}</p> : null}
+      {done ? <p className="text-[14px] text-sales-text-secondary">Sent for review. It will show as received once the company confirms it.</p> : null}
+      <button type="submit" disabled={busy} className="min-h-12 w-full rounded-sales-md bg-segmiq-lime text-[15px] font-semibold text-sales-text-primary">
         Upload payment proof
       </button>
     </form>
@@ -173,21 +182,27 @@ export function SupportForm({
         router.refresh();
       }}
     >
-      <select name="category" className="min-h-12 w-full rounded-2xl border border-[#e4ddd0] bg-white px-4">
+      <label className="block text-[14px] text-sales-text-secondary">What do you need?
+      <select name="category" className="mt-1 min-h-12 w-full rounded-sales-md border border-sales-border bg-sales-surface px-4 text-[16px] text-sales-text-primary">
         {PORTAL_SUPPORT_CATEGORIES.map((item) => (
           <option key={item.id} value={item.id}>{item.label}</option>
         ))}
       </select>
-      <select name="assetId" className="min-h-12 w-full rounded-2xl border border-[#e4ddd0] bg-white px-4">
+      </label>
+      <label className="block text-[14px] text-sales-text-secondary">Which item needs help?
+      <select name="assetId" className="mt-1 min-h-12 w-full rounded-sales-md border border-sales-border bg-sales-surface px-4 text-[16px] text-sales-text-primary">
         <option value="">Not sure</option>
         {assets.map((asset) => (
           <option key={asset.id} value={asset.id}>{asset.name}</option>
         ))}
       </select>
-      <textarea name="message" required minLength={4} rows={4} placeholder="Tell us what is happening" className="w-full rounded-2xl border border-[#e4ddd0] bg-white px-4 py-3" />
-      {error ? <p className="text-sm text-[#8a3b2d]">{error}</p> : null}
-      {done ? <p className="text-sm text-[#0f6b4c]">Received. The company can see this request.</p> : null}
-      <button type="submit" className="min-h-12 w-full rounded-full bg-[#0f6b4c] text-sm font-semibold text-white">Send request</button>
+      </label>
+      <label className="block text-[14px] text-sales-text-secondary">What is happening?
+        <textarea name="message" required minLength={4} rows={4} className="mt-1 w-full rounded-sales-md border border-sales-border bg-sales-surface px-4 py-3 text-[16px] text-sales-text-primary" />
+      </label>
+      {error ? <p className="text-[14px] text-sales-danger-fg">{error}</p> : null}
+      {done ? <p className="text-[14px] text-sales-text-secondary">Received. The company can see this request.</p> : null}
+      <button type="submit" className="min-h-12 w-full rounded-sales-md bg-segmiq-lime text-[15px] font-semibold text-sales-text-primary">Send request</button>
     </form>
   );
 }
@@ -218,15 +233,19 @@ export function UpgradeForm({ projectId }: { projectId?: string | null }) {
         setDone(true);
       }}
     >
-      <select name="intent" className="min-h-12 w-full rounded-2xl border border-[#e4ddd0] bg-white px-4">
+      <label className="block text-[14px] text-sales-text-secondary">What would help?
+      <select name="intent" className="mt-1 min-h-12 w-full rounded-sales-md border border-sales-border bg-sales-surface px-4 text-[16px] text-sales-text-primary">
         {PORTAL_UPGRADE_INTENTS.map((intent) => (
           <option key={intent} value={intent}>{intent}</option>
         ))}
       </select>
-      <textarea name="detail" rows={3} placeholder="Anything else we should know" className="w-full rounded-2xl border border-[#e4ddd0] bg-white px-4 py-3" />
-      {error ? <p className="text-sm text-[#8a3b2d]">{error}</p> : null}
-      {done ? <p className="text-sm text-[#0f6b4c]">Request sent. Someone from the company will follow up. Your installed system is unchanged.</p> : null}
-      <button type="submit" className="min-h-12 w-full rounded-full bg-[#1a1f1c] text-sm font-semibold text-white">Request upgrade</button>
+      </label>
+      <label className="block text-[14px] text-sales-text-secondary">Anything else
+        <textarea name="detail" rows={3} className="mt-1 w-full rounded-sales-md border border-sales-border bg-sales-surface px-4 py-3 text-[16px] text-sales-text-primary" />
+      </label>
+      {error ? <p className="text-[14px] text-sales-danger-fg">{error}</p> : null}
+      {done ? <p className="text-[14px] text-sales-text-secondary">Request sent. Someone from the company will follow up. Your installed system is unchanged.</p> : null}
+      <button type="submit" className="min-h-12 w-full rounded-sales-md bg-segmiq-lime text-[15px] font-semibold text-sales-text-primary">Request an upgrade</button>
     </form>
   );
 }

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export async function logAiAction(input: {
   clientId: string;
   userId: string | null;
+  conversationId?: string | null;
   toolName: string;
   riskLevel: "READ" | "PREPARE" | "WRITE_LOW" | "WRITE_HIGH";
   argumentsSummary: Record<string, unknown>;
@@ -10,22 +11,27 @@ export async function logAiAction(input: {
   approvalRequired: boolean;
   status: "COMPLETED" | "PENDING" | "FAILED" | "CANCELLED";
 }) {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("ai_action_log")
-    .insert({
-      client_id: input.clientId,
-      user_id: input.userId,
-      tool_name: input.toolName,
-      risk_level: input.riskLevel,
-      arguments_summary: input.argumentsSummary,
-      result_summary: input.resultSummary.slice(0, 1000),
-      approval_required: input.approvalRequired,
-      status: input.status,
-    })
-    .select("id")
-    .single();
-  return (data?.id as string | undefined) ?? null;
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("ai_action_log")
+      .insert({
+        client_id: input.clientId,
+        user_id: input.userId,
+        conversation_id: input.conversationId ?? null,
+        tool_name: input.toolName,
+        risk_level: input.riskLevel,
+        arguments_summary: input.argumentsSummary,
+        result_summary: input.resultSummary.slice(0, 1000),
+        approval_required: input.approvalRequired,
+        status: input.status,
+      })
+      .select("id")
+      .single();
+    return (data?.id as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function logAiUsage(input: {
@@ -36,16 +42,29 @@ export async function logAiUsage(input: {
   inputTokens?: number;
   outputTokens?: number;
 }) {
-  const supabase = createAdminClient();
-  await supabase.from("ai_usage_events").insert({
-    client_id: input.clientId,
-    user_id: input.userId,
-    feature: input.feature,
-    model: input.model,
-    input_tokens: input.inputTokens ?? 0,
-    output_tokens: input.outputTokens ?? 0,
-    estimated_cost: 0,
-  });
+  try {
+    const supabase = createAdminClient();
+    const inputTokens = input.inputTokens ?? 0;
+    const outputTokens = input.outputTokens ?? 0;
+    await supabase.from("ai_usage_events").insert({
+      client_id: input.clientId,
+      user_id: input.userId,
+      feature: input.feature,
+      model: input.model,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      estimated_cost: estimateCost(input.model, inputTokens, outputTokens),
+    });
+  } catch {
+    return;
+  }
+}
+
+function estimateCost(model: string, inputTokens: number, outputTokens: number): number {
+  if (model === "deterministic" || inputTokens + outputTokens === 0) return 0;
+  const inputRate = /haiku|flash|mini/i.test(model) ? 0.0000008 : 0.000003;
+  const outputRate = /haiku|flash|mini/i.test(model) ? 0.000004 : 0.000015;
+  return Math.round((inputTokens * inputRate + outputTokens * outputRate) * 1_000_000) / 1_000_000;
 }
 
 export async function intelligenceFlags(clientId: string) {

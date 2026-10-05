@@ -16,19 +16,24 @@ export default async function PortalAssetsPage() {
   }
   return (
     <PortalFrame companyName={identity.companyName} logoUrl={identity.logoUrl} active="assets">
-      <h1 className="text-4xl font-semibold tracking-tight">My system</h1>
-      {!identity.settings.showAssets ? <p className="mt-4 text-sm text-[#5c665f]">Installed equipment is not shown on this portal.</p> : null}
+      <h1 className="text-[2rem] font-semibold leading-tight">My system</h1>
+      {!identity.settings.showAssets ? <p className="mt-4 text-[16px] text-sales-text-secondary">Installed equipment is not shown on this portal.</p> : null}
+      {identity.settings.showAssets && assets.length === 0 ? (
+        <p className="mt-6 text-[16px] text-sales-text-secondary">Installed equipment will appear after commissioning.</p>
+      ) : null}
       {[...groups.entries()].map(([site, rows]) => (
         <section key={site} className="mt-8">
-          <h2 className="text-sm font-medium text-[#5c665f]">{site}</h2>
-          <div className="mt-3 space-y-3">
+          <h2 className="text-[14px] text-sales-text-secondary">{site}</h2>
+          <ul className="mt-2 divide-y divide-sales-border">
             {rows.map((asset) => (
-              <Link key={asset.id as string} href={`/portal/assets/${asset.id}`} className="block rounded-3xl bg-white p-5">
-                <p className="text-lg font-semibold">{asset.name}</p>
-                <p className="mt-1 text-sm text-[#5c665f]">{asset.status}{asset.installedAt ? ` · ${shortDate(asset.installedAt as string)}` : ""}</p>
-              </Link>
+              <li key={asset.id as string}>
+                <Link href={`/portal/assets/${asset.id}`} className="block py-4">
+                  <p className="text-[1.15rem] font-semibold">{asset.name}</p>
+                  <p className="mt-1 text-[15px] text-sales-text-secondary">{asset.status}{asset.installedAt ? ` · ${shortDate(asset.installedAt as string)}` : ""}</p>
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       ))}
     </PortalFrame>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
-import { Button, StatusDot } from "@/components/sales/ui";
+import { Button } from "@/components/sales/ui";
 import {
   CommandAttentionStrip,
   CommandCommandRow,
@@ -32,6 +32,8 @@ type ChatMessage = {
 
 const QUICK_PROMPTS = [
   { label: "What needs my attention today?", prompt: "What needs my attention today?" },
+  { label: "Which jobs are blocked by stock?", prompt: "Which projects are blocked by stock?" },
+  { label: "Payment proofs waiting", prompt: "Which payment proofs are waiting for confirmation?" },
   { label: "Which Deals are at risk?", prompt: "Show Deals with no next action" },
   { label: "Show quotation approvals", prompt: "Show quotations waiting for approval" },
   { label: "Who has overdue follow-ups?", prompt: "Show overdue follow-ups" },
@@ -239,15 +241,10 @@ export function CommandCenterPage({
               avatarUrl={avatarUrl}
               canAddLead={false}
               breadcrumb="Company / Command Center"
-              title="Command Center"
-              description="Ask about the business or tell SegmiQ what to do."
+              title={new Date().getHours() < 12 ? "Good morning." : new Date().getHours() < 17 ? "Good afternoon." : "Good evening."}
+              description="What needs your attention."
               primaryAction={null}
             />
-            <div className="inline-flex items-center gap-2 rounded-full border border-sales-border bg-sales-surface px-2.5 py-1">
-              <StatusDot tone="success" size="sm" />
-              <span className="text-[11px] font-medium text-sales-text-secondary">Manager Agent</span>
-              <span className="text-[11px] font-semibold text-sales-text-primary">Active</span>
-            </div>
           </div>
         </div>
 

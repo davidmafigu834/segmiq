@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PortalAccessPanel } from "@/components/portal/PortalAccessPanel";
+import { SectionSwitch } from "@/components/work-projects/ops-ui";
 import { uploadCompanyDocument } from "@/lib/documents/client-upload";
 import type { InstallationSnapshot } from "@/lib/work-projects/installation-service";
 import {
@@ -11,6 +12,22 @@ import {
   SOLAR_INSTALLATION_CHECKLIST,
   SOLAR_QA_CHECKS,
 } from "@/lib/work-projects/installation-rules";
+
+function installWord(status: string) {
+  const words: Record<string, string> = {
+    PLANNED: "Planned",
+    SCHEDULED: "Scheduled",
+    IN_PROGRESS: "In progress",
+    PAUSED: "Paused",
+    WORK_COMPLETED: "Work complete",
+    QA_PENDING: "Quality check",
+    COMMISSIONING_PENDING: "Commissioning",
+    HANDOVER_PENDING: "Handover",
+    COMPLETED: "Completed",
+    CANCELLED: "Cancelled",
+  };
+  return words[status] || status.replaceAll("_", " ");
+}
 
 const STEPS = ["Preparation", "Equipment", "Installation", "QA", "Commissioning", "Handover"] as const;
 
@@ -111,14 +128,9 @@ export function ProjectInstallationPanel({
         </button>
       ) : (
         <>
-          <div className="flex gap-2 overflow-x-auto">
-            {STEPS.map((label, index) => (
-              <button key={label} type="button" onClick={() => setStep(index)} className={`min-h-11 shrink-0 rounded-full border px-3 text-[12px] ${step === index ? "border-sales-text-primary bg-sales-text-primary text-white" : "border-sales-border"}`}>
-                {index + 1}. {label}
-              </button>
-            ))}
-          </div>
-          <p className="text-[13px] text-sales-text-secondary">{record.installation_number} · {record.status.replaceAll("_", " ")} · {record.site_name || "Site"} {record.site_address || ""}</p>
+          <SectionSwitch sections={STEPS} current={STEPS[step]} onChange={(label) => setStep(STEPS.indexOf(label as (typeof STEPS)[number]))} />
+          <p className="text-[1.35rem] font-semibold">{installWord(record.status)}</p>
+          <p className="text-[15px] text-sales-text-secondary">{record.site_name || "Site"}{record.site_address ? ` · ${record.site_address}` : ""}</p>
 
           {step === 0 ? (
             <div className="space-y-3">
@@ -151,14 +163,14 @@ export function ProjectInstallationPanel({
           {step === 1 ? (
             <div className="space-y-3">
               {snap.equipment.map((line) => (
-                <article key={line.id} className="rounded-sales-md border border-sales-border p-3 text-[13px]">
-                  <h3 className="font-medium">{line.description}</h3>
-                  <p>Required {line.quantity_required} · Reserved {line.quantity_reserved} · Issued {line.quantity_issued} · Installed {line.quantity_installed}</p>
+                <article key={line.id} className="border-b border-sales-border-subtle py-4 text-[15px]">
+                  <h3 className="text-[16px] font-semibold">{line.description}</h3>
+                  <p className="mt-1 text-[14px] text-sales-text-secondary">Required {line.quantity_required} · Reserved {line.quantity_reserved} · Issued {line.quantity_issued}</p>
                   {line.serials.map((unit) => <p key={unit.id}>Serial {unit.serial_number || "—"} · {unit.status}</p>)}
                   {snap.canOperate && line.track_inventory ? (
                     <div className="mt-2 grid gap-2 sm:grid-cols-2">
                       <input inputMode="decimal" value={issueQty[line.id] ?? ""} onChange={(e) => setIssueQty({ ...issueQty, [line.id]: e.target.value })} placeholder="Issue quantity" className="min-h-11 rounded-sales-md border border-sales-border px-3" />
-                      <button type="button" disabled={busy} onClick={() => void run({ action: "issue", installationId: record.id, equipmentId: line.id, quantity: Number(issueQty[line.id] || line.quantity_reserved), idempotencyKey: actionKey(`issue-${line.id}`) })} className="min-h-11 rounded-sales-md border border-sales-border px-3">Issue</button>
+                      <button type="button" disabled={busy} onClick={() => void run({ action: "issue", installationId: record.id, equipmentId: line.id, quantity: Number(issueQty[line.id] || line.quantity_reserved), idempotencyKey: actionKey(`issue-${line.id}`) })} className="min-h-11 rounded-sales-md bg-segmiq-lime px-3 text-[14px] font-semibold text-sales-text-primary">Issue</button>
                       <input value={serials[line.id] ?? ""} onChange={(e) => setSerials({ ...serials, [line.id]: e.target.value })} placeholder="Serial number" autoComplete="off" className="min-h-11 rounded-sales-md border border-sales-border px-3" />
                       <button type="button" disabled={busy} onClick={() => void run({ action: "serial", installationId: record.id, equipmentId: line.id, serialNumber: serials[line.id] || "" })} className="min-h-11 rounded-sales-md border border-sales-border px-3">Save serial</button>
                       <input inputMode="decimal" value={installedQty[line.id] ?? ""} onChange={(e) => setInstalledQty({ ...installedQty, [line.id]: e.target.value })} placeholder="Installed quantity" className="min-h-11 rounded-sales-md border border-sales-border px-3" />
@@ -181,17 +193,30 @@ export function ProjectInstallationPanel({
 
           {step === 2 ? (
             <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <button type="button" disabled={busy || !snap.canOperate} onClick={() => void run({ action: "start", installationId: record.id })} className="min-h-11 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-white">Start installation</button>
-                <button type="button" disabled={busy || !snap.canOperate} onClick={() => void run({ action: "pause", installationId: record.id })} className="min-h-11 rounded-sales-md border border-sales-border px-4 text-[13px]">Pause</button>
-                <button type="button" disabled={busy || !snap.canOperate} onClick={() => void run({ action: "complete_work", installationId: record.id, summary: "Physical installation work completed." })} className="min-h-11 rounded-sales-md border border-sales-border px-4 text-[13px]">Installation work complete</button>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button type="button" disabled={busy || !snap.canOperate} onClick={() => void run({ action: "start", installationId: record.id })} className="min-h-12 rounded-sales-md bg-segmiq-lime px-4 text-[15px] font-semibold text-sales-text-primary">Start work</button>
+                <button type="button" disabled={busy || !snap.canOperate} onClick={() => void run({ action: "complete_work", installationId: record.id, summary: "Physical installation work completed." })} className="min-h-12 rounded-sales-md border border-sales-border px-4 text-[15px] font-semibold">Work complete</button>
+                <button type="button" disabled={busy || !snap.canOperate} onClick={() => void run({ action: "pause", installationId: record.id })} className="min-h-11 rounded-sales-md px-4 text-[14px] text-sales-text-secondary">Pause</button>
               </div>
-              {solar ? SOLAR_INSTALLATION_CHECKLIST.map((item) => (
-                <label key={item.key} className="flex min-h-11 items-center gap-2 text-[13px]">
-                  <input type="checkbox" checked={Boolean(checks[item.key])} onChange={(e) => setChecks({ ...checks, [item.key]: e.target.checked })} />
-                  <span><span className="text-sales-text-muted">{item.section}. </span>{item.label}</span>
-                </label>
-              )) : <p className="text-[13px] text-sales-text-secondary">Record the work completed on site. This checklist is not an electrical certificate.</p>}
+              {solar ? (() => {
+                const sections = [...new Set(SOLAR_INSTALLATION_CHECKLIST.map((item) => item.section))];
+                return sections.map((section) => {
+                  const items = SOLAR_INSTALLATION_CHECKLIST.filter((item) => item.section === section);
+                  const done = items.filter((item) => checks[item.key]).length;
+                  return (
+                    <section key={section} className="space-y-1">
+                      <h3 className="text-[16px] font-semibold">{section}</h3>
+                      <p className="text-[14px] text-sales-text-secondary">{done} / {items.length} completed</p>
+                      {items.map((item) => (
+                        <label key={item.key} className="flex min-h-11 items-center gap-2 text-[15px]">
+                          <input type="checkbox" checked={Boolean(checks[item.key])} onChange={(e) => setChecks({ ...checks, [item.key]: e.target.checked })} />
+                          {item.label}
+                        </label>
+                      ))}
+                    </section>
+                  );
+                });
+              })() : <p className="text-[15px] text-sales-text-secondary">Record the work completed on site. This checklist is not an electrical certificate.</p>}
               {snap.canOperate ? <button type="button" disabled={busy} onClick={() => void run({ action: "checklist", installationId: record.id, checklist: checks, completed: true })} className="min-h-11 rounded-sales-md border border-sales-border px-4 text-[13px]">Save checklist</button> : null}
               {documentsEnabled ? (
                 <>
@@ -207,25 +232,28 @@ export function ProjectInstallationPanel({
           ) : null}
 
           {step === 3 && canManage ? (
-            <div className="space-y-2">
-              <p className="text-[12px] text-sales-text-muted">Record the contractor result. This is not an independent electrical certificate.</p>
+            <div className="space-y-3">
+              <h3 className="text-[1.35rem] font-semibold">Quality check</h3>
+              <p className="text-[14px] text-sales-text-secondary">Record the contractor result. This is not an independent electrical certificate.</p>
               {(solar ? SOLAR_QA_CHECKS : []).map((item) => (
                 <label key={item.key} className="flex min-h-11 items-center gap-2 text-[13px]">
                   <input type="checkbox" checked={Boolean(qa[item.key])} onChange={(e) => setQa({ ...qa, [item.key]: e.target.checked })} />{item.label}
                 </label>
               ))}
               <div className="flex flex-wrap gap-2">
-                <button type="button" disabled={busy} onClick={() => void run({ action: "qa", installationId: record.id, outcome: "PASS", checklist: qa })} className="min-h-11 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-white">Pass QA</button>
-                <button type="button" disabled={busy} onClick={() => void run({ action: "qa", installationId: record.id, outcome: "PASS_WITH_NOTES", checklist: qa })} className="min-h-11 rounded-sales-md border border-sales-border px-4 text-[13px]">Pass with notes</button>
-                <button type="button" disabled={busy} onClick={() => void run({ action: "qa", installationId: record.id, outcome: "REQUIRES_REWORK", checklist: qa })} className="min-h-11 rounded-sales-md border border-sales-border px-4 text-[13px]">Requires rework</button>
-                <button type="button" disabled={busy} onClick={() => void run({ action: "rework", installationId: record.id, title: "Installation rework" })} className="min-h-11 rounded-sales-md border border-sales-border px-4 text-[13px]">Create rework task</button>
+                <button type="button" disabled={busy} onClick={() => void run({ action: "qa", installationId: record.id, outcome: "PASS", checklist: qa })} className="min-h-11 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary">Pass</button>
+                <button type="button" disabled={busy} onClick={() => void run({ action: "qa", installationId: record.id, outcome: "PASS_WITH_NOTES", checklist: qa })} className="min-h-11 rounded-sales-md border border-sales-border px-4 text-[14px]">Pass with notes</button>
+                <button type="button" disabled={busy} onClick={() => void run({ action: "qa", installationId: record.id, outcome: "REQUIRES_REWORK", checklist: qa })} className="min-h-11 rounded-sales-md border border-sales-border px-4 text-[14px]">Requires rework</button>
+                <button type="button" disabled={busy} onClick={() => void run({ action: "rework", installationId: record.id, title: "Installation rework" })} className="min-h-11 rounded-sales-md border border-sales-border px-4 text-[14px]">Create rework task</button>
               </div>
               {snap.qualityChecks.map((row) => <p key={row.id} className="text-[13px]">{row.outcome} · {new Date(row.checked_at).toLocaleString()}{row.internal_notes ? ` · ${row.internal_notes}` : ""}</p>)}
             </div>
           ) : null}
 
           {step === 4 && canManage ? (
-            <div className="space-y-2 text-[13px]">
+            <div className="space-y-3 text-[15px]">
+              <h3 className="text-[1.35rem] font-semibold">Commissioning</h3>
+              <p className="text-[14px] text-sales-text-secondary">Completing commissioning creates installed assets from equipment recorded as installed.</p>
               <label className="block">Manufacturer warranty months
                 <input inputMode="numeric" value={commission.manufacturerMonths} onChange={(e) => setCommission({ ...commission, manufacturerMonths: e.target.value })} className="mt-1 min-h-11 w-full rounded-sales-md border border-sales-border px-3" />
               </label>
@@ -236,7 +264,7 @@ export function ProjectInstallationPanel({
                 <input value={commission.monitoringId} onChange={(e) => setCommission({ ...commission, monitoringId: e.target.value })} className="mt-1 min-h-11 w-full rounded-sales-md border border-sales-border px-3" />
               </label>
               <div className="flex flex-wrap gap-2">
-                <button type="button" disabled={busy} onClick={() => void run({ action: "commissioning", installationId: record.id, outcome: "PASSED", idempotencyKey: actionKey("commission-pass"), data: commission })} className="min-h-11 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-white">Complete commissioning</button>
+                <button type="button" disabled={busy} onClick={() => void run({ action: "commissioning", installationId: record.id, outcome: "PASSED", idempotencyKey: actionKey("commission-pass"), data: commission })} className="min-h-11 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary">Complete commissioning</button>
                 <button type="button" disabled={busy} onClick={() => void run({ action: "commissioning", installationId: record.id, outcome: "FAILED", idempotencyKey: actionKey("commission-fail"), internalNotes: "Commissioning failed", data: commission })} className="min-h-11 rounded-sales-md border border-sales-border px-4 text-[13px]">Commissioning failed</button>
               </div>
               {snap.commissioning ? <p>{snap.commissioning.status}{snap.commissioning.internal_notes ? ` · ${snap.commissioning.internal_notes}` : ""}</p> : null}
@@ -244,22 +272,25 @@ export function ProjectInstallationPanel({
           ) : null}
 
           {step === 5 && canManage ? (
-            <div className="space-y-2 text-[13px]">
+            <div className="space-y-3 text-[15px]">
+              <h3 className="text-[1.35rem] font-semibold">Handover</h3>
               {SOLAR_HANDOVER_CHECKS.map((item) => (
                 <label key={item.key} className="flex min-h-11 items-center gap-2">
                   <input type="checkbox" checked={Boolean(handoverChecks[item.key])} onChange={(e) => setHandoverChecks({ ...handoverChecks, [item.key]: e.target.checked })} />{item.label}
                 </label>
               ))}
-              <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Customer name" className="min-h-11 w-full rounded-sales-md border border-sales-border px-3" />
+              <label className="block text-[13px] text-sales-text-secondary">Customer name
+                <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="mt-1 min-h-11 w-full rounded-sales-md border border-sales-border px-3 text-[16px] text-sales-text-primary" />
+              </label>
               <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} /> Customer acknowledged the handover</label>
               {snap.showBalance && (snap.outstanding ?? 0) > 0 ? <p>Customer still owes {money(snap.outstanding || 0, snap.currency)}.</p> : null}
-              <button type="button" disabled={busy} onClick={() => void run({ action: "handover", installationId: record.id, customerName, acknowledged: ack, checklist: handoverChecks, trainingCompleted: Boolean(handoverChecks.operation), documentsProvided: Boolean(handoverChecks.manuals) })} className="min-h-11 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-white">Complete handover</button>
+              <button type="button" disabled={busy} onClick={() => void run({ action: "handover", installationId: record.id, customerName, acknowledged: ack, checklist: handoverChecks, trainingCompleted: Boolean(handoverChecks.operation), documentsProvided: Boolean(handoverChecks.manuals) })} className="min-h-11 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary">Complete handover</button>
               <PortalAccessPanel projectId={projectId} contactId={null} />
               <div className="rounded-sales-md border border-sales-border p-3">
-                <p className="font-medium">Complete project</p>
+                <p className="text-[1.15rem] font-semibold">Ready to complete project</p>
                 {snap.completion.blockers.map((line) => <p key={line}>{line}</p>)}
                 {snap.completion.warnings.map((line) => <p key={line}>{line}</p>)}
-                <button type="button" disabled={busy || !snap.completion.canComplete} onClick={() => void fetch(`/api/work-projects/${projectId}/status`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "COMPLETED" }) }).then(async (response) => { const data = await response.json(); if (!response.ok) throw new Error(data.error || "Project could not be completed."); router.refresh(); }).catch((err) => setError(err.message))} className="mt-2 min-h-11 rounded-sales-md bg-sales-text-primary px-4 text-[13px] font-semibold text-white">Complete project</button>
+                <button type="button" disabled={busy || !snap.completion.canComplete} onClick={() => void fetch(`/api/work-projects/${projectId}/status`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "COMPLETED" }) }).then(async (response) => { const data = await response.json(); if (!response.ok) throw new Error(data.error || "Project could not be completed."); router.refresh(); }).catch((err) => setError(err.message))} className="mt-2 min-h-11 rounded-sales-md bg-segmiq-lime px-4 text-[14px] font-semibold text-sales-text-primary">Complete project</button>
               </div>
             </div>
           ) : null}
@@ -293,20 +324,38 @@ export function ProjectAssetsPanel({ projectId, installation, canManage }: { pro
   const systems = installation.assets.filter((asset) => !asset.parent_asset_id);
   const children = installation.assets.filter((asset) => asset.parent_asset_id);
   return (
-    <div className="space-y-3">
-      {installation.assets.length === 0 ? <p className="text-[13px] text-sales-text-secondary">Installed assets appear after commissioning confirms the equipment was installed.</p> : null}
+    <div className="space-y-2">
+      {installation.assets.length === 0 ? (
+        <div className="py-8">
+          <p className="text-[1.25rem] font-semibold">No installed equipment yet.</p>
+          <p className="mt-2 max-w-md text-[15px] text-sales-text-secondary">Installed equipment will appear after commissioning.</p>
+        </div>
+      ) : null}
       {systems.map((asset) => (
-        <article key={asset.id} className="rounded-sales-md border border-sales-border p-3 text-[13px]">
-          <h3 className="font-medium">{asset.name}</h3>
-          <p>{asset.asset_type} · {asset.status} · {asset.quantity}{asset.serial_number ? ` · ${asset.serial_number}` : ""}</p>
-          <p>{asset.site_name || ""}</p>
-          {children.filter((child) => child.parent_asset_id === asset.id).map((child) => <p key={child.id}>{child.quantity} × {child.name} · {child.status}</p>)}
+        <article key={asset.id} className="border-b border-sales-border-subtle py-6">
+          <p className="text-[13px] text-sales-text-secondary">{asset.status === "ACTIVE" ? "Active" : asset.status.replaceAll("_", " ")}</p>
+          <h3 className="mt-1 text-[1.5rem] font-semibold leading-tight">{asset.name}</h3>
+          {asset.installed_at ? <p className="mt-2 text-[15px]">Installed {new Date(asset.installed_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</p> : null}
+          {asset.site_name ? <p className="text-[15px] text-sales-text-secondary">{asset.site_name}</p> : null}
+          <ul className="mt-4 divide-y divide-sales-border-subtle">
+            {children.filter((child) => child.parent_asset_id === asset.id).map((child) => (
+              <li key={child.id} className="py-3">
+                <p className="text-[16px] font-semibold">{child.name}</p>
+                <p className="text-[14px] text-sales-text-secondary">{child.quantity > 1 ? `${child.quantity} · ` : ""}{child.serial_number ? `Serial ${child.serial_number}` : "Serial not recorded"}</p>
+              </li>
+            ))}
+          </ul>
+          <ul className="mt-3 space-y-2">
+            {installation.warranties.filter((warranty) => warranty.installed_asset_id === asset.id || children.some((child) => child.id === warranty.installed_asset_id && child.parent_asset_id === asset.id)).map((warranty) => (
+              <li key={warranty.id} className="text-[14px]">
+                <span className="font-medium">{warranty.warranty_type.replaceAll("_", " ")}</span>
+                <span className="text-sales-text-secondary"> · {warranty.expires_at ? `Active until ${new Date(warranty.expires_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}` : "Warranty terms recorded"}</span>
+              </li>
+            ))}
+          </ul>
           {canManage && asset.status === "ACTIVE" ? (
-            <button type="button" className="mt-2 min-h-11 rounded-sales-md border border-sales-border px-3" onClick={() => void fetch(`/api/work-projects/${projectId}/installation`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "asset_status", installationId: installation.installation?.id, assetId: asset.id, assetStatus: "REPLACED" }) }).then(() => router.refresh())}>Mark replaced</button>
+            <button type="button" className="mt-3 min-h-11 rounded-sales-md border border-sales-border px-3 text-[14px]" onClick={() => void fetch(`/api/work-projects/${projectId}/installation`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "asset_status", installationId: installation.installation?.id, assetId: asset.id, assetStatus: "REPLACED" }) }).then(() => router.refresh())}>Mark replaced</button>
           ) : null}
-          {installation.warranties.filter((warranty) => warranty.installed_asset_id === asset.id).map((warranty) => (
-            <p key={warranty.id}>{warranty.warranty_type} · {warranty.status}</p>
-          ))}
         </article>
       ))}
     </div>
