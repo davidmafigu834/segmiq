@@ -3,8 +3,6 @@
  * App pages share SegmiQ tokens. Accent stays on the current step and the primary action.
  */
 
-import Link from "next/link";
-
 export type Milestone = { label: string; state: "done" | "current" | "upcoming" };
 
 export function DeliveryMilestones({ steps }: { steps: Milestone[] }) {

@@ -117,7 +117,7 @@ export function ProofForm({ projectId, currency }: { projectId: string; currency
         router.refresh();
       }}
     >
-      <label className="block text-[14px] text-sales-text-secondary">Amount
+      <label className="block text-[14px] text-sales-text-secondary">Amount ({currency})
         <input name="amount" type="number" min="0.01" step="0.01" required className="mt-1 min-h-12 w-full rounded-sales-md border border-sales-border bg-sales-surface px-4 text-[16px] text-sales-text-primary" />
       </label>
       <label className="block text-[14px] text-sales-text-secondary">Method

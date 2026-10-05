@@ -85,10 +85,10 @@ function when(value: string | null | undefined) {
   return date.toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: value.length <= 10 ? undefined : "2-digit", minute: value.length <= 10 ? undefined : "2-digit" });
 }
 
-const TABS = ["Overview", "Tasks", "Visits", "Payments", "Equipment", "Installation", "Assets", "Activity", "Documents", "Sales context"] as const;
+type WorkspaceTab = "Overview" | "Tasks" | "Visits" | "Payments" | "Equipment" | "Installation" | "Assets" | "Activity" | "Documents" | "Sales context";
 const SECTIONS = ["Overview", "Work", "Commercial", "Delivery", "Assets", "Files", "History"] as const;
 
-function sectionFor(tab: (typeof TABS)[number]) {
+function sectionFor(tab: WorkspaceTab) {
   if (tab === "Tasks" || tab === "Visits") return "Work";
   if (tab === "Payments" || tab === "Equipment") return "Commercial";
   if (tab === "Installation") return "Delivery";
@@ -153,10 +153,10 @@ export function ProjectWorkspaceClient({
   field: ProjectFieldSnapshot;
   commercial: ProjectCommercialSnapshot;
   installation: InstallationSnapshot;
-  initialTab?: (typeof TABS)[number];
+  initialTab?: WorkspaceTab;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<(typeof TABS)[number]>(initialTab);
+  const [tab, setTab] = useState<WorkspaceTab>(initialTab);
   const [project, setProject] = useState(workspace.project);
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
