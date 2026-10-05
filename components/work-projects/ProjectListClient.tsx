@@ -71,6 +71,7 @@ export function ProjectListClient({
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [focus, setFocus] = useState<"" | "active" | "scheduled" | "progress" | "attention" | "done">("");
 
   async function applyFilters(event?: React.FormEvent) {
