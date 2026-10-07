@@ -36,6 +36,7 @@ import {
   IntegrationsWebsiteSection,
   IntegrationsWhatsAppSection,
 } from "./IntegrationsSettingsViews";
+import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { SalesWorkflowSettings } from "@/components/sales/solar/SalesWorkflowSettings";
 import { useSalesToast } from "@/components/sales/ui";
 import {
