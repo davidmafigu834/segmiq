@@ -45,6 +45,7 @@ type Props = {
   showHubBranding?: boolean;
   agentActive?: boolean;
   realEstateHub?: boolean;
+  solarWorkflow?: boolean;
 };
 
 export function ConversationList({
@@ -74,6 +75,7 @@ export function ConversationList({
   showHubBranding = false,
   agentActive = false,
   realEstateHub = false,
+  solarWorkflow = false,
 }: Props) {
   const [sort, setSort] = useState<ConversationSort>("newest");
   const [sortOpen, setSortOpen] = useState(false);
@@ -424,6 +426,7 @@ export function ConversationList({
               claiming={claimingId === c.id}
               canClaim={canClaim}
               companyMode={companyMode}
+              solarWorkflow={solarWorkflow}
             />
           ))
         )}

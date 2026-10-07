@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logLeadEvent } from "@/lib/lead-events";
+import { markLeadContactedIfNew } from "@/lib/leads/mark-lead-contacted";
 import type { SendResult } from "@/lib/messaging/log";
 import { sendWhatsApp } from "@/lib/messaging/provider";
 import { firstName } from "@/lib/messaging/whatsapp-vars";
@@ -120,6 +121,11 @@ export async function sendWhatsAppTextToLead(opts: {
     });
 
     await supabase.from("leads").update({ updated_at: new Date().toISOString() }).eq("id", opts.leadId);
+    await markLeadContactedIfNew({
+      leadId: opts.leadId,
+      clientId,
+      actor: { id: opts.actorId, name: opts.actorName, role: opts.actorRole },
+    });
   }
 
   return { ...result, mode: "template" };

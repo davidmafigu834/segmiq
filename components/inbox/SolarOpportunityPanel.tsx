@@ -13,7 +13,7 @@ import { TransferToSupportDialog } from "@/components/inbox/TransferToSupportDia
 import { displayContactName, WhatsAppAvatar } from "@/components/inbox/WhatsAppAvatar";
 import { formatCurrencyAmount, hasMeaningfulScore } from "@/lib/inbox/format-display";
 import type { InboxConversation } from "@/lib/inbox/types";
-import { SOLAR_PANEL_ACTION_LABEL, type SolarPanelActionKind } from "@/lib/sales/solar-workflow/opportunity";
+import { solarWhatsAppNextStep, type SolarPanelActionKind } from "@/lib/sales/solar-workflow/opportunity";
 import type { SolarSalesStage } from "@/lib/sales/solar-workflow";
 import type { QuotationLineItemRow, QuotationRow } from "@/types";
 
@@ -325,12 +325,14 @@ export function SolarOpportunityPanel({
     }
   }
 
-  const actionLabel = card ? SOLAR_PANEL_ACTION_LABEL[card.nextAction] || card.nextAction : "";
+  const nextStep = card ? solarWhatsAppNextStep(card.nextActionKind, card.nextAction) : null;
   const actionIsNavigation =
     card?.nextActionKind === "open_visit" ||
     card?.nextActionKind === "continue_assessment" ||
     card?.nextActionKind === "open_project";
-  const showActionButton = Boolean(card && actionLabel && !card.handoff && (canModifyDeal || actionIsNavigation));
+  const showActionButton = Boolean(
+    card && nextStep?.button && !card.handoff && (canModifyDeal || actionIsNavigation)
+  );
 
   return (
     <aside
@@ -375,15 +377,26 @@ export function SolarOpportunityPanel({
                   </div>
                 </div>
               </div>
-              {showActionButton ? (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void runAction()}
-                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-[9px] bg-sales-brand px-3 py-2.5 text-[13px] font-semibold text-sales-brand-text disabled:opacity-50"
-                >
-                  {busy ? "Working…" : actionLabel}
-                </button>
+              {nextStep && !card.handoff && (nextStep.title || showActionButton) ? (
+                <div className="mt-3">
+                  {nextStep.title ? (
+                    <>
+                      <p className="text-[11px] font-semibold text-sales-text-label">Next step</p>
+                      <p className="mt-0.5 text-[13px] font-semibold text-sales-text-primary">{nextStep.title}</p>
+                    </>
+                  ) : null}
+                  {nextStep.hint ? <p className="mt-1 text-[12px] leading-relaxed text-sales-text-secondary">{nextStep.hint}</p> : null}
+                  {showActionButton ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void runAction()}
+                      className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-[9px] bg-sales-brand px-3 py-2.5 text-[13px] font-semibold text-sales-brand-text disabled:opacity-50"
+                    >
+                      {busy ? "Working…" : nextStep.button}
+                    </button>
+                  ) : null}
+                </div>
               ) : null}
             </div>
 

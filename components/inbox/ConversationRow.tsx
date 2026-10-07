@@ -17,6 +17,7 @@ import { LeadIntentBadge } from "./LeadIntentBadge";
 import { initials } from "@/lib/inbox/assignee-colors";
 import { Image as ImageIcon, Mic } from "lucide-react";
 import { formatDealStage } from "@/lib/sales/deals/display";
+import { solarConversationListLabel } from "@/lib/sales/solar-workflow/opportunity";
 
 type Props = {
   conversation: InboxConversation;
@@ -27,6 +28,7 @@ type Props = {
   claiming: boolean;
   canClaim: boolean;
   companyMode?: boolean;
+  solarWorkflow?: boolean;
 };
 
 function previewIcon(messageType: string | null | undefined) {
@@ -35,11 +37,14 @@ function previewIcon(messageType: string | null | undefined) {
   return null;
 }
 
-function rowContextLabel(conversation: InboxConversation): string {
+function rowContextLabel(conversation: InboxConversation, solarWorkflow: boolean): string {
   const typeLabel = CONVERSATION_TYPE_LABEL[conversation.conversationType];
   if (conversation.conversationType === "SUPPORT") {
     const supportLabel = supportStageLabel(conversation.supportCase?.status ?? null);
     return `${typeLabel} · ${supportLabel}`;
+  }
+  if (solarWorkflow && !conversation.activeDealId) {
+    return `${typeLabel} · ${solarConversationListLabel(conversation.status)}`;
   }
   if (conversation.activeDealId && conversation.dealStage) {
     return `${typeLabel} · ${formatDealStage(conversation.dealStage)}`;
@@ -72,6 +77,7 @@ export function ConversationRow({
   claiming,
   canClaim,
   companyMode = false,
+  solarWorkflow = false,
 }: Props) {
   const name = displayContactName(conversation);
   const waitingLabel = formatAwaitingReply(conversation.awaitingReplyMinutes);
@@ -79,7 +85,7 @@ export function ConversationRow({
   const followUpDue = isFollowUpDue(conversation);
   const isUnassigned = !conversation.assignedToId;
   const unread = conversation.unread > 0;
-  const contextLabel = !companyMode ? rowContextLabel(conversation) : null;
+  const contextLabel = !companyMode ? rowContextLabel(conversation, solarWorkflow) : null;
   const stageBadge = companyMode ? companyStageBadge(conversation) : null;
 
   return (

@@ -19,11 +19,13 @@ export function SolarStageCue({
   visitBase,
   quotesBase,
   compact = false,
+  refreshKey = 0,
 }: {
   leadId: string;
   visitBase: string;
   quotesBase: string;
   compact?: boolean;
+  refreshKey?: number;
 }) {
   const [card, setCard] = useState<Snapshot | null>(null);
 
@@ -40,7 +42,7 @@ export function SolarStageCue({
     return () => {
       cancelled = true;
     };
-  }, [leadId]);
+  }, [leadId, refreshKey]);
 
   if (!card) return null;
   const current = solarProgressIndex(card.stage);
@@ -55,11 +57,12 @@ export function SolarStageCue({
           ? `/sales/projects/${card.projectId}`
           : null;
 
+  const compactNext = card.nextAction === "Contact lead" ? "Reply to this customer" : card.nextAction;
   if (compact) {
     return (
       <div className="flex min-w-0 flex-wrap items-center gap-2 text-[12px]">
         <span className="font-semibold text-sales-text-primary">{card.stageLabel}</span>
-        {card.nextAction ? <span className="text-sales-text-secondary">Next · {card.nextAction}</span> : null}
+        {compactNext ? <span className="text-sales-text-secondary">Next · {compactNext}</span> : null}
         {actionHref ? (
           <Link href={actionHref} className="inline-flex min-h-11 items-center font-semibold text-sales-text-primary">{card.nextAction}</Link>
         ) : null}

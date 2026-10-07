@@ -190,6 +190,36 @@ function actionKind(label: string): SolarPanelActionKind {
   return "none";
 }
 
+/**
+ * WhatsApp presentation only. The Solar Sales board still uses solarPrimaryAction()
+ * ("Contact lead", "Qualify"). Inside an open conversation the composer is the contact.
+ */
+export function solarWhatsAppNextStep(
+  kind: SolarPanelActionKind,
+  canonicalLabel: string
+): { title: string | null; button: string | null; hint: string | null } {
+  if (kind === "contact") {
+    return {
+      title: "Reply to this customer",
+      button: null,
+      hint: "Your first successful reply will move this opportunity to Contacted.",
+    };
+  }
+  if (kind === "qualify") {
+    return { title: "Qualify this lead", button: "Qualify Lead", hint: null };
+  }
+  const button = SOLAR_PANEL_ACTION_LABEL[canonicalLabel] || canonicalLabel || null;
+  return { title: null, button, hint: null };
+}
+
+/** List label for a solar thread that has no deal yet. */
+export function solarConversationListLabel(status: string): string {
+  if (status === "NEW") return "New Lead";
+  if (status === "CONTACTED") return "Contacted";
+  if (status === "QUALIFIED" || status === "CONVERTED_TO_DEAL") return "Qualified";
+  return status.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 export const SOLAR_PANEL_ACTION_LABEL: Record<string, string> = {
   "Contact lead": "Contact lead",
   Qualify: "Qualify",

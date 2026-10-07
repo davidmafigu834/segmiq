@@ -94,6 +94,8 @@ type Props = {
   salespersonHub?: boolean;
   /** null while the company preset is still loading. */
   solarWorkflow?: boolean | null;
+  /** Bumped after a successful send so the solar cue refetches. */
+  snapshotRefreshKey?: number;
   alsoSells?: boolean;
 };
 
@@ -152,6 +154,7 @@ export function ChatThread({
   dailyPlanQueue = [],
   salespersonHub = false,
   solarWorkflow = false,
+  snapshotRefreshKey = 0,
   alsoSells = false,
 }: Props) {
   const [messages, setMessages] = useState<InboxChatMessage[]>([]);
@@ -990,7 +993,7 @@ export function ChatThread({
 
       {salespersonHub && !isSupport ? (
         <div className="border-b border-sales-border px-3 py-2 sm:px-4">
-          <SolarStageCue leadId={conversation.id} visitBase="/sales/site-visits" quotesBase="/sales/quotes" compact />
+          <SolarStageCue leadId={conversation.id} visitBase="/sales/site-visits" quotesBase="/sales/quotes" compact refreshKey={snapshotRefreshKey} />
         </div>
       ) : null}
 

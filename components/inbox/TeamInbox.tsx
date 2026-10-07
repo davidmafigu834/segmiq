@@ -457,6 +457,7 @@ export function TeamInbox({
                 hubTitle={pageTitle}
                 showHubBranding={showListHubBranding}
                 agentActive={agentActive}
+                solarWorkflow={whatsappMode && !companyMode && solarWorkflow === true}
                 realEstateHub={realEstateHub}
               />
             ) : null}
@@ -521,6 +522,7 @@ export function TeamInbox({
                 dailyPlanQueue={dailyPlanQueue}
                 salespersonHub={whatsappMode && !companyMode}
                 solarWorkflow={whatsappMode && !companyMode ? solarWorkflow : false}
+                snapshotRefreshKey={contextRevision}
                 alsoSells={alsoSells}
               />
             </div>
