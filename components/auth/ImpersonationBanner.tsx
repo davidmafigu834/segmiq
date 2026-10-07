@@ -16,6 +16,7 @@ export function ImpersonationBanner() {
   return (
     <div
       role="status"
+      data-impersonation-banner
       className="sticky top-0 z-[100] border-b border-amber-500/40 bg-amber-500/15 px-4 py-2 text-[13px] text-sales-text-primary backdrop-blur-sm"
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
@@ -10,6 +10,13 @@ import { LOST_REASONS } from "@/lib/call-log-constants";
 import { CreateFromDealDialog } from "@/components/work-projects/CreateFromDealDialog";
 import { useSalesToast } from "@/components/sales/ui";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import { cn } from "@/lib/ui/cn";
+import {
+  SOLAR_SALES_PAGE_DESCRIPTION,
+  SOLAR_SALES_PAGE_NOTE,
+  SOLAR_SALES_PAGE_TITLE,
+  SolarWorkflowNavigator,
+} from "@/components/sales/solar/SolarWorkflowNavigator";
 
 type Card = {
   leadId: string;
@@ -73,16 +80,23 @@ export function SolarSalesBoard({
   quotesHref,
   visitHref,
   projectsHref,
+  showPageHeading = false,
 }: {
   scope: "mine" | "team";
   settingsHref?: string;
   quotesHref: string;
   visitHref: string;
   projectsHref: "/sales/projects" | "/client/projects";
+  /** Company workspace has no sales page header. Sales pipeline already renders one. */
+  showPageHeading?: boolean;
 }) {
   const router = useRouter();
   const { toast } = useSalesToast();
   const compact = useMediaQuery("(max-width: 767px)");
+  const boardScroller = useRef<HTMLDivElement>(null);
+  const columnNodes = useRef(new Map<SolarSalesStage, HTMLElement>());
+  const droppableRefs = useRef(new Map<SolarSalesStage, (element?: HTMLElement | null) => void>());
+  const columnRefCache = useRef(new Map<SolarSalesStage, (node: HTMLElement | null) => void>());
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState("");
   const [stageFilter, setStageFilter] = useState<SolarSalesStage | "all">(compact ? "NEW_LEAD" : "all");
@@ -118,12 +132,39 @@ export function SolarSalesBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ownerId, from, to, valueMin]);
 
+  useLayoutEffect(() => {
+    if (compact) {
+      setStageFilter((current) => (current === "all" ? "NEW_LEAD" : current));
+    } else {
+      setStageFilter("all");
+    }
+  }, [compact]);
+
+  useLayoutEffect(() => {
+    columnNodes.current.forEach((node, stage) => {
+      droppableRefs.current.get(stage)?.(node);
+    });
+  });
+
   const sources = useMemo(() => {
     const set = new Set((data?.cards ?? []).map((card) => card.sourceLabel).filter(Boolean) as string[]);
     return [...set];
   }, [data]);
 
   const visibleStages = compact && stageFilter !== "all" ? [stageFilter] : [...SOLAR_SALES_STAGES];
+  const mobileStage: SolarSalesStage = stageFilter === "all" ? "NEW_LEAD" : stageFilter;
+
+  const stageCounts = useMemo(() => {
+    const counts = Object.fromEntries(SOLAR_SALES_STAGES.map((stage) => [stage, 0])) as Record<
+      SolarSalesStage,
+      number
+    >;
+    for (const card of data?.cards ?? []) {
+      if (source !== "all" && card.sourceLabel !== source) continue;
+      counts[card.stage] += 1;
+    }
+    return counts;
+  }, [data, source]);
 
   async function move(card: Card, target: SolarSalesStage) {
     setBusy(true);
@@ -203,15 +244,55 @@ export function SolarSalesBoard({
 
   const report = data?.report;
 
+  function bindColumn(stage: SolarSalesStage, droppableRef: (element?: HTMLElement | null) => void) {
+    droppableRefs.current.set(stage, droppableRef);
+    let cached = columnRefCache.current.get(stage);
+    if (!cached) {
+      cached = (node: HTMLElement | null) => {
+        droppableRefs.current.get(stage)?.(node);
+        if (node) columnNodes.current.set(stage, node);
+        else columnNodes.current.delete(stage);
+      };
+      columnRefCache.current.set(stage, cached);
+    }
+    return cached;
+  }
+
   return (
     <div className="min-w-0 space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[1.5rem] font-semibold text-sales-text-primary">Solar sales</h1>
-          <p className="text-[13px] text-sales-text-secondary">One pipeline from new lead to won. Delivery starts after the project is created.</p>
+      {showPageHeading ? (
+        <header className="flex flex-wrap items-end justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[24px]">
+              {SOLAR_SALES_PAGE_TITLE}
+            </h2>
+            <p className="mt-1 max-w-[42rem] text-[13px] leading-snug text-sales-text-secondary sm:text-[14px]">
+              {SOLAR_SALES_PAGE_DESCRIPTION}
+            </p>
+            <p className="mt-1 text-[12px] leading-snug text-sales-text-muted">{SOLAR_SALES_PAGE_NOTE}</p>
+          </div>
+          {settingsHref ? (
+            <Link href={settingsHref} className="inline-flex min-h-11 items-center text-[13px] font-medium text-sales-text-secondary">
+              Workflow settings
+            </Link>
+          ) : null}
+        </header>
+      ) : settingsHref ? (
+        <div className="flex justify-end">
+          <Link href={settingsHref} className="inline-flex min-h-11 items-center text-[13px] font-medium text-sales-text-secondary">
+            Workflow settings
+          </Link>
         </div>
-        {settingsHref ? <Link href={settingsHref} className="inline-flex min-h-11 items-center text-[13px] font-medium text-sales-text-secondary">Workflow settings</Link> : null}
-      </div>
+      ) : null}
+      <SolarWorkflowNavigator
+        counts={stageCounts}
+        mode={compact ? "select" : "scroll"}
+        selected={compact ? mobileStage : undefined}
+        onSelect={compact ? (stage) => setStageFilter(stage) : undefined}
+        scrollerRef={boardScroller}
+        columnNodes={columnNodes}
+        observeKey={compact ? `mobile:${mobileStage}` : "desktop"}
+      />
       {scope === "team" && report ? (
         <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
           <Metric label="Need a site visit" value={report.siteVisitRequired} />
@@ -240,25 +321,43 @@ export function SolarSalesBoard({
           <input inputMode="decimal" value={valueMin} onChange={(e) => setValueMin(e.target.value)} placeholder="Min value" aria-label="Minimum value" className="min-h-11 w-32 rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px]" />
         </div>
       ) : null}
-      {compact ? (
-        <select value={stageFilter} onChange={(e) => setStageFilter(e.target.value as SolarSalesStage)} className="min-h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[14px] font-medium">
-          {SOLAR_SALES_STAGES.map((stage) => (
-            <option key={stage} value={stage}>{SOLAR_SALES_STAGE_LABEL[stage]}</option>
-          ))}
-        </select>
-      ) : null}
       {error ? <p className="text-[13px] text-sales-danger-fg">{error}</p> : null}
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className={compact ? "space-y-3" : "flex gap-3 overflow-x-auto pb-4"}>
+        <div
+          ref={compact ? undefined : boardScroller}
+          className={
+            compact
+              ? "space-y-3"
+              : "solar-board-surface relative z-[1] flex gap-3 overflow-x-auto overscroll-x-contain px-1 pb-4 pt-3"
+          }
+        >
           {visibleStages.map((stage) => {
             const cards = (data?.cards ?? []).filter((card) => card.stage === stage && (source === "all" || card.sourceLabel === source));
+            const opportunityLabel = cards.length === 1 ? "1 opportunity" : `${cards.length} opportunities`;
             return (
               <Droppable droppableId={stage} key={stage}>
                 {(provided) => (
-                  <section ref={provided.innerRef} {...provided.droppableProps} className={compact ? "space-y-2" : "w-[260px] shrink-0 space-y-2"}>
-                    <header className="flex items-baseline justify-between px-1">
-                      <h2 className="text-[12px] font-semibold uppercase tracking-wide text-sales-text-secondary">{SOLAR_SALES_STAGE_LABEL[stage]}</h2>
-                      <span className="text-[12px] tabular-nums text-sales-text-muted">{cards.length}</span>
+                  <section
+                    ref={bindColumn(stage, provided.innerRef)}
+                    {...provided.droppableProps}
+                    data-stage={stage}
+                    className={cn(
+                      compact ? "space-y-2" : "w-[260px] min-w-[260px] shrink-0 space-y-2"
+                    )}
+                  >
+                    <header className="px-1">
+                      <h2
+                        className={cn(
+                          "flex items-center gap-1.5 text-[13px] font-semibold text-sales-text-primary",
+                          stage === "LOST" && "text-sales-danger-fg"
+                        )}
+                      >
+                        {stage === "WON" ? (
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sales-brand" aria-hidden />
+                        ) : null}
+                        {SOLAR_SALES_STAGE_LABEL[stage]}
+                      </h2>
+                      <p className="mt-0.5 text-[12px] tabular-nums text-sales-text-muted">{opportunityLabel}</p>
                     </header>
                     {cards.map((card, index) => (
                       <Draggable draggableId={card.leadId} index={index} key={card.leadId} isDragDisabled={compact || busy}>

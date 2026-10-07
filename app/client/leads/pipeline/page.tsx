@@ -95,10 +95,11 @@ export default async function ClientPipelinePage({
 
   if ((await readSalesWorkflowPreset(clientId)) === "SOLAR_INSTALLATION") {
     return (
-      <ClientManagerLayout breadcrumbPage="PIPELINE" pageTitle="Solar sales" navClientId={clientId}>
+      <ClientManagerLayout breadcrumbPage="PIPELINE" pageTitle="Pipeline" navClientId={clientId}>
         <div className="p-4 sm:p-6">
           <SolarSalesBoard
             scope="team"
+            showPageHeading
             settingsHref="/client/settings/company/sales-workflow"
             quotesHref="/sales/quotes"
             visitHref="/client/site-visits"

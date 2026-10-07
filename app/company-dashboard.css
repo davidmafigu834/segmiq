@@ -140,6 +140,18 @@ html[data-crm-theme="light"] .segmiq-dot-wave {
   display: none;
 }
 
+/* Solar sales: keep the brand wave as a short header fade. The board sits on a flat surface. */
+.solar-sales-canvas .segmiq-dot-wave {
+  height: 11.5rem;
+  opacity: 0.34;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+}
+
+.solar-sales-canvas .solar-board-surface {
+  background-color: var(--sales-bg);
+}
+
 /* ---------- Phase 10: page content padding (shell-owned) ---------- */
 
 .sales-dashboard-premium .sales-page-content {

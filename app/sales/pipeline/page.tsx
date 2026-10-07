@@ -16,6 +16,11 @@ import { RealEstatePipelineBoard } from "@/components/real-estate/RealEstatePipe
 import { getRealEstatePipelineData } from "@/lib/sales/get-real-estate-pipeline-data";
 import { isRealEstate } from "@/lib/terminology";
 import { SolarSalesBoard } from "@/components/sales/solar/SolarSalesBoard";
+import {
+  SOLAR_SALES_PAGE_DESCRIPTION,
+  SOLAR_SALES_PAGE_NOTE,
+  SOLAR_SALES_PAGE_TITLE,
+} from "@/components/sales/solar/SolarWorkflowNavigator";
 import { readSalesWorkflowPreset } from "@/lib/sales/solar-workflow/service";
 import type { DealRow, QuotationRow } from "@/types";
 
@@ -115,7 +120,7 @@ export default async function SalesPipelinePage() {
     ]);
     const whatsappBadge = (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
     return (
-      <SalesLayout breadcrumb="Sales / PIPELINE" pageTitle="Solar sales" hideShellHeader hideShellSidebar contentFlush>
+      <SalesLayout breadcrumb="Sales / PIPELINE" pageTitle={SOLAR_SALES_PAGE_TITLE} hideShellHeader hideShellSidebar contentFlush>
         <PipelinePageShell
           userName={session.user?.name ?? "Sales"}
           avatarUrl={(userRes.data as { avatar_url?: string | null } | null)?.avatar_url ?? null}
@@ -124,8 +129,10 @@ export default async function SalesPipelinePage() {
           whatsappBadge={whatsappBadge}
           tasksBadge={navBadges.followUpsToday || navBadges.callNow || 0}
           isSolo={session.clientMode === "solo"}
-          title="Solar sales"
-          description="New lead to won, including the pre-sale site visit."
+          title={SOLAR_SALES_PAGE_TITLE}
+          description={SOLAR_SALES_PAGE_DESCRIPTION}
+          note={SOLAR_SALES_PAGE_NOTE}
+          shellClassName="solar-sales-canvas"
         >
           <SolarSalesBoard scope="mine" quotesHref="/sales/quotes" visitHref="/sales/site-visits" projectsHref="/sales/projects" />
         </PipelinePageShell>

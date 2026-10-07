@@ -41,12 +41,14 @@ export function SalesPageHeader({
   breadcrumb,
   title,
   description,
+  note,
   actions,
   titleActions,
 }: {
   breadcrumb?: string;
   title: string;
   description?: string;
+  note?: string;
   actions?: ReactNode;
   titleActions?: ReactNode;
 }) {
@@ -69,6 +71,9 @@ export function SalesPageHeader({
               <p className="mt-1 max-w-[42rem] text-[13px] leading-snug text-sales-text-secondary sm:mt-1.5 sm:text-[14px]">
                 {description}
               </p>
+            ) : null}
+            {note ? (
+              <p className="mt-1 text-[12px] leading-snug text-sales-text-muted">{note}</p>
             ) : null}
           </div>
           {titleActions ? (
@@ -153,6 +158,7 @@ function SalesAppShellInner({
   breadcrumb,
   title,
   description,
+  note,
   dense = false,
   headerActions,
   titleActions,
@@ -179,6 +185,7 @@ function SalesAppShellInner({
   breadcrumb?: string;
   title?: string;
   description?: string;
+  note?: string;
   dense?: boolean;
   headerActions?: ReactNode;
   titleActions?: ReactNode;
@@ -304,6 +311,7 @@ function SalesAppShellInner({
                 breadcrumb={breadcrumb}
                 title={title}
                 description={description}
+                note={note}
                 actions={desktopActions}
                 titleActions={titleActions}
               />

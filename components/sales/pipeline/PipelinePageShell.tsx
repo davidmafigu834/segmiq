@@ -19,7 +19,9 @@ export function PipelinePageShell({
   breadcrumb = "Sales / Pipeline",
   title = "My pipeline",
   description = "Track and manage the Deals you're actively working to win.",
+  note,
   dense = true,
+  shellClassName,
   searchPlaceholder = "Search Deals, customers...",
 }: {
   children: ReactNode;
@@ -35,12 +37,14 @@ export function PipelinePageShell({
   breadcrumb?: string;
   title?: string;
   description?: string;
+  note?: string;
   dense?: boolean;
+  shellClassName?: string;
   searchPlaceholder?: string;
 }) {
   return (
     <SalesAppShell
-      className="pipeline-premium"
+      className={shellClassName ? `pipeline-premium ${shellClassName}` : "pipeline-premium"}
       userName={userName}
       userRoleLabel={userRoleLabel}
       avatarUrl={avatarUrl}
@@ -53,6 +57,7 @@ export function PipelinePageShell({
       breadcrumb={breadcrumb}
       title={title}
       description={description}
+      note={note}
       dense={dense}
       searchPlaceholder={searchPlaceholder}
     >
