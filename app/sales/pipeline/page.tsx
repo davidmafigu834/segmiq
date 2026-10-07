@@ -17,6 +17,7 @@ import { getRealEstatePipelineData } from "@/lib/sales/get-real-estate-pipeline-
 import { isRealEstate } from "@/lib/terminology";
 import { SolarSalesBoard } from "@/components/sales/solar/SolarSalesBoard";
 import { readSalesWorkflowPreset } from "@/lib/sales/solar-workflow/service";
+import type { DealRow, QuotationRow } from "@/types";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
