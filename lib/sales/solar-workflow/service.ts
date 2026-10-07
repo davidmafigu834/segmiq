@@ -243,7 +243,15 @@ export async function loadSolarSalesBoard(
 ) {
   const preset = await readSalesWorkflowPreset(actor.clientId);
   if (preset !== "SOLAR_INSTALLATION") {
-    return { ok: true as const, data: { preset, cards: [] as SolarPipelineCard[], report: solarSalesReport([]), staff: [] } };
+    return {
+      ok: true as const,
+      data: {
+        preset,
+        cards: [] as SolarPipelineCard[],
+        report: solarSalesReport([]),
+        staff: [] as Array<{ id: string; name: string | null }>,
+      },
+    };
   }
   const supabase = createAdminClient();
   const [{ data: leads }, { data: deals }, { data: visits }, { data: quotes }, { data: users }] = await Promise.all([
@@ -439,7 +447,6 @@ export async function solarLeadSnapshot(actor: SolarActor, leadId: string) {
 
 export async function answerSolarSalesQuestion(actor: SolarActor, question: SolarSalesQuestion) {
   const board = await loadSolarSalesBoard(actor, { mine: !manager(actor) });
-  if (!board.ok) return board;
   const stages = new Set(solarQuestionStages(question));
   const cards = board.data.cards.filter((card) => stages.has(card.stage));
   return { ok: true as const, data: { preset: board.data.preset, cards, report: board.data.report } };

@@ -359,9 +359,6 @@ export async function executeManagerTool(opts: {
     }
     const { answerSolarSalesQuestion } = await import("@/lib/sales/solar-workflow/service");
     const result = await answerSolarSalesQuestion(actor, filter as (typeof allowed)[number]);
-    if (!result.ok) {
-      return { name, ok: false, summary: {}, blocks: [{ type: "status", kind: "error", message: result.error }], phase: "Reading the solar sales workflow" };
-    }
     if (result.data.preset !== "SOLAR_INSTALLATION") {
       return { name, ok: true, summary: { count: 0 }, blocks: [{ type: "text", text: "This company is on the general trades sales workflow, so solar site-visit stages are not in use." }], phase: "Reading the solar sales workflow" };
     }

@@ -21,7 +21,6 @@ export async function GET(req: Request) {
     valueMax: valueMax ? Number(valueMax) : null,
     mine: actor.role === "SALESPERSON",
   });
-  if (!result.ok) return solarError(result.status, result.error);
   return NextResponse.json(result.data);
 }
 
