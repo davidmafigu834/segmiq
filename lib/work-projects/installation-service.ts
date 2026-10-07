@@ -204,7 +204,7 @@ export async function loadProjectInstallation(actor: WorkProjectActor, projectId
   const commercialData = commercial.ok ? commercial.data : null;
   const warnings = schedulingWarnings({
     paymentReady: commercialData ? commercialData.gate.satisfied || !commercialData.paymentRequired : true,
-    assessmentRequired: project.workflow_key === "SOLAR_INSTALLATION",
+    assessmentRequired: project.workflow_key === "SOLAR_INSTALLATION" && !project.inherited_sales_assessment_id,
     assessmentReady: commercialData?.assessmentCompleted ?? false,
     equipmentGaps: gaps,
   });

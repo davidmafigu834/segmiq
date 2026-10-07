@@ -106,6 +106,10 @@ async function runQuick(opts: {
     LEARNING_WEEK: { name: "get_learning_summary", input: { sinceDays: 7 } },
     LEARNING_CONFLICTS: { name: "search_learning", input: { conflicts: true } },
     LEARNING_CORRECTIONS: { name: "search_learning", input: { corrections: true } },
+    SOLAR_NEEDS_VISIT: { name: "search_solar_sales", input: { filter: "needs_site_visit" } },
+    SOLAR_ASSESSMENT_NO_PROPOSAL: { name: "search_solar_sales", input: { filter: "assessment_without_proposal" } },
+    SOLAR_UNSENT: { name: "search_solar_sales", input: { filter: "unsent_proposals" } },
+    SOLAR_QUOTE_FOLLOWUP: { name: "search_solar_sales", input: { filter: "quote_follow_up" } },
     LEARNING_FAQS: { name: "search_learning", input: { faqs: true } },
   };
   const spec = map[opts.intent] ?? map.OPERATIONAL_SUMMARY;

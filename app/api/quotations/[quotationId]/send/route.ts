@@ -341,6 +341,9 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
     })
     .eq("id", params.quotationId);
 
+  const { reconcileSolarQuoteSent } = await import("@/lib/sales/solar-workflow/service");
+  await reconcileSolarQuoteSent(access.clientId, params.quotationId);
+
   if (presentationSnapshot) {
     await supabase
       .from("quotations")

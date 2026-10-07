@@ -36,6 +36,7 @@ export const SETTINGS_SECTIONS: Record<SettingsCategory, SettingsSection[]> = {
     { id: "localization", label: "Localization", icon: "globe" },
     { id: "subscription", label: "Subscription", icon: "crown" },
     { id: "preferences", label: "Preferences", icon: "sliders" },
+    { id: "sales-workflow", label: "Sales Workflow", icon: "git" },
   ],
   profile: [
     { id: "personal", label: "Personal Information", icon: "user" },
@@ -88,6 +89,9 @@ export function settingsSectionsFor(
   opts?: { realEstate?: boolean }
 ): SettingsSection[] {
   const base = SETTINGS_SECTIONS[category];
+  if (category === "company" && opts?.realEstate) {
+    return base.filter((section) => section.id !== "sales-workflow");
+  }
   if (category === "integrations" && opts?.realEstate) {
     return [...base, { id: "website", label: "Website API", icon: "plug" }];
   }

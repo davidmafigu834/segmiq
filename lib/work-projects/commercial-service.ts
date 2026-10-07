@@ -247,7 +247,7 @@ export async function loadProjectCommercial(actor: WorkProjectActor, projectId: 
     const due = termAmount({ termType: term.term_type, percent: term.percent == null ? null : Number(term.percent), amount: term.amount == null ? null : Number(term.amount) }, value);
     return new Date(`${term.due_date}T23:59:59Z`).getTime() < now.getTime() && paid + 0.001 < due;
   }).length;
-  const assessmentCompleted = ((assessments ?? []) as unknown[]).length > 0;
+  const assessmentCompleted = ((assessments ?? []) as unknown[]).length > 0 || Boolean(project.inherited_sales_assessment_id);
   return {
     ok: true,
     data: {

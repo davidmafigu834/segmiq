@@ -118,7 +118,7 @@ export const MANAGER_TOOL_DEFINITIONS: AgentToolDefinition[] = [
   { name: "cancel_proactive_job", description: "Cancel a scheduled Proactive evaluation.", inputSchema: { type: "object", properties: { jobId: { type: "string" } }, required: ["jobId"] } },
   { name: "search_learning", description: "Search Learning Center candidates. Use conflicts, corrections, or faqs filters. Never invent evidence counts.", inputSchema: { type: "object", properties: { conflicts: { type: "boolean" }, corrections: { type: "boolean" }, faqs: { type: "boolean" }, sinceDays: { type: "number" } } } },
   { name: "get_learning_summary", description: "Grounded summary of what SegmiQ observed from the sales team. Counts only, no fake readiness scores.", inputSchema: { type: "object", properties: { sinceDays: { type: "number" } } } },
-  { name: "get_operations_attention", description: "Deterministic operations attention: payment proofs, missing equipment, QA, commissioning, handover, and open support. Do not invent blockers.", inputSchema: { type: "object", properties: {} } },
+  { name: "search_solar_sales", description: "Read-only solar sales workflow. Filters: needs_site_visit, assessment_without_proposal, unsent_proposals, quote_follow_up. Uses real workflow state. Does not take actions.", inputSchema: { type: "object", properties: { filter: { type: "string" } }, required: ["filter"] } },
   { name: "get_project_readiness", description: "Whether a work project is ready to install, from payments, assessment, and equipment gaps.", inputSchema: { type: "object", properties: { projectId: { type: "string" } }, required: ["projectId"] } },
   { name: "approve_learning_candidate", description: "Approve a LOW or MEDIUM risk Learning Candidate after confirmation. High-risk commercial learning must use Learning Center.", inputSchema: { type: "object", properties: { candidateId: { type: "string" } }, required: ["candidateId"] } },
   { name: "reject_learning_candidate", description: "Reject a Learning Candidate after confirmation.", inputSchema: { type: "object", properties: { candidateId: { type: "string" }, reason: { type: "string" } }, required: ["candidateId"] } },
@@ -349,6 +349,25 @@ export async function executeManagerTool(opts: {
       createdRange: args.createdPreset && isDatePreset(args.createdPreset) ? resolveDatePreset(args.createdPreset) : undefined,
     });
     return { name, ok: true, summary: { count: block.totalMatched }, blocks: [block, { type: "text", text: tableReply(block) }], phase: "Searching Leads" };
+  }
+
+  if (name === "search_solar_sales") {
+    const filter = typeof input.filter === "string" ? input.filter : "";
+    const allowed = ["needs_site_visit", "assessment_without_proposal", "unsent_proposals", "quote_follow_up"] as const;
+    if (!allowed.includes(filter as (typeof allowed)[number])) {
+      return { name, ok: true, summary: {}, blocks: [{ type: "text", text: "Ask which solar leads need a site visit, which assessments have no proposal, which proposals are unsent, or which quotes need follow-up." }], phase: "Reading the solar sales workflow" };
+    }
+    const { answerSolarSalesQuestion } = await import("@/lib/sales/solar-workflow/service");
+    const result = await answerSolarSalesQuestion(actor, filter as (typeof allowed)[number]);
+    if (!result.ok) {
+      return { name, ok: false, summary: {}, blocks: [{ type: "status", kind: "error", message: result.error }], phase: "Reading the solar sales workflow" };
+    }
+    if (result.data.preset !== "SOLAR_INSTALLATION") {
+      return { name, ok: true, summary: { count: 0 }, blocks: [{ type: "text", text: "This company is on the general trades sales workflow, so solar site-visit stages are not in use." }], phase: "Reading the solar sales workflow" };
+    }
+    const lines = result.data.cards.slice(0, 20).map((card) => `${card.customerName} — ${card.stageLabel}${card.location ? ` · ${card.location}` : ""}`);
+    const text = lines.length ? `${lines.length} matching solar opportunities:\n${lines.join("\n")}` : "No solar opportunities match that question.";
+    return { name, ok: true, summary: { count: result.data.cards.length }, blocks: [{ type: "text", text }], phase: "Reading the solar sales workflow" };
   }
 
   if (name === "search_deals") {

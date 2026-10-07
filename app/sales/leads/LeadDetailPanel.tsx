@@ -37,6 +37,7 @@ import { SendAssetPanel } from "@/components/leads/SendAssetPanel";
 import { QuotationsPanel } from "@/components/leads/QuotationsPanel";
 import { HandoverBanner } from "@/components/leads/HandoverBanner";
 import { LeadBriefing } from "@/components/leads/LeadBriefing";
+import { SolarStageCue } from "@/components/sales/solar/SolarStageCue";
 import { AskSegmiq } from "@/components/intelligence/AskSegmiq";
 import { DealValueEditor } from "@/components/leads/DealValueEditor";
 import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
@@ -531,6 +532,7 @@ export function LeadDetailPanel({
                 </div>
               ) : null}
 
+              <SolarStageCue leadId={activeLead.id} visitBase="/sales/site-visits" quotesBase="/sales/quotes" />
               <LeadBriefing leadId={activeLead.id} />
               <AskSegmiq leadId={activeLead.id} />
               <LeadIntelligenceCard

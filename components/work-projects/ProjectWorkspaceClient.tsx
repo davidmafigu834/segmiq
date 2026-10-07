@@ -340,6 +340,18 @@ export function ProjectWorkspaceClient({
             <ProjectCommercialSummary commercial={commercial} />
             <ProjectFieldSummary field={field} projectStatus={project.status} basePath={basePath} projectId={project.id} />
             <ProjectTeamPanel projectId={project.id} field={field} owners={owners} />
+            {project.inherited_sales_assessment_id ? (
+              <section className="rounded-[12px] border border-sales-border p-4">
+                <h2 className="text-[13px] font-medium text-sales-text-muted">Pre-sale site assessment</h2>
+                <p className="mt-1 text-[15px] font-semibold text-sales-text-primary">Completed</p>
+                <p className="text-[13px] text-sales-text-secondary">{when(project.inherited_sales_assessment_completed_at ?? null)}</p>
+                {project.sales_site_visit_id ? (
+                  <Link href={`${basePath.startsWith("/client") ? "/client/site-visits" : "/sales/site-visits"}/${project.sales_site_visit_id}`} className="mt-2 inline-flex min-h-11 items-center text-[14px] font-semibold">
+                    View assessment
+                  </Link>
+                ) : null}
+              </section>
+            ) : null}
             {project.workflow_key === "SOLAR_INSTALLATION" ? (
               <SolarSummary
                 service={project.project_type || workspace.deal?.service_summary || null}
@@ -486,7 +498,7 @@ export function ProjectWorkspaceClient({
           field={field}
           basePath={basePath}
           defaultSite={project.site_address}
-          suggestAssessment={project.status === "SITE_ASSESSMENT" || project.workflow_key === "SOLAR_INSTALLATION"}
+          suggestAssessment={project.status === "SITE_ASSESSMENT" && !project.inherited_sales_assessment_id}
         />
       ) : null}
       {tab === "Payments" ? (

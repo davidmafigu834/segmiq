@@ -15,7 +15,8 @@ import {
 import { RealEstatePipelineBoard } from "@/components/real-estate/RealEstatePipelineBoard";
 import { getRealEstatePipelineData } from "@/lib/sales/get-real-estate-pipeline-data";
 import { isRealEstate } from "@/lib/terminology";
-import type { DealRow, QuotationRow } from "@/types";
+import { SolarSalesBoard } from "@/components/sales/solar/SolarSalesBoard";
+import { readSalesWorkflowPreset } from "@/lib/sales/solar-workflow/service";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -100,6 +101,32 @@ export default async function SalesPipelinePage() {
             embedded
             inquiryBaseHref="/sales/leads"
           />
+        </PipelinePageShell>
+      </SalesLayout>
+    );
+  }
+
+  if (session.clientId && (await readSalesWorkflowPreset(session.clientId)) === "SOLAR_INSTALLATION") {
+    const navBadges = await fetchSalesNavBadges(session.userId, session.clientId);
+    const [unreadRes, userRes] = await Promise.all([
+      supabase.from("notifications").select("*", { count: "exact", head: true }).eq("user_id", session.userId).eq("read", false),
+      supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
+    ]);
+    const whatsappBadge = (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
+    return (
+      <SalesLayout breadcrumb="Sales / PIPELINE" pageTitle="Solar sales" hideShellHeader hideShellSidebar contentFlush>
+        <PipelinePageShell
+          userName={session.user?.name ?? "Sales"}
+          avatarUrl={(userRes.data as { avatar_url?: string | null } | null)?.avatar_url ?? null}
+          unreadNotifications={unreadRes.count ?? 0}
+          notificationRole={session.role}
+          whatsappBadge={whatsappBadge}
+          tasksBadge={navBadges.followUpsToday || navBadges.callNow || 0}
+          isSolo={session.clientMode === "solo"}
+          title="Solar sales"
+          description="New lead to won, including the pre-sale site visit."
+        >
+          <SolarSalesBoard scope="mine" quotesHref="/sales/quotes" visitHref="/sales/site-visits" projectsHref="/sales/projects" />
         </PipelinePageShell>
       </SalesLayout>
     );

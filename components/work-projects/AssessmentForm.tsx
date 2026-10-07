@@ -23,6 +23,7 @@ export function AssessmentForm({
   canEdit,
   documentsEnabled,
   projectStatus,
+  links,
 }: {
   projectId: string;
   visitId: string;
@@ -32,6 +33,7 @@ export function AssessmentForm({
   canEdit: boolean;
   documentsEnabled: boolean;
   projectStatus: string;
+  links?: { backHref: string; backLabel: string; savePath: string; photoPath: string };
 }) {
   const router = useRouter();
   const [data, setData] = useState(initial);
@@ -49,7 +51,7 @@ export function AssessmentForm({
   async function save(complete: boolean) {
     setBusy(true);
     setError("");
-    const res = await fetch(`/api/work-projects/${projectId}/visits/${visitId}/assessment`, {
+    const res = await fetch(links?.savePath ?? `/api/work-projects/${projectId}/visits/${visitId}/assessment`, {
       method: complete ? "POST" : "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -74,7 +76,7 @@ export function AssessmentForm({
       setError(uploaded.error);
       return;
     }
-    const res = await fetch(`/api/work-projects/${projectId}/visits/${visitId}/photos`, {
+    const res = await fetch(links?.photoPath ?? `/api/work-projects/${projectId}/visits/${visitId}/photos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ documentId: uploaded.documentId, category }),
@@ -94,7 +96,7 @@ export function AssessmentForm({
   if (!canEdit) {
     return (
       <div className="space-y-3">
-        <Link href={`${basePath}/${projectId}`} className="text-[13px] font-medium text-sales-text-secondary">Back to project</Link>
+        <Link href={links?.backHref ?? `${basePath}/${projectId}`} className="text-[13px] font-medium text-sales-text-secondary">{links?.backLabel ?? "Back to project"}</Link>
         <h1 className="text-[22px] font-semibold">Site assessment</h1>
         <Summary data={data} />
       </div>
@@ -103,7 +105,7 @@ export function AssessmentForm({
 
   return (
     <div className="space-y-6">
-      <Link href={`${basePath}/${projectId}`} className="inline-flex min-h-11 items-center text-[14px] font-medium text-sales-text-secondary">Back to project</Link>
+      <Link href={links?.backHref ?? `${basePath}/${projectId}`} className="inline-flex min-h-11 items-center text-[14px] font-medium text-sales-text-secondary">{links?.backLabel ?? "Back to project"}</Link>
       <div>
         <p className="text-[13px] text-sales-text-secondary">Site assessment</p>
         <h1 className="mt-1 text-[2rem] font-semibold leading-tight">Record the site</h1>

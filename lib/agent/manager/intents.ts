@@ -16,9 +16,17 @@ export type QuickIntent =
   | "LEARNING_CORRECTIONS"
   | "LEARNING_FAQS"
   | "OVERNIGHT_AGENT"
-  | "VIEWING_APPROVALS";
+  | "VIEWING_APPROVALS"
+  | "SOLAR_NEEDS_VISIT"
+  | "SOLAR_ASSESSMENT_NO_PROPOSAL"
+  | "SOLAR_UNSENT"
+  | "SOLAR_QUOTE_FOLLOWUP";
 
 const QUICK: Array<{ intent: QuickIntent; re: RegExp }> = [
+  { intent: "SOLAR_NEEDS_VISIT", re: /solar leads? still need a site visit|which solar leads? (still )?need a site visit|leads? need(ing)? site visits/i },
+  { intent: "SOLAR_ASSESSMENT_NO_PROPOSAL", re: /assessments? (were |was )?completed but no proposal|no proposal has been prepared/i },
+  { intent: "SOLAR_UNSENT", re: /proposals? haven'?t been sent|proposals? have not been sent|unsent proposals/i },
+  { intent: "SOLAR_QUOTE_FOLLOWUP", re: /which quotes? need follow-?up|quotes? need follow-?up/i },
   { intent: "OPERATIONAL_SUMMARY", re: /what needs (my )?attention|needs attention today|^attention$/i },
   { intent: "DAILY_BRIEF", re: /(today'?s|monday )?sales brief|give me (the |today'?s )?brief|morning brief/i },
   { intent: "QUOTE_APPROVALS", re: /quotation?s? (waiting|pending|need).*(approval)|approval queue|waiting for approval/i },

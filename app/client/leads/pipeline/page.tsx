@@ -7,6 +7,8 @@ import { getCompanyPipelinePageData } from "@/lib/sales/get-company-pipeline-pag
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { CompanyPipelinePage } from "@/components/dashboard/company/pipeline/CompanyPipelinePage";
+import { SolarSalesBoard } from "@/components/sales/solar/SolarSalesBoard";
+import { readSalesWorkflowPreset } from "@/lib/sales/solar-workflow/service";
 import { CompanyPipelinePageSkeleton } from "@/components/dashboard/company/pipeline/CompanyPipelinePageSkeleton";
 import { RealEstatePipelineBoard } from "@/components/real-estate/RealEstatePipelineBoard";
 import { getRealEstatePipelineData } from "@/lib/sales/get-real-estate-pipeline-data";
@@ -87,6 +89,22 @@ export default async function ClientPipelinePage({
           companyLogoUrl={(clientMeta?.logo_url as string | null) ?? null}
           whatsappBadge={whatsappBadge}
         />
+      </ClientManagerLayout>
+    );
+  }
+
+  if ((await readSalesWorkflowPreset(clientId)) === "SOLAR_INSTALLATION") {
+    return (
+      <ClientManagerLayout breadcrumbPage="PIPELINE" pageTitle="Solar sales" navClientId={clientId}>
+        <div className="p-4 sm:p-6">
+          <SolarSalesBoard
+            scope="team"
+            settingsHref="/client/settings/company/sales-workflow"
+            quotesHref="/sales/quotes"
+            visitHref="/client/site-visits"
+            projectsHref="/client/projects"
+          />
+        </div>
       </ClientManagerLayout>
     );
   }

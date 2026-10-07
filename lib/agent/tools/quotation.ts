@@ -483,6 +483,8 @@ export async function executeSendQuotation(
     eventType: "SENT",
     eventData: { quote_number: quoteNumber, autonomous: true, total: evaluation.total },
   });
+  const { reconcileSolarQuoteSent } = await import("@/lib/sales/solar-workflow/service");
+  await reconcileSolarQuoteSent(ctx.clientId, input.quotation_id);
   await logLeadEvent({
     leadId: ctx.leadId,
     clientId: ctx.clientId,

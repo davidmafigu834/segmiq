@@ -105,6 +105,9 @@ export type WorkProjectRow = {
   completed_at: string | null;
   cancelled_at: string | null;
   payment_required?: boolean;
+  sales_site_visit_id?: string | null;
+  inherited_sales_assessment_id?: string | null;
+  inherited_sales_assessment_completed_at?: string | null;
 };
 
 export type ServiceResult<T> =
@@ -220,6 +223,12 @@ export type WorkProjectDraft = {
   leadId: string | null;
   dealId: string;
   existingProjectId: string | null;
+  salesAssessment: {
+    visitId: string;
+    completedAt: string | null;
+    summary: string | null;
+    site: string | null;
+  } | null;
 };
 
 export async function previewWorkProjectFromDeal(
@@ -253,6 +262,8 @@ export async function previewWorkProjectFromDeal(
   const solar = readSolarQuoteSnapshot(quote?.template_layout_key, quote?.template_fields);
   const siteAddress = solar?.siteAddress || bundle.deal.location || bundle.contact?.location || null;
   const existing = await findWorkProjectByDeal(actor.clientId, dealId);
+  const { salesAssessmentForDeal } = await import("@/lib/sales/solar-workflow/service");
+  const salesAssessment = await salesAssessmentForDeal(actor.clientId, dealId);
 
   return {
     ok: true,
@@ -284,6 +295,7 @@ export async function previewWorkProjectFromDeal(
       leadId: bundle.lead?.id ?? null,
       dealId: bundle.deal.id,
       existingProjectId: existing?.id ?? null,
+      salesAssessment,
     },
   };
 }
@@ -368,6 +380,12 @@ export async function createWorkProjectFromWonDeal(
   if (!payload.id) return fail(500, "Could not create the project.");
   const loaded = await getWorkProject(actor, payload.id);
   if (!loaded.ok) return loaded;
+  if (payload.created !== false && actor.clientId) {
+    const { attachSalesAssessmentToProject } = await import("@/lib/sales/solar-workflow/service");
+    await attachSalesAssessmentToProject(actor.clientId, payload.id, input.dealId);
+    const refreshed = await getWorkProject(actor, payload.id);
+    if (refreshed.ok) return { ok: true, data: { project: refreshed.data.project, created: true } };
+  }
   return { ok: true, data: { project: loaded.data.project, created: payload.created !== false } };
 }
 

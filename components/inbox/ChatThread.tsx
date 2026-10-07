@@ -20,6 +20,7 @@ import { SiWhatsapp } from "react-icons/si";
 import type { InboxChatMessage, InboxConversation } from "@/lib/inbox/types";
 import { formatDealValue } from "@/lib/inbox/queue-filters";
 import { formatDealStage } from "@/lib/sales/deals/display";
+import { SolarStageCue } from "@/components/sales/solar/SolarStageCue";
 import { applyQuickReplyVariables } from "@/lib/inbox/quick-reply-vars";
 import { resolveNextBestAction } from "@/lib/inbox/next-best-action";
 import { CONVERSATION_TYPE_LABEL } from "@/lib/inbox/conversation-type";
@@ -981,6 +982,12 @@ export function ChatThread({
               {formatDealStage(conversation.dealStage)}
             </span>
           ) : null}
+        </div>
+      ) : null}
+
+      {salespersonHub && !isSupport ? (
+        <div className="border-b border-sales-border px-3 py-2 sm:px-4">
+          <SolarStageCue leadId={conversation.id} visitBase="/sales/site-visits" quotesBase="/sales/quotes" compact />
         </div>
       ) : null}
 

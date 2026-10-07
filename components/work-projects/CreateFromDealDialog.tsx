@@ -16,6 +16,7 @@ type Draft = {
   service: string | null;
   ownerId: string | null;
   existingProjectId: string | null;
+  salesAssessment?: { visitId: string; completedAt: string | null; summary: string | null; site: string | null } | null;
 };
 
 function money(value: number | null, currency: string) {
@@ -106,13 +107,16 @@ export function CreateFromDealDialog({
       <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-sales-xl bg-sales-surface p-5 sm:rounded-sales-xl">
         <p className="text-[13px] font-medium text-sales-text-secondary">Deal won</p>
         <h2 className="mt-1 text-[1.75rem] font-semibold leading-tight text-sales-text-primary">
-          {draft?.customerName || "Ready to deliver the work?"}
+          {solar ? "Create Solar Project" : draft?.customerName || "Ready to deliver the work?"}
         </h2>
         <p className="mt-1 text-[15px] text-sales-text-secondary">{solar ? "Create the solar delivery project." : "Create a project to manage delivery from assessment to handover."}</p>
         {loading ? <p className="mt-4 text-[13px] text-sales-text-secondary">Loading the won deal…</p> : null}
         {draft ? (
           <div className="mt-4 space-y-2 text-[13px] text-sales-text-secondary">
             <p>Customer. {draft.customerName}</p>
+            {draft.salesAssessment ? (
+              <p>Sales site assessment. Completed {draft.salesAssessment.completedAt ? new Date(draft.salesAssessment.completedAt).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : ""}</p>
+            ) : null}
             {draft.quotation ? (
               <p>
                 {draft.quotation.accepted ? "Accepted quote" : "Quotation"}. {draft.quotation.number || "Quotation"} — {money(draft.quotation.total, draft.quotation.currency || draft.currency)}
@@ -160,7 +164,7 @@ export function CreateFromDealDialog({
             </label>
             {error ? <p className="mt-3 text-[13px] text-sales-danger-fg">{error}</p> : null}
             <button type="button" disabled={saving || !title.trim()} onClick={() => void create()} className="mt-5 min-h-11 w-full rounded-sales-md bg-segmiq-lime text-[15px] font-semibold text-sales-text-primary disabled:opacity-50">
-              {saving ? "Creating…" : "Create project"}
+              {saving ? "Creating…" : solar ? "Create Project" : "Create project"}
             </button>
           </>
         )}

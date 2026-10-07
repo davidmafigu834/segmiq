@@ -24,6 +24,7 @@ import {
   Skeleton,
   Tooltip,
 } from "@/components/sales/ui";
+import { SolarStageCue } from "@/components/sales/solar/SolarStageCue";
 import { cn } from "@/lib/ui/cn";
 import { channelKindLabel, channelNetworkLabel, formatRelativeTime, intentBandLabel, originHeadline } from "@/lib/social-inbox/display";
 import { uniqueSignalChips } from "@/lib/social-inbox/inbox-ui";
@@ -268,7 +269,11 @@ export function SalesContextPanel({ session }: { session: SocialInboxSession }) 
           ) : intel.crm.state === "converted" ? (
             <>
               <p className="text-[13px] font-medium">{intel.crm.customerName ?? item.displayName}</p>
-              <p className="text-[12px] text-sales-text-muted">New lead</p>
+              {intel.crm.leadId ? (
+                <SolarStageCue leadId={intel.crm.leadId} visitBase="/sales/site-visits" quotesBase="/sales/quotes" compact />
+              ) : (
+                <p className="text-[12px] text-sales-text-muted">New lead</p>
+              )}
               <Button size="sm" variant="ghost" className="mt-1" onClick={() => (window.location.href = intel.crm.leadId ? `${session.seed.leadsBase}${encodeURIComponent(intel.crm.leadId)}` : session.seed.leadsBase)}>
                 Open lead →
               </Button>
