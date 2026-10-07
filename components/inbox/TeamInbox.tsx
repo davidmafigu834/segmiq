@@ -26,6 +26,7 @@ import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { CompanyWhatsAppHeader } from "./CompanyWhatsAppHeader";
 import { CompanyConversationInsightRail } from "./CompanyConversationInsightRail";
 import { SalesIntelligenceRail } from "./SalesIntelligenceRail";
+import { SolarOpportunityPanel } from "./SolarOpportunityPanel";
 import { RealEstateIntelligenceRail } from "./RealEstateIntelligenceRail";
 import { SupportIntelligenceRail } from "./SupportIntelligenceRail";
 import { SalespersonHubHeader } from "./SalespersonHubHeader";
@@ -91,6 +92,7 @@ export function TeamInbox({
   const [salespeople, setSalespeople] = useState(initialSalespeople);
   const [companyName, setCompanyName] = useState("");
   const [businessType, setBusinessType] = useState<"trades" | "real_estate">("trades");
+  const [solarWorkflow, setSolarWorkflow] = useState<boolean | null>(null);
   const [whatsappConnection, setWhatsAppConnection] = useState<SafeWhatsAppConnection | null>(null);
   const [agentActive, setAgentActive] = useState(false);
   const [dailyPlanQueue, setDailyPlanQueue] = useState<SalesActionRecommendation[]>([]);
@@ -191,12 +193,13 @@ export function TeamInbox({
   useEffect(() => {
     fetch(`/api/clients/${clientId}/company-profile`)
       .then((r) => r.json())
-      .then((d: { client?: { name?: string; business_type?: string } }) => {
+      .then((d: { client?: { name?: string; business_type?: string; sales_workflow_preset?: string | null } }) => {
         if (d.client?.name) setCompanyName(d.client.name);
         if (d.client?.business_type === "real_estate") setBusinessType("real_estate");
         else setBusinessType("trades");
+        setSolarWorkflow(d.client?.sales_workflow_preset === "SOLAR_INSTALLATION");
       })
-      .catch(() => {});
+      .catch(() => setSolarWorkflow(false));
   }, [clientId]);
 
   useEffect(() => {
@@ -517,6 +520,7 @@ export function TeamInbox({
                 userId={userId}
                 dailyPlanQueue={dailyPlanQueue}
                 salespersonHub={whatsappMode && !companyMode}
+                solarWorkflow={whatsappMode && !companyMode ? solarWorkflow : false}
                 alsoSells={alsoSells}
               />
             </div>
@@ -592,6 +596,42 @@ export function TeamInbox({
                   panelWidth={resizable ? intelWidth : undefined}
                   panelAnimated={resizable}
                 />
+              ) : solarWorkflow && whatsappMode && !companyMode ? (
+                <SolarOpportunityPanel
+                  conversation={active}
+                  clientId={clientId}
+                  userId={userId}
+                  salespeople={salespeople}
+                  canReassign={canReassign}
+                  canTransfer={canTransfer}
+                  canModifyDeal={canUpdateStatus}
+                  canClaim={salesCapable}
+                  claiming={claimingId === active.id}
+                  onClaim={(id) => void handleClaim(id)}
+                  onUpdated={() => {
+                    setContextRevision((value) => value + 1);
+                    void loadConversations({ silent: true });
+                  }}
+                  open={intelOpenEffective}
+                  onCollapse={() => {
+                    if (paneNav) setMobilePane("thread");
+                    else if (resizable) toggleIntelCollapsed();
+                    else setIntelOpen(false);
+                  }}
+                  onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+                  mobileFullScreen={paneNav}
+                  mobileTopClass={mobileIntelTop}
+                  panelWidth={resizable ? intelWidth : undefined}
+                  panelAnimated={resizable}
+                  refreshKey={contextRevision}
+                />
+              ) : solarWorkflow === null && whatsappMode && !companyMode ? (
+                <aside className="flex h-full w-[380px] shrink-0 flex-col border-l border-sales-border bg-sales-surface" aria-busy aria-label="Loading solar opportunity">
+                  <div className="space-y-3 p-4">
+                    <div className="h-16 animate-pulse rounded-[10px] bg-sales-surface-hover" />
+                    <div className="h-20 animate-pulse rounded-[10px] bg-sales-surface-hover" />
+                  </div>
+                </aside>
               ) : (
                 <SalesIntelligenceRail
                   conversation={active}

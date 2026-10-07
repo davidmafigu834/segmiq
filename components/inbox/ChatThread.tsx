@@ -92,6 +92,8 @@ type Props = {
   userId?: string;
   dailyPlanQueue?: SalesActionRecommendation[];
   salespersonHub?: boolean;
+  /** null while the company preset is still loading. */
+  solarWorkflow?: boolean | null;
   alsoSells?: boolean;
 };
 
@@ -149,6 +151,7 @@ export function ChatThread({
   userId = "",
   dailyPlanQueue = [],
   salespersonHub = false,
+  solarWorkflow = false,
   alsoSells = false,
 }: Props) {
   const [messages, setMessages] = useState<InboxChatMessage[]>([]);
@@ -991,7 +994,7 @@ export function ChatThread({
         </div>
       ) : null}
 
-      {salespersonHub && !isSupport ? (
+      {salespersonHub && !isSupport && solarWorkflow === false ? (
         <SalesConversationAssist
           conversation={conversation}
           lead={contextLead}

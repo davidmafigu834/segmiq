@@ -48,6 +48,8 @@ export type SolarQuoteFact = {
   currency?: string | null;
   viewedAt?: string | null;
   viewCount?: number | null;
+  acceptedAt?: string | null;
+  createdAt?: string | null;
 };
 
 export type SolarVisitFact = {

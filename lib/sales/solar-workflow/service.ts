@@ -16,7 +16,24 @@ import { planWonProjectHandoff, rejectCrossTenant } from "./handoff";
 import { SOLAR_SALES_STAGE_LABEL } from "./labels";
 import { solarSalesReport, solarQuestionStages, type SolarSalesQuestion } from "./reporting";
 import { getSolarSalesStage, quoteAccepted, quoteLayer, visitCompleted } from "./derive";
+import {
+  assessmentOutcomeLine,
+  essentialLoadLine,
+  quotationDisplayStatus,
+  resolveSolarActiveDeal,
+  selectRelevantQuotation,
+  solarAssessmentInProgress,
+  solarAssessmentSectionsDone,
+  solarInsight,
+  solarMissingFacts,
+  solarOpportunityAction,
+  solarPanelProgress,
+  solarPowerLines,
+  solarRoofLine,
+  SOLAR_ASSESSMENT_SECTION_TOTAL,
+} from "./opportunity";
 import { solarPrimaryAction, transitionSolarSalesStage } from "./transitions";
+import { workProjectStatusLabel } from "@/lib/work-projects/constants";
 import {
   isSalesWorkflowPreset,
   type SalesCommercialIntent,
@@ -88,6 +105,12 @@ type LeadRow = {
   contact_id: string | null;
   created_at: string;
   updated_at: string;
+  active_deal_id?: string | null;
+  budget?: string | null;
+  timeline?: string | null;
+  buying_timeframe?: string | null;
+  customer_need?: string | null;
+  follow_up_date?: string | null;
 };
 
 type DealLite = {
@@ -105,6 +128,7 @@ type DealLite = {
   sales_commercial_intent: string | null;
   updated_at: string;
   currency?: string | null;
+  next_action_at?: string | null;
 };
 
 function fail(status: number, error: string) {
@@ -150,7 +174,7 @@ async function loadLead(actor: SolarActor, leadId: string): Promise<LeadRow | nu
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("leads")
-    .select("id, client_id, name, phone, status, source, project_type, form_data, assigned_to_id, contact_id, created_at, updated_at")
+    .select("id, client_id, name, phone, status, source, project_type, form_data, assigned_to_id, contact_id, created_at, updated_at, active_deal_id, budget, timeline, buying_timeframe, customer_need, follow_up_date")
     .eq("id", leadId)
     .eq("client_id", actor.clientId)
     .maybeSingle();
@@ -166,16 +190,15 @@ function canTouchLead(actor: SolarActor, lead: LeadRow, deal: DealLite | null) {
   return false;
 }
 
-async function activeDeal(clientId: string, leadId: string): Promise<DealLite | null> {
+async function loadLeadDeals(clientId: string, leadId: string): Promise<DealLite[]> {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("deals")
-    .select("id, client_id, originating_lead_id, contact_id, owner_id, stage, name, service_summary, location, estimated_value, won_value, sales_commercial_intent, updated_at")
+    .select("id, client_id, originating_lead_id, contact_id, owner_id, stage, name, service_summary, location, estimated_value, won_value, sales_commercial_intent, updated_at, next_action_at")
     .eq("client_id", clientId)
     .eq("originating_lead_id", leadId)
     .order("updated_at", { ascending: false });
-  const rows = (data ?? []) as DealLite[];
-  return rows.find((row) => row.stage !== "WON" && row.stage !== "LOST") ?? rows[0] ?? null;
+  return ((data ?? []) as DealLite[]).filter((row) => !rejectCrossTenant(clientId, row.client_id));
 }
 
 function intentOf(value: string | null | undefined): SalesCommercialIntent | null {
@@ -195,6 +218,8 @@ type QuoteRow = {
   currency: string | null;
   viewed_at: string | null;
   view_count: number | null;
+  accepted_at?: string | null;
+  created_at?: string | null;
 };
 
 function quoteFact(row: QuoteRow): SolarQuoteFact {
@@ -208,6 +233,8 @@ function quoteFact(row: QuoteRow): SolarQuoteFact {
     currency: row.currency,
     viewedAt: row.viewed_at,
     viewCount: row.view_count,
+    acceptedAt: row.accepted_at ?? null,
+    createdAt: row.created_at ?? null,
   };
 }
 
@@ -257,7 +284,7 @@ export async function loadSolarSalesBoard(
   const [{ data: leads }, { data: deals }, { data: visits }, { data: quotes }, { data: users }] = await Promise.all([
     supabase
       .from("leads")
-      .select("id, client_id, name, phone, status, source, project_type, form_data, assigned_to_id, contact_id, created_at, updated_at")
+      .select("id, client_id, name, phone, status, source, project_type, form_data, assigned_to_id, contact_id, created_at, updated_at, active_deal_id")
       .eq("client_id", actor.clientId)
       .in("status", ["NEW", "CONTACTED", "QUALIFIED", "CONVERTED_TO_DEAL"])
       .order("updated_at", { ascending: false })
@@ -319,7 +346,7 @@ export async function loadSolarSalesBoard(
   for (const lead of leadRows) {
     if (rejectCrossTenant(actor.clientId, lead.client_id)) continue;
     const related = dealsByLead.get(lead.id) ?? [];
-    const deal = related.find((row) => row.stage !== "WON" && row.stage !== "LOST") ?? related[0] ?? null;
+    const deal = resolveSolarActiveDeal(related, lead.active_deal_id ?? null);
     if (filters?.mine && !manager(actor) && lead.assigned_to_id !== actor.userId && deal?.owner_id !== actor.userId) continue;
     if (!filters?.mine && !manager(actor) && lead.assigned_to_id !== actor.userId && deal?.owner_id !== actor.userId) continue;
     const leadVisits = visitRows.filter((row) => row.lead_id === lead.id || (deal && row.deal_id === deal.id));
@@ -422,6 +449,15 @@ export async function loadSolarSalesBoard(
   };
 }
 
+const VISIT_STATUS_LABEL: Record<string, string> = {
+  SCHEDULED: "Scheduled",
+  ON_SITE: "On site",
+  RESCHEDULED: "Rescheduled",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+  NO_ACCESS: "No access",
+};
+
 export async function solarLeadSnapshot(actor: SolarActor, leadId: string) {
   const loaded = await bundle(actor, leadId);
   if (!loaded.ok) {
@@ -431,18 +467,211 @@ export async function solarLeadSnapshot(actor: SolarActor, leadId: string) {
   if (loaded.data.preset !== "SOLAR_INSTALLATION") return { ok: true as const, data: null };
   const stage = getSolarSalesStage(loaded.data.facts);
   if (!stage) return { ok: true as const, data: null };
-  const openVisit = loaded.data.facts.visits.find((row) => row.status === "SCHEDULED" || row.status === "ON_SITE" || row.status === "RESCHEDULED");
+
+  const { lead, deal, deals, visitRows, assessmentByVisit, facts } = loaded.data;
+  const relevantQuote = selectRelevantQuotation(loaded.data.quoteRows.map(quoteFact));
+  const openVisit =
+    visitRows.find((row) => row.status === "SCHEDULED" || row.status === "ON_SITE" || row.status === "RESCHEDULED") ?? null;
+  const completedVisit =
+    visitRows.find((row) => row.status === "COMPLETED" && assessmentByVisit.get(row.id)?.status === "COMPLETED") ?? null;
+  const focusVisit = completedVisit ?? openVisit ?? visitRows.find((row) => row.status !== "CANCELLED") ?? null;
+  const assessmentRow = focusVisit ? assessmentByVisit.get(focusVisit.id) : undefined;
+  const parsed = assessmentRow ? parseSolarAssessment(assessmentRow.data) : null;
+  const assessmentData = parsed?.ok ? parsed.data : null;
+  const inProgress = assessmentRow?.status === "DRAFT" && assessmentData ? solarAssessmentInProgress(assessmentData) : false;
+  const assessmentComplete = assessmentRow?.status === "COMPLETED" && Boolean(assessmentData);
+
+  const supabase = createAdminClient();
+  const contactId = deal?.contact_id ?? lead.contact_id;
+  const assigneeIds = [focusVisit?.assigned_to_id, deal?.owner_id, lead.assigned_to_id].filter((id): id is string => Boolean(id));
+  const [{ data: projectRows }, { data: completedProjects }, { data: assets }, { data: people }] = await Promise.all([
+    deal
+      ? supabase
+          .from("work_projects")
+          .select("id, project_number, status")
+          .eq("client_id", actor.clientId)
+          .eq("deal_id", deal.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+      : Promise.resolve({ data: [] }),
+    contactId
+      ? supabase
+          .from("work_projects")
+          .select("id")
+          .eq("client_id", actor.clientId)
+          .eq("contact_id", contactId)
+          .eq("status", "COMPLETED")
+          .limit(1)
+      : Promise.resolve({ data: [] }),
+    contactId
+      ? supabase
+          .from("customer_installed_assets")
+          .select("id, name, asset_type, quantity, installed_at, status, work_project_id")
+          .eq("client_id", actor.clientId)
+          .eq("contact_id", contactId)
+          .eq("status", "ACTIVE")
+          .limit(24)
+      : Promise.resolve({ data: [] }),
+    assigneeIds.length
+      ? supabase.from("users").select("id, name").eq("client_id", actor.clientId).in("id", assigneeIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const names = new Map(((people ?? []) as Array<{ id: string; name: string | null }>).map((person) => [person.id, person.name]));
+  const project = ((projectRows ?? []) as Array<{ id: string; project_number: string; status: string }>)[0] ?? null;
+  const action = solarOpportunityAction(facts, { assessmentInProgress: inProgress, projectId: project?.id ?? null });
+  const quoteStatus = relevantQuote ? quotationDisplayStatus(relevantQuote) : null;
+  const location =
+    (assessmentComplete ? assessmentData?.site.address : null) ||
+    deal?.location ||
+    locationFromDealOrLead(null, lead.form_data) ||
+    null;
+  const activeAssets = ((assets ?? []) as Array<{
+    name: string;
+    asset_type: string;
+    quantity: number;
+    installed_at: string | null;
+    work_project_id: string | null;
+  }>).filter((asset) => asset.name);
+  const system = activeAssets.find((asset) => asset.asset_type === "SYSTEM") ?? null;
+  const parts = activeAssets.filter((asset) => asset.asset_type !== "SYSTEM");
+  const installedAt = system?.installed_at ?? parts.find((part) => part.installed_at)?.installed_at ?? null;
+  const openDeals = deals.filter((row) => row.stage !== "WON" && row.stage !== "LOST");
+  const source = formatLeadSource(lead.source);
+  const visitId = openVisit?.id ?? completedVisit?.id ?? focusVisit?.id ?? null;
+
   return {
     ok: true as const,
     data: {
       stage,
       stageLabel: SOLAR_SALES_STAGE_LABEL[stage],
-      nextAction: solarPrimaryAction(loaded.data.facts),
-      dealId: loaded.data.deal?.id ?? null,
-      visitId: openVisit?.id ?? loaded.data.facts.visits.find((row) => row.assessmentStatus === "COMPLETED")?.id ?? null,
-      quoteAccepted: quoteAccepted(loaded.data.facts.quotes),
+      nextAction: action.label,
+      nextActionKind: action.kind,
+      insight: solarInsight({ stage, quoteStatus, projectId: project?.id ?? null }),
+      progress: solarPanelProgress(stage),
+      handoff: stage === "WON" && Boolean(project),
+      customer: {
+        name: lead.name?.trim() || "Customer",
+        phone: lead.phone,
+        sourceLabel: source.label,
+        ownerName: names.get(deal?.owner_id ?? lead.assigned_to_id ?? "") ?? null,
+        kind: activeAssets.length > 0 || (completedProjects ?? []).length > 0 ? ("existing" as const) : ("new" as const),
+      },
+      dealId: deal?.id ?? null,
+      dealName: deal?.name ?? null,
+      wonValue: deal?.stage === "WON" ? deal.won_value : null,
+      currency: relevantQuote?.currency || "USD",
+      opportunities: openDeals.map((row) => ({
+        id: row.id,
+        name: row.name?.trim() || "Opportunity",
+      })),
+      requirement: {
+        service:
+          (assessmentComplete ? assessmentData?.site.propertyType : null) ||
+          lead.project_type ||
+          deal?.service_summary ||
+          lead.customer_need ||
+          null,
+        location,
+        loads: assessmentComplete && assessmentData ? essentialLoadLine(assessmentData) : null,
+        timeline: lead.buying_timeframe || lead.timeline || null,
+        budget: lead.budget || null,
+      },
+      missing: solarMissingFacts({
+        stage,
+        location,
+        budget: lead.budget ?? null,
+        timeline: lead.buying_timeframe || lead.timeline || null,
+        assessment: assessmentData,
+        assessmentComplete,
+      }),
+      visit: focusVisit
+        ? {
+            id: focusVisit.id,
+            status: focusVisit.status,
+            statusLabel: VISIT_STATUS_LABEL[focusVisit.status] ?? focusVisit.status,
+            scheduledAt: focusVisit.scheduled_start_at,
+            assigneeName: names.get(focusVisit.assigned_to_id ?? "") ?? null,
+            site: focusVisit.site_address?.trim() || focusVisit.site_city?.trim() || null,
+          }
+        : null,
+      assessment: {
+        status: assessmentComplete ? ("COMPLETED" as const) : assessmentRow?.status === "DRAFT" ? ("DRAFT" as const) : ("NONE" as const),
+        inProgress,
+        sectionsDone: assessmentData ? solarAssessmentSectionsDone(assessmentData) : 0,
+        sectionsTotal: SOLAR_ASSESSMENT_SECTION_TOTAL,
+        completedAt: assessmentComplete ? assessmentRow?.completed_at ?? null : null,
+        outcome: assessmentComplete && assessmentData ? assessmentOutcomeLine(assessmentData) : null,
+        power: assessmentComplete && assessmentData ? solarPowerLines(assessmentData) : [],
+        loads: assessmentComplete && assessmentData ? essentialLoadLine(assessmentData) : null,
+        roof: assessmentComplete && assessmentData ? solarRoofLine(assessmentData) : null,
+        visitId: focusVisit?.id ?? null,
+      },
+      quotation: relevantQuote?.id
+        ? {
+            id: relevantQuote.id,
+            number: relevantQuote.number ?? null,
+            status: relevantQuote.status,
+            statusLabel: quoteStatus,
+            total: relevantQuote.total ?? null,
+            currency: relevantQuote.currency || "USD",
+            sentAt: relevantQuote.sentAt ?? null,
+            viewedAt: relevantQuote.viewedAt ?? null,
+            acceptedAt: relevantQuote.acceptedAt ?? null,
+          }
+        : null,
+      project: project
+        ? {
+            id: project.id,
+            number: project.project_number,
+            status: project.status,
+            statusLabel: workProjectStatusLabel(project.status),
+          }
+        : null,
+      installedSystem: activeAssets.length
+        ? {
+            headline: system?.name ?? "Installed system",
+            lines: parts.map((part) => {
+              const quantity = Number(part.quantity);
+              return quantity > 1 ? `${quantity} × ${part.name}` : part.name;
+            }),
+            installedLabel:
+              installedAt && !Number.isNaN(new Date(installedAt).getTime())
+                ? String(new Date(installedAt).getFullYear())
+                : null,
+            projectId: system?.work_project_id ?? parts.find((part) => part.work_project_id)?.work_project_id ?? null,
+          }
+        : null,
+      reminderAt: deal?.next_action_at || lead.follow_up_date || null,
+      quoteAccepted: quoteAccepted(facts.quotes),
+      visitId,
+      projectId: project?.id ?? null,
+      proposalNotes: assessmentComplete && assessmentData
+        ? [assessmentOutcomeLine(assessmentData), essentialLoadLine(assessmentData), solarRoofLine(assessmentData), solarPowerLines(assessmentData).join(", "), assessmentData.site.address]
+            .filter((line): line is string => Boolean(line && line.trim()))
+            .join("\n")
+        : null,
     },
   };
+}
+
+export async function focusSolarOpportunity(actor: SolarActor, leadId: string, dealId: string) {
+  const loaded = await bundle(actor, leadId);
+  if (!loaded.ok) return loaded;
+  if (loaded.data.preset !== "SOLAR_INSTALLATION") return fail(409, "This company uses the general trades sales workflow.");
+  const deal = loaded.data.deals.find((row) => row.id === dealId);
+  if (!deal || deal.originating_lead_id !== leadId || rejectCrossTenant(actor.clientId, deal.client_id)) {
+    return fail(404, "That opportunity is not on this lead.");
+  }
+  if (deal.stage === "WON" || deal.stage === "LOST") return fail(409, "Choose an open opportunity.");
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({ active_deal_id: dealId, updated_at: new Date().toISOString() })
+    .eq("id", leadId)
+    .eq("client_id", actor.clientId);
+  if (error) return fail(500, "Could not switch opportunity.");
+  return { ok: true as const, dealId };
 }
 
 export async function answerSolarSalesQuestion(actor: SolarActor, question: SolarSalesQuestion) {
@@ -452,43 +681,75 @@ export async function answerSolarSalesQuestion(actor: SolarActor, question: Sola
   return { ok: true as const, data: { preset: board.data.preset, cards, report: board.data.report } };
 }
 
+type VisitBundleRow = {
+  id: string;
+  status: string;
+  scheduled_start_at: string | null;
+  assigned_to_id: string | null;
+  site_address: string | null;
+  site_city: string | null;
+};
+
+type AssessmentBundleRow = {
+  visit_id: string;
+  status: string;
+  completed_at: string | null;
+  data: unknown;
+};
+
 async function bundle(actor: SolarActor, leadId: string) {
   const preset = await readSalesWorkflowPreset(actor.clientId);
   const lead = await loadLead(actor, leadId);
   if (!lead) return fail(404, "Lead not found.");
-  const deal = await activeDeal(actor.clientId, leadId);
+  const deals = await loadLeadDeals(actor.clientId, leadId);
+  const deal = resolveSolarActiveDeal(deals, lead.active_deal_id ?? null);
   if (!canTouchLead(actor, lead, deal)) return fail(403, "You cannot update this lead.");
   const supabase = createAdminClient();
   const [{ data: visits }, { data: quotes }] = await Promise.all([
     supabase
       .from("sales_site_visits")
-      .select("id, status, scheduled_start_at")
+      .select("id, status, scheduled_start_at, assigned_to_id, site_address, site_city")
       .eq("client_id", actor.clientId)
       .or(`lead_id.eq.${leadId}${deal ? `,deal_id.eq.${deal.id}` : ""}`),
     supabase
       .from("quotations")
-      .select("id, status, approval_status, sent_at, quote_number, total, currency")
+      .select("id, status, approval_status, sent_at, quote_number, total, currency, viewed_at, view_count, accepted_at, created_at")
       .eq("client_id", actor.clientId)
       .or(`lead_id.eq.${leadId}${deal ? `,deal_id.eq.${deal.id}` : ""}`),
   ]);
-  const visitIds = ((visits ?? []) as Array<{ id: string }>).map((row) => row.id);
+  const visitRows = (visits ?? []) as VisitBundleRow[];
+  const visitIds = visitRows.map((row) => row.id);
   const { data: assessments } = visitIds.length
-    ? await supabase.from("sales_site_visit_assessments").select("visit_id, status, completed_at").eq("client_id", actor.clientId).in("visit_id", visitIds)
+    ? await supabase
+        .from("sales_site_visit_assessments")
+        .select("visit_id, status, completed_at, data")
+        .eq("client_id", actor.clientId)
+        .in("visit_id", visitIds)
     : { data: [] };
   const assessmentByVisit = new Map(
-    ((assessments ?? []) as Array<{ visit_id: string; status: string; completed_at: string | null }>).map((row) => [row.visit_id, row])
+    ((assessments ?? []) as AssessmentBundleRow[]).map((row) => [row.visit_id, row])
   );
-  const visitFacts: SolarVisitFact[] = ((visits ?? []) as Array<{ id: string; status: string; scheduled_start_at: string | null }>).map((row) => ({
+  const visitFacts: SolarVisitFact[] = visitRows.map((row) => ({
     id: row.id,
     status: row.status,
     scheduledStartAt: row.scheduled_start_at,
     assessmentStatus: (assessmentByVisit.get(row.id)?.status as "DRAFT" | "COMPLETED" | undefined) ?? null,
     completedAt: assessmentByVisit.get(row.id)?.completed_at ?? null,
   }));
-  const quoteFacts = ((quotes ?? []) as QuoteRow[]).map(quoteFact);
+  const quoteRows = (quotes ?? []) as QuoteRow[];
+  const quoteFacts = quoteRows.map(quoteFact);
   return {
     ok: true as const,
-    data: { preset, lead, deal, facts: factsFrom({ preset, lead, deal, visits: visitFacts, quotes: quoteFacts }) },
+    data: {
+      preset,
+      lead,
+      deal,
+      deals,
+      visitRows,
+      assessmentByVisit,
+      quoteRows,
+      facts: factsFrom({ preset, lead, deal, visits: visitFacts, quotes: quoteFacts }),
+    },
   };
 }
 

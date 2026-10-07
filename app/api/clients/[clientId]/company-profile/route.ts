@@ -44,7 +44,7 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
   const { data, error } = await supabase
     .from("clients")
     .select(
-      "id, name, industry, slug, logo_url, response_time_limit_hours, dial_code, primary_color, website, country, owner_email, assignment_mode, business_type, capability_tagline, years_in_operation, fb_page_id, fb_page_name, fb_form_name"
+      "id, name, industry, slug, logo_url, response_time_limit_hours, dial_code, primary_color, website, country, owner_email, assignment_mode, business_type, sales_workflow_preset, capability_tagline, years_in_operation, fb_page_id, fb_page_name, fb_form_name"
     )
     .eq("id", params.clientId)
     .maybeSingle();
@@ -107,7 +107,7 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     .update(update)
     .eq("id", params.clientId)
     .select(
-      "id, name, industry, slug, logo_url, response_time_limit_hours, dial_code, primary_color, website, country, owner_email, assignment_mode, business_type, capability_tagline, years_in_operation, fb_page_id, fb_page_name, fb_form_name"
+      "id, name, industry, slug, logo_url, response_time_limit_hours, dial_code, primary_color, website, country, owner_email, assignment_mode, business_type, sales_workflow_preset, capability_tagline, years_in_operation, fb_page_id, fb_page_name, fb_form_name"
     )
     .maybeSingle();
 

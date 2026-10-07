@@ -10,6 +10,7 @@ type Snapshot = {
   nextAction: string;
   dealId: string | null;
   visitId: string | null;
+  projectId?: string | null;
   quoteAccepted: boolean;
 };
 
@@ -44,13 +45,15 @@ export function SolarStageCue({
   if (!card) return null;
   const current = solarProgressIndex(card.stage);
   const actionHref =
-    card.nextAction === "Open visit" && card.visitId
+    (card.nextAction === "Open visit" || card.nextAction === "Continue assessment") && card.visitId
       ? `${visitBase}/${card.visitId}`
       : card.nextAction === "Prepare proposal" || card.nextAction === "Send quote"
         ? card.dealId
           ? `${quotesBase}?dealId=${card.dealId}`
           : quotesBase
-        : null;
+        : card.nextAction === "Open project" && card.projectId
+          ? `/sales/projects/${card.projectId}`
+          : null;
 
   if (compact) {
     return (
