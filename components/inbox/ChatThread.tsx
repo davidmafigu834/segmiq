@@ -993,7 +993,17 @@ export function ChatThread({
 
       {salespersonHub && !isSupport ? (
         <div className="border-b border-sales-border px-3 py-2 sm:px-4">
-          <SolarStageCue leadId={conversation.id} visitBase="/sales/site-visits" quotesBase="/sales/quotes" compact refreshKey={snapshotRefreshKey} />
+          <SolarStageCue
+            leadId={conversation.id}
+            visitBase="/sales/site-visits"
+            quotesBase="/sales/quotes"
+            compact
+            refreshKey={snapshotRefreshKey}
+            thread={{
+              lastMessageDirection: conversation.lastMessageDirection,
+              lastMessageAt: conversation.lastMessageAt,
+            }}
+          />
         </div>
       ) : null}
 

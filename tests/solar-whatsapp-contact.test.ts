@@ -68,15 +68,13 @@ test("WhatsApp new lead does not offer Contact lead, and the board label stays",
   assert.equal(step.button, null);
   assert.equal(step.title, "Reply to this customer");
   assert.match(step.hint ?? "", /Contacted/);
-  const qualify = solarWhatsAppNextStep("qualify", "Qualify");
-  assert.equal(qualify.title, "Qualify this lead");
-  assert.equal(qualify.button, "Qualify Lead");
   assert.equal(solarPrimaryAction(facts()), "Contact lead");
   assert.equal(solarPrimaryAction(facts({ leadStatus: "CONTACTED" })), "Qualify");
   const panel = readFileSync("components/inbox/SolarOpportunityPanel.tsx", "utf8");
-  assert.match(panel, /solarWhatsAppNextStep/);
+  assert.match(panel, /resolveSolarEngagement/);
+  assert.doesNotMatch(panel, /solarWhatsAppNextStep/);
   assert.doesNotMatch(panel, /Contact lead/);
-  assert.match(readFileSync("components/sales/solar/SolarStageCue.tsx", "utf8"), /refreshKey/);
+  assert.match(readFileSync("components/sales/solar/SolarStageCue.tsx", "utf8"), /resolveSolarEngagement/);
   assert.equal(solarConversationListLabel("NEW"), "New Lead");
   assert.equal(solarConversationListLabel("CONTACTED"), "Contacted");
 });

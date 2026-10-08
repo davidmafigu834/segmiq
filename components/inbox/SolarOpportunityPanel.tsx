@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { format, formatDistanceToNow } from "date-fns";
+import { addDays, format, formatDistanceToNow } from "date-fns";
 import { ArrowLeft, ArrowLeftRight, PanelRightClose } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { QuotationBuilder } from "@/components/leads/QuotationBuilder";
@@ -13,7 +13,13 @@ import { TransferToSupportDialog } from "@/components/inbox/TransferToSupportDia
 import { displayContactName, WhatsAppAvatar } from "@/components/inbox/WhatsAppAvatar";
 import { formatCurrencyAmount, hasMeaningfulScore } from "@/lib/inbox/format-display";
 import type { InboxConversation } from "@/lib/inbox/types";
-import { solarWhatsAppNextStep, type SolarPanelActionKind } from "@/lib/sales/solar-workflow/opportunity";
+import type { SolarPanelActionKind } from "@/lib/sales/solar-workflow/opportunity";
+import {
+  resolveSolarEngagement,
+  solarFollowUpWrite,
+  type SolarEngagementActionKind,
+  type SolarNextAction,
+} from "@/lib/sales/solar-workflow/engagement";
 import type { SolarSalesStage } from "@/lib/sales/solar-workflow";
 import type { QuotationLineItemRow, QuotationRow } from "@/types";
 
@@ -189,7 +195,6 @@ export function SolarOpportunityPanel({
     card && (card.stage === "NEW_LEAD" || card.stage === "CONTACTED") && hasMeaningfulScore(conversation.score, conversation.breakdown)
       ? conversation.score
       : null;
-  const showReminder = Boolean(card && (card.reminderAt || card.nextActionKind === "follow_up" || reminderOpen));
   const panelClass = panelWidth == null ? "w-[380px] shrink-0" : "shrink-0";
   const mobileClass = mobileFullScreen
     ? open
@@ -243,9 +248,17 @@ export function SolarOpportunityPanel({
     else setMessage(json.error || "Could not prepare the proposal.");
   }
 
-  async function runAction() {
+  async function runWorkflow(kind: SolarEngagementActionKind) {
     if (!card || busy) return;
-    const kind = card.nextActionKind;
+    if (kind === "follow_up") {
+      setMessage("Send the follow-up in this conversation. The sales stage stays the same.");
+      return;
+    }
+    if (kind === "schedule_follow_up") {
+      setReminderOpen(true);
+      return;
+    }
+    if (kind === "reply" || kind === "ask" || kind === "none") return;
     if (kind === "open_visit" || kind === "continue_assessment") {
       const visitId = card.visitId || card.assessment.visitId;
       if (visitId) router.push(`/sales/site-visits/${visitId}`);
@@ -258,10 +271,6 @@ export function SolarOpportunityPanel({
     if (!canModifyDeal) return;
     if (kind === "schedule_visit") {
       setScheduleOpen(true);
-      return;
-    }
-    if (kind === "follow_up") {
-      setReminderOpen(true);
       return;
     }
     if (kind === "mark_won") {
@@ -281,11 +290,11 @@ export function SolarOpportunityPanel({
       }
       return;
     }
-    if (kind === "contact" || kind === "qualify") {
+    if (kind === "qualify") {
       setBusy(true);
       try {
-        await transition(kind === "contact" ? "CONTACTED" : "QUALIFIED");
-        setMessage(kind === "contact" ? "Marked as contacted." : "Marked as qualified.");
+        await transition("QUALIFIED");
+        setMessage("Marked as qualified.");
         await reload();
       } catch (error) {
         setMessage(error instanceof Error ? error.message : "Could not update this opportunity.");
@@ -297,21 +306,19 @@ export function SolarOpportunityPanel({
 
   async function saveReminder(dateValue: string) {
     if (!card || !canModifyDeal || busy) return;
+    const write = solarFollowUpWrite(card.dealId, dateValue);
     setBusy(true);
     try {
-      const response = card.dealId
+      const response = write.resource === "deal"
         ? await fetch(`/api/deals/${card.dealId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              next_action_at: new Date(`${dateValue}T10:00:00`).toISOString(),
-              next_action_label: "Follow up with customer",
-            }),
+            body: JSON.stringify(write.body),
           })
         : await fetch(`/api/leads/${conversation.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ follow_up_date: dateValue }),
+            body: JSON.stringify(write.body),
           });
       if (!response.ok) {
         setMessage("Could not save the reminder.");
@@ -325,14 +332,41 @@ export function SolarOpportunityPanel({
     }
   }
 
-  const nextStep = card ? solarWhatsAppNextStep(card.nextActionKind, card.nextAction) : null;
-  const actionIsNavigation =
-    card?.nextActionKind === "open_visit" ||
-    card?.nextActionKind === "continue_assessment" ||
-    card?.nextActionKind === "open_project";
-  const showActionButton = Boolean(
-    card && nextStep?.button && !card.handoff && (canModifyDeal || actionIsNavigation)
-  );
+  const visitScheduled = Boolean(card?.visit && ["SCHEDULED", "ON_SITE", "RESCHEDULED"].includes(card.visit.status));
+  const plan = card
+    ? resolveSolarEngagement({
+        stage: card.stage,
+        now: new Date(),
+        lastMessageDirection: conversation.lastMessageDirection,
+        lastMessageAt: conversation.lastMessageAt,
+        followUpAt: card.reminderAt,
+        service: card.requirement.service,
+        location: card.requirement.location,
+        timeline: card.requirement.timeline,
+        budget: card.requirement.budget,
+        visitScheduled,
+        visitAt: card.visit?.scheduledAt ?? null,
+        assessmentCompletedAt: card.assessment.completedAt,
+        quote: card.quotation
+          ? {
+              number: card.quotation.number,
+              total: card.quotation.total,
+              currency: card.quotation.currency,
+              sentAt: card.quotation.sentAt,
+              viewedAt: card.quotation.viewedAt,
+              acceptedAt: card.quotation.acceptedAt,
+              status: card.quotation.statusLabel,
+            }
+          : null,
+        workflowKind: card.nextActionKind,
+        workflowLabel: card.nextAction,
+        hasProject: Boolean(card.project),
+      })
+    : null;
+  const stillNeeded =
+    card && (card.stage === "NEW_LEAD" || card.stage === "CONTACTED")
+      ? plan?.qualification.missingFields ?? []
+      : card?.missing ?? [];
 
   return (
     <aside
@@ -369,6 +403,7 @@ export function SolarOpportunityPanel({
               <div className="flex items-start gap-3">
                 <WhatsAppAvatar name={name} phone={phone} imageUrl={conversation.whatsappProfilePictureUrl} size="md" />
                 <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold text-sales-text-label">Customer</p>
                   <div className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary">{name}</div>
                   <div className="mt-0.5 text-[13px] font-medium text-sales-text-primary">{card.stage === "LOST" ? "Lost" : card.stageLabel}</div>
                   <div className="mt-1 flex items-center gap-1.5 text-[12px] text-sales-whatsapp">
@@ -377,30 +412,22 @@ export function SolarOpportunityPanel({
                   </div>
                 </div>
               </div>
-              {nextStep && !card.handoff && (nextStep.title || showActionButton) ? (
-                <div className="mt-3">
-                  {nextStep.title ? (
-                    <>
-                      <p className="text-[11px] font-semibold text-sales-text-label">Next step</p>
-                      <p className="mt-0.5 text-[13px] font-semibold text-sales-text-primary">{nextStep.title}</p>
-                    </>
-                  ) : null}
-                  {nextStep.hint ? <p className="mt-1 text-[12px] leading-relaxed text-sales-text-secondary">{nextStep.hint}</p> : null}
-                  {showActionButton ? (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => void runAction()}
-                      className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-[9px] bg-sales-brand px-3 py-2.5 text-[13px] font-semibold text-sales-brand-text disabled:opacity-50"
-                    >
-                      {busy ? "Working…" : nextStep.button}
-                    </button>
-                  ) : null}
-                </div>
+              {plan ? (
+                <EngagementBlock
+                  plan={plan}
+                  busy={busy}
+                  canModifyDeal={canModifyDeal}
+                  reminderOpen={reminderOpen}
+                  reminderDate={reminderDate}
+                  onReminderDate={setReminderDate}
+                  onReminderOpen={setReminderOpen}
+                  onRun={(action) => void runWorkflow(action.kind)}
+                  onSchedule={(date) => void saveReminder(format(date, "yyyy-MM-dd"))}
+                />
               ) : null}
             </div>
 
-            <Section title="Customer">
+            <Section title="Account">
               <p className="text-[12.5px] text-sales-text-secondary">
                 {card.customer.kind === "existing" ? "Existing customer" : "New customer"}
                 {card.customer.sourceLabel ? ` · ${card.customer.sourceLabel}` : ""}
@@ -445,7 +472,36 @@ export function SolarOpportunityPanel({
               ) : null}
             </Section>
 
-            <Section title="Solar sales">
+            {card.handoff && card.project ? (
+              <Section title="Customer won">
+                <p className="text-[13px] font-semibold text-sales-text-primary">{card.project.number}</p>
+                <p className="mt-0.5 text-[12.5px] text-sales-text-secondary">{card.project.statusLabel}</p>
+                <Link href={`/sales/projects/${card.project.id}`} className="mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold text-sales-text-primary">
+                  Open project
+                </Link>
+              </Section>
+            ) : null}
+
+            {card.stage === "WON" && !card.project ? (
+              <Section title="Sale won">
+                <p className="text-[13px] text-sales-text-secondary">
+                  {card.wonValue != null ? formatCurrencyAmount(card.wonValue, card.currency) : "Sales is complete. Create a project to begin delivery."}
+                </p>
+              </Section>
+            ) : null}
+
+            <Requirement card={card} />
+            {stillNeeded.length > 0 ? (
+              <Section title="Still needed">
+                <ul className="space-y-1 text-[12.5px] text-sales-text-secondary">
+                  {stillNeeded.map((item) => (
+                    <li key={item}>• {item}</li>
+                  ))}
+                </ul>
+              </Section>
+            ) : null}
+
+            <Section title="Solar journey">
               <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-[11px]" aria-label="Solar sales progress">
                 {card.progress.map((step, index) => (
                   <li key={step.id} className="inline-flex items-center gap-1">
@@ -469,35 +525,6 @@ export function SolarOpportunityPanel({
               {card.insight ? <p className="mt-2 text-[12.5px] leading-relaxed text-sales-text-secondary">{card.insight}</p> : null}
             </Section>
 
-            {card.handoff && card.project ? (
-              <Section title="Customer won">
-                <p className="text-[13px] font-semibold text-sales-text-primary">{card.project.number}</p>
-                <p className="mt-0.5 text-[12.5px] text-sales-text-secondary">{card.project.statusLabel}</p>
-                <Link href={`/sales/projects/${card.project.id}`} className="mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold text-sales-text-primary">
-                  Open project
-                </Link>
-              </Section>
-            ) : null}
-
-            {card.stage === "WON" && !card.project ? (
-              <Section title="Sale won">
-                <p className="text-[13px] text-sales-text-secondary">
-                  {card.wonValue != null ? formatCurrencyAmount(card.wonValue, card.currency) : "Sales is complete. Create a project to begin delivery."}
-                </p>
-              </Section>
-            ) : null}
-
-            <Requirement card={card} />
-            {card.missing.length > 0 ? (
-              <Section title="Still needed">
-                <ul className="space-y-1 text-[12.5px] text-sales-text-secondary">
-                  {card.missing.map((item) => (
-                    <li key={item}>• {item}</li>
-                  ))}
-                </ul>
-              </Section>
-            ) : null}
-
             <VisitBlock card={card} canModify={canModifyDeal} onSchedule={() => setScheduleOpen(true)} />
             <AssessmentBlock card={card} />
             <QuoteBlock
@@ -509,41 +536,6 @@ export function SolarOpportunityPanel({
                 void openQuotation(false).finally(() => setBusy(false));
               }}
             />
-
-            {showReminder ? (
-              <Section title="Reminder">
-                {card.reminderAt ? (
-                  <p className="text-[13px] text-sales-text-primary">
-                    {formatReminder(card.reminderAt)}
-                  </p>
-                ) : (
-                  <p className="text-[13px] text-sales-text-secondary">No reminder set.</p>
-                )}
-                {canModifyDeal ? (
-                  <button type="button" className="mt-2 text-[12px] font-semibold text-sales-text-primary" onClick={() => setReminderOpen((value) => !value)}>
-                    {card.reminderAt ? "Change" : "Set reminder"}
-                  </button>
-                ) : null}
-                {reminderOpen && canModifyDeal ? (
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      type="date"
-                      value={reminderDate}
-                      onChange={(event) => setReminderDate(event.target.value)}
-                      className="min-h-11 min-w-0 flex-1 rounded-[8px] border border-sales-border bg-sales-surface px-2.5 text-[13px]"
-                    />
-                    <button
-                      type="button"
-                      disabled={!reminderDate || busy}
-                      onClick={() => void saveReminder(reminderDate)}
-                      className="min-h-11 rounded-[8px] bg-sales-brand px-3 text-[12px] font-semibold text-sales-brand-text disabled:opacity-50"
-                    >
-                      Save
-                    </button>
-                  </div>
-                ) : null}
-              </Section>
-            ) : null}
 
             {card.installedSystem ? (
               <Section title="Existing system">
@@ -563,7 +555,17 @@ export function SolarOpportunityPanel({
               </Section>
             ) : null}
 
-            <Context card={card} />
+            {plan && plan.activity.length > 0 ? (
+              <Section title="Recent">
+                <ul className="space-y-1 text-[12.5px] text-sales-text-secondary">
+                  {plan.activity.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </Section>
+            ) : (
+              <Context card={card} />
+            )}
 
             {canTransfer || canReassign ? (
               <Section title="Ownership">
@@ -677,6 +679,128 @@ export function SolarOpportunityPanel({
   );
 }
 
+function EngagementBlock({
+  plan,
+  busy,
+  canModifyDeal,
+  reminderOpen,
+  reminderDate,
+  onReminderDate,
+  onReminderOpen,
+  onRun,
+  onSchedule,
+}: {
+  plan: ReturnType<typeof resolveSolarEngagement>;
+  busy: boolean;
+  canModifyDeal: boolean;
+  reminderOpen: boolean;
+  reminderDate: string;
+  onReminderDate: (value: string) => void;
+  onReminderOpen: (value: boolean) => void;
+  onRun: (action: SolarNextAction) => void;
+  onSchedule: (date: Date) => void;
+}) {
+  const showPrimary = actionVisible(plan.primary, canModifyDeal);
+  const showSecondary = actionVisible(plan.secondary, canModifyDeal);
+  const choices = [
+    { label: "Tomorrow", date: addDays(new Date(), 1) },
+    { label: "2 days", date: addDays(new Date(), 2) },
+    { label: "Friday", date: upcomingFriday(new Date()) },
+  ];
+  return (
+    <div className="mt-3 border-t border-sales-border-subtle pt-3">
+      {plan.engagementLabel ? (
+        <div>
+          <p className="text-[11px] font-semibold text-sales-text-label">Engagement</p>
+          <p className="mt-0.5 text-[13px] font-semibold text-sales-text-primary">{plan.engagementLabel}</p>
+          {plan.engagementDetail ? <p className="mt-0.5 text-[12px] text-sales-text-secondary">{plan.engagementDetail}</p> : null}
+        </div>
+      ) : null}
+      {plan.primary.title || showPrimary || showSecondary || plan.contextLines.length > 0 || plan.scheduleFollowUp ? (
+        <div className={plan.engagementLabel ? "mt-3" : ""}>
+          <p className="text-[11px] font-semibold text-sales-text-label">Next action</p>
+          {plan.contextLines.map((line) => (
+            <p key={line} className="mt-0.5 text-[12.5px] text-sales-text-secondary">{line}</p>
+          ))}
+          {plan.primary.title ? <p className="mt-0.5 text-[13px] font-semibold text-sales-text-primary">{plan.primary.title}</p> : null}
+          {showPrimary ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onRun(plan.primary)}
+              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-[9px] bg-sales-brand px-3 py-2.5 text-[13px] font-semibold text-sales-brand-text disabled:opacity-50"
+            >
+              {busy ? "Working…" : plan.primary.button}
+            </button>
+          ) : null}
+          {plan.scheduleFollowUp && canModifyDeal ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {choices.map((choice) => (
+                <button
+                  key={choice.label}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onSchedule(choice.date)}
+                  className="inline-flex min-h-9 items-center rounded-full border border-sales-border px-3 text-[12px] font-semibold text-sales-text-primary disabled:opacity-50"
+                >
+                  {choice.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => onReminderOpen(!reminderOpen)}
+                className="inline-flex min-h-9 items-center rounded-full border border-sales-border px-3 text-[12px] font-semibold text-sales-text-primary"
+              >
+                Custom
+              </button>
+            </div>
+          ) : null}
+          {reminderOpen && canModifyDeal ? (
+            <div className="mt-2 flex gap-2">
+              <input
+                type="date"
+                value={reminderDate}
+                onChange={(event) => onReminderDate(event.target.value)}
+                className="min-h-11 min-w-0 flex-1 rounded-[8px] border border-sales-border bg-sales-surface px-2.5 text-[13px]"
+              />
+              <button
+                type="button"
+                disabled={!reminderDate || busy}
+                onClick={() => onSchedule(new Date(`${reminderDate}T10:00:00`))}
+                className="min-h-11 rounded-[8px] bg-sales-brand px-3 text-[12px] font-semibold text-sales-brand-text disabled:opacity-50"
+              >
+                Save
+              </button>
+            </div>
+          ) : null}
+          {showSecondary && plan.secondary ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onRun(plan.secondary!)}
+              className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-[9px] border border-sales-border px-3 py-2.5 text-[13px] font-semibold text-sales-text-primary disabled:opacity-50"
+            >
+              {plan.secondary.button}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function actionVisible(action: SolarNextAction | null, canModifyDeal: boolean): boolean {
+  if (!action?.button) return false;
+  if (action.kind === "open_visit" || action.kind === "continue_assessment" || action.kind === "open_project") return true;
+  return canModifyDeal;
+}
+
+function upcomingFriday(now: Date): Date {
+  const delta = (5 - now.getDay() + 7) % 7;
+  return addDays(now, delta === 0 ? 7 : delta);
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="border-b border-sales-border-subtle px-3.5 py-3">
@@ -696,7 +820,7 @@ function Requirement({ card }: { card: Snapshot }) {
   ].filter((row): row is { label: string; value: string } => Boolean(row));
   if (!rows.length) return null;
   return (
-    <Section title="Customer need">
+    <Section title="What we know">
       <dl className="space-y-1.5">
         {rows.map((row) => (
           <div key={row.label}>
@@ -868,12 +992,6 @@ function SolarSkeleton() {
       <div className="h-24 animate-pulse rounded-[10px] bg-sales-surface-hover" />
     </div>
   );
-}
-
-function formatReminder(value: string): string {
-  const date = new Date(value.includes("T") ? value : `${value}T10:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
-  return format(date, "EEEE, HH:mm");
 }
 
 function ScheduleVisitDialog({

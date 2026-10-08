@@ -3,15 +3,42 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SOLAR_PROGRESS_STEPS, solarProgressIndex, type SolarSalesStage } from "@/lib/sales/solar-workflow";
+import { resolveSolarEngagement } from "@/lib/sales/solar-workflow/engagement";
+import type { SolarPanelActionKind } from "@/lib/sales/solar-workflow/opportunity";
 
 type Snapshot = {
   stage: SolarSalesStage;
   stageLabel: string;
   nextAction: string;
+  nextActionKind?: SolarPanelActionKind;
+  reminderAt?: string | null;
   dealId: string | null;
   visitId: string | null;
   projectId?: string | null;
   quoteAccepted: boolean;
+  requirement?: {
+    service: string | null;
+    location: string | null;
+    timeline: string | null;
+    budget: string | null;
+  };
+  visit?: { status: string; scheduledAt: string | null } | null;
+  quotation?: {
+    number: string | null;
+    statusLabel: string | null;
+    total: number | null;
+    currency: string;
+    sentAt: string | null;
+    viewedAt: string | null;
+    acceptedAt: string | null;
+  } | null;
+  assessment?: { completedAt: string | null } | null;
+  project?: { id: string } | null;
+};
+
+type ThreadFacts = {
+  lastMessageDirection: "inbound" | "outbound" | null;
+  lastMessageAt: string | null;
 };
 
 export function SolarStageCue({
@@ -20,12 +47,14 @@ export function SolarStageCue({
   quotesBase,
   compact = false,
   refreshKey = 0,
+  thread = null,
 }: {
   leadId: string;
   visitBase: string;
   quotesBase: string;
   compact?: boolean;
   refreshKey?: number;
+  thread?: ThreadFacts | null;
 }) {
   const [card, setCard] = useState<Snapshot | null>(null);
 
@@ -57,13 +86,44 @@ export function SolarStageCue({
           ? `/sales/projects/${card.projectId}`
           : null;
 
-  const compactNext = card.nextAction === "Contact lead" ? "Reply to this customer" : card.nextAction;
+  const visitScheduled = Boolean(card.visit && ["SCHEDULED", "ON_SITE", "RESCHEDULED"].includes(card.visit.status));
+  const threadPlan = compact && thread && card.nextActionKind
+    ? resolveSolarEngagement({
+        stage: card.stage,
+        now: new Date(),
+        lastMessageDirection: thread.lastMessageDirection,
+        lastMessageAt: thread.lastMessageAt,
+        followUpAt: card.reminderAt ?? null,
+        service: card.requirement?.service ?? null,
+        location: card.requirement?.location ?? null,
+        timeline: card.requirement?.timeline ?? null,
+        budget: card.requirement?.budget ?? null,
+        visitScheduled,
+        visitAt: card.visit?.scheduledAt ?? null,
+        assessmentCompletedAt: card.assessment?.completedAt ?? null,
+        quote: card.quotation
+          ? {
+              number: card.quotation.number,
+              total: card.quotation.total,
+              currency: card.quotation.currency,
+              sentAt: card.quotation.sentAt,
+              viewedAt: card.quotation.viewedAt,
+              acceptedAt: card.quotation.acceptedAt,
+              status: card.quotation.statusLabel,
+            }
+          : null,
+        workflowKind: card.nextActionKind,
+        workflowLabel: card.nextAction,
+        hasProject: Boolean(card.project || card.projectId),
+      })
+    : null;
+  const compactNext = threadPlan?.primary.title || threadPlan?.engagementLabel || (card.nextAction === "Contact lead" ? "Reply to this customer" : card.nextAction);
   if (compact) {
     return (
       <div className="flex min-w-0 flex-wrap items-center gap-2 text-[12px]">
         <span className="font-semibold text-sales-text-primary">{card.stageLabel}</span>
-        {compactNext ? <span className="text-sales-text-secondary">Next · {compactNext}</span> : null}
-        {actionHref ? (
+        {compactNext ? <span className="text-sales-text-secondary">{threadPlan ? compactNext : `Next · ${compactNext}`}</span> : null}
+        {actionHref && !threadPlan ? (
           <Link href={actionHref} className="inline-flex min-h-11 items-center font-semibold text-sales-text-primary">{card.nextAction}</Link>
         ) : null}
       </div>

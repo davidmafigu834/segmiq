@@ -642,6 +642,8 @@ export async function solarLeadSnapshot(actor: SolarActor, leadId: string) {
             projectId: system?.work_project_id ?? parts.find((part) => part.work_project_id)?.work_project_id ?? null,
           }
         : null,
+      // One reminder. A deal uses next_action_at; a lead without a deal uses follow_up_date.
+      // Scheduling this does not change the solar stage. See solarFollowUpWrite().
       reminderAt: deal?.next_action_at || lead.follow_up_date || null,
       quoteAccepted: quoteAccepted(facts.quotes),
       visitId,
