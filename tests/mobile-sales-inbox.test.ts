@@ -39,6 +39,7 @@ describe("salesperson inbox mobile contract", () => {
   const row = readFileSync("components/inbox/ConversationRow.tsx", "utf8");
   const css = readFileSync("app/globals.css", "utf8");
   const thread = readFileSync("components/inbox/ChatThread.tsx", "utf8");
+  const course = readFileSync("components/sales/training/CourseLayer.tsx", "utf8");
 
   it("asks the browser to resize layout when the keyboard opens", () => {
     assert.match(layout, /interactiveWidget:\s*"resizes-content"/);
@@ -59,7 +60,13 @@ describe("salesperson inbox mobile contract", () => {
   it("keeps the composer in the chat column and states when a send will not happen", () => {
     assert.match(thread, /WhatsApp is offline\. This message will not be sent\./);
     assert.match(thread, /max-\[1099px\]:max-h-\[46%\]/);
+    assert.match(thread, /sticky top-0 z-20/);
     assert.match(css, /100svh/);
     assert.match(css, /100dvh/);
+  });
+
+  it("keeps the course banner off the WhatsApp sales hub", () => {
+    assert.match(course, /pathname === "\/sales\/inbox"/);
+    assert.match(course, /if \(!ready \|\| inboxWorkspace\) return null/);
   });
 });

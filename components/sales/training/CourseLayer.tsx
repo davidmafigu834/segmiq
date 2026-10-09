@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useGuidedCourse } from "./GuidedCourseProvider";
 import { CourseCoachmark } from "./CourseCoachmark";
 import { CourseSpotlight } from "./CourseSpotlight";
@@ -11,6 +12,7 @@ import { CourseCompletionModal } from "./CourseCompletionModal";
 import { findCourseTarget } from "@/lib/sales/training/course-targets";
 
 export function CourseLayer() {
+  const pathname = usePathname();
   const {
     ready,
     uiMode,
@@ -18,12 +20,13 @@ export function CourseLayer() {
     isMobile,
     pause,
   } = useGuidedCourse();
+  const inboxWorkspace = pathname === "/sales/inbox" || pathname.startsWith("/sales/inbox/");
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [targetMissing, setTargetMissing] = useState(false);
   const [overlayNudge, setOverlayNudge] = useState(false);
 
   const targetId =
-    activeStep && (uiMode === "active" || uiMode === "practice")
+    !inboxWorkspace && activeStep && (uiMode === "active" || uiMode === "practice")
       ? isMobile && activeStep.mobileTarget
         ? activeStep.mobileTarget
         : activeStep.target
@@ -105,7 +108,7 @@ export function CourseLayer() {
     return () => window.removeEventListener("keydown", onKey);
   }, [uiMode, pause]);
 
-  if (!ready) return null;
+  if (!ready || inboxWorkspace) return null;
 
   return (
     <>

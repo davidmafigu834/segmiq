@@ -5629,5 +5629,25 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   .salesperson-wa-workspace[data-intel-sheet="open"] > .wa-context-pane > header {
     padding-top: 8px !important;
   }
+
+  .salesperson-wa-workspace[data-mobile-pane="thread"] > .company-wa-chat-pane {
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    flex: 1 1 0% !important;
+    overflow: hidden !important;
+  }
+
+  .salesperson-wa-workspace[data-mobile-pane="thread"] .wa-panel-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .salesperson-wa-workspace[data-mobile-pane="thread"] .wa-composer {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+  }
 }
 

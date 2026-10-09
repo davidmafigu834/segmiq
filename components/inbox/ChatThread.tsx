@@ -704,6 +704,15 @@ export function ChatThread({
   }
 
   const name = displayContactName(conversation);
+  const mobileStatus =
+    conversation.agentStatus === "HUMAN_NEEDED"
+      ? "Needs you"
+      : conversation.agentStatus === "AI_HANDLING" || conversation.agentStatus === "WAITING_ON_CUSTOMER"
+        ? "Agent handling"
+        : conversation.agentStatus === "PAUSED"
+          ? "Agent paused"
+          : null;
+  const mobileSubtitle = [mobileStatus, conversation.phone].filter(Boolean).join(" · ");
   const messageGroups = groupMessagesByDay(messages);
   const isWhatsApp = conversation.source === "WHATSAPP_INBOUND";
   const dealLabel = formatDealValue(conversation.dealValue, conversation.dealCurrency ?? "USD");
@@ -742,7 +751,7 @@ export function ChatThread({
   return (
     <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <div
-        className={`shrink-0 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top))] ${
+        className={`sticky top-0 z-20 shrink-0 bg-sales-surface max-[1099px]:pt-[env(safe-area-inset-top,0px)] ${
           isWhatsApp ? "wa-panel-header" : "border-b border-[var(--border)] bg-[var(--bg-primary)]"
         }`}
       >
@@ -774,29 +783,34 @@ export function ChatThread({
               />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5 layout:flex-row layout:items-center layout:gap-2.5">
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <span className="truncate text-[14px] font-semibold tracking-tight text-sales-text-primary">
+                  <span className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary min-[1100px]:text-[14px]">
                     {name}
                   </span>
                   {isWhatsApp ? (
                     <SiWhatsapp size={14} className="shrink-0 text-sales-whatsapp" aria-label="WhatsApp" />
                   ) : null}
                 </div>
+                {mobileSubtitle ? (
+                  <span className="truncate text-[12px] leading-4 text-sales-text-secondary min-[1100px]:hidden">
+                    {mobileSubtitle}
+                  </span>
+                ) : null}
                 {conversation.phone ? (
-                  <div className="truncate text-[11px] tabular-nums text-sales-text-secondary layout:shrink-0">
+                  <div className="hidden truncate text-[11px] tabular-nums text-sales-text-secondary min-[1100px]:block layout:shrink-0">
                     {conversation.phone}
                     {companyMode && conversation.location ? ` · ${conversation.location}` : ""}
                   </div>
                 ) : null}
                 {conversation.agentStatus === "HUMAN_NEEDED" ? (
-                  <span className="max-w-full truncate text-[12px] font-medium leading-snug text-sales-warning-fg">
+                  <span className="hidden max-w-full truncate text-[12px] font-medium leading-snug text-sales-warning-fg min-[1100px]:inline">
                     Needs you
                     {conversation.agentHumanNeededReason ? `: ${conversation.agentHumanNeededReason}` : ""}
                   </span>
                 ) : conversation.agentStatus === "AI_HANDLING" ||
                   conversation.agentStatus === "WAITING_ON_CUSTOMER" ? (
-                  <span className="max-w-full truncate text-[12px] font-medium text-sales-text-secondary">Agent handling</span>
+                  <span className="hidden max-w-full truncate text-[12px] font-medium text-sales-text-secondary min-[1100px]:inline">Agent handling</span>
                 ) : conversation.agentStatus === "PAUSED" ? (
-                  <span className="max-w-full truncate text-[12px] font-medium text-sales-text-muted">Agent paused</span>
+                  <span className="hidden max-w-full truncate text-[12px] font-medium text-sales-text-muted min-[1100px]:inline">Agent paused</span>
                 ) : null}
                 {!companyMode && salespersonHub ? (
                   <div className="hidden min-w-0 shrink-0 items-center gap-1.5 overflow-hidden min-[1100px]:flex">
@@ -809,7 +823,7 @@ export function ChatThread({
                     </span>
                   </div>
                 ) : !companyMode ? (
-                  <div className="flex min-w-0 shrink-0 items-center gap-1.5 overflow-hidden">
+                  <div className="hidden min-w-0 shrink-0 items-center gap-1.5 overflow-hidden min-[1100px]:flex">
                     {conversation.activeDealId ? (
                       <span className="truncate text-[12px] text-sales-text-secondary">
                         {[conversation.dealStage ? formatDealStage(conversation.dealStage) : null, dealLabel]
@@ -992,7 +1006,7 @@ export function ChatThread({
       ) : null}
 
       {salespersonHub && !isSupport ? (
-        <div className="border-b border-sales-border px-3 py-2 sm:px-4">
+        <div className="hidden border-b border-sales-border px-3 py-2 min-[1100px]:block sm:px-4">
           <SolarStageCue
             leadId={conversation.id}
             visitBase="/sales/site-visits"
@@ -1008,6 +1022,7 @@ export function ChatThread({
       ) : null}
 
       {salespersonHub && !isSupport && solarWorkflow === false ? (
+        <div className="max-[1099px]:hidden">
         <SalesConversationAssist
           conversation={conversation}
           lead={contextLead}
@@ -1023,6 +1038,7 @@ export function ChatThread({
           onCreateDeal={() => void openCreateDeal()}
           canCreateDeal={canCreateDeal}
         />
+        </div>
       ) : null}
 
       {companyMode && alsoSells && canSend && !isSupport ? (
@@ -1139,7 +1155,7 @@ export function ChatThread({
       </div>
 
       {canSend || companyMode ? (
-        <div className={`flex min-h-0 shrink-0 flex-col bg-sales-surface max-[1099px]:max-h-[46%] max-[1099px]:overflow-hidden ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)]"}`}>
+        <div className={`sticky bottom-0 z-20 flex min-h-0 shrink-0 flex-col bg-sales-surface max-[1099px]:max-h-[46%] max-[1099px]:overflow-hidden ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)]"}`}>
           <div className="min-h-0 max-[1099px]:flex-1 max-[1099px]:overflow-y-auto max-[1099px]:overscroll-contain">
           {sendError ? (
             <div role="alert" className="border-b border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-2 text-center text-xs text-[var(--danger-fg)]">
@@ -1155,14 +1171,6 @@ export function ChatThread({
               variant={isWhatsApp ? "whatsapp" : "default"}
               onCollapse={() => setQuickActionsOpen(false)}
             />
-          ) : null}
-          {!transportAvailable ? (
-            <div className="mx-3 mt-2 flex items-center gap-2 rounded-[9px] border border-sales-danger/30 bg-sales-danger-soft px-3 py-2 text-sales-danger-fg" role="status">
-              <AlertTriangle size={16} strokeWidth={1.8} className="shrink-0" aria-hidden />
-              <p className="min-w-0 text-[12px] font-medium leading-snug">
-                WhatsApp is offline. This message will not be sent.
-              </p>
-            </div>
           ) : null}
           {isWhatsApp && conversation ? (
             <>
@@ -1238,6 +1246,14 @@ export function ChatThread({
             />
           ) : null}
           </div>
+          {!transportAvailable ? (
+            <div className="flex shrink-0 items-center gap-2 border-t border-sales-danger/25 bg-sales-danger-soft px-3 py-1.5 text-sales-danger-fg" role="status">
+              <AlertTriangle size={14} strokeWidth={1.8} className="shrink-0" aria-hidden />
+              <p className="min-w-0 truncate text-[12px] font-medium leading-4">
+                WhatsApp is offline. This message will not be sent.
+              </p>
+            </div>
+          ) : null}
           {canSend ? (
           <div
             className={`shrink-0 ${
