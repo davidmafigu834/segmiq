@@ -623,6 +623,13 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-search
   border-radius: 9px;
 }
 
+html[data-crm] .sales-dashboard-premium .sd-search-wrap .sd-search-trigger.sd-search-icon {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+
 /* Primary button chrome is owned by `components/sales/ui/Button.tsx`. */
 
 /* ---------- Scrollbar ---------- */

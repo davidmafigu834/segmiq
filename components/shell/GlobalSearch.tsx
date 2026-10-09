@@ -141,7 +141,7 @@ export function GlobalSearch({
           <button
             type="button"
             onClick={openSearch}
-            className="sd-search-trigger inline-flex h-10 w-10 shrink-0 items-center justify-center border-0 bg-transparent text-sales-text-secondary transition-colors hover:text-sales-text-primary focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+            className="sd-search-trigger sd-search-icon inline-flex h-10 w-10 shrink-0 items-center justify-center border-0 bg-transparent text-sales-text-secondary transition-colors hover:text-sales-text-primary focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
             aria-label="Search"
           >
             <Search className="h-4 w-4" strokeWidth={1.5} />
