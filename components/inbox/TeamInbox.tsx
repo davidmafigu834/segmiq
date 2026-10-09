@@ -72,8 +72,6 @@ export function TeamInbox({
   backHref,
   pageTitle = "WhatsApp Sales Hub",
   companyMode = false,
-  unreadNotifications: _unreadNotifications = 0,
-  avatarUrl: _avatarUrl,
   onMobilePaneChange,
 }: Props) {
   const [conversations, setConversations] = useState<InboxConversation[]>([]);
