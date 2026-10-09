@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { SafeWhatsAppConnection } from "@/lib/whatsapp/providers/types";
+import { whatsAppConnectionPresentation } from "@/lib/inbox/connection-presentation";
 
 function relativeSynced(iso: string | null | undefined): string | null {
   if (!iso) return null;
@@ -23,18 +24,24 @@ export function WhatsAppConnectionStatus({
   connection,
   compact = false,
   reconnectHref,
+  quiet = false,
 }: {
   connection: SafeWhatsAppConnection | null;
   compact?: boolean;
   reconnectHref?: string;
+  /** Hide a healthy connection so the chat list can start immediately. Offline stays visible. */
+  quiet?: boolean;
 }) {
-  const connected = connection?.connected === true;
-  const pending = Boolean(
-    connection && ["INITIALIZING", "AWAITING_QR", "CONNECTING", "RECONNECTING"].includes(connection.status)
-  );
+  const presentation = whatsAppConnectionPresentation(connection);
   const synced = relativeSynced(connection?.lastSeenAt ?? connection?.connectedAt ?? null);
 
-  if (connected) {
+  if (presentation === "unknown") {
+    return <p className="sr-only">Checking WhatsApp connection</p>;
+  }
+
+  if (presentation === "connected") {
+    const label = `Connected${synced ? `, ${synced}` : ""}`;
+    if (quiet) return <p className="sr-only">{label}</p>;
     return (
       <p className={`text-[12px] text-sales-text-secondary ${compact ? "text-right" : ""}`}>
         Connected{synced ? ` · ${synced}` : ""}
@@ -42,11 +49,29 @@ export function WhatsAppConnectionStatus({
     );
   }
 
-  if (pending) {
+  if (presentation === "pending") {
     return (
-      <p className={`text-[12px] font-medium text-sales-warning-fg ${compact ? "text-right" : ""}`}>
+      <p className={`text-[12px] font-medium text-sales-warning-fg ${compact ? "text-right" : ""} ${quiet ? "px-3 py-2" : ""}`}>
         Connecting
       </p>
+    );
+  }
+
+  if (quiet) {
+    return (
+      <div className="flex min-h-11 items-center gap-2 px-3 py-1.5" role="status">
+        <p className="min-w-0 flex-1 text-[12px] font-medium leading-snug text-sales-danger-fg">
+          WhatsApp is offline. Messages cannot be sent.
+        </p>
+        {reconnectHref ? (
+          <Link
+            href={reconnectHref}
+            className="inline-flex min-h-11 shrink-0 items-center text-[12px] font-semibold text-sales-link hover:underline"
+          >
+            Reconnect
+          </Link>
+        ) : null}
+      </div>
     );
   }
 

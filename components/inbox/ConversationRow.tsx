@@ -87,6 +87,13 @@ export function ConversationRow({
   const unread = conversation.unread > 0;
   const contextLabel = !companyMode ? rowContextLabel(conversation, solarWorkflow) : null;
   const stageBadge = companyMode ? companyStageBadge(conversation) : null;
+  const showSalesPriority =
+    !companyMode &&
+    (conversation.agentStatus === "HUMAN_NEEDED" ||
+      conversation.agentStatus === "AI_HANDLING" ||
+      conversation.agentStatus === "WAITING_ON_CUSTOMER" ||
+      Boolean(waitingLabel) ||
+      followUpDue);
 
   return (
     <div
@@ -118,21 +125,14 @@ export function ConversationRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <div className="flex min-w-0 items-center gap-1.5">
                 <span
-                  className={`truncate text-[13px] tracking-[-0.01em] text-sales-text-primary ${
+                  className={`min-w-0 truncate text-[13px] tracking-[-0.01em] text-sales-text-primary ${
                     unread ? "font-semibold" : "font-medium"
                   }`}
                 >
                   {name}
                 </span>
-                {!companyMode && conversation.agentStatus === "HUMAN_NEEDED" ? (
-                  <span className="text-[11px] font-medium text-sales-warning-fg">Needs you</span>
-                ) : !companyMode &&
-                  (conversation.agentStatus === "AI_HANDLING" ||
-                    conversation.agentStatus === "WAITING_ON_CUSTOMER") ? (
-                  <span className="text-[11px] font-medium text-sales-text-muted">Agent</span>
-                ) : null}
                 {companyMode ? (
                   <>
                     <ConversationTypeBadge type={conversation.conversationType} />
@@ -154,14 +154,12 @@ export function ConversationRow({
                 unread && !companyMode ? "text-sales-whatsapp" : "text-sales-text-muted"
               }`}
             >
-              {companyMode
-                ? formatRelativeMessageTime(conversation.lastMessageAt)
-                : waitingLabel || (followUpDue ? "Follow-up due" : formatRelativeMessageTime(conversation.lastMessageAt))}
+              {formatRelativeMessageTime(conversation.lastMessageAt)}
             </span>
           </div>
 
           {contextLabel ? (
-            <div className="wa-kicker mt-0.5 truncate">
+            <div className="wa-kicker mt-0.5 hidden truncate min-[1100px]:block">
               {contextLabel}
             </div>
           ) : null}
@@ -200,11 +198,24 @@ export function ConversationRow({
                 </span>
               ) : null}
             </div>
-          ) : waitingLabel ? (
-            <div className="mt-1">
-              <span className={`text-[10px] font-medium tabular-nums ${waitingToneClass(waitingTone)}`}>
-                {waitingLabel}
-              </span>
+          ) : showSalesPriority ? (
+            <div className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden">
+              {conversation.agentStatus === "HUMAN_NEEDED" ? (
+                <span className="shrink-0 text-[11px] font-semibold text-sales-warning-fg">Needs you</span>
+              ) : null}
+              {waitingLabel ? (
+                <span className={`shrink-0 text-[11px] font-medium tabular-nums ${waitingToneClass(waitingTone)}`}>
+                  {waitingLabel}
+                </span>
+              ) : null}
+              {followUpDue ? (
+                <span className="shrink-0 text-[11px] font-semibold text-sales-warning-fg">Follow-up</span>
+              ) : null}
+              {!waitingLabel &&
+              !followUpDue &&
+              (conversation.agentStatus === "AI_HANDLING" || conversation.agentStatus === "WAITING_ON_CUSTOMER") ? (
+                <span className="shrink-0 text-[11px] font-medium text-sales-text-muted">Agent</span>
+              ) : null}
             </div>
           ) : null}
 
@@ -216,7 +227,7 @@ export function ConversationRow({
                 e.stopPropagation();
                 onClaim(conversation.id);
               }}
-              className="mt-1.5 rounded-md border border-sales-border bg-sales-surface px-1.5 py-0.5 text-[10px] font-semibold text-sales-text-primary hover:bg-sales-brand-soft disabled:opacity-50"
+              className="mt-1.5 inline-flex min-h-11 items-center rounded-md border border-sales-border bg-sales-surface px-3 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-brand-soft disabled:opacity-50"
             >
               {claiming ? "Claiming…" : "Claim"}
             </button>

@@ -740,7 +740,7 @@ export function ChatThread({
   }
 
   return (
-    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+    <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <div
         className={`shrink-0 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top))] ${
           isWhatsApp ? "wa-panel-header" : "border-b border-[var(--border)] bg-[var(--bg-primary)]"
@@ -788,15 +788,15 @@ export function ChatThread({
                   </div>
                 ) : null}
                 {conversation.agentStatus === "HUMAN_NEEDED" ? (
-                  <span className="max-w-full text-[12px] font-medium leading-snug text-sales-warning-fg">
+                  <span className="max-w-full truncate text-[12px] font-medium leading-snug text-sales-warning-fg">
                     Needs you
-                    {conversation.agentHumanNeededReason ? ` · ${conversation.agentHumanNeededReason}` : ""}
+                    {conversation.agentHumanNeededReason ? `: ${conversation.agentHumanNeededReason}` : ""}
                   </span>
                 ) : conversation.agentStatus === "AI_HANDLING" ||
                   conversation.agentStatus === "WAITING_ON_CUSTOMER" ? (
-                  <span className="max-w-full text-[12px] font-medium text-sales-text-secondary">Agent handling</span>
+                  <span className="max-w-full truncate text-[12px] font-medium text-sales-text-secondary">Agent handling</span>
                 ) : conversation.agentStatus === "PAUSED" ? (
-                  <span className="max-w-full text-[12px] font-medium text-sales-text-muted">Agent paused</span>
+                  <span className="max-w-full truncate text-[12px] font-medium text-sales-text-muted">Agent paused</span>
                 ) : null}
                 {!companyMode && salespersonHub ? (
                   <div className="hidden min-w-0 shrink-0 items-center gap-1.5 overflow-hidden min-[1100px]:flex">
@@ -1072,7 +1072,7 @@ export function ChatThread({
 
       <div
         ref={scrollRef}
-        className="wa-chat-wallpaper inbox-scroll relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-4 sm:px-5"
+        className="wa-chat-wallpaper inbox-scroll relative flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto overscroll-contain px-3 py-4 sm:px-5"
       >
         {loadingOlder ? (
           <div className="sticky top-0 z-10 mx-auto rounded-full border border-sales-border bg-sales-surface px-2.5 py-1 text-[10px] font-medium text-sales-text-secondary">
@@ -1139,7 +1139,8 @@ export function ChatThread({
       </div>
 
       {canSend || companyMode ? (
-        <div className={`shrink-0 bg-sales-surface ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)]"}`}>
+        <div className={`flex min-h-0 shrink-0 flex-col bg-sales-surface max-[1099px]:max-h-[46%] max-[1099px]:overflow-hidden ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)]"}`}>
+          <div className="min-h-0 max-[1099px]:flex-1 max-[1099px]:overflow-y-auto max-[1099px]:overscroll-contain">
           {sendError ? (
             <div role="alert" className="border-b border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-2 text-center text-xs text-[var(--danger-fg)]">
               {sendError}
@@ -1156,14 +1157,11 @@ export function ChatThread({
             />
           ) : null}
           {!transportAvailable ? (
-            <div className="mx-3 mt-2 flex items-start gap-2 rounded-[9px] border border-sales-danger/30 bg-sales-danger-soft px-3 py-2.5 text-sales-danger-fg">
-              <AlertTriangle size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" aria-hidden />
-              <div className="min-w-0">
-                <div className="text-[12px] font-semibold">WhatsApp temporarily offline</div>
-                <p className="mt-0.5 text-[11px] leading-snug">
-                  Sending will resume after your company reconnects WhatsApp.
-                </p>
-              </div>
+            <div className="mx-3 mt-2 flex items-center gap-2 rounded-[9px] border border-sales-danger/30 bg-sales-danger-soft px-3 py-2 text-sales-danger-fg" role="status">
+              <AlertTriangle size={16} strokeWidth={1.8} className="shrink-0" aria-hidden />
+              <p className="min-w-0 text-[12px] font-medium leading-snug">
+                WhatsApp is offline. This message will not be sent.
+              </p>
             </div>
           ) : null}
           {isWhatsApp && conversation ? (
@@ -1239,9 +1237,10 @@ export function ChatThread({
               isSupport={isSupport}
             />
           ) : null}
+          </div>
           {canSend ? (
           <div
-            className={`${
+            className={`shrink-0 ${
               isWhatsApp && !salespersonHub && !companyMode ? "" : isWhatsApp ? "" : "border-t border-[var(--border)]"
             }`}
             onDragOver={(e) => {
@@ -1349,7 +1348,7 @@ export function ChatThread({
               }}
               placeholder={
                 !transportAvailable
-                  ? "WhatsApp temporarily offline"
+                  ? "WhatsApp is offline"
                   : attachment
                     ? "Add a caption…"
                     : sessionClosed
@@ -1371,6 +1370,7 @@ export function ChatThread({
               disabled={(!input.trim() && !attachment) || sending || !transportAvailable}
               onClick={() => void sendCustomMessage(input)}
               aria-label="Send WhatsApp message"
+              aria-busy={sending}
               className={
                 isWhatsApp
                   ? "wa-send-btn"

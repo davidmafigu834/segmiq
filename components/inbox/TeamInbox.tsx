@@ -93,6 +93,7 @@ export function TeamInbox({
   const [agentActive, setAgentActive] = useState(false);
   const [dailyPlanQueue, setDailyPlanQueue] = useState<SalesActionRecommendation[]>([]);
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
+  const [intelSheetOpen, setIntelSheetOpen] = useState(false);
   const isMobile = useInboxMobile();
   const isCompact = useInboxCompact();
   const isWideWorkspace = useInboxWideWorkspace();
@@ -179,6 +180,7 @@ export function TeamInbox({
     // between 860px and 1099px and must keep the open chat or customer panel.
     if (!isCompact) {
       setMobilePane("list");
+      setIntelSheetOpen(false);
     }
   }, [isCompact]);
 
@@ -303,6 +305,7 @@ export function TeamInbox({
         /* selection remains functional without persistence */
       }
     }
+    setIntelSheetOpen(false);
     if (isCompact && whatsappMode) {
       setMobilePane("thread");
       return;
@@ -355,10 +358,19 @@ export function TeamInbox({
   );
 
   const intelOpenEffective = paneNav
-    ? mobilePane === "intel"
+    ? intelSheetOpen
     : resizable
       ? !intelCollapsed
       : intelOpen;
+
+  useEffect(() => {
+    if (!intelSheetOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIntelSheetOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [intelSheetOpen]);
 
   const showListHubBranding = whatsappMode || companyMode;
 
@@ -381,6 +393,7 @@ export function TeamInbox({
 
       <div
         data-mobile-pane={whatsappMode ? mobilePane : undefined}
+        data-intel-sheet={paneNav && intelSheetOpen ? "open" : "closed"}
         className={`min-h-0 min-w-0 flex-1 overflow-hidden ${
           companyMode
             ? "company-wa-workspace wa-hub-shell wa-hub-premium flex min-h-0 min-w-0 flex-1 overflow-hidden border-t border-sales-border bg-sales-surface"
@@ -458,10 +471,17 @@ export function TeamInbox({
                 canUpdateStatus={canUpdateStatus}
                 salespeople={salespeople}
                 showLogCall={salesCapable && ownsActive}
-                onBack={paneNav ? () => setMobilePane("list") : undefined}
+                onBack={
+                  paneNav
+                    ? () => {
+                        setIntelSheetOpen(false);
+                        setMobilePane("list");
+                      }
+                    : undefined
+                }
                 onToggleIntel={() => {
                   if (paneNav) {
-                    setMobilePane("intel");
+                    setIntelSheetOpen((open) => !open);
                     return;
                   }
                   if (resizable) {
@@ -515,14 +535,14 @@ export function TeamInbox({
                   panelWidth={resizable ? intelWidth : undefined}
                   onCollapse={() => {
                     if (paneNav) {
-                      setMobilePane("thread");
+                      setIntelSheetOpen(false);
                     } else if (resizable) {
                       toggleIntelCollapsed();
                     } else {
                       setIntelOpen(false);
                     }
                   }}
-                  onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+                  onMobileBack={paneNav ? () => setIntelSheetOpen(false) : undefined}
                 />
               ) : null
             ) : whatsappMode && active && (!resizable || !intelCollapsed) ? (
@@ -541,11 +561,11 @@ export function TeamInbox({
                   }}
                   open={intelOpenEffective}
                   onCollapse={() => {
-                    if (paneNav) setMobilePane("thread");
+                    if (paneNav) setIntelSheetOpen(false);
                     else if (resizable) toggleIntelCollapsed();
                     else setIntelOpen(false);
                   }}
-                  onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+                  onMobileBack={paneNav ? () => setIntelSheetOpen(false) : undefined}
                   panelWidth={resizable ? intelWidth : undefined}
                 />
               ) : realEstateHub ? (
@@ -558,11 +578,11 @@ export function TeamInbox({
                     void loadConversations({ silent: true });
                   }}
                   onCollapse={() => {
-                    if (paneNav) setMobilePane("thread");
+                    if (paneNav) setIntelSheetOpen(false);
                     else if (resizable) toggleIntelCollapsed();
                     else setIntelOpen(false);
                   }}
-                  onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+                  onMobileBack={paneNav ? () => setIntelSheetOpen(false) : undefined}
                   mobileFullScreen={paneNav}
                   mobileTopClass={mobileIntelTop}
                   panelWidth={resizable ? intelWidth : undefined}
@@ -586,11 +606,11 @@ export function TeamInbox({
                   }}
                   open={intelOpenEffective}
                   onCollapse={() => {
-                    if (paneNav) setMobilePane("thread");
+                    if (paneNav) setIntelSheetOpen(false);
                     else if (resizable) toggleIntelCollapsed();
                     else setIntelOpen(false);
                   }}
-                  onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+                  onMobileBack={paneNav ? () => setIntelSheetOpen(false) : undefined}
                   mobileFullScreen={paneNav}
                   mobileTopClass={mobileIntelTop}
                   panelWidth={resizable ? intelWidth : undefined}
@@ -598,7 +618,7 @@ export function TeamInbox({
                   refreshKey={contextRevision}
                 />
               ) : solarWorkflow === null && whatsappMode && !companyMode ? (
-                <aside className="wa-context-pane flex h-full w-full min-w-0 shrink-0 flex-col border-l border-sales-border bg-sales-surface min-[1100px]:w-[380px]" aria-busy aria-label="Loading solar opportunity">
+                <aside className="wa-context-pane hidden h-full min-w-0 shrink-0 flex-col border-l border-sales-border bg-sales-surface min-[1100px]:flex min-[1100px]:w-[380px]" aria-busy aria-label="Loading solar opportunity">
                   <div className="space-y-3 p-4">
                     <div className="h-16 animate-pulse rounded-[10px] bg-sales-surface-hover" />
                     <div className="h-20 animate-pulse rounded-[10px] bg-sales-surface-hover" />
@@ -623,11 +643,11 @@ export function TeamInbox({
                   }}
                   open={intelOpenEffective}
                   onCollapse={() => {
-                    if (paneNav) setMobilePane("thread");
+                    if (paneNav) setIntelSheetOpen(false);
                     else if (resizable) toggleIntelCollapsed();
                     else setIntelOpen(false);
                   }}
-                  onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+                  onMobileBack={paneNav ? () => setIntelSheetOpen(false) : undefined}
                   mobileFullScreen={paneNav}
                   mobileTopClass={mobileIntelTop}
                   panelWidth={resizable ? intelWidth : undefined}
@@ -649,7 +669,7 @@ export function TeamInbox({
                 whatsappMode={whatsappMode}
                 mobileTopClass={mobileIntelTop}
                 mobileFullScreen={paneNav}
-                onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+                onMobileBack={paneNav ? () => setIntelSheetOpen(false) : undefined}
                 panelWidth={resizable ? intelWidth : undefined}
                 panelAnimated={resizable}
                 canClaim={salesCapable}
@@ -659,6 +679,14 @@ export function TeamInbox({
             ) : null}
           </>
         )}
+        {paneNav && intelSheetOpen ? (
+          <button
+            type="button"
+            className="fixed inset-0 z-[44] bg-[rgba(16,24,40,0.45)] min-[1100px]:hidden"
+            aria-label="Close lead intelligence"
+            onClick={() => setIntelSheetOpen(false)}
+          />
+        ) : null}
       </div>
 
       <div

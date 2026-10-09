@@ -141,7 +141,7 @@ export function MessageBubble({ message, onTeach }: Props) {
     <div className={`flex px-1 py-0.5 ${isRep ? "justify-end" : "justify-start"}`}>
       <div className={`relative min-w-0 max-w-[min(88%,480px)] min-[1100px]:max-w-[min(68%,480px)] ${isRep ? "wa-bubble-out" : "wa-bubble-in"}`}>
         <MediaBlock message={message} />
-        {showText ? <div className="whitespace-pre-wrap break-words pr-1 text-[13.5px] leading-[1.45] sm:text-[14px]">{message.text}</div> : null}
+        {showText ? <div className="whitespace-pre-wrap break-words pr-1 text-[13.5px] leading-[1.45] [overflow-wrap:anywhere] sm:text-[14px]">{message.text}</div> : null}
         <div className="-mb-0.5 mt-0.5 flex items-center justify-end gap-1">
           {onTeach ? (
             <button

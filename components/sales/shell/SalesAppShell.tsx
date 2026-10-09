@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Building2,
@@ -30,6 +30,7 @@ import {
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import { ToastProvider } from "@/components/sales/ui/Toast";
 import { GuidedCourseMount } from "@/components/sales/training/GuidedCourseMount";
+import { useVisualViewportFrame } from "@/lib/shell/use-visual-viewport-frame";
 import { SalesHeaderQuickActions } from "@/components/sales/navigation/SalesHeaderQuickActions";
 import { PresenceHeartbeat } from "@/components/sales/PresenceHeartbeat";
 import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
@@ -202,6 +203,8 @@ function SalesAppShellInner({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const shellRef = useRef<HTMLDivElement>(null);
+  useVisualViewportFrame(shellRef);
   const { collapsed, toggleCollapsed, width } = useSalesSidebarCollapsed();
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps(assignmentMode);
@@ -243,12 +246,14 @@ function SalesAppShellInner({
 
   return (
     <div
+      ref={shellRef}
       className={cn(
-        "sales-dashboard-premium dashboard-shell flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-sales-bg text-sales-text-primary",
+        "sales-dashboard-premium dashboard-shell flex h-[100dvh] max-h-[100dvh] min-h-0 w-full min-w-0 max-w-[100vw] flex-col overflow-hidden bg-sales-bg text-sales-text-primary",
         className
       )}
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideBottomNav ? "true" : "false"}
+      data-content-flush={contentFlush ? "true" : "false"}
       data-sales-portal="true"
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
     >

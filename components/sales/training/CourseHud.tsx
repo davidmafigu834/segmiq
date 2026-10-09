@@ -9,7 +9,7 @@ export function CourseHud({ collapsed }: { collapsed?: boolean }) {
 
   if (collapsed || uiMode === "paused") {
     return (
-      <div className="fixed bottom-20 right-4 z-[var(--sales-z-course-coach,92)] layout:bottom-6">
+      <div className="fixed left-3 right-3 top-[max(8px,env(safe-area-inset-top,0px))] z-[var(--sales-z-course-coach,92)] layout:bottom-6 layout:left-auto layout:right-4 layout:top-auto layout:w-max layout:max-w-[calc(100vw-2rem)]">
         <div
           className="sales-modal-premium flex items-center gap-2 rounded-[12px] border border-sales-border bg-sales-surface px-3 py-2 shadow-none"
           style={{ backgroundColor: "var(--sales-surface, #FFFFFF)" }}

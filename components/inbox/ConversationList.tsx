@@ -200,7 +200,7 @@ export function ConversationList({
       data-course-target={whatsappMode && !companyMode ? "whatsapp-conversations" : undefined}
     >
       {whatsappMode ? (
-        <div className="sticky top-0 z-10 shrink-0 bg-sales-surface wa-panel-header">
+        <div className="sticky top-0 z-10 min-w-0 shrink-0 bg-sales-surface wa-panel-header">
           {showHubBranding ? (
             companyMode ? (
               <CompanyWhatsAppHeader connection={hubConnection} variant="list" agentActive={agentActive} />
@@ -222,7 +222,7 @@ export function ConversationList({
             </div>
           )}
           {companyMode && filterCounts && onFilterChange ? (
-            <div className="wa-filter-tabs flex border-t border-sales-border px-2" role="tablist" aria-label="Conversation filters">
+            <div className="wa-filter-tabs flex min-w-0 overflow-x-auto overscroll-x-contain border-t border-sales-border px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Conversation filters">
               {COMPANY_INBOX_FILTER_ORDER.map((key) => {
                 const active = filter === key;
                 return (
@@ -245,7 +245,7 @@ export function ConversationList({
             </div>
           ) : null}
           {!companyMode && !chromeInParent && filterCounts && onFilterChange ? (
-            <div className="wa-filter-tabs flex border-t border-sales-border px-2" role="tablist" aria-label="Primary conversation filters">
+            <div className="wa-filter-tabs flex min-w-0 overflow-x-auto overscroll-x-contain border-t border-sales-border px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Primary conversation filters">
               {salespersonPrimaryFilters.map((key) => {
                 const activeFilter = filter === key;
                 return (
@@ -270,7 +270,7 @@ export function ConversationList({
             </div>
           ) : null}
           {!chromeInParent ? (
-            <div className="border-t border-sales-border px-3 py-3">
+            <div className="border-t border-sales-border px-3 py-3 max-[1099px]:px-3 max-[1099px]:py-2">
               <div className="flex items-center gap-2">
                 <div className="wa-search min-w-0 flex-1">
                 <Search size={16} className="shrink-0 text-sales-text-muted" />
@@ -395,7 +395,7 @@ export function ConversationList({
         </div>
       )}
       <div
-        className={`inbox-scroll min-h-0 flex-1 overflow-y-auto ${
+        className={`inbox-scroll min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain ${
           whatsappMode ? "bg-sales-surface" : "bg-[var(--bg-secondary)]"
         }`}
       >
@@ -446,7 +446,7 @@ export function ConversationList({
         </div>
       ) : null}
       {!companyMode && whatsappMode && filtered.length > 0 ? (
-        <div className="flex min-h-[42px] shrink-0 items-center justify-between gap-2 border-t border-sales-border bg-sales-surface px-3">
+        <div className="flex min-h-8 shrink-0 items-center justify-between gap-2 border-t border-sales-border bg-sales-surface px-3 max-[1099px]:min-h-11">
           <span className="truncate text-[10px] text-sales-text-secondary">
             Showing {Math.min(visibleCount, filtered.length)} of {filtered.length}
           </span>

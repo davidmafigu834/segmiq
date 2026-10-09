@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CourseStep } from "@/lib/sales/training/types";
 import { canManualAdvance } from "@/lib/sales/training/engine";
 import { useGuidedCourse } from "./GuidedCourseProvider";
 import { Button } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
+import { mobileCourseDock } from "@/lib/sales/training/mobile-coachmark-dock";
 
 function placeCoachmark(
   rect: DOMRect | null,
@@ -73,6 +74,11 @@ export function CourseCoachmark({
     () => placeCoachmark(rect, step.placement, isMobile),
     [rect, step.placement, isMobile]
   );
+  const [mobileDock, setMobileDock] = useState<"top" | "bottom">("top");
+  useEffect(() => {
+    const mid = rect ? rect.top + rect.height / 2 : null;
+    setMobileDock(mobileCourseDock(mid, window.innerHeight));
+  }, [rect]);
 
   const showNext = canManualAdvance(step);
   const cue = step.requiredAction?.cue;
@@ -153,8 +159,11 @@ export function CourseCoachmark({
         aria-modal="false"
         aria-label={step.title}
         className={cn(
-          "sales-modal-premium fixed inset-x-0 bottom-0 z-[var(--sales-z-course-coach,92)]",
-          "rounded-t-[16px] border border-sales-border bg-sales-surface px-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))] pt-3 shadow-sales-modal"
+          "sales-modal-premium fixed inset-x-3 z-[var(--sales-z-course-coach,92)] max-h-[min(42dvh,320px)] overflow-y-auto overscroll-contain",
+          "rounded-[16px] border border-sales-border bg-sales-surface px-4 py-3 shadow-sales-modal",
+          mobileDock === "top"
+            ? "top-[max(8px,env(safe-area-inset-top,0px))]"
+            : "bottom-[max(12px,env(safe-area-inset-bottom,0px))]"
         )}
         style={{ backgroundColor: "var(--sales-surface, #FFFFFF)" }}
       >

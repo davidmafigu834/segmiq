@@ -5549,3 +5549,85 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   overflow: hidden;
 }
 
+/* Sales shell: small viewport first, then dynamic viewport. Compact widths
+   are resized to the visual viewport in useVisualViewportFrame. */
+.sales-dashboard-premium.dashboard-shell {
+  height: 100svh;
+  height: 100dvh;
+  max-height: 100dvh;
+}
+
+@media (max-width: 1099.98px) {
+  .sales-dashboard-premium[data-content-flush="true"] .sales-mobile-top-bar {
+    --sales-mobile-header-height: 44px;
+    padding-left: 12px;
+    padding-right: 8px;
+    gap: 4px;
+  }
+
+  .sales-dashboard-premium[data-content-flush="true"] .sales-mobile-top-bar img {
+    height: 20px;
+    max-width: 92px;
+  }
+
+  .sales-dashboard-premium[data-content-flush="true"][data-hide-mobile-nav="true"] .sales-mobile-scroll {
+    padding-bottom: 0 !important;
+  }
+
+  .salesperson-wa-workspace {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+
+  .salesperson-wa-workspace .wa-search {
+    min-height: 44px;
+    padding: 0.375rem 0.625rem;
+  }
+
+  .salesperson-wa-workspace .wa-conv-row {
+    padding: 8px 12px;
+  }
+
+  .salesperson-wa-workspace .wa-icon-btn,
+  .salesperson-wa-workspace .wa-icon-btn-muted,
+  .salesperson-wa-workspace .wa-plus-btn,
+  .salesperson-wa-workspace .wa-send-btn {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .salesperson-wa-workspace[data-intel-sheet="open"] > .wa-context-pane {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    z-index: 45;
+    display: flex !important;
+    height: auto !important;
+    max-height: 85% !important;
+    width: 100% !important;
+    max-width: none !important;
+    flex: none !important;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -12px 40px rgba(16, 24, 40, 0.18);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .salesperson-wa-workspace[data-intel-sheet="open"] > .wa-context-pane::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 8px auto 0;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: var(--sales-border, #e4e7ec);
+  }
+
+  .salesperson-wa-workspace[data-intel-sheet="open"] > .wa-context-pane > header {
+    padding-top: 8px !important;
+  }
+}
+

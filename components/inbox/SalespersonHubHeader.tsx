@@ -29,14 +29,19 @@ export function SalespersonHubHeader({
 }) {
   if (variant === "list") {
     return (
-      <header className="salesperson-wa-list-header shrink-0 border-b border-sales-border bg-sales-surface px-4 py-3">
-        <div className="flex min-w-0 items-baseline justify-between gap-3">
+      <header className="salesperson-wa-list-header shrink-0 border-b border-sales-border bg-sales-surface px-4 py-3 max-[1099px]:border-0 max-[1099px]:bg-transparent max-[1099px]:p-0">
+        <div className="flex min-w-0 items-baseline justify-between gap-3 max-[1099px]:hidden">
           <h1 className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary">
             {title}
           </h1>
           <HubAgentLabel active={agentActive} />
         </div>
-        <WhatsAppConnectionStatus connection={connection} />
+        <div className="hidden min-[1100px]:block">
+          <WhatsAppConnectionStatus connection={connection} />
+        </div>
+        <div className="min-[1100px]:hidden">
+          <WhatsAppConnectionStatus connection={connection} quiet />
+        </div>
       </header>
     );
   }
