@@ -30,8 +30,8 @@ export function SalesThemeToggle({
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-sales-md border border-sales-border bg-sales-surface text-sales-text-secondary transition-colors duration-150",
-        "hover:bg-sales-surface-hover hover:text-sales-text-primary hover:border-sales-border-strong",
+        "inline-flex shrink-0 items-center justify-center border-0 bg-transparent text-sales-text-secondary transition-colors duration-150",
+        "hover:text-sales-text-primary",
         "focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",
         dim,
         className

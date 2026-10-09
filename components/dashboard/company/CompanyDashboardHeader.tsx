@@ -103,7 +103,7 @@ export function CompanyDashboardHeader({
           <BreadcrumbTrail value={breadcrumb} />
           <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-2">
             <div className="sd-search-wrap min-w-0">
-              <GlobalSearch role={notificationRole} />
+              <GlobalSearch role={notificationRole} appearance="icon" />
             </div>
 
             <div className="flex items-center gap-1">

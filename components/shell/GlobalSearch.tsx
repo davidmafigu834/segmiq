@@ -19,9 +19,12 @@ type SearchResult = {
 export function GlobalSearch({
   role,
   placeholder,
+  appearance = "field",
 }: {
   role: UserRole;
   placeholder?: string;
+  /** `icon` is a bare magnifying glass. `field` keeps the bordered search control. */
+  appearance?: "field" | "icon";
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -134,30 +137,43 @@ export function GlobalSearch({
   return (
     <>
       <div className="inline-flex shrink-0 items-center">
-        <button
-          type="button"
-          onClick={openSearch}
-          className="sd-search-trigger hidden h-10 w-[220px] shrink-0 items-center gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface px-3 text-left text-[13px] text-sales-text-muted transition-colors hover:border-sales-border-strong xl:w-[260px] lg:inline-flex"
-        >
-          <Search className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-          <span className="min-w-0 flex-1 truncate">
-            {placeholder ??
-              (role === "SALESPERSON" || role === "CLIENT_MANAGER"
-                ? "Search leads, deals, customers, quotes..."
-                : "Search…")}
-          </span>
-          <kbd className="hidden shrink-0 rounded-[4px] border border-sales-border bg-sales-surface-subtle px-1.5 py-0.5 font-mono text-[10px] text-sales-text-muted sm:inline-block">
-            ⌘K
-          </kbd>
-        </button>
-        <button
-          type="button"
-          onClick={openSearch}
-          className="sd-search-trigger inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface text-sales-text-secondary transition-colors hover:bg-sales-surface-hover lg:hidden"
-          aria-label="Search"
-        >
-          <Search className="h-4 w-4" strokeWidth={1.5} />
-        </button>
+        {appearance === "icon" ? (
+          <button
+            type="button"
+            onClick={openSearch}
+            className="sd-search-trigger inline-flex h-10 w-10 shrink-0 items-center justify-center border-0 bg-transparent text-sales-text-secondary transition-colors hover:text-sales-text-primary focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+            aria-label="Search"
+          >
+            <Search className="h-4 w-4" strokeWidth={1.5} />
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={openSearch}
+              className="sd-search-trigger hidden h-10 w-[220px] shrink-0 items-center gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface px-3 text-left text-[13px] text-sales-text-muted transition-colors hover:border-sales-border-strong xl:w-[260px] lg:inline-flex"
+            >
+              <Search className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+              <span className="min-w-0 flex-1 truncate">
+                {placeholder ??
+                  (role === "SALESPERSON" || role === "CLIENT_MANAGER"
+                    ? "Search leads, deals, customers, quotes..."
+                    : "Search…")}
+              </span>
+              <kbd className="hidden shrink-0 rounded-[4px] border border-sales-border bg-sales-surface-subtle px-1.5 py-0.5 font-mono text-[10px] text-sales-text-muted sm:inline-block">
+                ⌘K
+              </kbd>
+            </button>
+            <button
+              type="button"
+              onClick={openSearch}
+              className="sd-search-trigger inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface text-sales-text-secondary transition-colors hover:bg-sales-surface-hover lg:hidden"
+              aria-label="Search"
+            >
+              <Search className="h-4 w-4" strokeWidth={1.5} />
+            </button>
+          </>
+        )}
       </div>
 
       {open ? (

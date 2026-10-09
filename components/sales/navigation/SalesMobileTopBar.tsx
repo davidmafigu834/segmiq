@@ -47,7 +47,7 @@ export function SalesMobileTopBar({
 
       <div className="flex shrink-0 items-center gap-1">
         <div className="sd-search-wrap">
-          <GlobalSearch role={notificationRole} />
+          <GlobalSearch role={notificationRole} appearance="icon" />
         </div>
         <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
         <SalesThemeToggle size="mobile" />
