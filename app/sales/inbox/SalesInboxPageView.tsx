@@ -17,8 +17,8 @@ function InboxSuspenseFallback() {
           <div key={i} className="h-8 w-24 animate-pulse rounded-full bg-sales-border/40" />
         ))}
       </div>
-      <div className="flex min-h-0 flex-1 gap-0 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
-        <div className="hidden w-[360px] shrink-0 border-r border-sales-border p-3 sm:block">
+      <div className="flex min-h-0 min-w-0 flex-1 gap-0 overflow-hidden border border-sales-border bg-sales-surface max-[1099px]:rounded-none min-[1100px]:rounded-[12px]">
+        <div className="w-full min-w-0 shrink-0 border-r border-sales-border p-3 min-[1100px]:w-[360px]">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="mb-3 flex gap-3">
               <div className="h-10 w-10 animate-pulse rounded-full bg-[var(--sales-neutral-100)]" />
@@ -29,7 +29,7 @@ function InboxSuspenseFallback() {
             </div>
           ))}
         </div>
-        <div className="flex flex-1 items-center justify-center text-sm text-sales-text-muted">
+        <div className="hidden min-w-0 flex-1 items-center justify-center text-sm text-sales-text-muted min-[1100px]:flex">
           Loading WhatsApp Sales Hub…
         </div>
       </div>

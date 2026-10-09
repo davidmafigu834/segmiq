@@ -109,7 +109,7 @@ export function RealEstateIntelligenceRail({
   const displayName = displayContactName(conversation);
   const mobilePanelClass = mobileFullScreen
     ? open
-      ? "max-[1099px]:fixed max-[1099px]:inset-0 max-[1099px]:z-40 max-[1099px]:flex max-[1099px]:w-full"
+      ? "max-[1099px]:relative max-[1099px]:z-auto max-[1099px]:flex max-[1099px]:h-full max-[1099px]:w-full max-[1099px]:max-w-none max-[1099px]:flex-1"
       : "max-[1099px]:hidden"
     : open
       ? "max-[860px]:translate-x-0"
@@ -121,21 +121,23 @@ export function RealEstateIntelligenceRail({
     <aside
       style={widthStyle}
       className={[
-        "flex h-full min-h-0 flex-col overflow-hidden border-l border-sales-border bg-sales-surface",
+        "wa-context-pane flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-l border-sales-border bg-sales-surface",
         panelAnimated ? "inbox-panel-animated" : "",
-        panelWidth != null ? "shrink-0" : "w-[min(100%,360px)] min-[1280px]:w-[clamp(300px,22vw,380px)]",
+        panelWidth != null
+          ? "w-full min-w-0 shrink-0 min-[1280px]:w-auto"
+          : "w-full min-w-0 min-[1100px]:w-[min(100%,360px)] min-[1100px]:shrink-0 min-[1280px]:w-[clamp(300px,22vw,380px)]",
         mobileFullScreen
           ? ""
           : `max-[860px]:fixed max-[860px]:bottom-0 max-[860px]:right-0 ${mobileTopClass} max-[860px]:z-40 max-[860px]:w-[min(360px,92vw)] max-[860px]:shadow-[-4px_0_24px_rgba(0,0,0,0.12)] max-[860px]:transition-transform`,
         mobilePanelClass,
       ].join(" ")}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-sales-border px-3 py-2.5">
+      <div className="flex shrink-0 items-center gap-2 border-b border-sales-border px-3 py-2.5 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top))]">
         {onMobileBack ? (
           <button
             type="button"
             onClick={onMobileBack}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-secondary hover:bg-sales-surface-hover min-[860px]:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] text-sales-text-secondary hover:bg-sales-surface-hover min-[1100px]:hidden"
             aria-label="Back to conversation"
           >
             <ArrowLeft size={16} />

@@ -788,18 +788,18 @@ export function ChatThread({
                   </div>
                 ) : null}
                 {conversation.agentStatus === "HUMAN_NEEDED" ? (
-                  <span className="w-fit text-[12px] font-medium text-sales-warning-fg">
+                  <span className="max-w-full text-[12px] font-medium leading-snug text-sales-warning-fg">
                     Needs you
                     {conversation.agentHumanNeededReason ? ` · ${conversation.agentHumanNeededReason}` : ""}
                   </span>
                 ) : conversation.agentStatus === "AI_HANDLING" ||
                   conversation.agentStatus === "WAITING_ON_CUSTOMER" ? (
-                  <span className="w-fit text-[12px] font-medium text-sales-text-secondary">Agent handling</span>
+                  <span className="max-w-full text-[12px] font-medium text-sales-text-secondary">Agent handling</span>
                 ) : conversation.agentStatus === "PAUSED" ? (
-                  <span className="w-fit text-[12px] font-medium text-sales-text-muted">Agent paused</span>
+                  <span className="max-w-full text-[12px] font-medium text-sales-text-muted">Agent paused</span>
                 ) : null}
                 {!companyMode && salespersonHub ? (
-                  <div className="hidden min-w-0 shrink-0 items-center gap-1.5 overflow-hidden min-[860px]:flex">
+                  <div className="hidden min-w-0 shrink-0 items-center gap-1.5 overflow-hidden min-[1100px]:flex">
                     <span className="truncate text-[12px] text-sales-text-secondary">
                       {conversation.activeDealId
                         ? conversation.dealStage
@@ -826,7 +826,7 @@ export function ChatThread({
           </div>
           <div className="relative flex shrink-0 items-center gap-0.5 sm:gap-1">
             {salespersonHub && !companyMode ? (
-              <div className="mr-1 hidden min-w-0 items-center gap-2 text-right min-[720px]:flex">
+              <div className="mr-1 hidden min-w-0 items-center gap-2 text-right min-[1100px]:flex">
                 <div className="min-w-0">
                   <div className="wa-meta-label">Owner</div>
                   <div className={`truncate text-[12px] font-medium ${conversation.assignee ? "text-sales-text-primary" : "text-sales-warning-fg"}`}>
@@ -1362,7 +1362,7 @@ export function ChatThread({
               aria-label="Type a WhatsApp reply"
               className={
                 isWhatsApp
-                  ? `wa-composer-input sm:text-[14px] ${sessionClosed ? "opacity-80" : ""}`
+                  ? `wa-composer-input text-[16px] min-[1100px]:text-[14px] ${sessionClosed ? "opacity-80" : ""}`
                   : "min-w-0 flex-1 rounded-full border border-[var(--border)] bg-[var(--surface-input)] px-4 py-2.5 text-[16px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--border-focus)] sm:text-[15px]"
               }
             />

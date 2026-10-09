@@ -152,7 +152,7 @@ export function ConversationList({
     : "max-[860px]:top-16";
   const mobilePanelClass = mobileFullScreen
     ? open
-      ? "max-[1099px]:fixed max-[1099px]:inset-0 max-[1099px]:z-40 max-[1099px]:flex max-[1099px]:w-full max-[1099px]:translate-x-0 max-[1099px]:shadow-none"
+      ? "max-[1099px]:relative max-[1099px]:z-auto max-[1099px]:flex max-[1099px]:h-full max-[1099px]:w-full max-[1099px]:max-w-full max-[1099px]:min-w-0 max-[1099px]:flex-1 max-[1099px]:shadow-none"
       : "max-[1099px]:hidden"
     : open
       ? "max-[860px]:translate-x-0"
@@ -160,12 +160,12 @@ export function ConversationList({
 
   const listWidthClass =
     panelWidth != null
-      ? "shrink-0"
+      ? "shrink-0 max-[1099px]:w-full max-[1099px]:max-w-full"
       : companyMode
         ? "w-full min-w-0 min-[1100px]:w-[clamp(320px,24vw,360px)] min-[1100px]:shrink-0"
         : whatsappMode
-          ? "w-[310px] min-[1536px]:w-[350px]"
-          : "w-[360px]";
+          ? "w-full min-w-0 min-[1100px]:w-[310px] min-[1100px]:shrink-0 min-[1536px]:w-[350px]"
+          : "w-full min-w-0 min-[1100px]:w-[360px] min-[1100px]:shrink-0";
 
   const emptyTitle =
     conversations.length === 0
@@ -200,7 +200,7 @@ export function ConversationList({
       data-course-target={whatsappMode && !companyMode ? "whatsapp-conversations" : undefined}
     >
       {whatsappMode ? (
-        <div className="sticky top-0 z-10 shrink-0 bg-sales-surface wa-panel-header max-[1099px]:pt-[env(safe-area-inset-top)]">
+        <div className="sticky top-0 z-10 shrink-0 bg-sales-surface wa-panel-header">
           {showHubBranding ? (
             companyMode ? (
               <CompanyWhatsAppHeader connection={hubConnection} variant="list" agentActive={agentActive} />
@@ -222,15 +222,17 @@ export function ConversationList({
             </div>
           )}
           {companyMode && filterCounts && onFilterChange ? (
-            <div className="flex border-t border-sales-border px-3">
+            <div className="wa-filter-tabs flex border-t border-sales-border px-2" role="tablist" aria-label="Conversation filters">
               {COMPANY_INBOX_FILTER_ORDER.map((key) => {
                 const active = filter === key;
                 return (
                   <button
                     key={key}
                     type="button"
+                    role="tab"
+                    aria-selected={active}
                     onClick={() => onFilterChange(key)}
-                    className={`relative flex min-w-0 flex-1 items-center justify-center gap-1 px-1 py-2.5 text-[12px] font-medium transition-colors ${
+                    className={`relative flex min-h-11 shrink-0 items-center justify-center gap-1 whitespace-nowrap px-3 py-2.5 text-[12px] font-medium transition-colors ${
                       active ? "text-sales-text-primary" : "text-sales-text-secondary hover:text-sales-text-primary"
                     }`}
                   >
@@ -243,7 +245,7 @@ export function ConversationList({
             </div>
           ) : null}
           {!companyMode && !chromeInParent && filterCounts && onFilterChange ? (
-            <div className="flex border-t border-sales-border px-2" role="tablist" aria-label="Primary conversation filters">
+            <div className="wa-filter-tabs flex border-t border-sales-border px-2" role="tablist" aria-label="Primary conversation filters">
               {salespersonPrimaryFilters.map((key) => {
                 const activeFilter = filter === key;
                 return (
@@ -253,7 +255,7 @@ export function ConversationList({
                     role="tab"
                     aria-selected={activeFilter}
                     onClick={() => onFilterChange(key)}
-                    className={`relative flex min-w-0 flex-1 items-center justify-center gap-1 px-1 py-2.5 text-[12px] font-medium transition-colors ${
+                    className={`relative flex min-h-11 shrink-0 items-center justify-center gap-1 whitespace-nowrap px-3 py-2.5 text-[12px] font-medium transition-colors ${
                       activeFilter
                         ? "text-sales-text-primary"
                         : "text-sales-text-secondary hover:text-sales-text-primary"
@@ -277,7 +279,7 @@ export function ConversationList({
                   value={search}
                   onChange={(e) => onSearchChange?.(e.target.value)}
                   placeholder="Search conversations…"
-                  className="w-full bg-transparent text-[14px] text-sales-text-primary placeholder:text-sales-text-muted focus:outline-none"
+                  className="w-full min-w-0 bg-transparent text-[16px] text-sales-text-primary placeholder:text-sales-text-muted focus:outline-none min-[1100px]:text-[14px]"
                 />
                 </div>
                 {onFilterChange ? (

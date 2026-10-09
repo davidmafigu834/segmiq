@@ -20,7 +20,7 @@ function ConnectionCluster({
   const showBroadcast = connection?.connected === true && connection?.capabilities.broadcast;
 
   return (
-    <div className={`flex shrink-0 items-center gap-3 ${compact ? "flex-wrap justify-end" : ""}`}>
+    <div className={`flex items-center gap-3 ${compact ? "min-w-0 max-w-full flex-wrap justify-start" : "shrink-0"}`}>
       <WhatsAppConnectionStatus connection={connection} compact={compact} reconnectHref="/client/account/whatsapp" />
       {showBroadcast ? (
         <Link
@@ -61,8 +61,8 @@ export function CompanyWhatsAppHeader({
           </h1>
           <HubAgentLabel active={agentActive} />
         </div>
-        <div className="mt-1">
-          <ConnectionCluster connection={connection} />
+        <div className="mt-1 min-w-0">
+          <ConnectionCluster connection={connection} compact />
         </div>
       </header>
     );

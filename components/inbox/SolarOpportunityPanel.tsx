@@ -135,7 +135,6 @@ export function SolarOpportunityPanel({
   onCollapse,
   onMobileBack,
   mobileFullScreen = false,
-  mobileTopClass = "max-[1099px]:top-0",
   panelWidth,
   panelAnimated = false,
   refreshKey = 0,
@@ -195,14 +194,20 @@ export function SolarOpportunityPanel({
     card && (card.stage === "NEW_LEAD" || card.stage === "CONTACTED") && hasMeaningfulScore(conversation.score, conversation.breakdown)
       ? conversation.score
       : null;
-  const panelClass = panelWidth == null ? "w-[380px] shrink-0" : "shrink-0";
+  const panelClass =
+    panelWidth == null
+      ? "w-[min(100%,380px)] min-w-0 shrink-0 max-[1099px]:w-full max-[1099px]:max-w-none"
+      : "min-w-0 shrink-0 max-[1099px]:w-full max-[1099px]:max-w-none";
   const mobileClass = mobileFullScreen
     ? open
-      ? "max-[1099px]:fixed max-[1099px]:inset-0 max-[1099px]:z-50 max-[1099px]:flex max-[1099px]:w-full"
+      ? "max-[1099px]:relative max-[1099px]:z-auto max-[1099px]:flex max-[1099px]:h-full max-[1099px]:w-full max-[1099px]:max-w-none max-[1099px]:flex-1"
       : "max-[1099px]:hidden"
     : open
       ? "max-[1279px]:translate-x-0"
       : "max-[1279px]:translate-x-full";
+  const drawerClass = mobileFullScreen
+    ? ""
+    : `min-[1100px]:max-[1279px]:fixed min-[1100px]:max-[1279px]:bottom-0 min-[1100px]:max-[1279px]:right-0 min-[1100px]:max-[1279px]:top-0 min-[1100px]:max-[1279px]:z-40 min-[1100px]:max-[1279px]:w-[min(390px,94vw)] min-[1100px]:max-[1279px]:shadow-[-12px_0_28px_rgba(16,24,40,0.14)] min-[1100px]:max-[1279px]:transition-transform`;
 
   async function reload() {
     onUpdated();
@@ -372,12 +377,12 @@ export function SolarOpportunityPanel({
     <aside
       id="intelPanel"
       style={panelWidth != null ? { width: panelWidth } : undefined}
-      className={`salesperson-wa-context-pane flex h-full min-h-0 flex-col border-l border-sales-border bg-sales-surface ${panelClass} ${mobileClass} ${
+      className={`salesperson-wa-context-pane wa-context-pane flex h-full min-h-0 min-w-0 flex-col border-l border-sales-border bg-sales-surface ${panelClass} ${mobileClass} ${drawerClass} ${
         panelAnimated ? "inbox-panel-animated" : ""
-      } max-[1279px]:fixed max-[1279px]:bottom-0 max-[1279px]:right-0 ${mobileTopClass} max-[1279px]:z-40 max-[1279px]:w-[min(390px,94vw)] max-[1279px]:shadow-[-12px_0_28px_rgba(16,24,40,0.14)] max-[1279px]:transition-transform`}
+      }`}
       data-course-target="whatsapp-solar-opportunity"
     >
-      <header className="flex min-h-[52px] shrink-0 items-center gap-2 border-b border-sales-border px-3.5">
+      <header className="flex min-h-[52px] shrink-0 items-center gap-2 border-b border-sales-border px-3.5 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top))]">
         {onMobileBack ? (
           <button type="button" onClick={onMobileBack} className="wa-icon-btn-muted shrink-0" aria-label="Back to conversation">
             <ArrowLeft size={19} />

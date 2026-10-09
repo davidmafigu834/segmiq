@@ -23,13 +23,11 @@ import {
   SALESPERSON_INBOX_PANEL_WIDTHS_KEY,
 } from "@/lib/inbox/inbox-panel-widths";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
-import { CompanyWhatsAppHeader } from "./CompanyWhatsAppHeader";
 import { CompanyConversationInsightRail } from "./CompanyConversationInsightRail";
 import { SalesIntelligenceRail } from "./SalesIntelligenceRail";
 import { SolarOpportunityPanel } from "./SolarOpportunityPanel";
 import { RealEstateIntelligenceRail } from "./RealEstateIntelligenceRail";
 import { SupportIntelligenceRail } from "./SupportIntelligenceRail";
-import { SalespersonHubHeader } from "./SalespersonHubHeader";
 import type { SafeWhatsAppConnection } from "@/lib/whatsapp/providers/types";
 import type { SalesActionRecommendation } from "@/lib/sales/intelligence/types";
 
@@ -74,8 +72,8 @@ export function TeamInbox({
   backHref,
   pageTitle = "WhatsApp Sales Hub",
   companyMode = false,
-  unreadNotifications = 0,
-  avatarUrl,
+  unreadNotifications: _unreadNotifications = 0,
+  avatarUrl: _avatarUrl,
   onMobilePaneChange,
 }: Props) {
   const [conversations, setConversations] = useState<InboxConversation[]>([]);
@@ -179,10 +177,12 @@ export function TeamInbox({
   }, [leadFromUrl, conversations, isCompact, backHref, clientId, companyMode]);
 
   useEffect(() => {
-    if (!isMobile) {
+    // Reset only when leaving the single-pane range. Phones in landscape sit
+    // between 860px and 1099px and must keep the open chat or customer panel.
+    if (!isCompact) {
       setMobilePane("list");
     }
-  }, [isMobile]);
+  }, [isCompact]);
 
   useEffect(() => {
     if (!claimToast) return;
@@ -362,13 +362,7 @@ export function TeamInbox({
       ? !intelCollapsed
       : intelOpen;
 
-  const showHubChrome =
-    whatsappMode && !companyMode && paneNav && mobilePane === "list" && !activeId;
-
-  const showCompanyPageHeader =
-    companyMode && paneNav && mobilePane === "list" && !activeId;
-
-  const showListHubBranding = (whatsappMode || companyMode) && !paneNav;
+  const showListHubBranding = whatsappMode || companyMode;
 
   return (
     <div
@@ -387,35 +381,13 @@ export function TeamInbox({
         </div>
       ) : null}
 
-      {showCompanyPageHeader ? (
-        <CompanyWhatsAppHeader
-          unreadNotifications={unreadNotifications}
-          notificationRole={role}
-          userName={userName}
-          avatarUrl={avatarUrl}
-          connection={whatsappConnection}
-          agentActive={agentActive}
-        />
-      ) : null}
-
-      {showHubChrome ? (
-        <SalespersonHubHeader
-          connection={whatsappConnection}
-          title={pageTitle}
-          agentActive={agentActive}
-          unreadNotifications={unreadNotifications}
-          notificationRole={role}
-          userName={userName}
-          avatarUrl={avatarUrl}
-        />
-      ) : null}
-
       <div
-        className={`min-h-0 flex-1 overflow-hidden ${
+        data-mobile-pane={whatsappMode ? mobilePane : undefined}
+        className={`min-h-0 min-w-0 flex-1 overflow-hidden ${
           companyMode
-            ? "company-wa-workspace wa-hub-shell wa-hub-premium flex min-h-0 flex-1 overflow-hidden border-t border-sales-border bg-sales-surface"
+            ? "company-wa-workspace wa-hub-shell wa-hub-premium flex min-h-0 min-w-0 flex-1 overflow-hidden border-t border-sales-border bg-sales-surface"
             : whatsappMode
-              ? "salesperson-wa-workspace wa-hub-shell wa-hub-premium flex min-h-0 flex-1 overflow-hidden border-t border-sales-border bg-sales-surface"
+              ? "salesperson-wa-workspace wa-hub-shell wa-hub-premium flex min-h-0 min-w-0 flex-1 overflow-hidden border-t border-sales-border bg-sales-surface"
               : "flex"
         }`}
       >
@@ -628,7 +600,7 @@ export function TeamInbox({
                   refreshKey={contextRevision}
                 />
               ) : solarWorkflow === null && whatsappMode && !companyMode ? (
-                <aside className="flex h-full w-[380px] shrink-0 flex-col border-l border-sales-border bg-sales-surface" aria-busy aria-label="Loading solar opportunity">
+                <aside className="wa-context-pane flex h-full w-full min-w-0 shrink-0 flex-col border-l border-sales-border bg-sales-surface min-[1100px]:w-[380px]" aria-busy aria-label="Loading solar opportunity">
                   <div className="space-y-3 p-4">
                     <div className="h-16 animate-pulse rounded-[10px] bg-sales-surface-hover" />
                     <div className="h-20 animate-pulse rounded-[10px] bg-sales-surface-hover" />

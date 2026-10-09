@@ -129,7 +129,7 @@ export function SalesConversationAssist({
                 ) : null}
                 <p className="truncate text-[12px] font-semibold text-sales-text-primary">{action.title}</p>
               </div>
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="flex min-w-0 flex-wrap items-center gap-1">
                 {action.showCall && onCall ? (
                   <button type="button" onClick={onCall} className="wa-btn-secondary !h-7 !w-auto !px-2 !text-[10px]">
                     <Phone size={12} strokeWidth={1.8} /> Call

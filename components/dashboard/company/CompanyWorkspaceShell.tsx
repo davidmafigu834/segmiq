@@ -91,7 +91,7 @@ export function CompanyWorkspaceShell({
               <DemoWorkspaceChip />
             </div>
           </div>
-          <div className={immersive ? "relative flex h-full min-h-0 flex-1 flex-col overflow-hidden" : "relative space-y-3 layout:space-y-3"}>
+          <div className={immersive ? "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden" : "relative space-y-3 layout:space-y-3"}>
             {children}
           </div>
         </div>

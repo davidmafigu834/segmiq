@@ -141,7 +141,7 @@ export function CompanyConversationInsightRail({
   ]);
 
   const responsiveClass = open
-    ? "max-[1099px]:fixed max-[1099px]:inset-0 max-[1099px]:z-50 max-[1099px]:flex max-[1099px]:w-full max-[1279px]:flex"
+    ? "max-[1099px]:relative max-[1099px]:z-auto max-[1099px]:flex max-[1099px]:h-full max-[1099px]:w-full max-[1099px]:max-w-none max-[1099px]:flex-1 max-[1279px]:flex"
     : "max-[1279px]:hidden";
 
   if (!conversation) return null;
@@ -163,7 +163,7 @@ export function CompanyConversationInsightRail({
   return (
     <aside
       style={panelWidth != null ? { width: panelWidth } : undefined}
-      className={`company-wa-context-pane inbox-panel-animated wa-panel flex h-full min-h-0 min-w-0 shrink-0 flex-col bg-sales-surface ${responsiveClass}`}
+      className={`company-wa-context-pane wa-context-pane inbox-panel-animated wa-panel flex h-full min-h-0 min-w-0 shrink-0 flex-col bg-sales-surface ${responsiveClass}`}
     >
       <div className="flex min-h-12 shrink-0 items-center gap-2 border-b border-sales-border px-3.5 py-2 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top))]">
         {onMobileBack ? (

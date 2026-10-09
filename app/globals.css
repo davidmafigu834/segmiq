@@ -1825,6 +1825,76 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     }
   }
 
+  /* Phone and tablet: one pane at a time, in the space between the app bars. */
+  .wa-filter-tabs {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .wa-filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (max-width: 1099.98px) {
+    .wa-hub-shell {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .wa-hub-shell[data-mobile-pane="list"] > #convPanel ~ * {
+      display: none !important;
+    }
+
+    .wa-hub-shell[data-mobile-pane="thread"] > #convPanel,
+    .wa-hub-shell[data-mobile-pane="thread"] > .wa-context-pane {
+      display: none !important;
+    }
+
+    .wa-hub-shell[data-mobile-pane="intel"] > #convPanel,
+    .wa-hub-shell[data-mobile-pane="intel"] > .company-wa-chat-pane {
+      display: none !important;
+    }
+
+    .wa-hub-shell #convPanel,
+    .wa-hub-shell .company-wa-chat-pane,
+    .wa-hub-shell .wa-context-pane {
+      position: relative !important;
+      inset: auto !important;
+      top: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+      left: auto !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      height: auto !important;
+      flex: 1 1 auto !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .wa-hub-shell input,
+    .wa-hub-shell textarea,
+    .wa-hub-shell select,
+    .wa-composer-input {
+      font-size: 16px;
+    }
+
+    .wa-hub-shell .wa-icon-btn,
+    .wa-hub-shell .wa-icon-btn-muted,
+    .wa-hub-shell .wa-plus-btn,
+    .wa-hub-shell .wa-send-btn {
+      min-height: 2.75rem !important;
+      min-width: 2.75rem !important;
+    }
+
+    .sales-dashboard-premium[data-hide-mobile-nav="true"] .sales-mobile-scroll:has(.wa-hub-shell) {
+      padding-bottom: 0 !important;
+    }
+  }
+
   .salesperson-wa-workspace .wa-conv-row {
     min-height: 80px;
     padding: 0.65rem 0.75rem;

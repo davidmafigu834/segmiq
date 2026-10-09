@@ -4,8 +4,8 @@ import { Skeleton } from "@/components/sales/ui";
 
 export function InboxSkeleton() {
   return (
-    <div className="flex min-h-0 flex-1 overflow-hidden bg-sales-bg" aria-busy aria-label="Loading inbox">
-      <div className="hidden w-[360px] shrink-0 border-r border-sales-border bg-sales-surface p-3 sm:block">
+    <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-sales-bg" aria-busy aria-label="Loading inbox">
+      <div className="w-full min-w-0 shrink-0 border-r border-sales-border bg-sales-surface p-3 min-[1100px]:w-[360px]">
         <Skeleton className="mb-4 h-4 w-40" />
         {Array.from({ length: 7 }).map((_, i) => (
           <div key={i} className="mb-3 flex gap-3 border-b border-sales-border-subtle pb-3">
@@ -21,7 +21,7 @@ export function InboxSkeleton() {
           </div>
         ))}
       </div>
-      <div className="flex min-w-0 flex-1 flex-col bg-sales-bg">
+      <div className="hidden min-w-0 flex-1 flex-col bg-sales-bg min-[1100px]:flex">
         <div className="flex items-center gap-3 border-b border-sales-border bg-sales-surface px-4 py-3">
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="space-y-2">
