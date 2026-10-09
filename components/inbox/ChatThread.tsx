@@ -397,8 +397,10 @@ export function ChatThread({
   }, [canSend, clientId]);
 
   useEffect(() => {
+    const node = scrollRef.current;
+    if (!node) return;
     if (stickToBottomRef.current) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      node.scrollTo({ top: node.scrollHeight });
       setHasNewBelow(false);
       return;
     }
@@ -1145,7 +1147,7 @@ export function ChatThread({
             onClick={() => {
               stickToBottomRef.current = true;
               setHasNewBelow(false);
-              bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+              scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
             }}
             className="sticky bottom-3 z-10 mx-auto rounded-full border border-sales-border bg-sales-surface px-3 py-1.5 text-[12px] font-semibold text-sales-text-primary shadow-[0_4px_12px_rgba(16,24,40,0.08)]"
           >
@@ -1305,9 +1307,9 @@ export function ChatThread({
               </div>
             ) : null}
             <div
-              className={`flex items-center gap-2 px-2 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:px-3 ${
-                companyMode ? "py-1.5" : "py-2.5"
-              }`}
+              className={`flex items-center gap-2 px-2 pt-2 sm:px-3 ${
+                companyMode ? "pb-1.5" : "pb-2"
+              } max-[1099px]:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]`}
             >
             {!isWhatsApp ? (
               <button

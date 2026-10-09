@@ -28,9 +28,14 @@ export function useVisualViewportFrame(shellRef: { readonly current: HTMLElement
       }
       const height = Math.max(0, Math.round(viewport.height));
       const offset = Math.max(0, Math.round(viewport.offsetTop));
+      const keyboardOpen = offset > 0 || height < window.innerHeight - 80;
+      if (!keyboardOpen) {
+        clear();
+        return;
+      }
       shell.style.height = `${height}px`;
       shell.style.maxHeight = `${height}px`;
-      shell.style.transform = offset > 0 ? `translateY(${offset}px)` : "";
+      shell.style.transform = offset > 0 ? `translateY(${offset}px)` : "translateY(0)";
     };
 
     apply();
