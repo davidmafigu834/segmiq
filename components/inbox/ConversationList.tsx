@@ -200,7 +200,7 @@ export function ConversationList({
       data-course-target={whatsappMode && !companyMode ? "whatsapp-conversations" : undefined}
     >
       {whatsappMode ? (
-        <div className="sticky top-0 z-10 min-w-0 shrink-0 bg-sales-surface wa-panel-header">
+        <div className="sticky top-0 z-10 flex min-w-0 shrink-0 flex-col bg-sales-surface wa-panel-header min-[1100px]:block">
           {showHubBranding ? (
             companyMode ? (
               <CompanyWhatsAppHeader connection={hubConnection} variant="list" agentActive={agentActive} />
@@ -245,7 +245,7 @@ export function ConversationList({
             </div>
           ) : null}
           {!companyMode && !chromeInParent && filterCounts && onFilterChange ? (
-            <div className="wa-filter-tabs flex min-w-0 overflow-x-auto overscroll-x-contain border-t border-sales-border px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Primary conversation filters">
+            <div className="wa-filter-tabs flex min-w-0 overflow-x-auto overscroll-x-contain border-t border-sales-border px-2 max-[1099px]:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Primary conversation filters">
               {salespersonPrimaryFilters.map((key) => {
                 const activeFilter = filter === key;
                 return (
@@ -269,8 +269,38 @@ export function ConversationList({
               })}
             </div>
           ) : null}
+          {!companyMode && !chromeInParent && filterCounts && onFilterChange ? (
+            <div
+              className="order-2 flex min-w-0 gap-2 overflow-x-auto overscroll-x-contain px-4 pb-2 pt-1 [scrollbar-width:none] min-[1100px]:hidden [&::-webkit-scrollbar]:hidden"
+              role="tablist"
+              aria-label="Conversation filters"
+            >
+              {(["all", "awaiting_reply", "human_needed", "follow_up_due"] as InboxFilter[]).map((key) => {
+                const selected = filter === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => onFilterChange(key)}
+                    className={`inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold ${
+                      selected
+                        ? "bg-sales-brand text-sales-brand-text"
+                        : "bg-sales-surface-subtle text-sales-text-secondary"
+                    }`}
+                  >
+                    {INBOX_FILTER_LABELS[key]}
+                    <span className={`tabular-nums text-[12px] ${selected ? "text-sales-brand-text/80" : "text-sales-text-muted"}`}>
+                      {filterCounts[key] ?? 0}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
           {!chromeInParent ? (
-            <div className="border-t border-sales-border px-3 py-3 max-[1099px]:px-3 max-[1099px]:py-2">
+            <div className="order-1 border-t border-sales-border px-3 py-3 max-[1099px]:border-0 max-[1099px]:px-4 max-[1099px]:py-2">
               <div className="flex items-center gap-2">
                 <div className="wa-search min-w-0 flex-1">
                 <Search size={16} className="shrink-0 text-sales-text-muted" />

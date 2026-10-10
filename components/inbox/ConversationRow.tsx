@@ -127,8 +127,8 @@ export function ConversationRow({
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-1.5">
                 <span
-                  className={`min-w-0 truncate text-[13px] tracking-[-0.01em] text-sales-text-primary ${
-                    unread ? "font-semibold" : "font-medium"
+                  className={`min-w-0 truncate tracking-[-0.01em] text-sales-text-primary max-[1099px]:text-[17px] max-[1099px]:font-semibold max-[1099px]:leading-6 min-[1100px]:text-[13px] ${
+                    unread ? "font-semibold" : "min-[1100px]:font-medium"
                   }`}
                 >
                   {name}
@@ -150,7 +150,7 @@ export function ConversationRow({
               </div>
             </div>
             <span
-              className={`shrink-0 text-[11px] tabular-nums font-medium ${
+              className={`shrink-0 tabular-nums font-medium max-[1099px]:text-[12px] min-[1100px]:text-[11px] ${
                 unread && !companyMode ? "text-sales-whatsapp" : "text-sales-text-muted"
               }`}
             >
@@ -164,7 +164,7 @@ export function ConversationRow({
             </div>
           ) : null}
 
-          <div className={`${companyMode ? "mt-1" : "mt-1"} flex items-center gap-1.5 text-[12px] text-sales-text-secondary`}>
+          <div className={`${companyMode ? "mt-1" : "mt-0.5"} flex items-center gap-1.5 text-sales-text-secondary max-[1099px]:text-[15px] max-[1099px]:leading-5 min-[1100px]:text-[12px]`}>
             <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
               {previewIcon(conversation.lastMessageType)}
               <span className={`truncate ${unread ? "font-medium text-sales-text-primary" : ""}`}>
@@ -199,24 +199,31 @@ export function ConversationRow({
               ) : null}
             </div>
           ) : showSalesPriority ? (
-            <div className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden">
-              {conversation.agentStatus === "HUMAN_NEEDED" ? (
-                <span className="shrink-0 text-[11px] font-semibold text-sales-warning-fg">Needs you</span>
-              ) : null}
-              {waitingLabel ? (
-                <span className={`shrink-0 text-[11px] font-medium tabular-nums ${waitingToneClass(waitingTone)}`}>
-                  {waitingLabel}
+            <>
+              <div className="mt-1 hidden min-w-0 items-center gap-1.5 overflow-hidden min-[1100px]:flex">
+                {conversation.agentStatus === "HUMAN_NEEDED" ? (
+                  <span className="shrink-0 text-[11px] font-semibold text-sales-warning-fg">Needs you</span>
+                ) : null}
+                {waitingLabel ? (
+                  <span className={`shrink-0 text-[11px] font-medium tabular-nums ${waitingToneClass(waitingTone)}`}>
+                    {waitingLabel}
+                  </span>
+                ) : null}
+                {followUpDue ? (
+                  <span className="shrink-0 text-[11px] font-semibold text-sales-warning-fg">Follow-up</span>
+                ) : null}
+                {!waitingLabel &&
+                !followUpDue &&
+                (conversation.agentStatus === "AI_HANDLING" || conversation.agentStatus === "WAITING_ON_CUSTOMER") ? (
+                  <span className="shrink-0 text-[11px] font-medium text-sales-text-muted">Agent</span>
+                ) : null}
+              </div>
+              {conversation.agentStatus === "HUMAN_NEEDED" || followUpDue ? (
+                <span className="mt-1 inline-flex w-fit rounded-full bg-sales-warning-soft px-2 py-0.5 text-[12px] font-semibold leading-4 text-sales-warning-fg min-[1100px]:hidden">
+                  {conversation.agentStatus === "HUMAN_NEEDED" ? "Needs you" : "Follow-up"}
                 </span>
               ) : null}
-              {followUpDue ? (
-                <span className="shrink-0 text-[11px] font-semibold text-sales-warning-fg">Follow-up</span>
-              ) : null}
-              {!waitingLabel &&
-              !followUpDue &&
-              (conversation.agentStatus === "AI_HANDLING" || conversation.agentStatus === "WAITING_ON_CUSTOMER") ? (
-                <span className="shrink-0 text-[11px] font-medium text-sales-text-muted">Agent</span>
-              ) : null}
-            </div>
+            </>
           ) : null}
 
           {isUnassigned && canClaim && !companyMode ? (

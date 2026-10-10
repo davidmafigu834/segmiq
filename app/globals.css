@@ -5584,19 +5584,80 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   }
 
   .salesperson-wa-workspace {
+    --sales-bg: #0b1014;
+    --sales-surface: #171f24;
+    --sales-surface-subtle: #242b30;
+    --sales-surface-hover: #242b30;
+    --sales-text-primary: #f5f7f8;
+    --sales-text-secondary: #99a6ad;
+    --sales-text-muted: #99a6ad;
+    --sales-border: #263137;
+    --sales-border-subtle: #263137;
+    --sales-brand: #d4ff4f;
+    --sales-brand-text: #101828;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
     overscroll-behavior: contain;
+    background: #0b1014 !important;
+    color: #f5f7f8;
+  }
+
+  .sales-dashboard-premium:has(.salesperson-wa-workspace) .sales-mobile-top-bar {
+    display: none !important;
+  }
+
+  .salesperson-wa-workspace .wa-conv-row-active {
+    background: transparent !important;
+    box-shadow: none !important;
   }
 
   .salesperson-wa-workspace .wa-search {
     min-height: 44px;
-    padding: 0.375rem 0.625rem;
+    border-color: transparent;
+    border-radius: 999px;
+    background: #242b30;
+    padding: 0 0.875rem;
+    box-shadow: none;
   }
 
   .salesperson-wa-workspace .wa-conv-row {
-    padding: 8px 12px;
+    min-height: 72px;
+    padding: 12px 16px;
+    border-bottom-color: #263137;
+  }
+
+  .salesperson-wa-workspace .wa-bubble-in,
+  .salesperson-wa-workspace .wa-bubble-out {
+    border: 0;
+    border-radius: 16px;
+    padding: 0.55rem 0.75rem 0.4rem;
+    font-size: 15px;
+    line-height: 1.45;
+    color: #f5f7f8;
+  }
+
+  .salesperson-wa-workspace .wa-bubble-in {
+    background: #171f24 !important;
+  }
+
+  .salesperson-wa-workspace .wa-bubble-out {
+    background: #243028 !important;
+  }
+
+  .salesperson-wa-workspace .wa-chat-wallpaper,
+  html[data-crm] .salesperson-wa-workspace.wa-hub-premium .wa-chat-wallpaper,
+  .sales-dashboard-premium .salesperson-wa-workspace .wa-chat-wallpaper {
+    background-color: #0b1014 !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' fill='none'%3E%3Ccircle cx='20' cy='24' r='1.2' fill='%23f5f7f8' fill-opacity='.08'/%3E%3Ccircle cx='96' cy='40' r='6' stroke='%23f5f7f8' stroke-opacity='.06'/%3E%3Cpath d='M140 22h10M145 17v10' stroke='%23d4ff4f' stroke-opacity='.14' stroke-width='1.1'/%3E%3Cpath d='M36 100h14' stroke='%23f5f7f8' stroke-opacity='.07' stroke-width='1.1'/%3E%3Ccircle cx='150' cy='112' r='1.4' fill='%23d4ff4f' fill-opacity='.16'/%3E%3Cpath d='M70 150l7 7M77 150l-7 7' stroke='%23f5f7f8' stroke-opacity='.07' stroke-width='1.1'/%3E%3C/svg%3E") !important;
+    background-size: 180px 180px !important;
+  }
+
+  .salesperson-wa-workspace .wa-sales-actions-sheet .wa-composer-tool {
+    width: 100%;
+    height: 44px;
+    justify-content: flex-start;
+    border-radius: 12px;
   }
 
   .salesperson-wa-workspace .wa-icon-btn,

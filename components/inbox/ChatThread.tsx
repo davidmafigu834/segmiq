@@ -785,7 +785,7 @@ export function ChatThread({
               />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5 layout:flex-row layout:items-center layout:gap-2.5">
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <span className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary min-[1100px]:text-[14px]">
+                  <span className="truncate text-[17px] font-semibold tracking-tight text-sales-text-primary min-[1100px]:text-[14px]">
                     {name}
                   </span>
                   {isWhatsApp ? (

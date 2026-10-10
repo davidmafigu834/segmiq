@@ -29,7 +29,10 @@ export function SalespersonHubHeader({
 }) {
   if (variant === "list") {
     return (
-      <header className="salesperson-wa-list-header shrink-0 border-b border-sales-border bg-sales-surface px-4 py-3 max-[1099px]:border-0 max-[1099px]:bg-transparent max-[1099px]:p-0">
+      <header className="salesperson-wa-list-header shrink-0 border-b border-sales-border bg-sales-surface px-4 py-3 max-[1099px]:border-0 max-[1099px]:bg-transparent max-[1099px]:px-4 max-[1099px]:pb-1 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
+        <h1 className="hidden text-[26px] font-bold leading-8 tracking-[-0.03em] text-sales-text-primary max-[1099px]:block">
+          Chats
+        </h1>
         <div className="flex min-w-0 items-baseline justify-between gap-3 max-[1099px]:hidden">
           <h1 className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary">
             {title}

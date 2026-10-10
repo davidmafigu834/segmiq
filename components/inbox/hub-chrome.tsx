@@ -59,14 +59,14 @@ export function WhatsAppConnectionStatus({
 
   if (quiet) {
     return (
-      <div className="flex min-h-11 items-center gap-2 px-3 py-1.5" role="status">
-        <p className="min-w-0 flex-1 text-[12px] font-medium leading-snug text-sales-danger-fg">
+      <div className="mt-2 flex min-h-11 items-center gap-2 rounded-[12px] bg-sales-danger-soft px-3" role="status">
+        <p className="min-w-0 flex-1 text-[13px] font-medium leading-4 text-sales-danger-fg">
           WhatsApp is offline. Messages cannot be sent.
         </p>
         {reconnectHref ? (
           <Link
             href={reconnectHref}
-            className="inline-flex min-h-11 shrink-0 items-center text-[12px] font-semibold text-sales-link hover:underline"
+            className="inline-flex min-h-11 shrink-0 items-center text-[13px] font-semibold text-sales-link"
           >
             Reconnect
           </Link>
