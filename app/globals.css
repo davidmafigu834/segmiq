@@ -5693,12 +5693,12 @@ html[data-marketing-theme="dark"] .auth-shell > main {
 
   .salesperson-wa-workspace .wa-bubble-in {
     border-radius: 18px 18px 18px 5px !important;
-    background: #1c252b !important;
+    background: #202C33 !important;
   }
 
   .salesperson-wa-workspace .wa-bubble-out {
     border-radius: 18px 18px 5px 18px !important;
-    background: #24352c !important;
+    background: #213A2C !important;
   }
 
   .salesperson-wa-workspace .wa-msg-grouped .wa-bubble-in {
@@ -5768,8 +5768,14 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   }
 
   .salesperson-wa-workspace .wa-composer {
-    background: #0b1014 !important;
+    background: #0B141A !important;
     border-top: 0 !important;
+  }
+
+  .salesperson-wa-workspace .wa-copilot-card {
+    background: #19262E !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: none !important;
   }
 
   .salesperson-wa-workspace .wa-composer-input {
@@ -5861,7 +5867,7 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   .salesperson-wa-workspace .wa-chat-wallpaper,
   html[data-crm] .salesperson-wa-workspace.wa-hub-premium .wa-chat-wallpaper,
   .sales-dashboard-premium .salesperson-wa-workspace .wa-chat-wallpaper {
-    background-color: #0b1014 !important;
+    background-color: #0B141A !important;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none'%3E%3Ccircle cx='18' cy='22' r='1.1' fill='%23f5f7f8' fill-opacity='.05'/%3E%3Ccircle cx='88' cy='46' r='1' fill='%23f5f7f8' fill-opacity='.04'/%3E%3Ccircle cx='132' cy='28' r='1.2' fill='%23d4ff4f' fill-opacity='.07'/%3E%3Ccircle cx='46' cy='96' r='1' fill='%23f5f7f8' fill-opacity='.045'/%3E%3Ccircle cx='120' cy='118' r='1.1' fill='%23f5f7f8' fill-opacity='.04'/%3E%3Ccircle cx='24' cy='142' r='1' fill='%23d4ff4f' fill-opacity='.05'/%3E%3C/svg%3E") !important;
     background-size: 160px 160px !important;
   }

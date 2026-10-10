@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
 import type { InboxChatMessage } from "@/lib/inbox/types";
 import { isMediaMessageType, isMediaPlaceholderBody } from "@/lib/inbox/media-placeholders";
@@ -91,6 +92,9 @@ function MediaBlock({ message }: { message: InboxChatMessage }) {
 }
 
 export function MessageBubble({ message, onTeach, grouped = false }: Props & { grouped?: boolean }) {
+  const [menuPoint, setMenuPoint] = useState<{ x: number; y: number } | null>(null);
+  const pressTimer = useRef<number | null>(null);
+  const pressOrigin = useRef<{ x: number; y: number } | null>(null);
   const isRep = message.direction === "rep";
   const isSystem = message.kind === "system";
   const hasMediaUi =
@@ -98,6 +102,31 @@ export function MessageBubble({ message, onTeach, grouped = false }: Props & { g
   const showText =
     Boolean(message.text?.trim()) &&
     !(hasMediaUi && isMediaPlaceholderBody(message.text, message.messageType));
+
+  useEffect(() => {
+    if (!menuPoint) return;
+    const close = () => setMenuPoint(null);
+    window.addEventListener("pointerdown", close);
+    window.addEventListener("keydown", close);
+    return () => {
+      window.removeEventListener("pointerdown", close);
+      window.removeEventListener("keydown", close);
+    };
+  }, [menuPoint]);
+
+  function clearPress() {
+    if (pressTimer.current != null) window.clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+    pressOrigin.current = null;
+  }
+
+  function openTeachMenu(x: number, y: number) {
+    if (!onTeach) return;
+    const width = 180;
+    const left = Math.min(Math.max(8, x), window.innerWidth - width - 8);
+    const top = Math.min(Math.max(8, y), window.innerHeight - 56);
+    setMenuPoint({ x: left, y: top });
+  }
 
   if (isSystem) {
     return (
@@ -139,7 +168,29 @@ export function MessageBubble({ message, onTeach, grouped = false }: Props & { g
 
   return (
     <div className={`wa-msg flex px-0.5 py-0.5 min-[1100px]:px-1 ${grouped ? "wa-msg-grouped" : ""} ${isRep ? "justify-end" : "justify-start"}`}>
-      <div className={`relative min-w-0 max-w-[min(88%,480px)] min-[1100px]:max-w-[min(68%,480px)] ${isRep ? "wa-bubble-out" : "wa-bubble-in"}`}>
+      <div
+        className={`relative min-w-0 max-w-[min(88%,480px)] min-[1100px]:max-w-[min(68%,480px)] ${isRep ? "wa-bubble-out" : "wa-bubble-in"}`}
+        onContextMenu={(event) => {
+          if (!onTeach) return;
+          event.preventDefault();
+          openTeachMenu(event.clientX, event.clientY);
+        }}
+        onPointerDown={(event) => {
+          if (!onTeach || event.pointerType === "mouse") return;
+          pressOrigin.current = { x: event.clientX, y: event.clientY };
+          pressTimer.current = window.setTimeout(() => {
+            const origin = pressOrigin.current;
+            if (origin) openTeachMenu(origin.x, origin.y);
+          }, 520);
+        }}
+        onPointerMove={(event) => {
+          const origin = pressOrigin.current;
+          if (!origin) return;
+          if (Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 8) clearPress();
+        }}
+        onPointerUp={clearPress}
+        onPointerCancel={clearPress}
+      >
         <MediaBlock message={message} />
         <div className="wa-bubble-copy">
           <div className="wa-bubble-meta">
@@ -155,12 +206,33 @@ export function MessageBubble({ message, onTeach, grouped = false }: Props & { g
             <button
               type="button"
               onClick={onTeach}
-              className="wa-teach text-[10px] font-medium text-sales-text-muted hover:text-sales-text-primary"
+              className="sr-only focus:not-sr-only focus:mt-1 focus:inline-flex focus:min-h-11 focus:items-center focus:text-[13px] focus:font-semibold focus:text-sales-text-primary"
             >
               Teach SegmiQ
             </button>
           ) : null}
         </div>
+        {menuPoint && onTeach ? (
+          <div
+            role="menu"
+            aria-label="Message actions"
+            className="fixed z-30 min-w-[180px] rounded-[12px] border border-sales-border bg-sales-surface p-1 shadow-[0_8px_24px_rgba(0,0,0,0.28)]"
+            style={{ left: menuPoint.x, top: menuPoint.y }}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              role="menuitem"
+              className="flex min-h-11 w-full items-center rounded-[8px] px-3 text-left text-[14px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+              onClick={() => {
+                setMenuPoint(null);
+                onTeach();
+              }}
+            >
+              Teach SegmiQ
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

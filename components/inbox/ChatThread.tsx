@@ -7,13 +7,18 @@ import {
   CheckCircle2,
   ChevronDown,
   FileText,
+  LayoutGrid,
+  Image as ImageIcon,
+  MessageSquare,
   MoreHorizontal,
   Paperclip,
   PanelRight,
+  Sparkles,
   Phone,
   Send,
   StickyNote,
   UserRound,
+  Zap,
   X,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
@@ -41,6 +46,7 @@ import { AssetDrawer } from "./AssetDrawer";
 import { AgentComposerAssist } from "./AgentComposerAssist";
 import { AgentActionCards } from "./AgentActionCards";
 import { SALES_COPILOT_DRAFT_EVENT, SalesCopilotCard, SalesCopilotSheet, useSalesCopilot } from "./SalesCopilotWorkspace";
+import { useCompactKeyboardOpen } from "@/lib/shell/use-compact-keyboard";
 import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
 import { SalesCommandDrawer } from "@/components/sales/command/SalesCommandDrawer";
 import { ManagerComposerToolbar } from "./ManagerComposerToolbar";
@@ -164,6 +170,9 @@ export function ChatThread({
   const [input, setInput] = useState("");
   const copilot = useSalesCopilot(conversation?.id ?? null);
   const [copilotOpen, setCopilotOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const keyboardOpen = useCompactKeyboardOpen();
+  const copilotAttention = (copilot.data?.items.length ?? 0) > 0 || copilot.data?.analysis.status === "pending";
   const [attachment, setAttachment] = useState<ComposerAttachment | null>(null);
   const [sending, setSending] = useState(false);
   const [logCallOpen, setLogCallOpen] = useState(false);
@@ -419,6 +428,16 @@ export function ChatThread({
     }
     if (messages.length > 0) setHasNewBelow(true);
   }, [messages, conversation?.id]);
+
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node || stickToBottomRef.current) return;
+    const top = node.scrollTop;
+    const frame = window.requestAnimationFrame(() => {
+      if (scrollRef.current && !stickToBottomRef.current) scrollRef.current.scrollTop = top;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [keyboardOpen]);
 
   function clearAttachment() {
     const current = attachmentRef.current;
@@ -797,7 +816,7 @@ export function ChatThread({
               />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5 layout:flex-row layout:items-center layout:gap-2.5">
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <span className="truncate text-[17px] font-semibold leading-6 tracking-[-0.02em] text-sales-text-primary max-[1099px]:text-[21px] min-[1100px]:text-[14px] min-[1100px]:tracking-tight">
+                  <span className="truncate text-[16px] font-semibold leading-5 tracking-[-0.02em] text-sales-text-primary min-[1100px]:text-[14px] min-[1100px]:leading-6 min-[1100px]:tracking-tight">
                     {name}
                   </span>
                   {isWhatsApp ? (
@@ -904,20 +923,29 @@ export function ChatThread({
                 {canReassign ? <ChevronDown size={12} className="text-sales-text-muted" /> : null}
               </button>
             ) : null}
-            <button
-              type="button"
-              onClick={() => setCopilotOpen(true)}
-              aria-label="Sales Copilot"
-              className={isWhatsApp ? "wa-icon-btn !h-9 !w-9 text-[11px] font-semibold" : "hidden"}
-            >
-              AI
-            </button>
+            {isWhatsApp ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setToolsOpen(false);
+                  setCopilotOpen(true);
+                }}
+                aria-label="Open Sales Copilot"
+                className="relative inline-flex h-11 min-w-11 shrink-0 items-center justify-center gap-1 rounded-full px-2 text-[13px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover min-[1100px]:!hidden"
+              >
+                <Sparkles size={16} strokeWidth={1.8} aria-hidden />
+                <span className="max-[389px]:sr-only">Copilot</span>
+                {copilotAttention ? (
+                  <span className="absolute right-1 top-1.5 h-2 w-2 rounded-full bg-sales-brand" aria-hidden />
+                ) : null}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onToggleIntel}
               aria-label={contextOpen ? "Hide customer context" : "Show customer context"}
               title={contextOpen ? "Hide customer context" : "Show customer context"}
-              className={isWhatsApp ? `wa-icon-btn !h-9 !w-9 ${contextOpen ? "!border-sales-brand-border !bg-sales-brand-soft" : ""}` : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"}
+              className={isWhatsApp ? `wa-icon-btn !h-11 !w-11 max-[1099px]:!hidden min-[1100px]:inline-flex ${contextOpen ? "!border-sales-brand-border !bg-sales-brand-soft" : ""}` : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"}
             >
               <PanelRight size={16} strokeWidth={1.8} />
             </button>
@@ -1197,8 +1225,8 @@ export function ChatThread({
       </div>
 
       {canSend || companyMode ? (
-        <div className={`sticky bottom-0 z-20 flex min-h-0 shrink-0 flex-col bg-sales-surface max-[1099px]:max-h-[46%] max-[1099px]:overflow-hidden ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)]"}`}>
-          <div className="min-h-0 max-[1099px]:flex-1 max-[1099px]:overflow-y-auto max-[1099px]:overscroll-contain">
+        <div className={`sticky bottom-0 z-20 flex min-h-0 shrink-0 flex-col bg-sales-surface ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)]"}`}>
+          <div className="min-h-0 max-[1099px]:max-h-[46%] max-[1099px]:overflow-y-auto max-[1099px]:overscroll-contain">
           {sendError ? (
             <div role="alert" className="border-b border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-2 text-center text-xs text-[var(--danger-fg)]">
               {sendError}
@@ -1243,6 +1271,7 @@ export function ChatThread({
             </>
           ) : null}
           {salespersonHub && isWhatsApp && !isSupport ? (
+            <div className="max-[1099px]:hidden">
             <SalespersonComposerToolbar
               variant="sales"
               quickActionsOpen={quickActionsOpen}
@@ -1257,8 +1286,10 @@ export function ChatThread({
               canCreateDeal={canCreateDeal}
               showLogCall={showLogCall}
             />
+            </div>
           ) : null}
           {salespersonHub && isWhatsApp && isSupport ? (
+            <div className="max-[1099px]:hidden">
             <SalespersonComposerToolbar
               variant="support"
               onInternalNote={handleInternalNote}
@@ -1267,8 +1298,10 @@ export function ChatThread({
               leadHref={leadHref}
               canTransfer={canTransfer}
             />
+            </div>
           ) : null}
           {companyMode && isWhatsApp ? (
+            <div className="max-[1099px]:hidden">
             <ManagerComposerToolbar
               canSend={canSend}
               alsoSells={alsoSells}
@@ -1286,15 +1319,19 @@ export function ChatThread({
               showLogCall={showLogCall}
               isSupport={isSupport}
             />
+            </div>
           ) : null}
           </div>
           {isWhatsApp ? (
             <SalesCopilotCard
               item={copilot.data?.items[0] ?? null}
               analysisStatus={copilot.data?.analysis.status}
-              composing={input.trim().length > 0}
+              keyboardOpen={keyboardOpen}
               busy={copilot.busy}
-              onOpen={() => setCopilotOpen(true)}
+              onOpen={() => {
+                setToolsOpen(false);
+                setCopilotOpen(true);
+              }}
               onAct={(item, body) => void copilot.act(item.id, body)}
               onDraft={(text) => {
                 setInput(text);
@@ -1396,10 +1433,24 @@ export function ChatThread({
                 <button
                   type="button"
                   disabled={sending || !transportAvailable}
+                  onClick={() => {
+                    setCopilotOpen(false);
+                    setToolsOpen(true);
+                  }}
+                  aria-label="Tools"
+                  aria-expanded={toolsOpen}
+                  className="inline-flex h-11 min-w-11 shrink-0 items-center justify-center gap-1 rounded-full px-2 text-[13px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover disabled:opacity-50 min-[1100px]:!hidden"
+                >
+                  <LayoutGrid size={18} strokeWidth={1.8} aria-hidden />
+                  <span className="max-[359px]:sr-only">Tools</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={sending || !transportAvailable}
                   onClick={() => fileInputRef.current?.click()}
                   title="Attach a photo, video, or file"
                   aria-label="Attach a photo, video, or file"
-                  className={`wa-plus-btn ${attachment ? "wa-plus-btn-open" : ""}`}
+                  className={`wa-plus-btn max-[1099px]:!hidden min-[1100px]:inline-flex ${attachment ? "wa-plus-btn-open" : ""}`}
                 >
                   <Paperclip size={18} strokeWidth={1.8} />
                 </button>
@@ -1488,6 +1539,116 @@ export function ChatThread({
           ) : null}
         </div>
       )}
+
+      {isWhatsApp && toolsOpen ? (
+        <PremiumSheet
+          title="Tools"
+          description="Actions for this conversation."
+          onClose={() => setToolsOpen(false)}
+          labelledBy="conversation-tools-title"
+          maxWidthClass="max-w-lg"
+        >
+          <div className="flex flex-col gap-2">
+            {(salespersonHub && !isSupport) || (companyMode && alsoSells && canSend) ? (
+              <button
+                type="button"
+                className="flex min-h-11 w-full items-center gap-3 rounded-[12px] border border-sales-border px-3 py-2 text-left"
+                onClick={() => {
+                  setToolsOpen(false);
+                  setQuickActionsOpen(true);
+                }}
+              >
+                <Zap size={18} className="shrink-0 text-sales-brand" aria-hidden />
+                <span>
+                  <span className="block text-[14px] font-semibold text-sales-text-primary">Quick replies</span>
+                  <span className="block text-[13px] leading-5 text-sales-text-secondary">Insert a saved reply into the message.</span>
+                </span>
+              </button>
+            ) : null}
+            {(salespersonHub && !isSupport) || (companyMode && alsoSells && canSend) ? (
+              <button
+                type="button"
+                className="flex min-h-11 w-full items-center gap-3 rounded-[12px] border border-sales-border px-3 py-2 text-left"
+                onClick={() => {
+                  setToolsOpen(false);
+                  setAssetDrawerOpen(true);
+                }}
+              >
+                <Paperclip size={18} className="shrink-0 text-sales-brand" aria-hidden />
+                <span>
+                  <span className="block text-[14px] font-semibold text-sales-text-primary">Send asset</span>
+                  <span className="block text-[13px] leading-5 text-sales-text-secondary">Share a file from the company library.</span>
+                </span>
+              </button>
+            ) : null}
+            {salespersonHub && !isSupport && salesHubCommand ? (
+              <button
+                type="button"
+                className="flex min-h-11 w-full items-center gap-3 rounded-[12px] border border-sales-border px-3 py-2 text-left"
+                onClick={() => {
+                  setToolsOpen(false);
+                  setCommandOpen(true);
+                }}
+              >
+                <MessageSquare size={18} className="shrink-0 text-sales-brand" aria-hidden />
+                <span>
+                  <span className="block text-[14px] font-semibold text-sales-text-primary">Command SegmiQ</span>
+                  <span className="block text-[13px] leading-5 text-sales-text-secondary">Ask SegmiQ for help in this chat.</span>
+                </span>
+              </button>
+            ) : null}
+            {canSend ? (
+              <button
+                type="button"
+                className="flex min-h-11 w-full items-center gap-3 rounded-[12px] border border-sales-border px-3 py-2 text-left"
+                onClick={() => {
+                  setToolsOpen(false);
+                  window.setTimeout(() => fileInputRef.current?.click(), 0);
+                }}
+              >
+                <ImageIcon size={18} className="shrink-0 text-sales-brand" aria-hidden />
+                <span>
+                  <span className="block text-[14px] font-semibold text-sales-text-primary">Photo or file</span>
+                  <span className="block text-[13px] leading-5 text-sales-text-secondary">Attach a photo, video, or file to this message.</span>
+                </span>
+              </button>
+            ) : null}
+            {leadHref ? (
+              <a href={leadHref} className="flex min-h-11 w-full items-center gap-3 rounded-[12px] border border-sales-border px-3 py-2 text-left">
+                <UserRound size={18} className="shrink-0 text-sales-brand" aria-hidden />
+                <span>
+                  <span className="block text-[14px] font-semibold text-sales-text-primary">View customer</span>
+                  <span className="block text-[13px] leading-5 text-sales-text-secondary">Open the customer record.</span>
+                </span>
+              </a>
+            ) : null}
+            {dealHref ? (
+              <a href={dealHref} className="flex min-h-11 w-full items-center gap-3 rounded-[12px] border border-sales-border px-3 py-2 text-left">
+                <FileText size={18} className="shrink-0 text-sales-brand" aria-hidden />
+                <span>
+                  <span className="block text-[14px] font-semibold text-sales-text-primary">View deal</span>
+                  <span className="block text-[13px] leading-5 text-sales-text-secondary">Open the linked deal.</span>
+                </span>
+              </a>
+            ) : canCreateDeal ? (
+              <button
+                type="button"
+                className="flex min-h-11 w-full items-center gap-3 rounded-[12px] border border-sales-border px-3 py-2 text-left"
+                onClick={() => {
+                  setToolsOpen(false);
+                  void openCreateDeal();
+                }}
+              >
+                <FileText size={18} className="shrink-0 text-sales-brand" aria-hidden />
+                <span>
+                  <span className="block text-[14px] font-semibold text-sales-text-primary">Create deal</span>
+                  <span className="block text-[13px] leading-5 text-sales-text-secondary">Start a deal from this conversation.</span>
+                </span>
+              </button>
+            ) : null}
+          </div>
+        </PremiumSheet>
+      ) : null}
 
       {isWhatsApp ? (
         <SalesCopilotSheet
