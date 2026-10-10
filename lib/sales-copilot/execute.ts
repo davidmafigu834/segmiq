@@ -159,7 +159,9 @@ export async function prepareQuotationDraft(input: {
   let createdId: string | null = null;
   const first = await supabase.from("quotations").insert(insert).select("id").single();
   if (first.error || !first.data) {
-    const { creation_source: _source, copilot_fingerprint: _fp, ...legacy } = insert;
+    const legacy: Record<string, unknown> = { ...insert };
+    delete legacy.creation_source;
+    delete legacy.copilot_fingerprint;
     const second = await supabase.from("quotations").insert(legacy).select("id").single();
     if (second.error || !second.data) {
       throw new Error(first.error?.message ?? second.error?.message ?? "Quotation draft was not saved.");
