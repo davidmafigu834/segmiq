@@ -5,6 +5,7 @@ import { analyseConversation } from "../lib/sales-copilot/analyse";
 import { reconcileProposals } from "../lib/sales-copilot/reconcile";
 import { payloadHash } from "../lib/sales-copilot/hash";
 import { existingLocalDay, resolveCommitmentWhen } from "../lib/sales-copilot/dates";
+import { carryCopilotSummary, readableCopilotSummary } from "../lib/sales-copilot/summary";
 import type { CopilotEngineInput, ProposalDraft } from "../lib/sales-copilot/types";
 
 const TZ = "Africa/Harare";
@@ -436,6 +437,20 @@ describe("Sales Copilot reconcile", () => {
     });
     assert.equal(result.upserts.length, 0);
     assert.equal(result.obsoleteIds.includes("item-1"), false);
+  });
+});
+
+describe("Sales Copilot summary", () => {
+  it("shows a repeated empty summary once, as nothing to display", () => {
+    const stacked = Array.from({ length: 5 }, () => "Earlier context: No action is waiting on this conversation.").join(" ");
+    assert.equal(readableCopilotSummary(stacked), null);
+  });
+
+  it("keeps one earlier note instead of nesting the previous summary", () => {
+    const previous = "Earlier context: Earlier context: Need: four tyres. No action is waiting on this conversation.";
+    const next = carryCopilotSummary("No action is waiting on this conversation.", previous);
+    assert.equal(next, "Need: four tyres.");
+    assert.equal(carryCopilotSummary("The customer asked about delivery.", next), "Earlier context: Need: four tyres. The customer asked about delivery.");
   });
 });
 

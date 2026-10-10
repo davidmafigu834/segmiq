@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { customerDraft } from "@/lib/sales-copilot/draft";
+import { readableCopilotSummary } from "@/lib/sales-copilot/summary";
 import type { CopilotWorkView } from "@/lib/sales-copilot/types";
 
 export const SALES_COPILOT_DRAFT_EVENT = "segmiq:sales-copilot-draft";
@@ -265,7 +266,7 @@ export function SalesCopilotSheet({
   return (
     <PremiumSheet
       title="Sales Copilot"
-      description={summary ?? "Review what was understood and what still needs a decision."}
+      description={readableCopilotSummary(summary) ?? "Review what was understood and what still needs a decision."}
       onClose={onClose}
       closeDisabled={busy}
       labelledBy="sales-copilot-title"
@@ -500,16 +501,19 @@ function SalesCopilotPanelItem({
 export function SalesCopilotPanel({ leadId }: { leadId: string }) {
   const copilot = useSalesCopilot(leadId);
   const items = copilot.data?.items ?? [];
+  const summary = readableCopilotSummary(copilot.data?.analysis.summary);
   return (
     <section className="border-b border-sales-border-subtle px-4 py-3.5">
       <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">Sales Copilot</div>
-      {copilot.data?.analysis.summary ? (
-        <p className="text-[13px] leading-5 text-sales-text-secondary">{copilot.data.analysis.summary}</p>
+      {summary ? (
+        <p className="text-[13px] leading-5 text-sales-text-secondary">{summary}</p>
       ) : (
         <p className="text-[13px] text-sales-text-secondary">
           {copilot.data?.analysis.status === "pending"
             ? "Sales Copilot is reading this conversation."
-            : "Sales Copilot has not read this conversation yet. It starts after the next saved message."}
+            : items.length > 0
+              ? "Review the actions below."
+              : "Nothing to review on this conversation."}
         </p>
       )}
       {copilot.notice ? <p className="mt-2 text-[12px] text-sales-danger">{copilot.notice}</p> : null}

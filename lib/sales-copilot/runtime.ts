@@ -6,6 +6,7 @@ import { defaultRequiredFields, draftFingerprint } from "./catalogue";
 import { prepareQuotationDraft, quotationReadyCopy } from "./execute";
 import { enrichAnalysis } from "./ai";
 import { reconcileProposals } from "./reconcile";
+import { carryCopilotSummary } from "./summary";
 import { listWorkItems, loadAnalysis, persistReconcile, saveAnalysis } from "./store";
 import type { CatalogueItem, CopilotMessage, ListingItem, RequiredField } from "./types";
 
@@ -171,7 +172,7 @@ export async function runCopilotAnalysis(
   if (messages.length >= 40) {
     const previous = await loadAnalysis(leadId);
     if (previous?.summary) {
-      analysis.summary = `Earlier context: ${previous.summary.slice(0, 280)} ${analysis.summary}`.slice(0, 800);
+      analysis.summary = carryCopilotSummary(analysis.summary, previous.summary);
     }
   }
 
