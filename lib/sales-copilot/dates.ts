@@ -88,7 +88,7 @@ export type ResolvedWhen = {
   ymd: string;
 };
 
-function parseExplicitTime(text: string): { hour: number; minute: number } | null {
+export function parseExplicitTime(text: string): { hour: number; minute: number } | null {
   const ampm = text.match(/\b(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
   if (ampm) {
     let hour = Number(ampm[1]);
@@ -175,5 +175,37 @@ export function resolveCommitmentWhen(
     hourSuggested: !explicit,
     dayLabel,
     ymd: ymdKey(ymd),
+  };
+}
+
+const DAY_WORD = /\b(today|tomorrow|next week|in \d+ days?|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/i;
+
+/**
+ * Keep a date that was requested earlier when a later reply only adds a time.
+ * "Tomorrow" is resolved from the message that used that word, not from a reply after midnight.
+ */
+export function resolveAnchoredSlot(input: {
+  anchorText: string;
+  anchorAt: Date;
+  replyText: string;
+  replyAt: Date;
+  timeZone: string;
+  defaultHour: number;
+}): { at: string | null; hourSuggested: boolean; dayLabel: string; ymd: string } | null {
+  const replyHasDay = DAY_WORD.test(input.replyText);
+  const replyDay = resolveCommitmentWhen(input.replyText, input.replyAt, input.timeZone, input.defaultHour);
+  const anchorDay = resolveCommitmentWhen(input.anchorText, input.anchorAt, input.timeZone, input.defaultHour);
+  const day = replyHasDay && replyDay ? replyDay : anchorDay;
+  if (!day) return null;
+  const explicit = parseExplicitTime(input.replyText) ?? parseExplicitTime(input.anchorText);
+  if (!explicit) {
+    return { at: null, hourSuggested: true, dayLabel: day.dayLabel, ymd: day.ymd };
+  }
+  const [year, month, date] = day.ymd.split("-").map(Number);
+  return {
+    at: atLocalHour({ year, month, day: date }, explicit.hour, explicit.minute, input.timeZone),
+    hourSuggested: false,
+    dayLabel: day.dayLabel,
+    ymd: day.ymd,
   };
 }

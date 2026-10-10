@@ -16,6 +16,7 @@ function visible(row: WorkItemRow, now: Date): boolean {
   if (row.fulfilment_status !== "open") return false;
   if (row.snooze_until && new Date(row.snooze_until).getTime() > now.getTime()) return false;
   if (row.review_status === "dismissed" || row.review_status === "stale") return false;
+  if (row.proposed_payload.onDemand === true && row.review_status === "pending") return false;
   if (row.review_status === "pending" || row.review_status === "snoozed") return true;
   if (row.execution_status === "failed") return true;
   if (row.review_status === "approved" && row.execution_status === "succeeded" && row.linked_follow_up) return true;
@@ -65,7 +66,7 @@ export function copilotRowToTask(row: WorkItemRow, now: Date, relatedName: strin
       linkedQuotationId: row.linked_quotation_id,
       missing: row.missing_information,
       evidenceMessageIds: row.evidence_message_ids,
-      primaryLabel: primaryLabel(row.action_type, row.execution_status),
+      primaryLabel: primaryLabel(row.action_type, row.execution_status, row.missing_information),
     },
   };
 }

@@ -45,7 +45,7 @@ import { SalesConversationAssist } from "./SalesConversationAssist";
 import { AssetDrawer } from "./AssetDrawer";
 import { AgentComposerAssist } from "./AgentComposerAssist";
 import { AgentActionCards } from "./AgentActionCards";
-import { SALES_COPILOT_DRAFT_EVENT, SalesCopilotCard, SalesCopilotSheet, useSalesCopilot } from "./SalesCopilotWorkspace";
+import { SALES_COPILOT_DRAFT_EVENT, SalesCopilotCard, SalesCopilotSheet, priorityWorkItem, useSalesCopilot } from "./SalesCopilotWorkspace";
 import { useCompactKeyboardOpen } from "@/lib/shell/use-compact-keyboard";
 import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
 import { SalesCommandDrawer } from "@/components/sales/command/SalesCommandDrawer";
@@ -172,7 +172,8 @@ export function ChatThread({
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const keyboardOpen = useCompactKeyboardOpen();
-  const copilotAttention = (copilot.data?.items.length ?? 0) > 0 || copilot.data?.analysis.status === "pending";
+  const copilotCard = priorityWorkItem(copilot.data?.items ?? []);
+  const copilotAttention = copilotCard != null || copilot.data?.analysis.status === "pending";
   const [attachment, setAttachment] = useState<ComposerAttachment | null>(null);
   const [sending, setSending] = useState(false);
   const [logCallOpen, setLogCallOpen] = useState(false);
@@ -1324,7 +1325,7 @@ export function ChatThread({
           </div>
           {isWhatsApp ? (
             <SalesCopilotCard
-              item={copilot.data?.items[0] ?? null}
+              item={copilotCard}
               analysisStatus={copilot.data?.analysis.status}
               keyboardOpen={keyboardOpen}
               busy={copilot.busy}

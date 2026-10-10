@@ -75,14 +75,18 @@ export function rowFromUnknown(value: unknown): WorkItemRow | null {
   };
 }
 
-export function primaryLabel(actionType: string, executionStatus: string): string {
+export function primaryLabel(actionType: string, executionStatus: string, missing: string[] = []): string {
   if (executionStatus === "failed") return "Retry";
+  if (missing.length > 0 && (actionType === "appointment" || actionType === "create_reminder" || actionType === "update_reminder")) {
+    return "Change time";
+  }
   if (actionType === "quotation_draft") return "Review draft";
   if (actionType === "quotation_missing") return "Add missing details";
   if (actionType === "quotation_choice" || actionType === "listing_shortlist") return "Choose product";
-  if (actionType === "update_reminder" || actionType === "create_reminder" || actionType === "customer_checkin" || actionType === "contact_later") {
-    return "Set follow-up";
-  }
+  if (actionType === "contact_later") return "Approve follow-up";
+  if (actionType === "customer_checkin") return "Set follow-up";
+  if (actionType === "update_reminder" || actionType === "create_reminder") return "Save reminder";
+  if (actionType === "appointment") return "Change time";
   if (actionType === "send_quotation") return "Open draft";
   if (actionType === "answer_question") return "Draft reply";
   return "Review";
@@ -114,7 +118,7 @@ export function toPublicItem(row: WorkItemRow): CopilotWorkView {
     payload,
     semanticKey: row.semantic_key,
     contextRevision: row.context_revision,
-    primaryLabel: primaryLabel(row.action_type, row.execution_status),
+    primaryLabel: primaryLabel(row.action_type, row.execution_status, row.missing_information),
     snoozeUntil: row.snooze_until,
   };
 }

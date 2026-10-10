@@ -121,6 +121,18 @@ function statusLabel(item: CopilotWorkView, analysisStatus?: string) {
   return "To do";
 }
 
+export function priorityWorkItem(items: CopilotWorkView[]): CopilotWorkView | null {
+  const rank = { high: 0, medium: 1, low: 2 };
+  const actionable = items.filter((item) => item.payload.onDemand !== true && item.reviewStatus !== "dismissed");
+  return (
+    [...actionable].sort((left, right) => {
+      const priority = rank[left.priority] - rank[right.priority];
+      if (priority !== 0) return priority;
+      return (right.evidence[0]?.at ?? "").localeCompare(left.evidence[0]?.at ?? "");
+    })[0] ?? null
+  );
+}
+
 const cardButton =
   "inline-flex h-11 items-center rounded-[10px] px-3 text-[14px] font-semibold";
 const cardPrimary = `${cardButton} bg-sales-brand text-sales-brand-text disabled:opacity-50`;
@@ -241,9 +253,13 @@ export function SalesCopilotCard({
           <a href={quoteHref} className={cardSecondary}>
             Edit items
           </a>
-        ) : item.primaryLabel !== "Review" && !detailsFirst ? (
+        ) : item.actionType === "contact_later" ? (
           <button type="button" onClick={onOpen} className={cardSecondary}>
-            Review
+            Change date
+          </button>
+        ) : item.linkedFollowUp && item.primaryLabel !== "Change time" ? (
+          <button type="button" onClick={onOpen} className={cardSecondary}>
+            Change time
           </button>
         ) : null}
       </div>

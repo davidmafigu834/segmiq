@@ -201,6 +201,7 @@ describe("Sales Copilot analysis", () => {
     const items = draft.payload.items as Array<{ productId: string; quantity: number }>;
     assert.equal(items[0].productId, "p-michelin");
     assert.equal(items[0].quantity, 4);
+    assert.equal(draft.payload.onDemand, true);
     assert.match(draft.explanation, /Available stock: 12/);
   });
 
@@ -286,7 +287,9 @@ describe("Sales Copilot analysis", () => {
     );
     const later = analysis.proposals.find((item) => item.actionType === "contact_later");
     assert.ok(later);
-    assert.match(later.explanation, /company default of 7 days/);
+    assert.match(later.explanation, /checking in after 7 days/);
+    assert.match(later.explanation, /suggestion/);
+    assert.equal(later.payload.onDemand, undefined);
     assert.equal(later.hourSuggested, true);
     assert.equal(existingLocalDay(String(later.payload.followUpAt), TZ), "2026-10-15");
   });
@@ -724,6 +727,126 @@ describe("Sales Copilot quotation reasoning", () => {
     assert.match(ui, /Confirm snooze/);
     assert.doesNotMatch(ui, /Still needed:/);
     assert.doesNotMatch(ui, /readableCopilotSummary\(summary\)/);
+  });
+});
+
+describe("Sales Copilot quiet observation", () => {
+  const customer = {
+    id: "in-1",
+    direction: "inbound" as const,
+    createdAt: "2026-10-10T21:59:00.000Z",
+    status: "received",
+    authorId: null,
+    authorName: "Customer",
+  };
+  const salesperson = {
+    id: "out-1",
+    direction: "outbound" as const,
+    createdAt: "2026-10-10T22:25:00.000Z",
+    status: "sent",
+    authorId: "rep",
+    authorName: "Ada",
+  };
+
+  it("keeps a future customer promise quiet until it is due or accepted", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        followUpAt: null,
+        messages: [
+          {
+            id: "c-future",
+            direction: "inbound",
+            body: "I'll get back to you tomorrow.",
+            createdAt: "2026-12-01T14:00:00.000Z",
+            status: "received",
+            authorId: null,
+            authorName: "Customer",
+          },
+        ],
+      })
+    );
+    const checkin = analysis.proposals.find((item) => item.actionType === "customer_checkin");
+    assert.ok(checkin);
+    assert.equal(checkin.waitingActor, "customer");
+    assert.equal(checkin.payload.onDemand, true);
+    assert.equal(analysis.proposals.some((item) => item.actionType === "create_reminder"), false);
+  });
+
+  it("keeps a meeting request quiet until the salesperson offers a time", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        followUpAt: null,
+        messages: [{ ...customer, body: "Can we schedule a meeting tomorrow for that product?" }],
+      })
+    );
+    assert.equal(analysis.proposals.some((item) => item.actionType === "create_reminder"), false);
+    const noted = analysis.proposals.find((item) => item.semanticKey.startsWith("meeting:request"));
+    assert.equal(noted?.payload.onDemand, true);
+  });
+
+  it("keeps the requested day when the reply crosses midnight", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        followUpAt: null,
+        messages: [
+          { ...customer, body: "Can we schedule a meeting tomorrow for that product?" },
+          { ...salesperson, body: "Okay, 8am will be fine." },
+        ],
+      })
+    );
+    const meeting = analysis.proposals.find((item) => item.semanticKey === "meeting:2026-10-11");
+    assert.ok(meeting);
+    assert.equal(meeting.payload.onDemand, false);
+    assert.equal(meeting.title, "Save a meeting reminder?");
+    assert.equal(existingLocalDay(String(meeting.payload.followUpAt), TZ), "2026-10-11");
+    assert.match(String(meeting.explanation), /08:00/);
+    assert.match(meeting.explanation, /Awaiting customer confirmation/);
+    assert.equal(meeting.payload.awaitingCustomerConfirmation, true);
+  });
+
+  it("updates the same meeting when the customer accepts", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        followUpAt: null,
+        messages: [
+          { ...customer, body: "Can we schedule a meeting tomorrow for that product?" },
+          { ...salesperson, body: "Okay, 8am will be fine." },
+          {
+            ...customer,
+            id: "in-2",
+            createdAt: "2026-10-10T22:40:00.000Z",
+            body: "Yes",
+          },
+        ],
+      })
+    );
+    const meetings = analysis.proposals.filter((item) => item.semanticKey.startsWith("meeting:"));
+    assert.equal(meetings.length, 1);
+    assert.equal(meetings[0].payload.awaitingCustomerConfirmation, false);
+    assert.match(meetings[0].explanation, /accepted/i);
+  });
+
+  it("offers quotation help after the salesperson commits, not after the request alone", () => {
+    const asked = analyseConversation(
+      baseInput({
+        messages: [{ ...customer, id: "q", createdAt: "2026-10-08T14:00:00.000Z", body: "Can you send a quotation?" }],
+      })
+    );
+    const quiet = asked.proposals.find((item) => String(item.actionType).startsWith("quotation"));
+    assert.equal(quiet?.payload.onDemand, true);
+    const offered = analyseConversation(
+      baseInput({
+        knownFacts: { size: "205/55R16", brand: "Michelin", quantity: "4", branch: "Harare" },
+        messages: [
+          { ...customer, id: "q", createdAt: "2026-10-08T14:00:00.000Z", body: "Please quote 4 Michelin Pilot 205/55R16 tyres." },
+          { ...salesperson, id: "s", createdAt: "2026-10-08T15:00:00.000Z", body: "Let me prepare a quotation." },
+        ],
+      })
+    );
+    const draft = offered.proposals.find((item) => item.actionType === "quotation_draft");
+    assert.ok(draft);
+    assert.notEqual(draft.payload.onDemand, true);
+    assert.match(draft.explanation, /prepare a draft quotation for your review/i);
   });
 });
 

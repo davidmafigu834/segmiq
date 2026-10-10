@@ -6,6 +6,8 @@ import {
   existingLocalDay,
   formatLocalWhen,
   localYmd,
+  parseExplicitTime,
+  resolveAnchoredSlot,
   resolveCommitmentWhen,
   ymdKey,
 } from "./dates";
@@ -438,6 +440,93 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
     }
   }
 
+  const meetingRequests = messages.filter((message) => isCustomerStatement(message) && /\b(meet|meeting|schedule|viewing|visit|appointment)\b/i.test(message.body));
+  for (const request of meetingRequests) {
+    const reply = messages.find(
+      (message) =>
+        isSalespersonStatement(message) &&
+        new Date(message.createdAt).getTime() > new Date(request.createdAt).getTime() &&
+        (parseExplicitTime(message.body) != null || /\b(ok|okay|fine|works|sure|yes)\b/i.test(message.body))
+    );
+    if (!reply) {
+      proposals.push({
+        semanticKey: `meeting:request:${request.id}`,
+        actionType: "answer_question",
+        queue: "todo",
+        title: "Meeting request noted",
+        explanation: "The customer asked to meet. Draft a reply when you are ready. Nothing is scheduled yet.",
+        evidenceMessageIds: [request.id],
+        evidence: [excerpt(request)],
+        proposedAt: null,
+        hourSuggested: false,
+        currentDueAt: null,
+        waitingActor: "salesperson",
+        priority: "low",
+        missing: [],
+        payload: { kind: "answer_question", question: request.body.trim().slice(0, 180), onDemand: true },
+        linkedFollowUp: false,
+      });
+      continue;
+    }
+    const slot = resolveAnchoredSlot({
+      anchorText: request.body,
+      anchorAt: new Date(request.createdAt),
+      replyText: reply.body,
+      replyAt: new Date(reply.createdAt),
+      timeZone: input.timezone,
+      defaultHour: input.defaultHour,
+    });
+    const accepted = messages.some(
+      (message) =>
+        isCustomerStatement(message) &&
+        new Date(message.createdAt).getTime() > new Date(reply.createdAt).getTime() &&
+        SHORT_APPROVAL.test(message.body.trim())
+    );
+    const subjectMatch = request.body.match(/\bfor\s+(.{3,80}?)(?:[?.!]|$)/i);
+    const subject = subjectMatch?.[1]?.trim() || statedNeed(messages)?.text || "this enquiry";
+    const whenLabel = slot?.at
+      ? formatLocalWhen(slot.at, input.timezone, false)
+      : slot
+        ? slot.dayLabel
+        : "a time you still need to choose";
+    const changed = messages.some(
+      (message) =>
+        new Date(message.createdAt).getTime() > new Date(reply.createdAt).getTime() &&
+        /\b(cancel|reschedule|can't make|cannot make)\b/i.test(message.body)
+    );
+    const key = `meeting:${slot?.ymd ?? "open"}`;
+    proposals.push({
+      semanticKey: key,
+      actionType: input.followUpAt && existingLocalDay(input.followUpAt, input.timezone) !== slot?.ymd ? "update_reminder" : slot?.at ? "create_reminder" : "appointment",
+      queue: "needs_review",
+      title: changed ? "Update the meeting reminder?" : "Save a meeting reminder?",
+      explanation: changed
+        ? "The arranged time was changed or cancelled in the conversation. Review the existing reminder before it is updated. Nothing is removed until you approve."
+        : slot?.at
+          ? `You offered to meet this client on ${whenLabel} to discuss ${subject}. Can I add a reminder to your Tasks? ${accepted ? "The customer has accepted this time." : "Awaiting customer confirmation."} Saving a reminder does not book a calendar invitation.`
+          : `You agreed to meet this client ${slot ? `on ${slot.dayLabel}` : ""} to discuss ${subject}, but no exact time was given. Choose the time before a reminder is saved.`,
+      evidenceMessageIds: [request.id, reply.id],
+      evidence: [excerpt(request), excerpt(reply)],
+      proposedAt: changed ? null : slot?.at ?? null,
+      hourSuggested: false,
+      currentDueAt: input.followUpAt,
+      waitingActor: accepted ? "salesperson" : "customer",
+      priority: "high",
+      missing: slot?.at && !changed ? [] : ["Time"],
+      payload: {
+        kind: "follow_up",
+        mode: input.followUpAt ? "update" : "create",
+        followUpAt: slot?.at ?? null,
+        hourSuggested: false,
+        source: "HUMAN_CREATED",
+        awaitingCustomerConfirmation: !accepted,
+        subject,
+        onDemand: false,
+      },
+      linkedFollowUp: true,
+    });
+  }
+
   const comparing = messages.find(
     (message) =>
       isCustomerStatement(message) &&
@@ -469,8 +558,8 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
       queue: "needs_review",
       title: "Suggest a later check-in",
       explanation: usedCustomerTiming
-        ? `This customer is still comparing options and mentioned ${whenFromText?.dayLabel}. Their conversation stays on this contact. Would you like to schedule a check-in for ${formatLocalWhen(at, input.timezone, !whenFromText || whenFromText.hourSuggested)}?`
-        : `This customer is still comparing options. I suggest checking in ${formatLocalWhen(at, input.timezone, true)}. That date uses the company default of ${input.contactLaterDays} days and the hour is a suggestion. Their conversation history will remain attached. Would you like to schedule that?`,
+        ? `The client is still comparing options and mentioned ${whenFromText?.dayLabel}. Can I add a check-in for ${formatLocalWhen(at, input.timezone, !whenFromText || whenFromText.hourSuggested)} to Contact later? The hour is a suggestion until you approve it.`
+        : `The client is still comparing options. Your company suggests checking in after ${input.contactLaterDays} days, on ${formatLocalWhen(at, input.timezone, true)}. Can I add this to Contact later? The hour is a suggestion.`,
       evidenceMessageIds: [comparing.id],
       evidence: [excerpt(comparing)],
       proposedAt: at,
@@ -704,7 +793,7 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
           actionType: "quotation_draft",
           queue: "needs_review",
           title: "Quotation details are ready to draft",
-          explanation: `The conversation includes ${line.quantity} × ${line.name}. A draft can be prepared for review. It will not be sent automatically.${stockNote}`,
+          explanation: `I found the products and quantities discussed: ${line.quantity} × ${line.name}. Can I prepare a draft quotation for your review? It will not be sent automatically.${stockNote}`,
           evidenceMessageIds: evidenceMessages.map((message) => message.id),
           evidence: evidenceMessages.map(excerpt),
           proposedAt: null,
@@ -829,6 +918,39 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
       payload: { kind: "answer_question", question: unanswered[0].text },
       linkedFollowUp: false,
     });
+  }
+
+  const quoteCommitted = messages.some(
+    (message) =>
+      isSalespersonStatement(message) &&
+      /\b(quote|quotation|draft)\b/i.test(message.body) &&
+      (isFuturePromiseSentence(message.body) || /\b(prepare|send|draft)\b/i.test(message.body))
+  );
+  const savedQuoteVisible = openDrafts.length > 0 || otherQuotes.length > 0 || claimedDraft;
+  for (let index = 0; index < proposals.length; index += 1) {
+    const proposal = proposals[index];
+    const quoteAction = proposal.actionType.startsWith("quotation") || proposal.actionType === "send_quotation";
+    if (quoteAction && !quoteCommitted && !savedQuoteVisible) {
+      proposals[index] = { ...proposal, payload: { ...proposal.payload, onDemand: true } };
+    }
+    if (proposal.actionType === "answer_question" && proposal.payload.onDemand !== true && proposal.semanticKey.startsWith("answer:")) {
+      proposals[index] = { ...proposal, payload: { ...proposal.payload, onDemand: true } };
+    }
+    if (proposal.actionType === "listing_shortlist" || (proposal.actionType === "appointment" && !proposal.semanticKey.startsWith("meeting:"))) {
+      proposals[index] = { ...proposal, payload: { ...proposal.payload, onDemand: true } };
+    }
+    if (proposal.actionType === "customer_checkin") {
+      const due = proposal.proposedAt != null && new Date(proposal.proposedAt).getTime() <= Date.now();
+      const accepted = messages.some(
+        (message) =>
+          isSalespersonStatement(message) &&
+          new Date(message.createdAt).getTime() > new Date(proposal.evidence[0]?.at ?? 0).getTime() &&
+          (SHORT_APPROVAL.test(message.body.trim()) || /\b(i['’]?ll wait|no problem|sounds good)\b/i.test(message.body))
+      );
+      if (!due && !accepted) {
+        proposals[index] = { ...proposal, payload: { ...proposal.payload, onDemand: true } };
+      }
+    }
   }
 
   const uniqueProposals = new Map<string, ProposalDraft>();
