@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useGuidedCourse } from "./GuidedCourseProvider";
 import { CourseCoachmark } from "./CourseCoachmark";
 import { CourseSpotlight } from "./CourseSpotlight";
-import { CourseHud } from "./CourseHud";
 import { CourseProgressPanel } from "./CourseProgressPanel";
 import { CourseLessonComplete } from "./CourseLessonComplete";
 import { CourseCompletionModal } from "./CourseCompletionModal";
@@ -128,12 +127,10 @@ export function CourseLayer() {
             targetMissing={targetMissing}
             overlayNudge={overlayNudge}
           />
-          <CourseHud />
           {!isMobile ? <CourseProgressPanel /> : null}
         </>
       ) : null}
 
-      {uiMode === "paused" ? <CourseHud collapsed /> : null}
       {uiMode === "lesson_complete" ? <CourseLessonComplete /> : null}
       {uiMode === "course_complete" ? <CourseCompletionModal /> : null}
     </>
