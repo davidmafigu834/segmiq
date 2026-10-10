@@ -4,10 +4,7 @@ import { fetchCallLogsByLeadIds } from "@/lib/call-logs";
 import { firstCallResponseMinutes, getAvgResponseMinutes } from "@/lib/metrics";
 import type { LeadSource, LeadStatus } from "@/types";
 import type { CampaignQualifiers } from "@/lib/lead-lanes";
-import {
-  syncRetargetingForClient,
-  type RetargetingStatusView,
-} from "@/lib/retargeting";
+import { type RetargetingStatusView } from "@/lib/retargeting";
 import { isActiveConvertLaterPick } from "@/lib/convert-later-picks";
 import {
   MIRROR_STALL_WINDOW_DAYS,
@@ -1034,12 +1031,7 @@ export async function fetchClientManagerDashboardData(clientId: string) {
       : "direct";
   const businessType =
     client?.business_type === "real_estate" ? ("real_estate" as const) : ("trades" as const);
-  let retargeting: RetargetingStatusView | null = null;
-  try {
-    retargeting = await syncRetargetingForClient(clientId, clientName);
-  } catch {
-    retargeting = null;
-  }
+  const retargeting: RetargetingStatusView | null = null;
 
   let whatsappHub: WhatsAppHubReport | null = null;
   try {
@@ -1217,14 +1209,12 @@ export async function fetchSalespersonDashboardData(userId: string) {
   }
 
   const aiEnabledByClient = new Map<string, boolean>();
-  const clientNameById = new Map<string, string>();
   for (const row of (clientRows ?? []) as Array<{
     id: string;
     ai_enabled: boolean | null;
     name: string | null;
   }>) {
     aiEnabledByClient.set(row.id, row.ai_enabled === true);
-    clientNameById.set(row.id, row.name ?? "Client");
   }
 
   const qualifiersByClient = new Map<string, CampaignQualifierRow>();
@@ -1325,13 +1315,6 @@ export async function fetchSalespersonDashboardData(userId: string) {
   }
 
   const retargetingStatuses: RetargetingStatusView[] = [];
-  for (const [cid, cname] of Array.from(clientNameById.entries())) {
-    try {
-      retargetingStatuses.push(await syncRetargetingForClient(cid, cname));
-    } catch {
-      // segment tables may not exist in all environments yet
-    }
-  }
 
   const leadValueOf = (lead: SalespersonLeadRow): number => {
     const deal = Number(lead.deal_value);

@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { UserRole } from "@/types";
-import { RetargetingBanners } from "@/components/sales/RetargetingBanner";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
-import type { RetargetingStatusView } from "@/lib/retargeting-shared";
 import { buildPerformance } from "@/lib/sales/sales-dashboard-view";
 import type { SalesDashboardData } from "@/lib/sales/get-sales-dashboard-data";
 import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
@@ -69,7 +67,6 @@ function SalesDashboardInner({
     daysLeftLabel: data.goal?.daysLeftLabel ?? null,
   };
 
-  const retargetingStatuses = (legacy.retargetingStatuses ?? []) as RetargetingStatusView[];
   const planQueue = data.plan?.queue ?? [];
   const planProgress = data.plan?.progress ?? null;
 
@@ -126,10 +123,6 @@ function SalesDashboardInner({
             onOpenLog={() => openLogSheet("")}
             onAddLead={openAddHubSheet}
           />
-
-          {retargetingStatuses.length > 0 ? (
-            <RetargetingBanners statuses={retargetingStatuses} />
-          ) : null}
 
           {!data.hasAnyLeads && !data.hasAnyDeals ? (
             <div className="dashboard-panel dashboard-panel--attention overflow-hidden border-0 p-5 shadow-none">

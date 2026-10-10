@@ -11,7 +11,6 @@ import {
 import { isRetargetingGraduated } from "@/lib/retargeting-shared";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
 import { PriorityLanes } from "@/components/sales/PriorityLanes";
-import { RetargetingBanners } from "@/components/sales/RetargetingBanner";
 import { PulseBar } from "@/components/dashboard/PulseBar";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
 import type { SoloDashboardData } from "@/lib/dashboard-data";
@@ -89,10 +88,6 @@ export default function SoloDashboardMain({
         </p>
         <PulseBar metrics={data.businessMetrics} />
       </div>
-
-      {(data.sales.retargetingStatuses?.length ?? 0) > 0 && (
-        <RetargetingBanners statuses={data.sales.retargetingStatuses!} />
-      )}
 
       <PriorityLanes
         lanes={lanes}

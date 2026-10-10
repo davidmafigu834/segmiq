@@ -15,8 +15,6 @@ import {
   BarChart2,
   UserPlus,
   ChevronRight,
-  Target,
-  Bell,
   FileText,
   DollarSign,
   CheckCircle2,
@@ -26,12 +24,7 @@ import {
 } from "lucide-react";
 import { formatCurrencyUsd, leadJoinName } from "@/lib/format";
 import { GrowthTrendChart, type GrowthTrendPoint } from "@/components/dashboard/GrowthTrendChart";
-import {
-  canNudgeRetargeting,
-  retargetingStatusLabel,
-  RETARGETING_PROGRESS_SHOW_RATIO,
-  type RetargetingStatusView,
-} from "@/lib/retargeting-shared";
+import { type RetargetingStatusView } from "@/lib/retargeting-shared";
 import { LossInsightsSection } from "@/components/dashboard/LossInsightsSection";
 import { LeadLocationInsightsSection } from "@/components/dashboard/LeadLocationInsightsSection";
 import { RevenueForecastCard, type ForecastCardData } from "@/components/dashboard/RevenueForecastCard";
@@ -230,19 +223,12 @@ export default function ClientDashboardMain({
 }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [nudging, setNudging] = useState(false);
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps(data.assignmentMode ?? "direct", {
     mode: "manager",
     clientId: session.clientId as string,
   });
   const firstName = (session?.user?.name as string | undefined)?.split(" ")[0] || "there";
-  const rt = data.retargeting;
-  const showRetargeting =
-    rt &&
-    rt.leadCount > 0 &&
-    (rt.status !== "building" ||
-      rt.leadCount >= rt.threshold * RETARGETING_PROGRESS_SHOW_RATIO);
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
@@ -311,58 +297,6 @@ export default function ClientDashboardMain({
           Team
         </button>
       </div>
-
-      {showRetargeting && rt && (
-        <div className="ag-fade-in mb-8 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
-          <div className="flex items-start gap-3">
-            <Target size={18} className="shrink-0 mt-0.5 text-[var(--accent)]" />
-            <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-semibold text-[var(--text-primary)] mb-1">
-                Retargeting audience
-              </p>
-              <p className="text-[13px] text-[var(--text-secondary)]">
-                {retargetingStatusLabel(rt.status)} · {rt.leadCount} graduated
-                leads
-                {rt.status === "building" &&
-                  ` — opens at ${rt.threshold} leads`}
-              </p>
-              {rt.status === "ad_live" && rt.adLiveAt && (
-                <p className="text-[12px] text-[var(--text-tertiary)] mt-1">
-                  Ad went live{" "}
-                  {new Date(rt.adLiveAt).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </p>
-              )}
-              {(rt.status === "ready" || rt.status === "ad_pending") &&
-                canNudgeRetargeting(rt.lastNudgeAt) && (
-                  <button
-                    type="button"
-                    disabled={nudging}
-                    onClick={async () => {
-                      setNudging(true);
-                      try {
-                        await fetch("/api/sales/retargeting/nudge", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ clientId: rt.clientId }),
-                        });
-                        router.refresh();
-                      } finally {
-                        setNudging(false);
-                      }
-                    }}
-                    className="mt-3 inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-[var(--accent)] text-[var(--accent-foreground)] text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
-                  >
-                    <Bell size={14} />
-                    {nudging ? "Sending…" : "Request ad"}
-                  </button>
-                )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ============================================
           TODAY'S FOCUS — 3 urgent numbers
