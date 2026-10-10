@@ -77,7 +77,7 @@ export async function runCopilotAnalysis(
     ]);
 
   const messages: CopilotMessage[] = ((messageRows ?? []) as Array<Record<string, unknown>>)
-    .map((row) => ({
+    .map((row): CopilotMessage => ({
       id: String(row.id),
       direction: row.direction === "inbound" ? "inbound" : "outbound",
       body: String(row.body ?? ""),
