@@ -67,6 +67,12 @@ export function useSalesCopilot(leadId: string | null) {
   return { data, busy, notice, reload: load, act };
 }
 
+function waitingCopy(status: string | undefined) {
+  if (status === "failed") return "Sales Copilot could not read the latest messages. Chat and your tasks still work.";
+  if (status === "pending") return "Sales Copilot is reading this conversation.";
+  return "Sales Copilot has not read this conversation yet. It starts after the next saved message.";
+}
+
 function statusLabel(item: CopilotWorkView, analysisStatus?: string) {
   if (item.executionStatus === "failed") return "Failed";
   if (item.executionStatus === "running") return "Working";
@@ -94,7 +100,7 @@ export function SalesCopilotCard({
   onAct: (item: CopilotWorkView, body: Record<string, unknown>) => void;
   onDraft: (text: string) => void;
 }) {
-  if (!item && analysisStatus !== "pending" && analysisStatus !== "failed") return null;
+  if (!item && analysisStatus !== "pending" && analysisStatus !== "failed" && analysisStatus !== "idle") return null;
   if (composing && item) {
     return (
       <button
@@ -114,9 +120,7 @@ export function SalesCopilotCard({
       <div className="border-t border-sales-border bg-sales-surface px-3 py-2" role="status">
         <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">Sales Copilot</p>
         <p className="mt-1 text-[13px] leading-5 text-sales-text-secondary">
-          {analysisStatus === "failed"
-            ? "Sales Copilot could not read the latest messages. Chat and your tasks still work."
-            : "Sales Copilot is reading this conversation."}
+          {waitingCopy(analysisStatus)}
         </p>
       </div>
     );
@@ -445,9 +449,9 @@ export function SalesCopilotPanel({ leadId }: { leadId: string }) {
         <p className="text-[13px] leading-5 text-sales-text-secondary">{copilot.data.analysis.summary}</p>
       ) : (
         <p className="text-[13px] text-sales-text-secondary">
-          {copilot.data?.analysis.status === "failed"
-            ? "Sales Copilot could not read this conversation. The chat and manual tasks still work."
-            : "Reading the saved conversation."}
+          {copilot.data?.analysis.status === "pending"
+            ? "Sales Copilot is reading this conversation."
+            : "Sales Copilot has not read this conversation yet. It starts after the next saved message."}
         </p>
       )}
       {copilot.notice ? <p className="mt-2 text-[12px] text-sales-danger">{copilot.notice}</p> : null}

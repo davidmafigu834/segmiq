@@ -31,6 +31,15 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
       listWorkItems(params.leadId, lead.client_id as string),
     ]);
     void runDueCopilotJobs(2).catch(() => undefined);
+    let status = analysis?.status ?? "idle";
+    if (!analysis) {
+      const { data: job } = await supabase
+        .from("sales_copilot_jobs")
+        .select("status")
+        .eq("lead_id", params.leadId)
+        .maybeSingle();
+      if (job?.status === "scheduled" || job?.status === "running") status = "pending";
+    }
     const now = Date.now();
     const publicItems = items.map(toPublicItem).filter((item) => visible(item, now));
     publicItems.sort((a, b) => {
@@ -41,7 +50,7 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
     return NextResponse.json({
       feature: "Sales Copilot",
       analysis: {
-        status: analysis?.status ?? "pending",
+        status,
         summary: analysis?.summary ?? null,
         updatedAt: analysis?.updated_at ?? null,
         error: analysis?.error ?? null,
