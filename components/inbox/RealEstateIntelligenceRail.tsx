@@ -15,6 +15,7 @@ import type { InboxConversation } from "@/lib/inbox/types";
 import type { ReIntelligencePanel } from "@/lib/agent/real-estate/intelligence";
 import type { AgentHandoffSummary } from "@/lib/agent/real-estate/handoff-summary";
 import { AgentConversationCard } from "./AgentConversationCard";
+import { SalesCopilotPanel } from "./SalesCopilotWorkspace";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
 
 type Props = {
@@ -158,6 +159,7 @@ export function RealEstateIntelligenceRail({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
+        <SalesCopilotPanel leadId={conversation.id} />
         <div className="flex items-center gap-3 border-b border-sales-border-subtle px-4 py-3">
           <WhatsAppAvatar
             name={displayName}

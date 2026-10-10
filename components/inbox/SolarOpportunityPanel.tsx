@@ -11,6 +11,7 @@ import { CreateFromDealDialog } from "@/components/work-projects/CreateFromDealD
 import { TransferDialog } from "@/components/inbox/TransferDialog";
 import { TransferToSupportDialog } from "@/components/inbox/TransferToSupportDialog";
 import { displayContactName, WhatsAppAvatar } from "@/components/inbox/WhatsAppAvatar";
+import { SalesCopilotPanel } from "@/components/inbox/SalesCopilotWorkspace";
 import { formatCurrencyAmount, hasMeaningfulScore } from "@/lib/inbox/format-display";
 import type { InboxConversation } from "@/lib/inbox/types";
 import type { SolarPanelActionKind } from "@/lib/sales/solar-workflow/opportunity";
@@ -395,6 +396,7 @@ export function SolarOpportunityPanel({
       </header>
 
       <div className="inbox-scroll min-h-0 flex-1 overflow-y-auto bg-sales-surface pb-[env(safe-area-inset-bottom)]">
+        <SalesCopilotPanel leadId={conversation.id} />
         {loading ? <SolarSkeleton /> : null}
         {!loading && loadError ? (
           <p className="p-4 text-[13px] text-sales-text-secondary">CRM context is temporarily unavailable. Messaging remains active.</p>

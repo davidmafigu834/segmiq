@@ -908,7 +908,7 @@ export function ChatThread({
               type="button"
               onClick={() => setCopilotOpen(true)}
               aria-label="Sales Copilot"
-              className={isWhatsApp ? "wa-icon-btn !h-9 !w-9 text-[11px] font-semibold min-[1100px]:hidden" : "hidden"}
+              className={isWhatsApp ? "wa-icon-btn !h-9 !w-9 text-[11px] font-semibold" : "hidden"}
             >
               AI
             </button>
@@ -1289,7 +1289,6 @@ export function ChatThread({
           ) : null}
           </div>
           {isWhatsApp ? (
-            <div className="min-[1100px]:hidden">
             <SalesCopilotCard
               item={copilot.data?.items[0] ?? null}
               analysisStatus={copilot.data?.analysis.status}
@@ -1303,7 +1302,6 @@ export function ChatThread({
                 composerRef.current?.focus();
               }}
             />
-            </div>
           ) : null}
           {!transportAvailable ? (
             <div className="wa-offline-strip flex shrink-0 items-center gap-2 border-t border-sales-danger/25 bg-sales-danger-soft px-3 py-1.5 text-sales-danger-fg" role="status">
