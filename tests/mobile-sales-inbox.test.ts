@@ -39,6 +39,7 @@ describe("salesperson inbox mobile contract", () => {
   const row = readFileSync("components/inbox/ConversationRow.tsx", "utf8");
   const css = readFileSync("app/globals.css", "utf8");
   const thread = readFileSync("components/inbox/ChatThread.tsx", "utf8");
+  const bubble = readFileSync("components/inbox/MessageBubble.tsx", "utf8");
   const course = readFileSync("components/sales/training/CourseLayer.tsx", "utf8");
 
   it("asks the browser to resize layout when the keyboard opens", () => {
@@ -55,6 +56,13 @@ describe("salesperson inbox mobile contract", () => {
     const timeCalls = row.match(/formatRelativeMessageTime\(/g) ?? [];
     assert.equal(timeCalls.length, 1);
     assert.doesNotMatch(row, /waitingLabel \|\| \(followUpDue/);
+  });
+
+  it("sets a mobile message size and a rounded composer", () => {
+    assert.match(css, /\.salesperson-wa-workspace \.wa-bubble-text/);
+    assert.match(css, /font-size: 17px !important/);
+    assert.match(css, /border-radius: 22px !important/);
+    assert.match(bubble, /wa-bubble-text/);
   });
 
   it("keeps the composer in the chat column and states when a send will not happen", () => {

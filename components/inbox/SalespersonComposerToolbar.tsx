@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -98,11 +97,9 @@ export function SalespersonComposerToolbar({
   showLogCall = false,
   canTransfer = false,
 }: Props) {
-  const [actionsOpen, setActionsOpen] = useState(false);
   const title = variant === "support" ? "Support tools" : "Sales actions";
 
   function run(action?: () => void) {
-    setActionsOpen(false);
     action?.();
   }
 
@@ -153,36 +150,9 @@ export function SalespersonComposerToolbar({
 
   return (
     <div className="wa-composer-toolbar" aria-label={title}>
-      <button
-        type="button"
-        className="inline-flex min-h-11 items-center rounded-full px-1 text-[13px] font-semibold text-sales-text-primary min-[1100px]:hidden"
-        onClick={() => setActionsOpen(true)}
-        aria-haspopup="dialog"
-        aria-expanded={actionsOpen}
-      >
-        {title}
-      </button>
-      <div className="wa-composer-toolbar-scroll hidden min-[1100px]:flex" role="toolbar" aria-label={title}>
+      <div className="wa-composer-toolbar-scroll" role="toolbar" aria-label={title}>
         {tools}
       </div>
-      {actionsOpen ? (
-        <div className="min-[1100px]:hidden">
-          <button
-            type="button"
-            className="fixed inset-0 z-[46] bg-[rgba(11,16,20,0.62)]"
-            aria-label="Close sales actions"
-            onClick={() => setActionsOpen(false)}
-          />
-          <div
-            role="dialog"
-            aria-label={title}
-            className="fixed inset-x-0 bottom-0 z-[47] rounded-t-[16px] bg-sales-surface px-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-12px_40px_rgba(0,0,0,0.28)]"
-          >
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-sales-border" />
-            <div className="wa-sales-actions-sheet flex max-h-[50vh] flex-col gap-1 overflow-y-auto">{tools}</div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

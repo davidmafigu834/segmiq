@@ -711,6 +711,31 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     box-shadow: none;
   }
 
+  .wa-bubble-copy {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .wa-bubble-text {
+    order: 1;
+    flex: 1 0 100%;
+    min-width: 0;
+  }
+
+  .wa-bubble-meta {
+    order: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    margin-left: auto;
+  }
+
+  .wa-teach {
+    order: 2;
+    margin-right: auto;
+  }
+
   .wa-day-pill {
     border: 0;
     border-radius: 0;
@@ -5627,30 +5652,218 @@ html[data-marketing-theme="dark"] .auth-shell > main {
     border-bottom-color: #263137;
   }
 
+  .salesperson-wa-workspace .wa-panel-header {
+    background: #171f24 !important;
+    border-bottom: 1px solid #263137 !important;
+  }
+
+  .salesperson-wa-workspace .wa-icon-btn,
+  .salesperson-wa-workspace .wa-icon-btn-muted {
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    color: #c5d0d6 !important;
+  }
+
+  .salesperson-wa-workspace .wa-icon-btn:hover,
+  .salesperson-wa-workspace .wa-icon-btn-muted:hover {
+    border: 0 !important;
+    background: #242b30 !important;
+    color: #f5f7f8 !important;
+  }
+
+  .salesperson-wa-workspace .wa-msg {
+    margin-top: 8px;
+  }
+
+  .salesperson-wa-workspace .wa-msg-grouped {
+    margin-top: 2px;
+  }
+
   .salesperson-wa-workspace .wa-bubble-in,
   .salesperson-wa-workspace .wa-bubble-out {
-    border: 0;
-    border-radius: 16px;
-    padding: 0.55rem 0.75rem 0.4rem;
-    font-size: 15px;
-    line-height: 1.45;
-    color: #f5f7f8;
+    border: 0 !important;
+    padding: 7px 10px 6px !important;
+    font-size: 17px;
+    line-height: 1.42;
+    color: #f5f7f8 !important;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+    max-width: min(82%, 460px) !important;
   }
 
   .salesperson-wa-workspace .wa-bubble-in {
-    background: #171f24 !important;
+    border-radius: 18px 18px 18px 5px !important;
+    background: #1c252b !important;
   }
 
   .salesperson-wa-workspace .wa-bubble-out {
-    background: #243028 !important;
+    border-radius: 18px 18px 5px 18px !important;
+    background: #24352c !important;
+  }
+
+  .salesperson-wa-workspace .wa-msg-grouped .wa-bubble-in {
+    border-radius: 6px 18px 18px 6px !important;
+  }
+
+  .salesperson-wa-workspace .wa-msg-grouped .wa-bubble-out {
+    border-radius: 18px 6px 6px 18px !important;
+  }
+
+  .salesperson-wa-workspace .wa-bubble-copy {
+    display: block;
+  }
+
+  .salesperson-wa-workspace .wa-bubble-text {
+    display: inline;
+    font-size: 17px !important;
+    font-weight: 430;
+    line-height: 1.42 !important;
+    letter-spacing: -0.011em;
+    color: #f5f7f8;
+  }
+
+  .salesperson-wa-workspace .wa-bubble-meta {
+    float: right;
+    margin: 6px 0 -2px 12px;
+    color: #8b9aa3;
+  }
+
+  .salesperson-wa-workspace .wa-bubble-meta span {
+    color: #8b9aa3 !important;
+    font-size: 12px !important;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  .salesperson-wa-workspace .wa-teach {
+    display: block;
+    clear: both;
+    margin: 6px 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: #8b9aa3;
+  }
+
+  .salesperson-wa-workspace .wa-day-rule {
+    width: auto;
+    max-width: none;
+    margin: 12px auto 8px;
+    gap: 0;
+  }
+
+  .salesperson-wa-workspace .wa-day-rule::before,
+  .salesperson-wa-workspace .wa-day-rule::after {
+    display: none;
+  }
+
+  .salesperson-wa-workspace .wa-day-rule span {
+    border-radius: 999px;
+    background: #171f24;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: #99a6ad;
+  }
+
+  .salesperson-wa-workspace .wa-composer {
+    background: #0b1014 !important;
+    border-top: 0 !important;
+  }
+
+  .salesperson-wa-workspace .wa-composer-input {
+    min-height: 44px;
+    border: 0 !important;
+    border-radius: 22px !important;
+    background: #242b30 !important;
+    box-shadow: none !important;
+    padding: 10px 16px !important;
+    font-size: 16px !important;
+    line-height: 1.35;
+  }
+
+  .salesperson-wa-workspace .wa-composer-input::placeholder {
+    color: #7d8b93;
+  }
+
+  .salesperson-wa-workspace .wa-composer-input:focus {
+    border: 0 !important;
+    background: #2a3238 !important;
+    box-shadow: none !important;
+  }
+
+  .salesperson-wa-workspace .wa-plus-btn {
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    color: #c5d0d6 !important;
+  }
+
+  .salesperson-wa-workspace .wa-send-btn {
+    border-radius: 999px !important;
+    background: #d4ff4f !important;
+    color: #101828 !important;
+  }
+
+  .salesperson-wa-workspace .wa-send-btn:disabled {
+    background: #242b30 !important;
+    color: #667077 !important;
+    opacity: 1;
+  }
+
+  .salesperson-wa-workspace .wa-offline-strip {
+    margin: 0 10px 2px;
+    border: 0 !important;
+    border-radius: 12px;
+    background: #2a1d1d !important;
+    color: #f0b4ae !important;
+    padding: 7px 10px;
+  }
+
+  .salesperson-wa-workspace .wa-composer-toolbar {
+    padding: 8px 8px 0;
+    background: transparent;
+  }
+
+  .salesperson-wa-workspace .wa-composer-tool {
+    height: 36px;
+    border: 0;
+    border-radius: 999px;
+    background: #242b30;
+    padding: 0 12px 0 10px;
+  }
+
+  .salesperson-wa-workspace .wa-composer-tool-label {
+    max-width: 9.5rem;
+    font-size: 13px;
+    font-weight: 600;
+    color: #f5f7f8;
+  }
+
+  .salesperson-wa-workspace .wa-composer-tool-icon {
+    color: #d4ff4f;
+  }
+
+  .salesperson-wa-workspace .wa-composer-tool-active,
+  .salesperson-wa-workspace .wa-composer-tool-accent {
+    background: #d4ff4f;
+    border-color: transparent;
+  }
+
+  .salesperson-wa-workspace .wa-composer-tool-active .wa-composer-tool-icon,
+  .salesperson-wa-workspace .wa-composer-tool-accent .wa-composer-tool-icon,
+  .salesperson-wa-workspace .wa-composer-tool-active .wa-composer-tool-label,
+  .salesperson-wa-workspace .wa-composer-tool-accent .wa-composer-tool-label {
+    color: #101828;
   }
 
   .salesperson-wa-workspace .wa-chat-wallpaper,
   html[data-crm] .salesperson-wa-workspace.wa-hub-premium .wa-chat-wallpaper,
   .sales-dashboard-premium .salesperson-wa-workspace .wa-chat-wallpaper {
     background-color: #0b1014 !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' fill='none'%3E%3Ccircle cx='20' cy='24' r='1.2' fill='%23f5f7f8' fill-opacity='.08'/%3E%3Ccircle cx='96' cy='40' r='6' stroke='%23f5f7f8' stroke-opacity='.06'/%3E%3Cpath d='M140 22h10M145 17v10' stroke='%23d4ff4f' stroke-opacity='.14' stroke-width='1.1'/%3E%3Cpath d='M36 100h14' stroke='%23f5f7f8' stroke-opacity='.07' stroke-width='1.1'/%3E%3Ccircle cx='150' cy='112' r='1.4' fill='%23d4ff4f' fill-opacity='.16'/%3E%3Cpath d='M70 150l7 7M77 150l-7 7' stroke='%23f5f7f8' stroke-opacity='.07' stroke-width='1.1'/%3E%3C/svg%3E") !important;
-    background-size: 180px 180px !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none'%3E%3Ccircle cx='18' cy='22' r='1.1' fill='%23f5f7f8' fill-opacity='.05'/%3E%3Ccircle cx='88' cy='46' r='1' fill='%23f5f7f8' fill-opacity='.04'/%3E%3Ccircle cx='132' cy='28' r='1.2' fill='%23d4ff4f' fill-opacity='.07'/%3E%3Ccircle cx='46' cy='96' r='1' fill='%23f5f7f8' fill-opacity='.045'/%3E%3Ccircle cx='120' cy='118' r='1.1' fill='%23f5f7f8' fill-opacity='.04'/%3E%3Ccircle cx='24' cy='142' r='1' fill='%23d4ff4f' fill-opacity='.05'/%3E%3C/svg%3E") !important;
+    background-size: 160px 160px !important;
   }
 
   .salesperson-wa-workspace .wa-sales-actions-sheet .wa-composer-tool {
@@ -5718,7 +5931,7 @@ html[data-marketing-theme="dark"] .auth-shell > main {
     flex: none !important;
     margin: 0 !important;
     overflow: hidden !important;
-    background: var(--sales-surface, #fff);
+    background: #0b1014 !important;
   }
 
   .salesperson-wa-workspace[data-mobile-pane="thread"] .wa-panel-header {

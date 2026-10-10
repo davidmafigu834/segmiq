@@ -62,7 +62,7 @@ function MediaBlock({ message }: { message: InboxChatMessage }) {
       <img
         src={message.mediaUrl}
         alt=""
-        className="mb-1 max-h-72 max-w-full rounded-md object-cover"
+        className="mb-1 max-h-72 max-w-full rounded-md object-cover max-[1099px]:mb-1.5 max-[1099px]:rounded-[14px]"
       />
     );
   }
@@ -90,7 +90,7 @@ function MediaBlock({ message }: { message: InboxChatMessage }) {
   );
 }
 
-export function MessageBubble({ message, onTeach }: Props) {
+export function MessageBubble({ message, onTeach, grouped = false }: Props & { grouped?: boolean }) {
   const isRep = message.direction === "rep";
   const isSystem = message.kind === "system";
   const hasMediaUi =
@@ -138,22 +138,28 @@ export function MessageBubble({ message, onTeach }: Props) {
   }
 
   return (
-    <div className={`flex px-1 py-0.5 ${isRep ? "justify-end" : "justify-start"}`}>
+    <div className={`wa-msg flex px-0.5 py-0.5 min-[1100px]:px-1 ${grouped ? "wa-msg-grouped" : ""} ${isRep ? "justify-end" : "justify-start"}`}>
       <div className={`relative min-w-0 max-w-[min(88%,480px)] min-[1100px]:max-w-[min(68%,480px)] ${isRep ? "wa-bubble-out" : "wa-bubble-in"}`}>
         <MediaBlock message={message} />
-        {showText ? <div className="whitespace-pre-wrap break-words pr-1 text-[13.5px] leading-[1.45] [overflow-wrap:anywhere] sm:text-[14px]">{message.text}</div> : null}
-        <div className="-mb-0.5 mt-0.5 flex items-center justify-end gap-1">
+        <div className="wa-bubble-copy">
+          <div className="wa-bubble-meta">
+            <span className="text-[11px] tabular-nums leading-none text-sales-text-muted max-[1099px]:text-[12px]">{formatTime(message.createdAt)}</span>
+            {isRep ? <StatusTicks status={message.status} /> : null}
+          </div>
+          {showText ? (
+            <div className="wa-bubble-text whitespace-pre-wrap break-words text-[13.5px] leading-[1.45] [overflow-wrap:anywhere] sm:text-[14px]">
+              {message.text}
+            </div>
+          ) : null}
           {onTeach ? (
             <button
               type="button"
               onClick={onTeach}
-              className="mr-auto text-[10px] font-medium text-sales-text-muted hover:text-sales-text-primary"
+              className="wa-teach text-[10px] font-medium text-sales-text-muted hover:text-sales-text-primary"
             >
               Teach SegmiQ
             </button>
           ) : null}
-          <span className="text-[11px] tabular-nums leading-none text-sales-text-muted">{formatTime(message.createdAt)}</span>
-          {isRep ? <StatusTicks status={message.status} /> : null}
         </div>
       </div>
     </div>

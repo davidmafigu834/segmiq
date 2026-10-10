@@ -714,7 +714,6 @@ export function ChatThread({
         : conversation.agentStatus === "PAUSED"
           ? "Agent paused"
           : null;
-  const mobileSubtitle = [mobileStatus, conversation.phone].filter(Boolean).join(" · ");
   const messageGroups = groupMessagesByDay(messages);
   const isWhatsApp = conversation.source === "WHATSAPP_INBOUND";
   const dealLabel = formatDealValue(conversation.dealValue, conversation.dealCurrency ?? "USD");
@@ -757,7 +756,7 @@ export function ChatThread({
           isWhatsApp ? "wa-panel-header" : "border-b border-[var(--border)] bg-[var(--bg-primary)]"
         }`}
       >
-        <div className={`flex items-center justify-between gap-2 px-3 sm:px-4 ${
+        <div className={`flex items-center justify-between gap-2 px-3 sm:px-4 max-[1099px]:min-h-[64px] max-[1099px]:gap-1 max-[1099px]:px-1.5 max-[1099px]:py-2 ${
           (salespersonHub || companyMode) && isWhatsApp ? "py-2" : "py-3"
         }`}>
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
@@ -781,20 +780,29 @@ export function ChatThread({
                 phone={conversation.phone}
                 imageUrl={conversation.whatsappProfilePictureUrl}
                 size="sm"
-                className="max-[480px]:h-9 max-[480px]:w-9"
+                className="max-[1099px]:!h-11 max-[1099px]:!w-11 max-[1099px]:text-[13px] max-[1099px]:ring-0 max-[1099px]:shadow-none"
               />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5 layout:flex-row layout:items-center layout:gap-2.5">
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <span className="truncate text-[17px] font-semibold tracking-tight text-sales-text-primary min-[1100px]:text-[14px]">
+                  <span className="truncate text-[17px] font-semibold leading-6 tracking-[-0.02em] text-sales-text-primary max-[1099px]:text-[21px] min-[1100px]:text-[14px] min-[1100px]:tracking-tight">
                     {name}
                   </span>
                   {isWhatsApp ? (
-                    <SiWhatsapp size={14} className="shrink-0 text-sales-whatsapp" aria-label="WhatsApp" />
+                    <SiWhatsapp size={13} className="shrink-0 text-sales-whatsapp" aria-label="WhatsApp" />
                   ) : null}
                 </div>
-                {mobileSubtitle ? (
-                  <span className="truncate text-[12px] leading-4 text-sales-text-secondary min-[1100px]:hidden">
-                    {mobileSubtitle}
+                {conversation.phone ? (
+                  <span className="truncate text-[13px] font-medium leading-[18px] text-sales-text-secondary min-[1100px]:hidden">
+                    {conversation.phone}
+                  </span>
+                ) : mobileStatus ? (
+                  <span className="truncate text-[13px] leading-[18px] text-sales-text-secondary min-[1100px]:hidden">
+                    {mobileStatus}
+                  </span>
+                ) : null}
+                {conversation.phone && mobileStatus === "Needs you" ? (
+                  <span className="truncate text-[12px] font-semibold leading-4 text-sales-warning-fg min-[1100px]:hidden">
+                    Needs you
                   </span>
                 ) : null}
                 {conversation.phone ? (
@@ -1090,7 +1098,7 @@ export function ChatThread({
 
       <div
         ref={scrollRef}
-        className="wa-chat-wallpaper inbox-scroll relative flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto overscroll-contain px-3 py-4 sm:px-5"
+        className="wa-chat-wallpaper inbox-scroll relative flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto overscroll-contain px-3 py-4 max-[1099px]:gap-2 max-[1099px]:px-2 max-[1099px]:py-3 sm:px-5"
       >
         {loadingOlder ? (
           <div className="sticky top-0 z-10 mx-auto rounded-full border border-sales-border bg-sales-surface px-2.5 py-1 text-[10px] font-medium text-sales-text-secondary">
@@ -1117,16 +1125,26 @@ export function ChatThread({
           </div>
         ) : (
           messageGroups.map((group) => (
-            <div key={group.label} className="space-y-1.5">
-              <div className="flex justify-center py-1">
+            <div key={group.label} className="flex flex-col gap-1.5 max-[1099px]:gap-0">
+              <div className="flex justify-center py-1 max-[1099px]:py-2">
                 <div className="wa-day-rule">
                   <span>{group.label}</span>
                 </div>
               </div>
-              {group.messages.map((m) => (
+              {group.messages.map((m, index) => {
+                const previous = group.messages[index - 1];
+                const grouped = Boolean(
+                  previous &&
+                    previous.kind === m.kind &&
+                    previous.direction === m.direction &&
+                    m.kind !== "system" &&
+                    m.kind !== "internal"
+                );
+                return (
                 <MessageBubble
                   key={m.id}
                   message={m}
+                  grouped={grouped}
                   onTeach={
                     m.direction === "rep" && m.kind !== "system" && m.kind !== "internal"
                       ? () => {
@@ -1136,7 +1154,8 @@ export function ChatThread({
                       : undefined
                   }
                 />
-              ))}
+                );
+              })}
             </div>
           ))
         )}
@@ -1249,7 +1268,7 @@ export function ChatThread({
           ) : null}
           </div>
           {!transportAvailable ? (
-            <div className="flex shrink-0 items-center gap-2 border-t border-sales-danger/25 bg-sales-danger-soft px-3 py-1.5 text-sales-danger-fg" role="status">
+            <div className="wa-offline-strip flex shrink-0 items-center gap-2 border-t border-sales-danger/25 bg-sales-danger-soft px-3 py-1.5 text-sales-danger-fg" role="status">
               <AlertTriangle size={14} strokeWidth={1.8} className="shrink-0" aria-hidden />
               <p className="min-w-0 truncate text-[12px] font-medium leading-4">
                 WhatsApp is offline. This message will not be sent.
