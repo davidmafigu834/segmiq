@@ -67,7 +67,7 @@ export function useSalesCopilot(leadId: string | null) {
   return { data, busy, notice, reload: load, act };
 }
 
-function statusLabel(item: CopilotWorkView, analysisStatus: string | undefined) {
+function statusLabel(item: CopilotWorkView, analysisStatus?: string) {
   if (item.executionStatus === "failed") return "Failed";
   if (item.executionStatus === "running") return "Working";
   if (item.reviewStatus === "stale") return "Out of date";
