@@ -6,8 +6,6 @@ import type { CopilotWorkView } from "@/lib/sales-copilot/types";
 
 export const SALES_COPILOT_DRAFT_EVENT = "segmiq:sales-copilot-draft";
 
-export const SALES_COPILOT_DRAFT_EVENT = "segmiq-sales-copilot-draft";
-
 type Payload = {
   analysis: { status: string; summary: string | null; error: string | null };
   items: CopilotWorkView[];
