@@ -34,7 +34,7 @@ export async function runCopilotAnalysis(
     .eq("id", leadId)
     .eq("client_id", clientId)
     .maybeSingle();
-  if (leadError || !lead) return;
+  if (leadError || !lead) return null;
 
   const [{ data: messageRows }, { data: client }, { data: hours }, { data: quote }, { data: products }, { data: listings }] =
     await Promise.all([
