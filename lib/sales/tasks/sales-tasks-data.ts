@@ -14,6 +14,7 @@ import {
   titleForTask,
   weekBounds,
 } from "./format";
+import { loadCopilotTasksForOwner } from "@/lib/sales-copilot/project";
 import type {
   SalesTaskItem,
   SalesTaskView,
@@ -277,6 +278,19 @@ export async function fetchSalespersonTasks(opts: {
       now
     );
     if (task) openTasks.push(task);
+  }
+
+  try {
+    const copilot = await loadCopilotTasksForOwner(opts.userId, now);
+    for (let index = openTasks.length - 1; index >= 0; index -= 1) {
+      const leadId = openTasks[index]?.leadId;
+      if (leadId && copilot.suppressFollowUpLeadIds.has(leadId)) {
+        openTasks.splice(index, 1);
+      }
+    }
+    openTasks.push(...copilot.tasks);
+  } catch (err) {
+    console.error("[sales-tasks] copilot", err);
   }
 
   // Completed this week / previous week via FOLLOW_UP_SET with completed flag

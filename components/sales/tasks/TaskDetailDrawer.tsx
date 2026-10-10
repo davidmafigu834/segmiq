@@ -45,11 +45,13 @@ export function TaskDetailDrawer({
   onClose,
   onComplete,
   onReschedule,
+  onRefresh,
 }: {
   task: SalesTaskItem;
   onClose: () => void;
   onComplete: (task: SalesTaskItem) => void;
   onReschedule: (task: SalesTaskItem) => void;
+  onRefresh?: () => void;
 }) {
   const dueTone = dueDateTone(task);
   const dueClass =
@@ -67,7 +69,40 @@ export function TaskDetailDrawer({
       size="md"
       footer={
         <div className="flex flex-wrap justify-end gap-2">
-          {!task.completed ? (
+          {!task.completed && task.copilot ? (
+            <>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => {
+                  void fetch(`/api/sales/copilot/work-items/${task.copilot?.workItemId}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "dismiss" }),
+                  }).then(() => {
+                    onRefresh?.();
+                    onClose();
+                  });
+                }}
+              >
+                Dismiss
+              </Button>
+              {task.copilot.actionType === "quotation_draft" &&
+              task.copilot.linkedQuotationId &&
+              task.copilot.executionStatus === "succeeded" ? (
+                <Link
+                  href={`/sales/quotes/${task.copilot.linkedQuotationId}`}
+                  className="inline-flex min-h-11 items-center rounded-[8px] bg-sales-brand px-3 text-[13px] font-semibold text-sales-brand-text"
+                >
+                  Review draft
+                </Link>
+              ) : (
+                <Button variant="primary" size="md" onClick={() => onComplete(task)}>
+                  {task.copilot.executionStatus === "failed" ? "Retry" : task.copilot.primaryLabel}
+                </Button>
+              )}
+            </>
+          ) : !task.completed ? (
             <>
               <Button variant="secondary" size="md" onClick={() => onReschedule(task)}>
                 Reschedule
@@ -85,6 +120,27 @@ export function TaskDetailDrawer({
       }
     >
       <div className="space-y-5">
+        {task.copilot ? (
+          <div className="space-y-2">
+            <p className="text-[13px] leading-5 text-sales-text-secondary">{task.copilot.explanation}</p>
+            {task.copilot.currentDueAt || task.copilot.proposedAt ? (
+              <p className="text-[12px] leading-5 text-sales-text-secondary">
+                {task.copilot.currentDueAt ? `Current: ${formatTaskDueDate(task.copilot.currentDueAt)}. ` : "No current reminder. "}
+                {task.copilot.proposedAt
+                  ? `Proposed: ${formatTaskDueDate(task.copilot.proposedAt)}${task.copilot.hourSuggested ? " (suggested time)." : "."}`
+                  : ""}
+              </p>
+            ) : null}
+            {task.copilot.executionStatus === "failed" ? (
+              <p className="text-[13px] font-medium text-sales-danger">Failed. Retry uses the same approved change.</p>
+            ) : null}
+            {task.copilot.linkedQuotationId ? (
+              <Link href={`/sales/quotes/${task.copilot.linkedQuotationId}`} className="inline-flex min-h-11 items-center text-[13px] font-semibold text-sales-text-primary">
+                Review draft
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={`flex h-9 w-9 items-center justify-center rounded-sales-md ${typeTint(task.type)}`}

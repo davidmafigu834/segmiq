@@ -427,6 +427,16 @@ export async function handleInboundWhatsAppMessage(opts: {
 
   if (persistError || !persisted?.id) return;
 
+  void import("@/lib/sales-copilot/jobs")
+    .then((mod) =>
+      mod.enqueueCopilotAnalysis({
+        clientId: client.id,
+        leadId,
+        reason: "inbound_message",
+      })
+    )
+    .catch(() => undefined);
+
   if (opts.connectionId && opts.providerType) {
     await supabase
       .from("whatsapp_external_messages")

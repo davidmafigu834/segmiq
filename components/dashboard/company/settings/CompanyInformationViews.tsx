@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ErrorState, Field, Input, Select, TextArea } from "@/components/sales/ui";
 import { SettingsSectionCard, SettingsInfoGrid } from "./SettingsSectionCard";
 import { SettingsFormDrawer } from "./SettingsFormDrawer";
@@ -506,6 +506,75 @@ function EditBusinessInformationDrawer({
   );
 }
 
+function CopilotTimingFields() {
+  const [contactLaterDays, setContactLaterDays] = useState("7");
+  const [checkinOffsetDays, setCheckinOffsetDays] = useState("1");
+  const [saved, setSaved] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/sales/copilot/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json: { contactLaterDays?: number; checkinOffsetDays?: number } | null) => {
+        if (cancelled || !json) return;
+        if (json.contactLaterDays) setContactLaterDays(String(json.contactLaterDays));
+        if (json.checkinOffsetDays) setCheckinOffsetDays(String(json.checkinOffsetDays));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <div className="space-y-2 border-t border-sales-border pt-3">
+      <p className="text-[13px] font-medium text-sales-text-primary">Sales Copilot follow-up defaults</p>
+      <p className="text-[12px] leading-5 text-sales-text-secondary">
+        Used when a customer gives no time, or when a check-in should wait until after they promised to reply. Hours without a stated time stay labelled as suggestions.
+      </p>
+      <label className="block text-[12px] font-medium text-sales-text-secondary">
+        Days before a comparison check-in
+        <input
+          type="number"
+          min={1}
+          max={90}
+          value={contactLaterDays}
+          onChange={(event) => setContactLaterDays(event.target.value)}
+          className="mt-1 min-h-11 w-full rounded-[8px] border border-sales-border px-2 text-[16px]"
+        />
+      </label>
+      <label className="block text-[12px] font-medium text-sales-text-secondary">
+        Days after a customer promised to reply
+        <input
+          type="number"
+          min={1}
+          max={30}
+          value={checkinOffsetDays}
+          onChange={(event) => setCheckinOffsetDays(event.target.value)}
+          className="mt-1 min-h-11 w-full rounded-[8px] border border-sales-border px-2 text-[16px]"
+        />
+      </label>
+      <button
+        type="button"
+        className="inline-flex min-h-11 items-center rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold"
+        onClick={() => {
+          void fetch("/api/sales/copilot/settings", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contactLaterDays: Number(contactLaterDays),
+              checkinOffsetDays: Number(checkinOffsetDays),
+            }),
+          }).then((res) => setSaved(res.ok ? "Saved" : "Could not save"));
+        }}
+      >
+        Save Copilot defaults
+      </button>
+      {saved ? <p className="text-[12px] text-sales-text-secondary">{saved}</p> : null}
+    </div>
+  );
+}
+
 function EditOperatingHoursDrawer({
   hours,
   onClose,
@@ -586,8 +655,9 @@ function EditOperatingHoursDrawer({
         }}
         onStartChange={setWorkStartTime}
         onEndChange={setWorkEndTime}
-        hint="Default is Monday–Friday, 8:00am–5:00pm. Salespeople can override this on Goals."
+        hint="Default is Monday–Friday, 8:00am–5:00pm. Salespeople can override this on Goals. The work start time is the suggested hour when a promise does not name a time."
       />
+      <CopilotTimingFields />
       {error ? <p className="text-[13px] text-sales-danger">{error}</p> : null}
     </SettingsFormDrawer>
   );

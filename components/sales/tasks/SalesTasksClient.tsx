@@ -123,6 +123,7 @@ export function SalesTasksClient() {
   const [dueFilter, setDueFilter] = useState<SalesTaskDueFilter>(
     (searchParams.get("due") as SalesTaskDueFilter) || "all"
   );
+  const [copilotQueue, setCopilotQueue] = useState<"all" | "needs_review" | "todo" | "waiting" | "contact_later">("all");
   const [quickFilters, setQuickFilters] = useState<SalesTaskQuickFilter[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -183,6 +184,16 @@ export function SalesTasksClient() {
       if (dueFilter !== "all" && !task.completed && !matchesDueFilter(task.dueAt, dueFilter)) {
         return false;
       }
+      if (copilotQueue === "needs_review" && task.copilot?.queue !== "needs_review") return false;
+      if (copilotQueue === "todo" && task.copilot && task.copilot.queue !== "todo") return false;
+      if (copilotQueue === "waiting" && task.copilot?.waitingActor == null && task.copilot?.queue !== "waiting") return false;
+      if (
+        copilotQueue === "contact_later" &&
+        task.copilot?.actionType !== "contact_later" &&
+        task.copilot?.actionType !== "customer_checkin"
+      ) {
+        return false;
+      }
       for (const q of quickFilters) {
         if (q === "high_priority" && task.priority !== "high") return false;
         if (q === "overdue" && task.status !== "overdue") return false;
@@ -194,7 +205,7 @@ export function SalesTasksClient() {
       }
       return true;
     });
-  }, [data, statusFilter, dueFilter, quickFilters, view]);
+  }, [data, statusFilter, dueFilter, quickFilters, view, copilotQueue]);
 
   const pageCount = Math.max(1, Math.ceil(filteredTasks.length / pageSize));
   const pageSafe = Math.min(page, pageCount);
@@ -221,6 +232,41 @@ export function SalesTasksClient() {
 
   async function completeTask(task: SalesTaskItem) {
     if (task.completed) return;
+    if (task.copilot) {
+      if (
+        task.copilot.actionType === "quotation_draft" &&
+        task.copilot.linkedQuotationId &&
+        task.copilot.executionStatus === "succeeded"
+      ) {
+        window.location.assign(`/sales/quotes/${task.copilot.linkedQuotationId}`);
+        return;
+      }
+      if (
+        task.copilot.actionType === "answer_question" ||
+        task.copilot.actionType === "listing_shortlist" ||
+        task.copilot.actionType === "quotation_choice"
+      ) {
+        window.location.assign(task.whatsappHref);
+        return;
+      }
+      const action =
+        task.copilot.executionStatus === "failed"
+          ? "retry"
+          : task.copilot.queue === "needs_review"
+            ? "approve"
+            : "complete";
+      const res = await fetch(`/api/sales/copilot/work-items/${task.copilot.workItemId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) toast({ title: json.error ?? "Could not update this task", tone: "error" });
+      else toast({ title: "Sales Copilot updated", tone: "success" });
+      setDetail(null);
+      await load();
+      return;
+    }
     const prev = data;
     setData((d) => {
       if (!d) return d;
@@ -329,7 +375,18 @@ export function SalesTasksClient() {
         <div className="flex h-10 shrink-0 items-center gap-2">
           <div className="hidden items-center gap-2 md:flex">
             <MenuSelect
-              aria-label="Status filter"
+              aria-label="Sales Copilot queue"
+              value={copilotQueue}
+              onChange={setCopilotQueue}
+              options={[
+                { value: "all", label: "All work" },
+                { value: "needs_review", label: "Needs review" },
+                { value: "todo", label: "To do" },
+                { value: "waiting", label: "Waiting" },
+                { value: "contact_later", label: "Contact later" },
+              ]}
+            />
+            <MenuSelect
               value={statusFilter}
               onChange={setStatusFilter}
               options={[
@@ -433,6 +490,21 @@ export function SalesTasksClient() {
                     }
                   >
                     <div className="space-y-4">
+                      <div>
+                        <p className="mb-1.5 text-[11px] font-medium text-sales-text-muted">Sales Copilot</p>
+                        <MenuSelect
+                          aria-label="Sales Copilot queue"
+                          value={copilotQueue}
+                          onChange={setCopilotQueue}
+                          options={[
+                            { value: "all", label: "All work" },
+                            { value: "needs_review", label: "Needs review" },
+                            { value: "todo", label: "To do" },
+                            { value: "waiting", label: "Waiting" },
+                            { value: "contact_later", label: "Contact later" },
+                          ]}
+                        />
+                      </div>
                       <div>
                         <p className="mb-1.5 text-[11px] font-medium text-sales-text-muted">Status</p>
                         <MenuSelect
@@ -904,6 +976,7 @@ export function SalesTasksClient() {
           task={detail}
           onClose={() => setDetail(null)}
           onComplete={(t) => void completeTask(t)}
+          onRefresh={() => void load()}
           onReschedule={(t) => {
             setRescheduleDate(toDateKey(addDays(new Date(), 1)));
             setRescheduleTask(t);

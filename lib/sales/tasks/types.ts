@@ -52,6 +52,23 @@ export type SalesTaskItem = {
   whatsappHref: string | null;
   score: number | null;
   notes: string | null;
+  copilot?: {
+    workItemId: string;
+    queue: "needs_review" | "todo" | "waiting";
+    actionType: string;
+    explanation: string;
+    reviewStatus: string;
+    executionStatus: string;
+    fulfilmentStatus: string;
+    waitingActor: string | null;
+    hourSuggested: boolean;
+    currentDueAt: string | null;
+    proposedAt: string | null;
+    linkedQuotationId: string | null;
+    missing: string[];
+    evidenceMessageIds: string[];
+    primaryLabel: string;
+  } | null;
 };
 
 export type SalesTasksPayload = {

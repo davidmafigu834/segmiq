@@ -68,6 +68,15 @@ export async function persistOutboundWhatsAppMessage(opts: {
     } catch {
       /* learning must never block WhatsApp */
     }
+    void import("@/lib/sales-copilot/jobs")
+      .then((mod) =>
+        mod.enqueueCopilotAnalysis({
+          clientId: opts.clientId,
+          leadId: opts.leadId,
+          reason: "outbound_message",
+        })
+      )
+      .catch(() => undefined);
   }
 
   return { ok: true, id: data?.id as string | undefined };

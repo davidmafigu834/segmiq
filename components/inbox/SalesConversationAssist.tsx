@@ -96,7 +96,7 @@ export function SalesConversationAssist({
     });
   }
 
-  const summary = action?.title ?? "No next action scheduled";
+  const summary = action?.kind === "daily_plan" ? action.title : "Qualification";
 
   return (
     <div className="wa-sales-assist shrink-0 border-b border-sales-border bg-sales-surface">
@@ -106,7 +106,7 @@ export function SalesConversationAssist({
         className="flex w-full items-center gap-2 px-3 py-1.5 text-left sm:px-4"
         aria-expanded={hydrated ? expanded : false}
       >
-        <span className="wa-kicker shrink-0">Next</span>
+        <span className="wa-kicker shrink-0">{action?.kind === "daily_plan" ? "Today" : "Qualify"}</span>
         <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-sales-text-primary">{summary}</span>
         {showQualification ? (
           <span className="shrink-0 text-[10px] tabular-nums text-sales-text-secondary">
@@ -121,7 +121,7 @@ export function SalesConversationAssist({
 
       {expanded ? (
         <div className="space-y-2 border-t border-sales-border-subtle px-3 py-2 sm:px-4">
-          {action ? (
+          {action?.kind === "daily_plan" ? (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
                 {action.reason ? (

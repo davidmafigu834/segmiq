@@ -38,6 +38,7 @@ import { QuotationBuilder } from "@/components/leads/QuotationBuilder";
 import type { LeadStatus, QuotationLineItemRow, QuotationRow } from "@/types";
 import { ScoreBreakdownBar } from "./ScoreBreakdownBar";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
+import { SalesCopilotPanel } from "./SalesCopilotWorkspace";
 
 type QuotationWithItems = QuotationRow & { items?: QuotationLineItemRow[] };
 
@@ -104,7 +105,6 @@ export function LeadIntelligencePanel({
   claiming = false,
 }: Props) {
   const [briefing, setBriefing] = useState("");
-  const [suggestion, setSuggestion] = useState("");
   const [capturedFields, setCapturedFields] = useState<{ label: string; value: string }[]>([]);
   const [leadBudget, setLeadBudget] = useState<string | null>(null);
   const [leadTimeline, setLeadTimeline] = useState<string | null>(null);
@@ -130,13 +130,11 @@ export function LeadIntelligencePanel({
     if (!conversation?.id) return;
     let cancelled = false;
     setBriefing("");
-    setSuggestion("");
     fetch(`/api/leads/${conversation.id}/briefing`)
       .then((r) => r.json())
-      .then((d: { briefing?: string; suggestion?: string }) => {
+      .then((d: { briefing?: string }) => {
         if (cancelled) return;
         if (d.briefing) setBriefing(d.briefing);
-        if (d.suggestion) setSuggestion(d.suggestion);
       })
       .catch(() => {});
     return () => {
@@ -616,22 +614,18 @@ export function LeadIntelligencePanel({
           {summary ? (
             <section className="border-b border-sales-border-subtle px-4 py-3.5">
               <div className="flex items-center gap-2">
-                {sectionLabel("AI briefing")}
+                {sectionLabel("Conversation summary")}
                 <span className="rounded-md bg-[#F2F4F7] px-1.5 py-0.5 text-[10px] font-semibold text-sales-text-muted">
                   Beta
                 </span>
               </div>
               <div className="mt-2 rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-3">
                 <p className="text-[13px] leading-relaxed text-[#344054]">{summary}</p>
-                {suggestion ? (
-                  <p className="mt-2 text-[12px] text-sales-text-muted">
-                    <span className="font-medium text-sales-text-primary">Recommended: </span>
-                    {suggestion}
-                  </p>
-                ) : null}
               </div>
             </section>
           ) : null}
+
+          <SalesCopilotPanel leadId={conversation.id} />
 
           {/* Qualification */}
           {(qualRows.length > 0 || conversation.tags.length > 0) ? (

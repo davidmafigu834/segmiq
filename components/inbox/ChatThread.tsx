@@ -40,6 +40,7 @@ import { SalesConversationAssist } from "./SalesConversationAssist";
 import { AssetDrawer } from "./AssetDrawer";
 import { AgentComposerAssist } from "./AgentComposerAssist";
 import { AgentActionCards } from "./AgentActionCards";
+import { SALES_COPILOT_DRAFT_EVENT, SalesCopilotCard, SalesCopilotSheet, useSalesCopilot } from "./SalesCopilotWorkspace";
 import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
 import { SalesCommandDrawer } from "@/components/sales/command/SalesCommandDrawer";
 import { ManagerComposerToolbar } from "./ManagerComposerToolbar";
@@ -161,6 +162,8 @@ export function ChatThread({
   const [loading, setLoading] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
   const [input, setInput] = useState("");
+  const copilot = useSalesCopilot(conversation?.id ?? null);
+  const [copilotOpen, setCopilotOpen] = useState(false);
   const [attachment, setAttachment] = useState<ComposerAttachment | null>(null);
   const [sending, setSending] = useState(false);
   const [logCallOpen, setLogCallOpen] = useState(false);
@@ -199,6 +202,16 @@ export function ChatThread({
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
   const composerRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const onDraft = (event: Event) => {
+      const text = (event as CustomEvent<string>).detail;
+      if (typeof text !== "string" || !text.trim()) return;
+      setInput(text);
+      composerRef.current?.focus();
+    };
+    window.addEventListener(SALES_COPILOT_DRAFT_EVENT, onDraft);
+    return () => window.removeEventListener(SALES_COPILOT_DRAFT_EVENT, onDraft);
+  }, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachmentRef = useRef<ComposerAttachment | null>(null);
   attachmentRef.current = attachment;
@@ -893,6 +906,14 @@ export function ChatThread({
             ) : null}
             <button
               type="button"
+              onClick={() => setCopilotOpen(true)}
+              aria-label="Sales Copilot"
+              className={isWhatsApp ? "wa-icon-btn !h-9 !w-9 text-[11px] font-semibold min-[1100px]:hidden" : "hidden"}
+            >
+              AI
+            </button>
+            <button
+              type="button"
               onClick={onToggleIntel}
               aria-label={contextOpen ? "Hide customer context" : "Show customer context"}
               title={contextOpen ? "Hide customer context" : "Show customer context"}
@@ -1015,7 +1036,7 @@ export function ChatThread({
         </div>
       ) : null}
 
-      {salespersonHub && !isSupport ? (
+      {salespersonHub && !isSupport && solarWorkflow ? (
         <div className="hidden border-b border-sales-border px-3 py-2 min-[1100px]:block sm:px-4">
           <SolarStageCue
             leadId={conversation.id}
@@ -1267,6 +1288,23 @@ export function ChatThread({
             />
           ) : null}
           </div>
+          {isWhatsApp ? (
+            <div className="min-[1100px]:hidden">
+            <SalesCopilotCard
+              item={copilot.data?.items[0] ?? null}
+              analysisStatus={copilot.data?.analysis.status}
+              composing={input.trim().length > 0}
+              busy={copilot.busy}
+              onOpen={() => setCopilotOpen(true)}
+              onAct={(item, body) => void copilot.act(item.id, body)}
+              onDraft={(text) => {
+                setInput(text);
+                setCopilotOpen(false);
+                composerRef.current?.focus();
+              }}
+            />
+            </div>
+          ) : null}
           {!transportAvailable ? (
             <div className="wa-offline-strip flex shrink-0 items-center gap-2 border-t border-sales-danger/25 bg-sales-danger-soft px-3 py-1.5 text-sales-danger-fg" role="status">
               <AlertTriangle size={14} strokeWidth={1.8} className="shrink-0" aria-hidden />
@@ -1452,6 +1490,23 @@ export function ChatThread({
           ) : null}
         </div>
       )}
+
+      {isWhatsApp ? (
+        <SalesCopilotSheet
+          open={copilotOpen}
+          items={copilot.data?.items ?? []}
+          summary={copilot.data?.analysis.summary ?? null}
+          busy={copilot.busy}
+          notice={copilot.notice}
+          onClose={() => setCopilotOpen(false)}
+          onAct={(item, body) => void copilot.act(item.id, body)}
+          onDraft={(text) => {
+            setInput(text);
+            setCopilotOpen(false);
+            composerRef.current?.focus();
+          }}
+        />
+      ) : null}
 
       {pricingPicker ? (
         <PremiumSheet
