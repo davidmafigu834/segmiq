@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { evaluateLeadModifyAccess } from "../lib/auth/permissions";
-import { analyseConversation } from "../lib/sales-copilot/analyse";
+import { analyseConversation, relevantQuotations } from "../lib/sales-copilot/analyse";
+import { defaultRequiredFields } from "../lib/sales-copilot/catalogue";
 import { reconcileProposals } from "../lib/sales-copilot/reconcile";
 import { payloadHash } from "../lib/sales-copilot/hash";
 import { existingLocalDay, resolveCommitmentWhen } from "../lib/sales-copilot/dates";
@@ -451,6 +453,277 @@ describe("Sales Copilot summary", () => {
     const next = carryCopilotSummary("No action is waiting on this conversation.", previous);
     assert.equal(next, "Need: four tyres.");
     assert.equal(carryCopilotSummary("The customer asked about delivery.", next), "Earlier context: Need: four tyres. The customer asked about delivery.");
+  });
+});
+
+describe("Sales Copilot quotation reasoning", () => {
+  const sent = {
+    id: "out-1",
+    direction: "outbound" as const,
+    createdAt: "2026-10-08T14:00:00.000Z",
+    status: "sent",
+    authorId: "rep",
+    authorName: "Ada",
+  };
+  const customer = {
+    id: "in-1",
+    direction: "inbound" as const,
+    createdAt: "2026-10-08T13:00:00.000Z",
+    status: "received",
+    authorId: null,
+    authorName: "Customer",
+  };
+
+  it("does not treat a completed draft claim as an open future commitment", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        messages: [{ ...sent, body: "I've prepared a draft quotation." }],
+      })
+    );
+    assert.equal(analysis.proposals.some((item) => item.title === "Open commitment"), false);
+    const quote = analysis.proposals.find((item) => item.semanticKey.startsWith("quote:"));
+    assert.ok(quote);
+    assert.match(quote.explanation, /no linked quotation was found/i);
+    assert.doesNotMatch(quote.explanation, /Nothing was created/);
+  });
+
+  it("keeps an undated promise to prepare a draft on the quotation, not as a vague commitment", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        messages: [{ ...sent, body: "I'll prepare a draft." }],
+      })
+    );
+    assert.equal(analysis.proposals.some((item) => item.actionType === "open_commitment"), false);
+    assert.ok(analysis.proposals.some((item) => item.semanticKey.startsWith("quote:")));
+  });
+
+  it("keeps a requested team review separate from a completed draft claim", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        messages: [{ ...sent, body: "I've prepared a draft quotation. I'd like our team to review this." }],
+      })
+    );
+    const review = analysis.proposals.find((item) => item.title === "Technical review requested");
+    const quote = analysis.proposals.find((item) => item.semanticKey.startsWith("quote:"));
+    assert.ok(review);
+    assert.ok(quote);
+    assert.notEqual(review.semanticKey, quote.semanticKey);
+    assert.equal(review.evidenceMessageIds[0], "out-1");
+    assert.doesNotMatch(review.explanation, /I've prepared/i);
+  });
+
+  it("links one relevant saved draft and does not ask to recreate it", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        existingQuotes: [{ id: "quote-1", status: "draft", fingerprint: "fp-1", dealId: "deal-1" }],
+        messages: [{ ...sent, body: "I've prepared a draft quotation." }],
+      })
+    );
+    const quote = analysis.proposals.find((item) => item.actionType === "quotation_draft");
+    assert.ok(quote);
+    assert.equal(quote.payload.quotationId, "quote-1");
+    assert.equal(quote.payload.existing, true);
+    assert.deepEqual(quote.missing, []);
+    assert.doesNotMatch(quote.explanation, /Nothing was created|no linked quotation/i);
+  });
+
+  it("does not link a single quotation from a different opportunity", () => {
+    const quotes = [
+      { id: "quote-other", status: "draft", fingerprint: "fp", dealId: "deal-other" },
+    ];
+    assert.deepEqual(relevantQuotations(quotes, "deal-this"), []);
+    assert.equal(relevantQuotations(quotes, null)[0]?.id, "quote-other");
+    const analysis = analyseConversation(
+      baseInput({
+        existingQuotes: [],
+        messages: [{ ...sent, body: "I've prepared a draft quotation." }],
+      })
+    );
+    assert.match(analysis.proposals.find((item) => item.semanticKey.startsWith("quote:"))?.explanation ?? "", /no linked quotation was found/i);
+  });
+
+  it("shows the saved quotation status instead of claiming nothing was created", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        existingQuotes: [{ id: "quote-sent", status: "sent", fingerprint: "fp", dealId: "deal-1" }],
+        messages: [{ ...sent, body: "I've prepared a draft quotation." }],
+      })
+    );
+    const quote = analysis.proposals.find((item) => item.payload.quotationId === "quote-sent");
+    assert.ok(quote);
+    assert.match(quote.title, /sent/i);
+    assert.doesNotMatch(quote.explanation, /Nothing was created|no linked quotation/i);
+  });
+
+  it("asks for a choice when more than one draft could match", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        existingQuotes: [
+          { id: "quote-1", status: "draft", fingerprint: "a", dealId: "deal-1" },
+          { id: "quote-2", status: "draft", fingerprint: "b", dealId: "deal-1" },
+        ],
+        messages: [{ ...customer, body: "Please send the quotation." }],
+      })
+    );
+    const choice = analysis.proposals.find((item) => item.actionType === "quotation_choice");
+    assert.ok(choice);
+    assert.equal(Array.isArray(choice.payload.options) && choice.payload.options.length, 2);
+  });
+
+  it("treats a home system request as the main requirement and leaves technical fields unknown", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        requiredFields: [
+          { key: "requirement", label: "Main requirement" },
+          { key: "budget", label: "Budget" },
+          { key: "roof", label: "Roof type" },
+        ],
+        knownFacts: {},
+        catalogue: [],
+        messages: [{ ...customer, body: "I need a solar system at home. Please prepare a quotation." }],
+      })
+    );
+    const quote = analysis.proposals.find((item) => item.actionType === "quotation_missing");
+    assert.ok(quote);
+    assert.equal(quote.title, "Quotation needs more information");
+    assert.equal(quote.missing.includes("Main requirement"), false);
+    assert.equal(quote.missing.includes("Budget"), true);
+    assert.equal(quote.missing.includes("Roof type"), true);
+    assert.equal(quote.explanation.includes("Still needed"), false);
+    assert.equal(analysis.summary.startsWith("Need:"), false);
+  });
+
+  it("reads a short approval with the preceding proposal", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        requiredFields: [
+          { key: "requirement", label: "Main requirement" },
+          { key: "budget", label: "Budget" },
+        ],
+        knownFacts: {},
+        catalogue: [],
+        messages: [
+          { ...sent, id: "out-2", body: "I can include a 5kW home system in the quotation." },
+          { ...customer, id: "in-2", createdAt: "2026-10-08T15:00:00.000Z", body: "Please go ahead" },
+        ],
+      })
+    );
+    const requirement = analysis.facts.find((fact) => fact.key === "requirement");
+    assert.ok(requirement);
+    assert.match(requirement.value, /5kW home system/);
+    assert.equal(requirement.messageId, "out-2");
+    assert.equal(analysis.facts.some((fact) => fact.key === "budget"), false);
+  });
+
+  it("uses different required questions for tyre sales and real estate", () => {
+    const tyreFields = defaultRequiredFields({ businessType: "trades", hasListings: false, hasProducts: true });
+    const estateFields = defaultRequiredFields({ businessType: "real_estate", hasListings: true, hasProducts: false });
+    const ask = [{ ...customer, body: "Can I get a quotation?" }];
+    const tyre = analyseConversation(baseInput({ requiredFields: tyreFields, knownFacts: {}, catalogue: [], messages: ask }));
+    const estate = analyseConversation(
+      baseInput({
+        requiredFields: estateFields,
+        knownFacts: {},
+        catalogue: [],
+        capabilities: { quotations: true, listings: true, appointments: true, reminders: true, stock: false },
+        messages: ask,
+      })
+    );
+    const tyreMissing = tyre.proposals.find((item) => item.actionType === "quotation_missing")?.missing ?? [];
+    const estateMissing = estate.proposals.find((item) => item.actionType === "quotation_missing")?.missing ?? [];
+    assert.deepEqual(tyreMissing, ["Product", "Quantity"]);
+    assert.deepEqual(estateMissing, ["Sale or rental", "Location", "Budget"]);
+  });
+
+  it("revises the quotation item when a later analysis finds the saved draft", () => {
+    const messages = [{ ...sent, body: "I've prepared a draft quotation." }];
+    const before = analyseConversation(baseInput({ messages }));
+    const after = analyseConversation(
+      baseInput({
+        messages,
+        existingQuotes: [{ id: "quote-9", status: "draft", fingerprint: "fp", dealId: "deal-9" }],
+      })
+    );
+    const previous = before.proposals.find((item) => item.semanticKey === "quote:incomplete");
+    const next = after.proposals.find((item) => item.payload.quotationId === "quote-9");
+    assert.ok(previous);
+    assert.ok(next);
+    const result = reconcileProposals({
+      proposals: after.proposals,
+      existing: [
+        {
+          id: "item-quote",
+          semanticKey: previous.semanticKey,
+          payloadHash: "old",
+          reviewStatus: "pending",
+          executionStatus: "none",
+          fulfilmentStatus: "open",
+          contextRevision: "rev1",
+          evidenceMessageIds: ["out-1"],
+          salespersonChoice: false,
+          chosenId: null,
+        },
+      ],
+      fulfilledKeys: after.fulfilledKeys,
+      contextRevision: "rev2",
+      loadedMessageIds: ["out-1"],
+    });
+    assert.equal(result.obsoleteIds.includes("item-quote"), true);
+    assert.equal(result.upserts.some((item) => item.semanticKey === next.semanticKey), true);
+    assert.equal(result.upserts.filter((item) => item.semanticKey.startsWith("quote:")).length, 1);
+  });
+
+  it("does not bring back a dismissed quotation suggestion with the same payload", () => {
+    const analysis = analyseConversation(
+      baseInput({ messages: [{ ...sent, body: "I've prepared a draft quotation." }] })
+    );
+    const proposal = analysis.proposals.find((item) => item.semanticKey === "quote:incomplete");
+    assert.ok(proposal);
+    const hash = payloadHash({
+      actionType: proposal.actionType,
+      proposedAt: proposal.proposedAt,
+      payload: proposal.payload,
+      missing: proposal.missing,
+    });
+    const result = reconcileProposals({
+      proposals: [proposal],
+      existing: [
+        {
+          id: "item-dismissed",
+          semanticKey: proposal.semanticKey,
+          payloadHash: hash,
+          reviewStatus: "dismissed",
+          executionStatus: "none",
+          fulfilmentStatus: "open",
+          contextRevision: "rev1",
+          evidenceMessageIds: ["out-1"],
+          salespersonChoice: false,
+          chosenId: null,
+        },
+      ],
+      fulfilledKeys: [],
+      contextRevision: "rev2",
+      loadedMessageIds: ["out-1"],
+    });
+    assert.equal(result.upserts.length, 0);
+    assert.equal(result.obsoleteIds.includes("item-dismissed"), false);
+  });
+
+  it("labels the quotation actions specifically", () => {
+    const source = readFileSync(new URL("../lib/sales-copilot/store.ts", import.meta.url), "utf8");
+    assert.match(source, /quotation_missing"\) return "Add missing details"/);
+    assert.match(source, /quotation_draft"\) return "Review draft"/);
+    assert.match(source, /return "Set follow-up"/);
+    assert.match(source, /answer_question"\) return "Draft reply"/);
+  });
+
+  it("keeps the review sheet from repeating the message in the header or snooze field", () => {
+    const ui = readFileSync(new URL("../components/inbox/SalesCopilotWorkspace.tsx", import.meta.url), "utf8");
+    assert.match(ui, /to review/);
+    assert.match(ui, /View supporting messages/);
+    assert.match(ui, /Confirm snooze/);
+    assert.doesNotMatch(ui, /Still needed:/);
+    assert.doesNotMatch(ui, /readableCopilotSummary\(summary\)/);
   });
 });
 

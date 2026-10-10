@@ -88,6 +88,18 @@ function needsDetails(item: CopilotWorkView) {
   );
 }
 
+function knownValues(item: CopilotWorkView): Array<{ key: string; value: string }> {
+  const known = item.payload.known;
+  if (!Array.isArray(known)) return [];
+  return known.flatMap((row) => {
+    if (!row || typeof row !== "object") return [];
+    const value = "value" in row ? row.value : null;
+    const key = "key" in row ? row.key : value;
+    if (typeof value !== "string" || !value.trim()) return [];
+    return [{ key: String(key), value }];
+  });
+}
+
 function usesSchedule(item: CopilotWorkView) {
   return (
     item.actionType === "update_reminder" ||
@@ -161,7 +173,7 @@ export function SalesCopilotCard({
 
   const ready = quoteReady(item);
   const quoteHref = ready && item.linkedQuotationId ? `/sales/quotes/${item.linkedQuotationId}` : null;
-  const detailsFirst = needsDetails(item);
+  const detailsFirst = needsDetails(item) || item.actionType === "quotation_missing";
   const collapsed = keyboardOpen || userCollapsed;
 
   if (collapsed) {
@@ -178,7 +190,7 @@ export function SalesCopilotCard({
           {item.title}
         </button>
         <button type="button" onClick={onOpen} className="shrink-0 text-[13px] font-semibold text-sales-text-primary">
-          Review
+          {item.primaryLabel}
         </button>
       </div>
     );
@@ -198,10 +210,7 @@ export function SalesCopilotCard({
         </button>
       </div>
       <h2 className="text-[16px] font-semibold leading-5 text-sales-text-primary">{item.title}</h2>
-      <p className="mt-1 text-[14px] leading-5 text-sales-text-secondary">{item.explanation}</p>
-      {item.missing.length ? (
-        <p className="mt-1 text-[14px] leading-5 text-sales-text-secondary">Still needed: {item.missing.join(", ")}</p>
-      ) : null}
+      <p className="mt-1 line-clamp-2 text-[14px] leading-5 text-sales-text-secondary">{item.explanation}</p>
       {item.executionError ? <p className="mt-1 text-[13px] leading-5 text-sales-danger">{item.executionError}</p> : null}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {quoteHref ? (
@@ -225,7 +234,7 @@ export function SalesCopilotCard({
             }}
             className={cardPrimary}
           >
-            {item.executionStatus === "failed" ? "Retry" : detailsFirst ? "Review" : item.primaryLabel}
+            {item.executionStatus === "failed" ? "Retry" : item.primaryLabel}
           </button>
         )}
         {quoteHref ? (
@@ -262,15 +271,20 @@ export function SalesCopilotSheet({
   onDraft: (text: string) => void;
 }) {
   const [when, setWhen] = useState("");
+  const [snoozeFor, setSnoozeFor] = useState<string | null>(null);
+  const [evidenceFor, setEvidenceFor] = useState<string | null>(null);
+  void summary;
   if (!open) return null;
+  const pendingCount = items.length;
   return (
     <PremiumSheet
       title="Sales Copilot"
-      description={readableCopilotSummary(summary) ?? "Review what was understood and what still needs a decision."}
+      description={pendingCount ? `${pendingCount} ${pendingCount === 1 ? "item" : "items"} to review` : "Nothing is waiting"}
       onClose={onClose}
       closeDisabled={busy}
       labelledBy="sales-copilot-title"
       maxWidthClass="max-w-lg"
+      className="wa-copilot-sheet"
     >
       {notice ? (
         <p role="alert" className="mb-3 text-[13px] text-sales-danger">
@@ -290,7 +304,19 @@ export function SalesCopilotSheet({
                 <p className="mt-1 text-[16px] font-semibold leading-5 text-sales-text-primary">{item.title}</p>
                 <p className="mt-1 text-[14px] leading-5 text-sales-text-secondary">{item.explanation}</p>
                 {item.evidence[0]?.text ? (
-                  <p className="mt-2 text-[13px] leading-5 text-sales-text-secondary">“{item.evidence[0].text}”</p>
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      className="min-h-11 text-left text-[13px] font-semibold text-sales-text-primary"
+                      aria-expanded={evidenceFor === item.id}
+                      onClick={() => setEvidenceFor((current) => (current === item.id ? null : item.id))}
+                    >
+                      View supporting messages
+                    </button>
+                    {evidenceFor === item.id ? (
+                      <p className="text-[13px] leading-5 text-sales-text-secondary">“{item.evidence[0].text}”</p>
+                    ) : null}
+                  </div>
                 ) : null}
                 {item.currentDueAt || item.proposedAt ? (
                   <p className="mt-2 text-[13px] leading-5 text-sales-text-secondary">
@@ -300,8 +326,22 @@ export function SalesCopilotSheet({
                       : ""}
                   </p>
                 ) : null}
+                {knownValues(item).length ? (
+                  <ul className="mt-2 space-y-1 text-[13px] leading-5 text-sales-text-secondary">
+                    {knownValues(item).map((fact) => (
+                      <li key={fact.key}>Known: {fact.value}</li>
+                    ))}
+                  </ul>
+                ) : null}
                 {item.missing.length ? (
-                  <p className="mt-2 text-[13px] leading-5 text-sales-text-secondary">Still needed: {item.missing.join(", ")}</p>
+                  <div className="mt-2">
+                    <p className="text-[13px] font-semibold text-sales-text-primary">Still to confirm</p>
+                    <ul className="mt-1 list-disc pl-4 text-[13px] leading-5 text-sales-text-secondary">
+                      {item.missing.map((label) => (
+                        <li key={label}>{label}</li>
+                      ))}
+                    </ul>
+                  </div>
                 ) : null}
                 {item.executionError ? <p className="mt-2 text-[13px] leading-5 text-sales-danger">{item.executionError}</p> : null}
                 {item.reviewStatus === "stale" ? (
@@ -324,21 +364,33 @@ export function SalesCopilotSheet({
                     ))}
                   </div>
                 ) : null}
-                <label className="mt-3 block text-[12px] font-medium text-sales-text-secondary">
-                  {scheduled ? "Date and time" : "Snooze until"}
-                  <input
-                    type="datetime-local"
-                    value={when}
-                    onChange={(event) => setWhen(event.target.value)}
-                    className="mt-1 min-h-11 w-full rounded-[8px] border border-sales-border bg-sales-surface px-2 text-[16px] text-sales-text-primary"
-                  />
-                </label>
+                {scheduled ? (
+                  <label className="mt-3 block text-[12px] font-medium text-sales-text-secondary">
+                    Date and time
+                    <input
+                      type="datetime-local"
+                      value={when}
+                      onChange={(event) => setWhen(event.target.value)}
+                      className="mt-1 min-h-11 w-full rounded-[8px] border border-sales-border bg-transparent px-2 text-[16px] text-inherit"
+                    />
+                  </label>
+                ) : snoozeFor === item.id ? (
+                  <label className="mt-3 block text-[12px] font-medium text-sales-text-secondary">
+                    Snooze until
+                    <input
+                      type="datetime-local"
+                      value={when}
+                      onChange={(event) => setWhen(event.target.value)}
+                      className="mt-1 min-h-11 w-full rounded-[8px] border border-sales-border bg-transparent px-2 text-[16px] text-inherit"
+                    />
+                  </label>
+                ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {ready && item.linkedQuotationId ? (
                     <a href={`/sales/quotes/${item.linkedQuotationId}`} className={cardPrimary}>
                       Review draft
                     </a>
-                  ) : (
+                  ) : item.actionType === "quotation_missing" ? null : (
                     <button
                       type="button"
                       disabled={busy || item.reviewStatus === "stale"}
@@ -368,14 +420,20 @@ export function SalesCopilotSheet({
                       Draft reply
                     </button>
                   ) : null}
-                  <button
-                    type="button"
-                    disabled={busy || !when}
-                    onClick={() => onAct(item, { action: "snooze", snoozeUntil: new Date(when).toISOString() })}
-                    className={cardSecondary}
-                  >
-                    Snooze
-                  </button>
+                  {snoozeFor === item.id ? (
+                    <button
+                      type="button"
+                      disabled={busy || !when}
+                      onClick={() => onAct(item, { action: "snooze", snoozeUntil: new Date(when).toISOString() })}
+                      className={cardSecondary}
+                    >
+                      Confirm snooze
+                    </button>
+                  ) : (
+                    <button type="button" disabled={busy} onClick={() => setSnoozeFor(item.id)} className={cardSecondary}>
+                      Snooze
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={busy}
@@ -455,7 +513,7 @@ function SalesCopilotPanelItem({
               Edit items
             </a>
           </>
-        ) : choosing ? null : (
+        ) : choosing || item.actionType === "quotation_missing" ? null : (
           <button
             type="button"
             disabled={busy}

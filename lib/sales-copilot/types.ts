@@ -52,6 +52,7 @@ export type CopilotEngineInput = {
   quoteStatus: string | null;
   doNotContact: boolean;
   messages: CopilotMessage[];
+  existingQuotes?: Array<{ id: string; status: string; fingerprint: string | null; dealId: string | null }>;
 };
 
 export type EvidenceExcerpt = {

@@ -18,8 +18,10 @@ import type {
   ProposalDraft,
 } from "./types";
 
-const PROMISE =
-  /\b(i['’]?ll|i will|we['’]?ll|we will|let me)\b/i;
+const FUTURE_PROMISE = /\b(i['’]?ll|i will|we['’]?ll|we will|let me)\b/i;
+const COMPLETED_WORK = /\b(i['’]?ve|i have|we['’]?ve|we have)\b/i;
+const COMPLETED_VERB = /\b(prepar\w*|creat\w*|sent|draft\w*|quot\w*)\b/i;
+const SHORT_APPROVAL = /^(please go ahead|go ahead|yes|yeah|ok|okay|sure|sounds good|proceed|do it)[.!]?$/i;
 
 function isCustomerStatement(message: CopilotMessage): boolean {
   return message.direction === "inbound" && message.status !== "failed";
@@ -46,7 +48,7 @@ function excerpt(message: CopilotMessage): EvidenceExcerpt {
 
 function intentOf(text: string): string {
   const t = text.toLowerCase();
-  if (/quote|quotation/.test(t)) return "send_quote";
+  if (/quote|quotation|prepare (?:a|the) draft/.test(t)) return "send_quote";
   if (/stock/.test(t)) return "check_stock";
   if (/measur/.test(t)) return "send_measurements";
   if (/(colleague|manager|my team)/.test(t) && /(ask|check with|speak)/.test(t)) return "ask_colleague";
@@ -90,12 +92,79 @@ function factFromMessages(
       }
     }
   }
+  const need = statedNeed(messages);
+  if (need) {
+    for (const field of input.requiredFields) {
+      if (facts.some((fact) => fact.key === field.key)) continue;
+      if (!isPrimaryRequirementField(field)) continue;
+      facts.push({ key: field.key, value: need.text, messageId: need.messageId });
+    }
+  }
   return facts;
 }
 
 function missingLabels(input: CopilotEngineInput, facts: CopilotAnalysis["facts"]): string[] {
   const have = new Set(facts.map((fact) => fact.key));
-  return input.requiredFields.filter((field) => !have.has(field.key)).map((field) => field.label);
+  return input.requiredFields
+    .filter((field) => !have.has(field.key))
+    .map((field) => field.label)
+    .filter((label) => !/catalogue item/i.test(label));
+}
+
+function sentencesOf(body: string): string[] {
+  const parts = body
+    .split(/(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.length > 0 ? parts : [body.trim()];
+}
+
+function isCompletedWorkClaim(sentence: string): boolean {
+  return COMPLETED_WORK.test(sentence) && COMPLETED_VERB.test(sentence);
+}
+
+function isFuturePromiseSentence(sentence: string): boolean {
+  if (isCompletedWorkClaim(sentence)) return false;
+  return FUTURE_PROMISE.test(sentence);
+}
+
+function isTeamReviewRequest(sentence: string): boolean {
+  return /\b(team|technical|engineer|colleague)\b/i.test(sentence) && /\b(review|check|assess|look at)\b/i.test(sentence);
+}
+
+function isPrimaryRequirementField(field: { key: string; label: string }): boolean {
+  return /requirement|intent|scope|need|product|system|work|enquir|inquir/i.test(`${field.key} ${field.label}`);
+}
+
+export function relevantQuotations<T extends { dealId: string | null }>(quotes: T[], activeDealId: string | null): T[] {
+  if (!activeDealId) return quotes;
+  const sameOpportunity = quotes.filter((quote) => quote.dealId == null || quote.dealId === activeDealId);
+  if (sameOpportunity.length > 0 || quotes.length < 2) return sameOpportunity;
+  return quotes;
+}
+
+function statedNeed(messages: CopilotMessage[]): { text: string; messageId: string } | null {
+  const explicit = messages.filter(
+    (message) =>
+      isCustomerStatement(message) &&
+      /\b(need|looking for|want|interested in|require)\b/i.test(message.body) &&
+      !SHORT_APPROVAL.test(message.body.trim())
+  );
+  const last = explicit[explicit.length - 1];
+  if (last) return { text: last.body.trim().slice(0, 160), messageId: last.id };
+  const approval = [...messages]
+    .reverse()
+    .find((message) => isCustomerStatement(message) && SHORT_APPROVAL.test(message.body.trim()));
+  if (!approval) return null;
+  const prior = [...messages]
+    .reverse()
+    .find(
+      (message) =>
+        isSalespersonStatement(message) &&
+        new Date(message.createdAt).getTime() <= new Date(approval.createdAt).getTime() &&
+        message.body.trim().length > 24
+    );
+  return prior ? { text: prior.body.trim().slice(0, 160), messageId: prior.id } : null;
 }
 
 export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis {
@@ -151,20 +220,46 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
     .map((message) => ({ text: message.body.trim().slice(0, 180), messageId: message.id }));
 
   for (const message of messages) {
-    if (!PROMISE.test(message.body)) continue;
-    if (isAmbiguousCommitment(message.body)) {
+    for (const clause of sentencesOf(message.body)) {
+    if (isCompletedWorkClaim(clause)) continue;
+    if (isTeamReviewRequest(clause)) {
+      const reviewWhen = resolveCommitmentWhen(clause, new Date(message.createdAt), input.timezone, input.defaultHour);
+      if (!reviewWhen && !proposals.some((proposal) => proposal.semanticKey === `review:${message.id}`)) {
+        proposals.push({
+          semanticKey: `review:${message.id}`,
+          actionType: "open_commitment",
+          queue: "needs_review",
+          title: "Technical review requested",
+          explanation: "A team review was requested. No date was given, so nothing was scheduled.",
+          evidenceMessageIds: [message.id],
+          evidence: [excerpt(message)],
+          proposedAt: null,
+          hourSuggested: false,
+          currentDueAt: null,
+          waitingActor: "colleague",
+          priority: "medium",
+          missing: [],
+          payload: { kind: "open_commitment", intent: "ask_colleague", actor: "colleague" },
+          linkedFollowUp: false,
+        });
+      }
+      if (!isFuturePromiseSentence(clause)) continue;
+    }
+    if (!isFuturePromiseSentence(clause) && !isAmbiguousCommitment(clause)) continue;
+    if (intentOf(clause) === "send_quote" && !resolveCommitmentWhen(clause, new Date(message.createdAt), input.timezone, input.defaultHour)) continue;
+    if (isAmbiguousCommitment(clause)) {
       uncertainty.push("A commitment was mentioned without a date that can be scheduled.");
-      const intent = intentOf(message.body);
+      const intent = intentOf(clause);
       const actor = actorFor(message, intent);
       proposals.push({
         semanticKey: `${actor}:${intent}:undated`,
         actionType: "open_commitment",
         queue: "needs_review",
-        title: actor === "customer" ? "Customer commitment is still open" : "Open commitment",
+        title: actor === "customer" ? "Customer commitment is still open" : "Follow-up has no date",
         explanation:
           actor === "salesperson"
-            ? `You said “${message.body.trim().slice(0, 140)}”. No date was given, so nothing was scheduled.`
-            : `The customer said “${message.body.trim().slice(0, 140)}”. No date was given, so no deadline was added.`,
+            ? `You said “${clause.trim().slice(0, 140)}”. No date was given, so nothing was scheduled.`
+            : `The customer said “${clause.trim().slice(0, 140)}”. No date was given, so no deadline was added.`,
         evidenceMessageIds: [message.id],
         evidence: [excerpt(message)],
         proposedAt: null,
@@ -179,9 +274,9 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
       continue;
     }
 
-    const intent = intentOf(message.body);
+    const intent = intentOf(clause);
     const actor = actorFor(message, intent);
-    const when = resolveCommitmentWhen(message.body, new Date(message.createdAt), input.timezone, input.defaultHour);
+    const when = resolveCommitmentWhen(clause, new Date(message.createdAt), input.timezone, input.defaultHour);
     const semanticKey = when
       ? `${actor}:${intent}:${when.ymd}`
       : `${actor}:${intent}:undated`;
@@ -225,13 +320,13 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
         semanticKey,
         actionType: "open_commitment",
         queue: "needs_review",
-        title: actor === "colleague" ? "Waiting on a colleague" : "Open commitment",
+        title: actor === "colleague" ? "Waiting on a colleague" : intent === "contact" ? "Follow-up has no date" : "Open commitment",
         explanation:
           actor === "salesperson"
-            ? `You said “${message.body.trim().slice(0, 140)}”. No date was given, so nothing was scheduled.`
+            ? `You said “${clause.trim().slice(0, 140)}”. No date was given, so nothing was scheduled.`
             : actor === "colleague"
-              ? `You said you would ask someone else: “${message.body.trim().slice(0, 140)}”. No deadline was invented.`
-              : `The customer said “${message.body.trim().slice(0, 140)}”. No date was given, so no deadline was added.`,
+              ? `You said you would ask someone else: “${clause.trim().slice(0, 140)}”. No deadline was invented.`
+              : `The customer said “${clause.trim().slice(0, 140)}”. No date was given, so no deadline was added.`,
         evidenceMessageIds: [message.id],
         evidence: [excerpt(message)],
         proposedAt: null,
@@ -312,6 +407,35 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
         linkedFollowUp: true,
       });
     }
+
+    if (actor === "salesperson" && intent === "send_quote") {
+      const proposedLabel = formatLocalWhen(when.at, input.timezone, when.hourSuggested);
+      proposals.push({
+        semanticKey,
+        actionType: input.followUpAt ? "update_reminder" : "create_reminder",
+        queue: "needs_review",
+        title: "Send the quotation",
+        explanation: `You said you would prepare the quotation ${when.dayLabel}. Set a follow-up for ${proposedLabel}?`,
+        evidenceMessageIds: [message.id],
+        evidence: [excerpt(message)],
+        proposedAt: when.at,
+        hourSuggested: when.hourSuggested,
+        currentDueAt: input.followUpAt,
+        waitingActor: "salesperson",
+        priority: "high",
+        missing: [],
+        payload: {
+          kind: "follow_up",
+          mode: input.followUpAt ? "update" : "create",
+          followUpAt: when.at,
+          hourSuggested: when.hourSuggested,
+          source: "HUMAN_CREATED",
+          proposedLabel,
+        },
+        linkedFollowUp: true,
+      });
+    }
+    }
   }
 
   const comparing = messages.find(
@@ -369,7 +493,17 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
     });
   }
 
-  const quoteTalk = /\b(quote|quotation)\b/i.test(customerText) || (/\b(how much|price|pricing)\b/i.test(customerText) && !input.capabilities.listings);
+  const salespersonText = messages.filter(isSalespersonStatement).map((message) => message.body).join("\n");
+  const claimedDraft = messages.some(
+    (message) => isSalespersonStatement(message) && sentencesOf(message.body).some((sentence) => isCompletedWorkClaim(sentence))
+  );
+  const savedQuotes = input.existingQuotes ?? [];
+  const openDrafts = savedQuotes.filter((quote) => quote.status === "draft" || quote.status === "pending_approval");
+  const otherQuotes = savedQuotes.filter((quote) => quote.status !== "draft" && quote.status !== "pending_approval");
+  const knownNeed = Boolean(statedNeed(messages)) || needs.length > 0;
+  const quoteTalk =
+    /\b(quote|quotation|prepare (?:a|the) draft)\b/i.test(`${customerText}\n${salespersonText}`) ||
+    (/\b(how much|price|pricing)\b/i.test(customerText) && !input.capabilities.listings);
   const propertyTalk = /\b(rent|rental|for sale|to buy|viewing|property|apartment|house|bedroom)\b/i.test(customerText);
   if (input.capabilities.listings && propertyTalk && !/\b(quote|quotation)\b/i.test(customerText)) {
     const hits = matchListings(customerText, input.listings);
@@ -434,8 +568,91 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
         linkedFollowUp: false,
       });
     }
+  } else if (quoteTalk && input.capabilities.quotations && openDrafts.length > 1) {
+    const evidenceMessages = messages.filter((message) => isCustomerStatement(message) || isSalespersonStatement(message)).slice(-2);
+    proposals.push({
+      semanticKey: "quote:choose-saved",
+      actionType: "quotation_choice",
+      queue: "needs_review",
+      title: "Choose the quotation",
+      explanation: "More than one draft is saved for this conversation. Choose the one to review. No new draft was created.",
+      evidenceMessageIds: evidenceMessages.map((message) => message.id),
+      evidence: evidenceMessages.map(excerpt),
+      proposedAt: null,
+      hourSuggested: false,
+      currentDueAt: null,
+      waitingActor: "salesperson",
+      priority: "high",
+      missing: [],
+      payload: {
+        kind: "quotation_choice",
+        options: openDrafts.map((quote) => ({ id: quote.id, name: `Saved draft ${quote.id.slice(0, 8)}` })),
+      },
+      linkedFollowUp: false,
+    });
+  } else if (quoteTalk && input.capabilities.quotations && openDrafts.length === 1) {
+    const evidenceMessages = messages.filter((message) => isCustomerStatement(message) || isSalespersonStatement(message)).slice(-2);
+    proposals.push({
+      semanticKey: `quote:saved:${openDrafts[0].id}`,
+      actionType: "quotation_draft",
+      queue: "needs_review",
+      title: "Quotation draft ready",
+      explanation: "A saved draft is linked to this conversation. Review the items and prices before sending.",
+      evidenceMessageIds: evidenceMessages.map((message) => message.id),
+      evidence: evidenceMessages.map(excerpt),
+      proposedAt: null,
+      hourSuggested: false,
+      currentDueAt: null,
+      waitingActor: "salesperson",
+      priority: "high",
+      missing: [],
+      payload: { kind: "quotation_draft", quotationId: openDrafts[0].id, existing: true },
+      linkedFollowUp: false,
+    });
+  } else if (quoteTalk && input.capabilities.quotations && otherQuotes.length === 1) {
+    const evidenceMessages = messages.filter((message) => isCustomerStatement(message) || isSalespersonStatement(message)).slice(-2);
+    const status = otherQuotes[0].status.replaceAll("_", " ");
+    proposals.push({
+      semanticKey: `quote:saved:${otherQuotes[0].id}`,
+      actionType: "quotation_draft",
+      queue: "needs_review",
+      title: `Quotation is ${status}`,
+      explanation: `A saved quotation is linked to this conversation. Its status is ${status}. Review it before sending anything else.`,
+      evidenceMessageIds: evidenceMessages.map((message) => message.id),
+      evidence: evidenceMessages.map(excerpt),
+      proposedAt: null,
+      hourSuggested: false,
+      currentDueAt: null,
+      waitingActor: "salesperson",
+      priority: "high",
+      missing: [],
+      payload: { kind: "quotation_draft", quotationId: otherQuotes[0].id, existing: true },
+      linkedFollowUp: false,
+    });
+  } else if (quoteTalk && input.capabilities.quotations && otherQuotes.length > 1) {
+    const evidenceMessages = messages.filter((message) => isCustomerStatement(message) || isSalespersonStatement(message)).slice(-2);
+    proposals.push({
+      semanticKey: "quote:choose-saved",
+      actionType: "quotation_choice",
+      queue: "needs_review",
+      title: "Choose the quotation",
+      explanation: "More than one quotation is saved for this conversation. Choose the one to review. No new draft was created.",
+      evidenceMessageIds: evidenceMessages.map((message) => message.id),
+      evidence: evidenceMessages.map(excerpt),
+      proposedAt: null,
+      hourSuggested: false,
+      currentDueAt: null,
+      waitingActor: "salesperson",
+      priority: "high",
+      missing: [],
+      payload: {
+        kind: "quotation_choice",
+        options: otherQuotes.map((quote) => ({ id: quote.id, name: `${quote.status} ${quote.id.slice(0, 8)}` })),
+      },
+      linkedFollowUp: false,
+    });
   } else if (quoteTalk && input.capabilities.quotations) {
-    const match = matchCatalogue(customerText, input.catalogue);
+    const match = matchCatalogue(`${customerText}\n${salespersonText}`, input.catalogue);
     const missing = missingLabels(input, facts);
     const evidenceMessages = messages.filter(isCustomerStatement).slice(-3);
     if (match.status === "ambiguous") {
@@ -506,12 +723,26 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
       } else {
         const gaps = [...missing];
         if (!quantity) gaps.push("Quantity");
+        const gapCopy = claimedDraft
+          ? {
+              title: "Quotation was mentioned, but no draft is linked",
+              explanation: "The conversation mentions a draft, but no linked quotation was found. Please confirm the remaining details before a draft can be prepared.",
+            }
+          : knownNeed
+            ? {
+                title: "Quotation needs more information",
+                explanation: "I've identified the customer's requirements. Please confirm the remaining details before I prepare the draft.",
+              }
+            : {
+                title: "Quotation needs more information",
+                explanation: "A quotation was discussed. Confirm the remaining details before a draft is prepared.",
+              };
         proposals.push({
           semanticKey: "quote:incomplete",
           actionType: "quotation_missing",
           queue: "needs_review",
-          title: "Quotation needs a few details",
-          explanation: `A quotation was discussed, but it is not ready. Still needed: ${Array.from(new Set(gaps)).join(", ")}. Nothing was created.`,
+          title: gapCopy.title,
+          explanation: gapCopy.explanation,
           evidenceMessageIds: evidenceMessages.map((message) => message.id),
           evidence: evidenceMessages.map(excerpt),
           proposedAt: null,
@@ -520,18 +751,34 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
           waitingActor: "salesperson",
           priority: "medium",
           missing: Array.from(new Set(gaps)),
-          payload: { kind: "quotation_missing" },
+          payload: { kind: "quotation_missing", known: facts.map((fact) => ({ key: fact.key, value: fact.value })) },
           linkedFollowUp: false,
         });
       }
     } else {
-      const gaps = [...missing, "Catalogue item"];
+      const gaps = [...missing];
+      const gapCopy = claimedDraft
+        ? {
+            title: "Quotation was mentioned, but no draft is linked",
+            explanation: gaps.length
+              ? "The conversation mentions a draft, but no linked quotation was found. Please confirm the remaining details before a draft can be prepared."
+              : "The conversation mentions a draft, but no linked quotation was found.",
+          }
+        : knownNeed
+          ? {
+              title: "Quotation needs more information",
+              explanation: "I've identified the customer's requirements. Please confirm the remaining details before I prepare the draft.",
+            }
+          : {
+              title: "Quotation needs more information",
+              explanation: "A quotation was discussed. Confirm which product to include. No catalogue item was guessed.",
+            };
       proposals.push({
         semanticKey: "quote:incomplete",
         actionType: "quotation_missing",
         queue: "needs_review",
-        title: "Quotation needs a few details",
-        explanation: `A quotation was discussed, but it is not ready. Still needed: ${Array.from(new Set(gaps)).join(", ")}. Nothing was created.`,
+        title: gapCopy.title,
+        explanation: gapCopy.explanation,
         evidenceMessageIds: evidenceMessages.map((message) => message.id),
         evidence: evidenceMessages.map(excerpt),
         proposedAt: null,
@@ -540,7 +787,14 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
         waitingActor: "salesperson",
         priority: "medium",
         missing: Array.from(new Set(gaps)),
-        payload: { kind: "quotation_missing" },
+        payload: {
+          kind: "quotation_missing",
+          known: facts.map((fact) => ({ key: fact.key, value: fact.value })),
+          options:
+            input.catalogue.length > 0 && input.catalogue.length <= 12
+              ? input.catalogue.map((item) => ({ id: item.id, name: item.name }))
+              : undefined,
+        },
         linkedFollowUp: false,
       });
     }
@@ -581,10 +835,7 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
   for (const proposal of proposals) uniqueProposals.set(proposal.semanticKey, proposal);
   const deduped = Array.from(uniqueProposals.values());
   const waitingActor = deduped.find((proposal) => proposal.waitingActor)?.waitingActor ?? null;
-  const summaryParts = [
-    needs[0] ? `Need: ${needs[0]}` : null,
-    deduped[0] ? deduped[0].explanation : "No action is waiting on this conversation.",
-  ].filter(Boolean);
+  const summaryParts = [deduped[0] ? deduped[0].explanation : "No action is waiting on this conversation."];
 
   return {
     summary: summaryParts.join(" "),
@@ -635,5 +886,18 @@ export function applyGroundedReading(
       questions.push({ text: question.text.trim().slice(0, 180), messageId: question.messageId });
     }
   }
-  return { ...analysis, needs, objections, questions };
+  const proposals = analysis.proposals.map((proposal) => {
+    if (proposal.actionType !== "quotation_missing" || needs.length === 0) return proposal;
+    if (proposal.title.startsWith("Quotation was mentioned")) return proposal;
+    const missing = proposal.missing.filter((label) => !/requirement|requested work|scope|^product$/i.test(label));
+    return {
+      ...proposal,
+      missing,
+      title: missing.length ? "Quotation needs more information" : proposal.title,
+      explanation: missing.length
+        ? "I've identified the customer's requirements. Please confirm the remaining details before I prepare the draft."
+        : "I've identified the customer's requirements. Review them before a draft is prepared.",
+    };
+  });
+  return { ...analysis, needs, objections, questions, proposals };
 }

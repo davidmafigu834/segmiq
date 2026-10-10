@@ -78,10 +78,10 @@ export function rowFromUnknown(value: unknown): WorkItemRow | null {
 export function primaryLabel(actionType: string, executionStatus: string): string {
   if (executionStatus === "failed") return "Retry";
   if (actionType === "quotation_draft") return "Review draft";
-  if (actionType === "quotation_choice" || actionType === "listing_shortlist") return "Choose";
-  if (actionType === "update_reminder") return "Update reminder";
-  if (actionType === "create_reminder" || actionType === "customer_checkin" || actionType === "contact_later") {
-    return "Schedule";
+  if (actionType === "quotation_missing") return "Add missing details";
+  if (actionType === "quotation_choice" || actionType === "listing_shortlist") return "Choose product";
+  if (actionType === "update_reminder" || actionType === "create_reminder" || actionType === "customer_checkin" || actionType === "contact_later") {
+    return "Set follow-up";
   }
   if (actionType === "send_quotation") return "Open draft";
   if (actionType === "answer_question") return "Draft reply";

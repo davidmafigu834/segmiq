@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { loadCompanyBrainSnapshot } from "@/lib/company-brain/store";
 import { resolveClientSalesTimezone } from "@/lib/sales/intelligence/daily-plan-service";
-import { analyseConversation } from "./analyse";
+import { analyseConversation, relevantQuotations } from "./analyse";
 import { defaultRequiredFields, draftFingerprint } from "./catalogue";
 import { prepareQuotationDraft, quotationReadyCopy } from "./execute";
 import { enrichAnalysis } from "./ai";
@@ -37,7 +37,7 @@ export async function runCopilotAnalysis(
     .maybeSingle();
   if (leadError || !lead) return null;
 
-  const [{ data: messageRows }, { data: client }, { data: hours }, { data: quote }, { data: products }, { data: listings }] =
+  const [{ data: messageRows }, { data: client }, { data: hours }, { data: quoteRows }, { data: products }, { data: listings }] =
     await Promise.all([
       supabase
         .from("whatsapp_messages")
@@ -59,11 +59,11 @@ export async function runCopilotAnalysis(
         .maybeSingle(),
       supabase
         .from("quotations")
-        .select("status")
+        .select("id, status, copilot_fingerprint, deal_id")
         .eq("lead_id", leadId)
+        .eq("client_id", clientId)
         .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
+        .limit(8),
       supabase
         .from("products")
         .select("id, name, sku, brand, selling_price, track_inventory")
@@ -138,6 +138,15 @@ export async function runCopilotAnalysis(
   if (budget) knownFacts.budget = budget;
   if (timeline) knownFacts.preferred_date = timeline;
 
+  const activeDealId = (lead.active_deal_id as string | null) ?? null;
+  const savedQuotes = ((quoteRows ?? []) as Array<Record<string, unknown>>).map((row) => ({
+    id: String(row.id),
+    status: String(row.status ?? ""),
+    fingerprint: (row.copilot_fingerprint as string | null) ?? null,
+    dealId: (row.deal_id as string | null) ?? null,
+  }));
+  const relevant = relevantQuotations(savedQuotes, activeDealId);
+
   const timezone = await resolveClientSalesTimezone(clientId);
   const contactLaterDays = Number(client?.copilot_contact_later_days) || 7;
   const checkinOffsetDays = Number(client?.copilot_checkin_offset_days) || 1;
@@ -159,7 +168,8 @@ export async function runCopilotAnalysis(
     listings: listingItems,
     stage: (lead.status as string | null) ?? null,
     followUpAt: (lead.follow_up_date as string | null) ?? null,
-    quoteStatus: (quote?.status as string | null) ?? null,
+    quoteStatus: relevant[0]?.status ?? null,
+    existingQuotes: relevant,
     doNotContact: false,
     messages,
   });
@@ -204,9 +214,16 @@ export async function runCopilotAnalysis(
   const dealId = (lead.active_deal_id as string | null) ?? null;
   for (const item of plan.upserts) {
     if (item.actionType !== "quotation_draft" || item.missing.length > 0) continue;
+    const existingId = typeof item.payload.quotationId === "string" ? item.payload.quotationId : null;
+    if (item.payload.existing === true && existingId) {
+      item.linkedQuotationId = existingId;
+      item.executionStatus = "succeeded";
+      item.reviewStatus = "pending";
+      continue;
+    }
     if (!dealId) {
       item.title = "Quotation needs a deal";
-      item.explanation = "The products are clear, but a deal is required before a draft can be saved. Nothing was created.";
+      item.explanation = "The products are clear, but a deal is required before a draft can be saved.";
       item.missing = ["Deal"];
       continue;
     }
