@@ -246,7 +246,7 @@ export function SalesTasksClient() {
         task.copilot.actionType === "listing_shortlist" ||
         task.copilot.actionType === "quotation_choice"
       ) {
-        window.location.assign(task.whatsappHref);
+        window.location.assign(task.whatsappHref ?? task.leadHref);
         return;
       }
       const action =
