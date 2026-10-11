@@ -4,12 +4,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  Calendar,
   CalendarClock,
   CheckSquare,
   ChevronDown,
+  ClipboardList,
+  Clock,
   FileText,
   Filter,
   Lightbulb,
+  MessageCircle,
   MoreHorizontal,
   Phone,
   Plus,
@@ -58,6 +62,7 @@ import { formatTrend } from "@/lib/sales/sales-dashboard-display";
 import { customerDraft, stageCopilotDraft } from "@/lib/sales-copilot/draft";
 import {
   dueDateTone,
+  formatScheduleWhen,
   formatTaskPriority,
   matchesDueFilter,
   scheduleLine,
@@ -96,6 +101,118 @@ function priorityDot(priority: SalesTaskItem["priority"]) {
   return "bg-sales-success";
 }
 
+type CopilotQueue = "all" | "needs_review" | "todo" | "waiting" | "contact_later";
+
+type TaskCardTone = "review" | "todo" | "waiting" | "later" | "failed" | "done";
+
+const SCOPE_OPTIONS: { value: SalesTaskView; label: string; countKey: "mine" | "assigned" | "created" | "all" }[] = [
+  { value: "mine", label: "My tasks", countKey: "mine" },
+  { value: "assigned", label: "Assigned to me", countKey: "assigned" },
+  { value: "created", label: "Created by me", countKey: "created" },
+  { value: "all", label: "All tasks", countKey: "all" },
+];
+
+const QUEUE_FILTERS: { value: CopilotQueue; label: string; full: string; tone: string }[] = [
+  { value: "all", label: "All", full: "All", tone: "all" },
+  { value: "needs_review", label: "Review", full: "Needs review", tone: "review" },
+  { value: "todo", label: "To do", full: "To do", tone: "todo" },
+  { value: "waiting", label: "Waiting", full: "Waiting", tone: "waiting" },
+  { value: "contact_later", label: "Later", full: "Contact later", tone: "later" },
+];
+
+function matchesCopilotQueue(task: SalesTaskItem, queue: CopilotQueue): boolean {
+  if (queue === "needs_review") return task.copilot?.listState === "needs_review";
+  if (queue === "todo") return task.copilot?.listState === "todo";
+  if (queue === "waiting") return task.copilot?.listState === "waiting";
+  if (queue === "contact_later") {
+    return task.copilot?.actionType === "contact_later" || task.copilot?.actionType === "customer_checkin";
+  }
+  return true;
+}
+
+function matchesScopedTask(
+  task: SalesTaskItem,
+  opts: {
+    statusFilter: SalesTaskStatusFilter;
+    dueFilter: SalesTaskDueFilter;
+    quickFilters: SalesTaskQuickFilter[];
+    view: SalesTaskView;
+  }
+): boolean {
+  if (opts.statusFilter === "pending" && task.status !== "pending") return false;
+  if (opts.statusFilter === "overdue" && task.status !== "overdue") return false;
+  if (opts.statusFilter === "completed" && !task.completed) return false;
+  if (opts.statusFilter === "all" && task.completed) {
+    if (opts.view === "mine" || opts.view === "assigned") return false;
+  }
+  if (opts.dueFilter !== "all" && !task.completed && !matchesDueFilter(task.deadlineAt, opts.dueFilter)) {
+    return false;
+  }
+  for (const q of opts.quickFilters) {
+    if (q === "high_priority" && task.priority !== "high") return false;
+    if (q === "overdue" && task.status !== "overdue") return false;
+    if (q === "due_today" && !matchesDueFilter(task.deadlineAt, "today")) return false;
+    if (q === "follow_ups" && task.type !== "follow_up" && task.type !== "whatsapp") return false;
+    if (q === "calls" && task.type !== "call") return false;
+    if (q === "quote_reviews" && task.type !== "quote_review") return false;
+  }
+  return true;
+}
+
+function taskCardStatus(task: SalesTaskItem): { label: string; tone: TaskCardTone } {
+  if (task.completed) return { label: "Completed", tone: "done" };
+  if (task.copilot?.executionStatus === "failed") return { label: "Failed", tone: "failed" };
+  const action = task.copilot?.actionType;
+  const contactLater = action === "contact_later" || action === "customer_checkin";
+  if (task.copilot?.listState === "needs_review") return { label: "Needs review", tone: "review" };
+  if (task.copilot?.listState === "waiting") return { label: "Waiting", tone: "waiting" };
+  if (contactLater && task.copilot?.listState !== "todo") return { label: "Contact later", tone: "later" };
+  return { label: "To do", tone: "todo" };
+}
+
+function taskKindIcon(task: SalesTaskItem) {
+  const action = task.copilot?.actionType ?? "";
+  const title = `${task.title} ${task.typeLabel}`.toLowerCase();
+  const iconProps = { size: 18, strokeWidth: 1.8, "aria-hidden": true as const };
+  if (action === "appointment" || /\b(meeting|viewing|visit)\b/.test(title)) {
+    return <Calendar {...iconProps} />;
+  }
+  if (
+    action === "quotation_draft" ||
+    action === "quotation_missing" ||
+    action === "quotation_choice" ||
+    action === "send_quotation" ||
+    action === "listing_shortlist" ||
+    task.type === "quote_review"
+  ) {
+    return <FileText {...iconProps} />;
+  }
+  if (action === "customer_checkin" || action === "answer_question" || action === "contact_later" || task.type === "whatsapp") {
+    return <MessageCircle {...iconProps} />;
+  }
+  if (action === "open_commitment" || /\b(team review|internal review)\b/.test(title)) {
+    return <ClipboardList {...iconProps} />;
+  }
+  if (task.type === "call" || /\b(call|callback|phone)\b/.test(title)) {
+    return <Phone {...iconProps} />;
+  }
+  if (action === "create_reminder" || action === "update_reminder" || task.type === "follow_up") {
+    return <Clock {...iconProps} />;
+  }
+  return <CalendarClock {...iconProps} />;
+}
+
+function cardDateText(task: SalesTaskItem, timeZone: string): string {
+  const line = scheduleLine(task.schedule, timeZone);
+  if (line.startsWith("Suggested time:")) return `Suggested:${line.slice("Suggested time:".length)}`;
+  return line;
+}
+
+function customerInitial(name: string): string {
+  const trimmed = name.trim();
+  return trimmed ? trimmed.charAt(0).toUpperCase() : "?";
+}
+
 function parseView(raw: string | null): SalesTaskView {
   if (raw === "assigned" || raw === "created" || raw === "all" || raw === "mine") return raw;
   return "mine";
@@ -114,7 +231,7 @@ export function SalesTasksClient() {
   const [dueFilter, setDueFilter] = useState<SalesTaskDueFilter>(
     (searchParams.get("due") as SalesTaskDueFilter) || "all"
   );
-  const [copilotQueue, setCopilotQueue] = useState<"all" | "needs_review" | "todo" | "waiting" | "contact_later">("all");
+  const [copilotQueue, setCopilotQueue] = useState<CopilotQueue>("all");
   const [quickFilters, setQuickFilters] = useState<SalesTaskQuickFilter[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -172,41 +289,34 @@ export function SalesTasksClient() {
     setPage(1);
   }, [statusFilter, dueFilter, quickFilters, view]);
 
-  const filteredTasks = useMemo(() => {
+  const scopedTasks = useMemo(() => {
     if (!data) return [];
-    return data.tasks.filter((task) => {
-      if (statusFilter === "pending" && task.status !== "pending") return false;
-      if (statusFilter === "overdue" && task.status !== "overdue") return false;
-      if (statusFilter === "completed" && !task.completed) return false;
-      if (statusFilter === "all" && task.completed) {
-        // hide completed from default open-focused lists for mine/assigned
-        if (view === "mine" || view === "assigned") return false;
-      }
-      if (dueFilter !== "all" && !task.completed && !matchesDueFilter(task.deadlineAt, dueFilter)) {
-        return false;
-      }
-      if (copilotQueue === "needs_review" && task.copilot?.listState !== "needs_review") return false;
-      if (copilotQueue === "todo" && task.copilot?.listState !== "todo") return false;
-      if (copilotQueue === "waiting" && task.copilot?.listState !== "waiting") return false;
-      if (
-        copilotQueue === "contact_later" &&
-        task.copilot?.actionType !== "contact_later" &&
-        task.copilot?.actionType !== "customer_checkin"
-      ) {
-        return false;
-      }
-      for (const q of quickFilters) {
-        if (q === "high_priority" && task.priority !== "high") return false;
-        if (q === "overdue" && task.status !== "overdue") return false;
-        if (q === "due_today" && !matchesDueFilter(task.deadlineAt, "today")) return false;
-        if (q === "follow_ups" && task.type !== "follow_up" && task.type !== "whatsapp")
-          return false;
-        if (q === "calls" && task.type !== "call") return false;
-        if (q === "quote_reviews" && task.type !== "quote_review") return false;
-      }
-      return true;
-    });
-  }, [data, statusFilter, dueFilter, quickFilters, view, copilotQueue]);
+    return data.tasks.filter((task) =>
+      matchesScopedTask(task, { statusFilter, dueFilter, quickFilters, view })
+    );
+  }, [data, statusFilter, dueFilter, quickFilters, view]);
+
+  const filteredTasks = useMemo(
+    () => scopedTasks.filter((task) => matchesCopilotQueue(task, copilotQueue)),
+    [scopedTasks, copilotQueue]
+  );
+
+  const queueCounts = useMemo(() => {
+    const counts: Record<CopilotQueue, number> = {
+      all: scopedTasks.length,
+      needs_review: 0,
+      todo: 0,
+      waiting: 0,
+      contact_later: 0,
+    };
+    for (const task of scopedTasks) {
+      if (matchesCopilotQueue(task, "needs_review")) counts.needs_review += 1;
+      if (matchesCopilotQueue(task, "todo")) counts.todo += 1;
+      if (matchesCopilotQueue(task, "waiting")) counts.waiting += 1;
+      if (matchesCopilotQueue(task, "contact_later")) counts.contact_later += 1;
+    }
+    return counts;
+  }, [scopedTasks]);
 
   const pageCount = Math.max(1, Math.ceil(filteredTasks.length / pageSize));
   const pageSafe = Math.min(page, pageCount);
@@ -385,8 +495,48 @@ export function SalesTasksClient() {
     : null;
 
   return (
-    <div className="w-full max-w-none space-y-3 px-4 pb-2 text-left layout:space-y-4 layout:px-6">
-      <div className="flex h-10 w-full min-w-0 items-center justify-start gap-3">
+    <div className="sales-tasks-root w-full min-w-0 max-w-none space-y-3 overflow-x-hidden px-3 pb-4 text-left min-[390px]:px-4 layout:space-y-4 layout:overflow-visible layout:px-6">
+      <div className="sales-tasks-mobile layout:hidden">
+        <div className="sales-tasks-heading">
+          <h1>Tasks</h1>
+          {data ? (
+            <span className="sales-tasks-count" aria-label={`${filteredTasks.length} ${filteredTasks.length === 1 ? "task" : "tasks"}`}>
+              {filteredTasks.length}
+            </span>
+          ) : null}
+          <div className="sales-tasks-heading-actions">
+            <button
+              type="button"
+              className="sales-tasks-icon-btn"
+              aria-label={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : "Filters"}
+              onClick={() => setFiltersOpen((open) => !open)}
+            >
+              <Filter size={18} strokeWidth={1.8} />
+              {activeFilterCount > 0 ? <span className="sales-tasks-filter-count" /> : null}
+            </button>
+            <button type="button" className="sales-tasks-add" onClick={() => setAddOpen(true)}>
+              <Plus size={16} strokeWidth={1.8} />
+              Add
+            </button>
+          </div>
+        </div>
+        <div className="sales-tasks-scopes" role="radiogroup" aria-label="Task ownership">
+          {SCOPE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={view === option.value}
+              className={cn("sales-task-scope", view === option.value && "is-selected")}
+              onClick={() => setView(option.value)}
+            >
+              <span>{option.label}</span>
+              <span className="sales-task-scope-count">{data?.counts[option.countKey] ?? 0}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="hidden h-10 w-full min-w-0 items-center justify-start gap-3 layout:flex">
         <div className="min-w-0 flex-1 overflow-x-auto">
           <SegmentedControl
             aria-label="Task ownership"
@@ -702,60 +852,45 @@ export function SalesTasksClient() {
                 Sales Copilot could not load. Manual follow-ups are still listed.
               </p>
             ) : null}
-            <div className="-mx-4 w-[calc(100%+2rem)] layout:hidden">
-              <p className="px-4 text-[13px] text-sales-text-secondary">
-                <span className="font-semibold tabular-nums text-sales-text-primary">{filteredTasks.length}</span>
-                {" "}
-                {filteredTasks.length === 1 ? "task" : "tasks"}
-                {filteredTasks.some((task) => task.schedule.overdue) ? (
-                  <span className="text-sales-danger">
-                    {" "}
-                    · {filteredTasks.filter((task) => task.schedule.overdue).length} overdue
-                  </span>
-                ) : null}
-              </p>
-              <div className="mt-2 flex gap-2 overflow-x-auto px-4 pb-1">
-                {(
-                  [
-                    ["all", "All"],
-                    ["needs_review", "Needs review"],
-                    ["todo", "To do"],
-                    ["waiting", "Waiting"],
-                    ["contact_later", "Contact later"],
-                  ] as const
-                ).map(([value, label]) => (
+            <div className="layout:hidden">
+              <div className="sales-task-filters-wrap">
+                <div className="sales-task-filters">
+                  <div className="sales-task-filters-group" role="radiogroup" aria-label="Task status">
+                    {QUEUE_FILTERS.map((filter) => (
+                      <button
+                        key={filter.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={copilotQueue === filter.value}
+                        aria-label={`${filter.full}, ${queueCounts[filter.value]}`}
+                        data-tone={filter.tone}
+                        className={cn("sales-task-filter", copilotQueue === filter.value && "is-selected")}
+                        onClick={() => {
+                          setCopilotQueue(filter.value);
+                          setPage(1);
+                        }}
+                      >
+                        {filter.label}
+                        <span className="sales-task-filter-count">{queueCounts[filter.value]}</span>
+                      </button>
+                    ))}
+                  </div>
                   <button
-                    key={value}
                     type="button"
+                    className="sales-task-filter"
                     onClick={() => {
-                      setCopilotQueue(value);
-                      setPage(1);
+                      setSelecting((on) => !on);
+                      setSelectedIds([]);
                     }}
-                    className={cn(
-                      "inline-flex h-11 shrink-0 items-center rounded-full px-3 text-[13px] font-medium",
-                      copilotQueue === value
-                        ? "bg-sales-brand text-sales-brand-text"
-                        : "bg-sales-surface-subtle text-sales-text-secondary"
-                    )}
                   >
-                    {label}
+                    {selecting ? "Done" : "Select"}
                   </button>
-                ))}
-                <button
-                  type="button"
-                  className="inline-flex h-11 shrink-0 items-center rounded-full px-3 text-[13px] font-semibold text-sales-text-primary"
-                  onClick={() => {
-                    setSelecting((on) => !on);
-                    setSelectedIds([]);
-                  }}
-                >
-                  {selecting ? "Done" : "Select"}
-                </button>
+                </div>
               </div>
               {selecting && selectedIds.length > 0 ? (
                 <button
                   type="button"
-                  className="mt-2 inline-flex h-11 items-center px-4 text-[14px] font-semibold text-sales-text-primary"
+                  className="sales-task-complete"
                   onClick={() => {
                     const chosen = filteredTasks.filter((task) => selectedIds.includes(task.id) && canSelect(task));
                     setSelectedIds([]);
@@ -766,9 +901,9 @@ export function SalesTasksClient() {
                   Complete selected ({selectedIds.length})
                 </button>
               ) : null}
-              <div className="mt-1 divide-y divide-sales-border-subtle">
+              <div className="sales-task-list">
                 {pageRows.length === 0 ? (
-                  <div className="px-4">
+                  <div className="sales-task-empty">
                     <TaskEmpty
                       view={view}
                       filtered={activeFilterCount > 0 || copilotQueue !== "all"}
@@ -804,24 +939,14 @@ export function SalesTasksClient() {
                 )}
               </div>
               {pageCount > 1 ? (
-                <div className="flex items-center justify-between px-4 py-3">
-                  <button
-                    type="button"
-                    className="inline-flex h-11 items-center px-1 text-[14px] font-semibold text-sales-text-primary disabled:opacity-40"
-                    disabled={pageSafe <= 1}
-                    onClick={() => setPage(pageSafe - 1)}
-                  >
+                <div className="sales-task-pager">
+                  <button type="button" disabled={pageSafe <= 1} onClick={() => setPage(pageSafe - 1)}>
                     Previous
                   </button>
-                  <span className="text-[13px] tabular-nums text-sales-text-secondary">
+                  <span>
                     {pageSafe} / {pageCount}
                   </span>
-                  <button
-                    type="button"
-                    className="inline-flex h-11 items-center px-1 text-[14px] font-semibold text-sales-text-primary disabled:opacity-40"
-                    disabled={pageSafe >= pageCount}
-                    onClick={() => setPage(pageSafe + 1)}
-                  >
+                  <button type="button" disabled={pageSafe >= pageCount} onClick={() => setPage(pageSafe + 1)}>
                     Next
                   </button>
                 </div>
@@ -1434,90 +1559,73 @@ function MobileTaskCard({
   onOpen: () => void;
   onPrimary: () => void;
 }) {
-  const tone = dueDateTone(task);
-  const explanation = task.copilot?.explanation || task.notes;
-  const state =
-    task.copilot?.executionStatus === "failed"
-      ? "Failed"
-      : task.schedule.overdue
-        ? "Overdue"
-        : task.copilot?.listState === "needs_review"
-          ? "Needs review"
-          : task.copilot?.listState === "waiting"
-            ? "Waiting"
-            : null;
-  const chatHref = task.whatsappHref ?? task.leadHref;
+  const status = taskCardStatus(task);
+  const explanation = (task.copilot?.explanation || task.notes || "").trim();
+  const dateText = cardDateText(task, timeZone);
+  const noDate = task.schedule.kind === "none" || !task.schedule.at;
+  const showDate = !(noDate && /no date/i.test(explanation));
+  const realOverdue =
+    (task.schedule.kind === "due" || task.schedule.kind === "check_in") && task.schedule.overdue;
+  const showPassed = task.schedule.passedSuggestion && !/passed|new time/i.test(explanation);
+  const showExpected =
+    task.schedule.kind === "check_in" &&
+    Boolean(task.schedule.expectedReplyAt) &&
+    !/expected reply/i.test(explanation);
   return (
-    <article className="w-full px-4 py-3 text-left">
-      <div className="flex items-start gap-2.5">
+    <article className={cn("sales-task-card", status.tone === "review" && "sales-task-card--review")}>
+      <div className="sales-task-card-main">
         {selecting && selectable ? (
           <Checkbox
             checked={selected}
             onCheckedChange={(value) => onSelect(value === true)}
             aria-label={`Select ${task.title}`}
-            className="mt-0.5"
+            className="mt-1"
           />
         ) : null}
-        <div className="min-w-0 flex-1">
-          <button type="button" className="block w-full text-left" onClick={onOpen}>
-            <p className="text-[15px] font-semibold leading-5 text-sales-text-primary [overflow-wrap:anywhere]">
-              {task.title}
-            </p>
-            <p className="mt-1 text-[13px] leading-5 text-sales-text-secondary">
-              <span className="font-medium text-sales-text-primary">{task.relatedName}</span>
-              {task.relatedSecondary ? ` · ${task.relatedSecondary}` : ""}
-            </p>
-            <p
-              className={cn(
-                "mt-0.5 text-[13px] leading-5",
-                tone === "danger" ? "font-medium text-sales-danger" : "text-sales-text-secondary"
-              )}
-            >
-              {scheduleLine(task.schedule, timeZone)}
-            </p>
-          </button>
-          {explanation ? (
-            <p className="mt-2 line-clamp-3 text-[13px] leading-5 text-sales-text-secondary [overflow-wrap:anywhere]">
-              {explanation}
-            </p>
-          ) : null}
-          {task.schedule.expectedReplyAt ? (
-            <p className="mt-1 text-[12px] leading-5 text-sales-text-muted">
-              Expected reply is separate from this check-in.
-            </p>
-          ) : null}
-          {task.schedule.passedSuggestion ? (
-            <p className="mt-1 text-[12px] leading-5 text-sales-text-secondary">
-              This proposed time has passed. Choose a new time.
-            </p>
-          ) : null}
-          {task.copilot?.executionError ? (
-            <p className="mt-1 text-[12px] leading-5 text-sales-danger">{task.copilot.executionError}</p>
-          ) : null}
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-            {state ? (
-              <span className={cn("text-[12px] font-semibold", state === "Overdue" || state === "Failed" ? "text-sales-danger" : "text-sales-brand-fg")}>
-                {state}
-              </span>
-            ) : null}
-            {task.priority === "high" ? (
-              <span className="text-[12px] font-medium text-sales-text-secondary">High</span>
-            ) : null}
-          </div>
-          <div className="mt-2 flex items-center gap-3">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={onPrimary}
-              className="inline-flex h-11 items-center rounded-[10px] bg-sales-brand px-3 text-[14px] font-semibold text-sales-brand-text disabled:opacity-50"
-            >
-              {busy ? "Working…" : task.copilot?.actionLabel ?? "View details"}
-            </button>
-            <Link href={chatHref} className="inline-flex h-11 items-center text-[14px] font-semibold text-sales-text-primary">
-              View chat
-            </Link>
-          </div>
+        <div className={cn("sales-task-icon", `sales-task-icon--${status.tone}`)} aria-hidden>
+          {taskKindIcon(task)}
         </div>
+        <div className="sales-task-body">
+          <button type="button" className="sales-task-title-btn" onClick={onOpen}>
+            <span className="sales-task-title">{task.title}</span>
+          </button>
+          <div className="sales-task-customer">
+            <span className="sales-task-avatar" aria-hidden>
+              {customerInitial(task.relatedName)}
+            </span>
+            <span className="sales-task-name" title={task.relatedName}>
+              {task.relatedName}
+              {task.relatedSecondary ? <span className="sales-task-name-meta"> · {task.relatedSecondary}</span> : null}
+            </span>
+            <span className={cn("sales-task-badge", `sales-task-badge--${status.tone}`)}>{status.label}</span>
+          </div>
+          {showDate ? (
+            <p className={cn("sales-task-date", realOverdue && "is-overdue")}>
+              <Clock size={14} strokeWidth={1.8} aria-hidden />
+              <span>{dateText}</span>
+            </p>
+          ) : null}
+          {showExpected && task.schedule.expectedReplyAt ? (
+            <p className="sales-task-date">
+              <Clock size={14} strokeWidth={1.8} aria-hidden />
+              <span>Expected reply: {formatScheduleWhen(task.schedule.expectedReplyAt, timeZone)}</span>
+            </p>
+          ) : null}
+          {showPassed ? <p className="sales-task-note">This proposed time has passed. Choose a new time.</p> : null}
+        </div>
+      </div>
+      {explanation ? <p className="sales-task-explain">{explanation}</p> : null}
+      {task.copilot?.executionError ? <p className="sales-task-error">{task.copilot.executionError}</p> : null}
+      <div className="sales-task-footer">
+        <button type="button" className="sales-task-primary" disabled={busy} onClick={onPrimary}>
+          {busy ? "Working…" : task.copilot?.actionLabel ?? "View details"}
+        </button>
+        {task.whatsappHref ? (
+          <Link href={task.whatsappHref} className="sales-task-chat">
+            <MessageCircle size={16} strokeWidth={1.8} aria-hidden />
+            View chat
+          </Link>
+        ) : null}
       </div>
     </article>
   );

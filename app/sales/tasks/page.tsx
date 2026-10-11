@@ -43,6 +43,7 @@ export default async function SalesTasksPage() {
     >
       <SalesAppShell
         {...shell}
+        className="sales-tasks-page"
         breadcrumb="Sales / Tasks"
         title="Tasks"
         description="Know what needs attention now and keep every opportunity moving."

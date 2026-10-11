@@ -1218,3 +1218,504 @@ html[data-crm]:not([data-crm-theme="light"])
     justify-content: center;
   }
 }
+
+/* Tasks mobile: Design 1 charcoal cards. Scoped below the layout breakpoint. */
+@media (max-width: 1099.98px) {
+  html .sales-dashboard-premium.sales-tasks-page .sales-mobile-scroll {
+    --sales-bg: #0c0c0c;
+    --sales-surface: #192228;
+    --sales-surface-subtle: #243038;
+    --sales-surface-hover: #243038;
+    --sales-text-primary: #f2f5f7;
+    --sales-text-secondary: #a5b1bc;
+    --sales-text-muted: #8e9ba6;
+    --sales-border: #2c363e;
+    --sales-border-subtle: #2c363e;
+    --sales-brand: #d4ff4f;
+    --sales-brand-text: #0c0c0c;
+    --sales-brand-fg: #d4ff4f;
+    overflow-x: hidden;
+    overflow-y: auto;
+    color: #f2f5f7;
+    background-color: #0c0c0c;
+    background-image: none;
+    padding-bottom: calc(var(--sales-mobile-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 16px);
+  }
+
+  html .sales-dashboard-premium.sales-tasks-page .sales-page-stack {
+    overflow: visible;
+    flex: 0 0 auto;
+  }
+
+  html .sales-dashboard-premium.sales-tasks-page .segmiq-dot-wave,
+  html .sales-dashboard-premium.sales-tasks-page .sales-page-header {
+    display: none;
+  }
+}
+
+.sales-tasks-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.sales-tasks-heading h1 {
+  margin: 0;
+  color: #f2f5f7;
+  font-size: 25px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.sales-tasks-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid #2c363e;
+  border-radius: 999px;
+  background: #192228;
+  color: #a5b1bc;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.sales-tasks-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.sales-tasks-icon-btn,
+.sales-tasks-add {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  min-width: 44px;
+  border: 1px solid #2c363e;
+  border-radius: 11px;
+  background: transparent;
+  color: #f2f5f7;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sales-tasks-add {
+  gap: 6px;
+  padding: 0 12px;
+}
+
+.sales-tasks-filter-count {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #d4ff4f;
+}
+
+.sales-tasks-scopes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 4px;
+  border: 1px solid #2c363e;
+  border-radius: 12px;
+  background: #111618;
+}
+
+.sales-task-scope {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #a5b1bc;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  flex-wrap: wrap;
+}
+
+.sales-task-scope.is-selected {
+  background: #192228;
+  color: #d4ff4f;
+  box-shadow: inset 0 0 0 1px #3d4c34;
+}
+
+.sales-task-scope-count {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.sales-task-filters-wrap {
+  position: relative;
+}
+
+.sales-task-filters-wrap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  background: linear-gradient(to right, transparent, #0c0c0c);
+  pointer-events: none;
+}
+
+.sales-task-filters {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.sales-task-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.sales-task-filters-group {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+
+.sales-task-filter {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #a5b1bc;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sales-task-filter.is-selected {
+  background: rgba(255, 255, 255, 0.03);
+  color: #f2f5f7;
+  box-shadow: inset 0 -2px 0 rgba(212, 255, 79, 0.8);
+}
+
+.sales-task-filter.is-selected[data-tone="review"] {
+  color: #ffbe4a;
+}
+
+.sales-task-filter.is-selected[data-tone="todo"] {
+  color: #82bfff;
+}
+
+.sales-task-filter.is-selected[data-tone="waiting"] {
+  color: #b7c4ce;
+}
+
+.sales-task-filter.is-selected[data-tone="later"] {
+  color: #d5e2c2;
+}
+
+.sales-task-filter-count {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.sales-task-complete {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  margin-top: 4px;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: #f2f5f7;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sales-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.sales-task-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #2c363e;
+  border-radius: 16px;
+  background: #192228;
+  box-shadow: none;
+}
+
+.sales-task-card--review {
+  box-shadow: inset 3px 0 0 #ffbe4a;
+}
+
+.sales-task-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sales-task-icon {
+  display: flex;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+}
+
+.sales-task-icon--review,
+.sales-task-badge--review {
+  background: rgba(255, 190, 74, 0.14);
+  color: #ffbe4a;
+}
+
+.sales-task-icon--todo,
+.sales-task-badge--todo {
+  background: rgba(130, 191, 255, 0.14);
+  color: #82bfff;
+}
+
+.sales-task-icon--waiting,
+.sales-task-badge--waiting {
+  background: rgba(165, 177, 188, 0.14);
+  color: #b7c4ce;
+}
+
+.sales-task-icon--later,
+.sales-task-badge--later {
+  background: rgba(212, 255, 79, 0.1);
+  color: #d5e2c2;
+}
+
+.sales-task-icon--failed,
+.sales-task-badge--failed {
+  background: rgba(255, 190, 74, 0.12);
+  color: #ffbe4a;
+}
+
+.sales-task-icon--done,
+.sales-task-badge--done {
+  background: rgba(165, 177, 188, 0.1);
+  color: #a5b1bc;
+}
+
+.sales-task-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.sales-task-body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.sales-task-title-btn {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.sales-task-title {
+  display: block;
+  color: #f2f5f7;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 23px;
+  overflow-wrap: anywhere;
+}
+
+.sales-task-customer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 8px;
+  min-width: 0;
+}
+
+.sales-task-avatar {
+  display: inline-flex;
+  flex: 0 0 22px;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #243038;
+  color: #f2f5f7;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sales-task-name {
+  min-width: 0;
+  flex: 1 1 8rem;
+  overflow: hidden;
+  color: #f2f5f7;
+  font-size: 13px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sales-task-name-meta {
+  color: #a5b1bc;
+}
+
+.sales-task-date,
+.sales-task-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 8px 0 0;
+  color: #a5b1bc;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.sales-task-date svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.sales-task-date.is-overdue {
+  color: #ffbe4a;
+}
+
+.sales-task-note {
+  display: block;
+}
+
+.sales-task-explain {
+  display: -webkit-box;
+  margin: 10px 0 0;
+  overflow: hidden;
+  color: #a5b1bc;
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.sales-task-error {
+  margin: 8px 0 0;
+  color: #ffbe4a;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.sales-task-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #2c363e;
+}
+
+.sales-task-primary,
+.sales-task-chat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.sales-task-primary {
+  max-width: 100%;
+  padding: 0 14px;
+  border: 0;
+  background: #d4ff4f;
+  color: #0c0c0c;
+  box-shadow: none;
+}
+
+.sales-task-primary:disabled {
+  opacity: 0.55;
+}
+
+.sales-task-chat {
+  gap: 6px;
+  padding: 0 4px;
+  color: #a5b1bc;
+}
+
+.sales-task-empty {
+  padding: 8px 4px 4px;
+}
+
+.sales-task-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: #a5b1bc;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sales-task-pager button {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: #f2f5f7;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sales-task-pager button:disabled {
+  opacity: 0.4;
+}
+
+@media (min-width: 390px) {
+  .sales-task-card {
+    padding: 16px;
+  }
+}
