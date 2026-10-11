@@ -29,6 +29,14 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   const leadId = lead.id as string;
   const removed = await supabase.from("whatsapp_messages").delete({ count: "exact" }).eq("lead_id", leadId).eq("client_id", clientId);
   if (removed.error) return NextResponse.json({ error: removed.error.message }, { status: 500 });
+  const sentCopies = await supabase
+    .from("message_logs")
+    .delete({ count: "exact" })
+    .eq("lead_id", leadId)
+    .eq("channel", "whatsapp")
+    .eq("notification_type", "WHATSAPP_SESSION");
+  if (sentCopies.error) return NextResponse.json({ error: sentCopies.error.message }, { status: 500 });
+  await supabase.from("lead_events").delete().eq("lead_id", leadId).in("event_type", ["MESSAGE_SENT", "MESSAGE_RECEIVED"]);
   await supabase.from("sales_copilot_work_items").delete().eq("lead_id", leadId).eq("client_id", clientId);
   await supabase.from("sales_copilot_analyses").delete().eq("lead_id", leadId).eq("client_id", clientId);
   await supabase.from("sales_copilot_jobs").delete().eq("lead_id", leadId).eq("client_id", clientId);
@@ -37,6 +45,6 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   return NextResponse.json({
     ok: true,
     name: lead.name,
-    messagesRemoved: removed.count ?? 0,
+    messagesRemoved: (removed.count ?? 0) + (sentCopies.count ?? 0),
   });
 }
