@@ -6,6 +6,8 @@ import { allocateQuoteNumber, ensureQuotationSettings } from "@/lib/quotations/q
 import { saveItemsAndTotals } from "@/lib/quotations/persist";
 import { logQuotationEvent } from "@/lib/quotations/events";
 import { draftFingerprint } from "./catalogue";
+import { followUpCalendarDate } from "./dates";
+import { resolveClientSalesTimezone } from "@/lib/sales/intelligence/daily-plan-service";
 import type { WorkItemRow } from "./store";
 import { appendAudit } from "./store";
 
@@ -52,33 +54,72 @@ export async function applyFollowUp(input: {
     .eq("client_id", input.clientId)
     .maybeSingle();
   if (!lead) throw new Error("Lead not found");
-  if ((lead.follow_up_date as string | null) === input.followUpAt) {
-    return { followUpAt: input.followUpAt, unchanged: true };
+  const timezone = await resolveClientSalesTimezone(input.clientId);
+  const followUpDate = followUpCalendarDate(input.followUpAt, timezone);
+  const dateUnchanged = (lead.follow_up_date as string | null) === followUpDate;
+  if (!dateUnchanged) {
+    const { error } = await supabase
+      .from("leads")
+      .update({
+        follow_up_date: followUpDate,
+        follow_up_source: input.source,
+        follow_up_execution_mode: "HUMAN_ONLY",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", input.leadId)
+      .eq("client_id", input.clientId);
+    if (error) throw new Error(error.message);
+    await logLeadEvent({
+      leadId: input.leadId,
+      clientId: input.clientId,
+      actor: { id: input.actorId, name: input.actorName, role: "SALESPERSON" },
+      eventType: "FOLLOW_UP_SET",
+      eventData: {
+        follow_up_date: input.followUpAt,
+        follow_up_day: followUpDate,
+        source: "sales_copilot",
+        work_item_id: input.itemId,
+      },
+      dedupeKey: `copilot:followup:${input.itemId}:${input.payloadHash}`,
+    });
   }
-  const { error } = await supabase
-    .from("leads")
-    .update({
-      follow_up_date: input.followUpAt,
-      follow_up_source: input.source,
-      follow_up_execution_mode: "HUMAN_ONLY",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", input.leadId)
-    .eq("client_id", input.clientId);
+  if (input.followUpAt.includes("T") && input.actorId) {
+    await rememberCallbackTime(supabase, {
+      leadId: input.leadId,
+      actorId: input.actorId,
+      itemId: input.itemId,
+      callbackAt: input.followUpAt,
+      followUpDate,
+    });
+  }
+  return { followUpAt: input.followUpAt, unchanged: dateUnchanged };
+}
+
+async function rememberCallbackTime(
+  supabase: SupabaseClient,
+  input: { leadId: string; actorId: string; itemId: string; callbackAt: string; followUpDate: string }
+) {
+  const notes = `Sales Copilot reminder:${input.itemId}`;
+  const { data: existing } = await supabase
+    .from("call_logs")
+    .select("id")
+    .eq("lead_id", input.leadId)
+    .eq("notes", notes)
+    .limit(1)
+    .maybeSingle();
+  const row = {
+    callback_at: input.callbackAt,
+    follow_up_date: input.followUpDate,
+    outcome: "FOLLOW_UP",
+    reach_outcome: "call_back",
+    result: "follow_up",
+    notes,
+  };
+  const write = existing?.id
+    ? supabase.from("call_logs").update(row).eq("id", existing.id)
+    : supabase.from("call_logs").insert({ ...row, lead_id: input.leadId, user_id: input.actorId });
+  const { error } = await write;
   if (error) throw new Error(error.message);
-  await logLeadEvent({
-    leadId: input.leadId,
-    clientId: input.clientId,
-    actor: { id: input.actorId, name: input.actorName, role: "SALESPERSON" },
-    eventType: "FOLLOW_UP_SET",
-    eventData: {
-      follow_up_date: input.followUpAt,
-      source: "sales_copilot",
-      work_item_id: input.itemId,
-    },
-    dedupeKey: `copilot:followup:${input.itemId}:${input.payloadHash}`,
-  });
-  return { followUpAt: input.followUpAt, unchanged: false };
 }
 
 async function findReusableDraft(

@@ -41,6 +41,14 @@ export function atLocalHour(ymd: Ymd, hour: number, minute: number, timeZone: st
   return new Date(new Date(startIso).getTime() + (hour * 60 + minute) * 60_000).toISOString();
 }
 
+/** Calendar day for a follow-up instant. leads.follow_up_date stores a date, not a clock time. */
+export function followUpCalendarDate(instantIso: string, timeZone: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(instantIso)) return instantIso;
+  const parsed = new Date(instantIso);
+  if (Number.isNaN(parsed.getTime())) return instantIso.slice(0, 10);
+  return ymdKey(localYmd(parsed, timeZone));
+}
+
 export function existingLocalDay(value: string, timeZone: string): string | null {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
   const parsed = new Date(value);

@@ -6,7 +6,7 @@ import { analyseConversation, relevantQuotations } from "../lib/sales-copilot/an
 import { defaultRequiredFields } from "../lib/sales-copilot/catalogue";
 import { reconcileProposals } from "../lib/sales-copilot/reconcile";
 import { payloadHash } from "../lib/sales-copilot/hash";
-import { existingLocalDay, resolveCommitmentWhen } from "../lib/sales-copilot/dates";
+import { existingLocalDay, followUpCalendarDate, formatLocalWhen, resolveCommitmentWhen } from "../lib/sales-copilot/dates";
 import { carryCopilotSummary, readableCopilotSummary } from "../lib/sales-copilot/summary";
 import type { CopilotEngineInput, ProposalDraft } from "../lib/sales-copilot/types";
 
@@ -72,6 +72,13 @@ describe("Sales Copilot dates", () => {
     assert.equal(resolved.dayLabel, "tomorrow");
     const later = resolveCommitmentWhen("I'll contact you tomorrow", messageAt, TZ, 9);
     assert.equal(later?.ymd, resolved.ymd);
+  });
+
+  it("keeps 8am as 8am instead of turning the saved day into 2pm", () => {
+    const eightAmHarare = "2026-10-11T06:00:00.000Z";
+    assert.equal(followUpCalendarDate(eightAmHarare, TZ), "2026-10-11");
+    assert.match(formatLocalWhen(eightAmHarare, TZ, false), /08:00/);
+    assert.equal(followUpCalendarDate("2026-10-10T23:00:00.000Z", TZ), "2026-10-11");
   });
 
   it("keeps an explicit hour", () => {

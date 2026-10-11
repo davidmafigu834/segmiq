@@ -17,6 +17,7 @@ import {
   Phone,
   Send,
   StickyNote,
+  Trash2,
   UserRound,
   Zap,
   X,
@@ -702,6 +703,24 @@ export function ChatThread({
     }
   }
 
+  async function clearConversation() {
+    if (!conversation) return;
+    const ok = window.confirm(
+      `Clear every message in ${displayContactName(conversation)}? Sales Copilot suggestions for this chat are removed. The customer, deals and saved quotations stay.`
+    );
+    if (!ok) return;
+    setMenuOpen(false);
+    const res = await fetch(`/api/inbox/conversations/${conversation.id}/clear`, { method: "POST" });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      window.alert(body.error ?? "The conversation could not be cleared.");
+      return;
+    }
+    setMessages([]);
+    setInput("");
+    void copilot.reload();
+  }
+
   async function openCreateDeal() {
     if (!conversation || !canCreateDeal) return;
     const res = await fetch(`/api/leads/${conversation.id}`);
@@ -1020,6 +1039,16 @@ export function ChatThread({
                   >
                     <CheckCircle2 size={14} />
                     {conversation.conversationStatus === "RESOLVED" ? "Reopen conversation" : "Resolve conversation"}
+                  </button>
+                ) : null}
+                {isWhatsApp && (canSend || companyMode) ? (
+                  <button
+                    type="button"
+                    onClick={() => void clearConversation()}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-sales-danger hover:bg-sales-surface-hover"
+                  >
+                    <Trash2 size={14} />
+                    Clear conversation
                   </button>
                 ) : null}
                 {isWhatsApp ? (
