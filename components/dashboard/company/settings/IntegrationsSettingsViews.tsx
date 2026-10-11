@@ -28,12 +28,14 @@ export function IntegrationsAppsSection({
   helpEmail,
   onManageWhatsApp,
   onManageChannels,
+  onManageZohoBooks,
 }: {
   facebookConnected: boolean;
   facebookPageName: string | null;
   helpEmail?: string | null;
   onManageWhatsApp: () => void;
   onManageChannels: () => void;
+  onManageZohoBooks: () => void;
 }) {
   const [connection, setConnection] = useState<SafeWhatsAppConnection | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,6 +126,23 @@ export function IntegrationsAppsSection({
             <span className="block text-[13px] font-semibold text-sales-text-primary">Social channels</span>
             <span className="mt-0.5 block text-[12px] text-sales-text-secondary">
               Facebook Messenger, comments, and Instagram for Social Inbox
+            </span>
+          </span>
+          <ChevronRight size={16} className="text-sales-text-muted" />
+        </button>
+
+        <button
+          type="button"
+          onClick={onManageZohoBooks}
+          className="mt-1 flex w-full items-center gap-3 rounded-[10px] px-2 py-3 text-left hover:bg-sales-surface-hover"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-sales-brand-soft text-[13px] font-semibold text-sales-text-primary">
+            ZB
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13px] font-semibold text-sales-text-primary">Zoho Books</span>
+            <span className="mt-0.5 block text-[12px] text-sales-text-secondary">
+              Connect a Books organisation, then test it
             </span>
           </span>
           <ChevronRight size={16} className="text-sales-text-muted" />

@@ -36,6 +36,7 @@ import {
   IntegrationsWebsiteSection,
   IntegrationsWhatsAppSection,
 } from "./IntegrationsSettingsViews";
+import { ZohoBooksSettingsSection } from "./ZohoBooksSettings";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { SalesWorkflowSettings } from "@/components/sales/solar/SalesWorkflowSettings";
 import { useSalesToast } from "@/components/sales/ui";
@@ -99,6 +100,7 @@ export function CompanySettingsPage({
     (category === "integrations" && activeSection === "whatsapp") ||
     (category === "integrations" && activeSection === "channels") ||
     (category === "integrations" && activeSection === "website") ||
+    (category === "integrations" && activeSection === "zoho-books") ||
     (category === "automation" && activeSection === "company-brain");
 
   function go(nextCategory: SettingsCategory, nextSection?: string) {
@@ -255,12 +257,18 @@ export function CompanySettingsPage({
                 helpEmail={helpEmail}
                 onManageWhatsApp={() => go("integrations", "whatsapp")}
                 onManageChannels={() => go("integrations", "channels")}
+                onManageZohoBooks={() => go("integrations", "zoho-books")}
               />
             ) : null}
             {category === "integrations" && activeSection === "whatsapp" ? <IntegrationsWhatsAppSection /> : null}
             {category === "integrations" && activeSection === "channels" ? (
               <Suspense fallback={<div className="h-32" />}>
                 <IntegrationsChannelsSection />
+              </Suspense>
+            ) : null}
+            {category === "integrations" && activeSection === "zoho-books" ? (
+              <Suspense fallback={<div className="h-32" />}>
+                <ZohoBooksSettingsSection />
               </Suspense>
             ) : null}
             {category === "integrations" && activeSection === "website" && realEstate ? (

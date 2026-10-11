@@ -49,6 +49,7 @@ export const SETTINGS_SECTIONS: Record<SettingsCategory, SettingsSection[]> = {
     { id: "apps", label: "Connected Apps", icon: "plug" },
     { id: "whatsapp", label: "WhatsApp", icon: "whatsapp" },
     { id: "channels", label: "Channels", icon: "share" },
+    { id: "zoho-books", label: "Zoho Books", icon: "book" },
   ],
   automation: [
     { id: "assignment", label: "Lead Assignment", icon: "git" },

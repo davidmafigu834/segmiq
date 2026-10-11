@@ -17,7 +17,12 @@ import {
  * - AAD binds ciphertext to clientId + token kind.
  */
 
-export type IntegrationTokenKind = "fb_page" | "fb_user" | "meta_wa";
+export type IntegrationTokenKind =
+  | "fb_page"
+  | "fb_user"
+  | "meta_wa"
+  | "zoho_books_access"
+  | "zoho_books_refresh";
 
 type SealedPayload = EncryptedEnvelope & { __segmiq_enc: 1 };
 

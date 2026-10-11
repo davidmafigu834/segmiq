@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Bell,
+  BookOpen,
   Bot,
   Brain,
   Briefcase,
@@ -38,6 +39,7 @@ const ICONS: Record<string, LucideIcon> = {
   users: Users,
   bell: Bell,
   plug: Plug,
+  book: BookOpen,
   git: GitBranch,
   download: Download,
   shield: Shield,
