@@ -10,6 +10,8 @@ export type RecentUpdateInput = {
   leadName: string;
   href: string;
   linkLabel: string;
+  /** Short event line shown under the customer name. */
+  detail: string;
   summary: string;
 };
 
@@ -59,6 +61,7 @@ export function mapLeadEvent(row: {
       leadName: name,
       href: chat,
       linkLabel: "View chat",
+      detail: body ? `Replied: “${snippet(body)}”` : "Replied",
       summary: body ? `${name} replied: “${snippet(body)}”` : `${name} replied.`,
     };
   }
@@ -74,6 +77,7 @@ export function mapLeadEvent(row: {
       leadName: name,
       href: `/sales/leads?lead=${row.leadId}`,
       linkLabel: "View lead",
+      detail: "Assigned to you",
       summary: `${name} was assigned to you.`,
     };
   }
@@ -95,6 +99,7 @@ export function mapLeadEvent(row: {
       leadName: name,
       href: "/sales/tasks",
       linkLabel: "View task",
+      detail: `Follow-up set for ${label}`,
       summary: `The follow-up for ${name} changed to ${label}.`,
     };
   }
@@ -120,6 +125,7 @@ export function mapQuotationEvent(row: {
       leadName: name,
       href: `/sales/quotes/${row.quotationId}`,
       linkLabel: "View quotation",
+      detail: "Quotation approved",
       summary: `A quotation for ${name} was approved.`,
     };
   }
@@ -132,6 +138,7 @@ export function mapQuotationEvent(row: {
       leadName: name,
       href: `/sales/quotes/${row.quotationId}`,
       linkLabel: "View quotation",
+      detail: "Quotation accepted",
       summary: `A quotation for ${name} was accepted.`,
     };
   }

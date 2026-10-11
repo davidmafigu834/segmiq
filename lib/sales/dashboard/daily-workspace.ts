@@ -1,4 +1,4 @@
-import { localYmd, ymdKey } from "@/lib/sales-copilot/dates";
+import { addDays, localYmd, ymdKey } from "@/lib/sales-copilot/dates";
 import { formatScheduleWhen, scheduleLine } from "@/lib/sales/tasks/format";
 import type { SalesTaskItem } from "@/lib/sales/tasks/types";
 
@@ -193,9 +193,66 @@ export function workspacePrimary(task: SalesTaskItem): WorkspacePrimary {
   return { label: copilot.actionLabel || "View task", kind: "review" };
 }
 
+export type WorkspaceCardTone = "review" | "todo" | "waiting" | "failed" | "done";
+
+export function workspaceCardStatus(task: SalesTaskItem): { label: string; tone: WorkspaceCardTone } {
+  if (task.completed) return { label: "Completed", tone: "done" };
+  if (task.copilot?.executionStatus === "failed") return { label: "Failed", tone: "failed" };
+  if (task.copilot?.listState === "needs_review") return { label: "Needs review", tone: "review" };
+  if (task.copilot?.listState === "waiting") return { label: "Waiting", tone: "waiting" };
+  return { label: "To do", tone: "todo" };
+}
+
+function dayPhrase(iso: string, timeZone: string, now: Date): string {
+  const due = new Date(iso);
+  if (!Number.isFinite(due.getTime())) return "that day";
+  const dueDay = ymdKey(localYmd(due, timeZone));
+  const today = localYmd(now, timeZone);
+  if (dueDay === ymdKey(today)) return "today";
+  if (dueDay === ymdKey(addDays(today, 1))) return "tomorrow";
+  if (dueDay === ymdKey(addDays(today, -1))) return "yesterday";
+  return new Intl.DateTimeFormat("en-GB", { timeZone, weekday: "long" }).format(due);
+}
+
+function compactCheckIn(task: SalesTaskItem, now: Date, timeZone: string): string | null {
+  if (task.copilot?.actionType !== "customer_checkin") return null;
+  const promised = task.schedule.expectedReplyAt;
+  const at = task.schedule.at;
+  const persisted = task.copilot.reviewStatus === "approved" && task.copilot.executionStatus === "succeeded";
+  if (promised && at) {
+    const reply = dayPhrase(promised, timeZone, now);
+    const check = dayPhrase(at, timeZone, now);
+    if (persisted) return `The customer expects to reply ${reply}. The check-in is saved for ${check}.`;
+    return `The customer expects to reply ${reply}. Review a ${check} check-in if there is no response.`;
+  }
+  if (promised) {
+    return `The customer expects to reply ${dayPhrase(promised, timeZone, now)}. Review a check-in if there is no response.`;
+  }
+  return null;
+}
+
+function tidyExplanation(text: string, task: SalesTaskItem): string {
+  let value = text.replace(/\s+/g, " ").trim();
+  if (task.schedule.kind === "none" || !task.schedule.at) {
+    value = value
+      .replace(/\.?\s*No date was given, so nothing was scheduled\.?/gi, ".")
+      .replace(/\s*Nothing was scheduled yet\.?/gi, "")
+      .replace(/\s*Nothing is scheduled yet\.?/gi, "")
+      .replace(/\s{2,}/g, " ")
+      .replace(/\.\s*\./g, ".")
+      .replace(/\s+\./g, ".")
+      .trim();
+  }
+  const sentences = value.split(/(?<=[.!?])\s+/).filter((sentence) => sentence.trim().length > 0);
+  if (sentences.length > 2) return `${sentences[0]} ${sentences[1]}`;
+  return value;
+}
+
 export function workspaceExplanation(task: SalesTaskItem, now: Date, timeZone: string): string {
+  const checkIn = compactCheckIn(task, now, timeZone);
+  if (checkIn) return checkIn;
   const saved = task.copilot?.explanation?.trim() || task.notes?.trim();
-  if (saved) return saved;
+  if (saved) return tidyExplanation(saved, task);
   if (isDueOnLocalDay(task, now, timeZone)) return "This follow-up is due today.";
   if (isOverdueBeforeLocalDay(task, now, timeZone)) return "This follow-up is overdue.";
   return "This follow-up is still open.";
@@ -237,6 +294,6 @@ export function workspaceDateLine(task: SalesTaskItem, timeZone: string, now = n
   const overdue = task.schedule.kind === "due" || task.schedule.kind === "check_in" ? task.schedule.overdue : false;
   return {
     text: scheduleLine(task.schedule, timeZone, now),
-    tone: overdue ? "overdue" : task.schedule.kind === "suggested" ? "attention" : "neutral",
+    tone: overdue ? "overdue" : "neutral",
   };
 }

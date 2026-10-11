@@ -58,7 +58,7 @@ export function primaryLabel(actionType: string, executionStatus: string, missin
   if (actionType === "quotation_missing") return "Add missing details";
   if (actionType === "quotation_choice" || actionType === "listing_shortlist") return "Choose product";
   if (actionType === "contact_later") return "Approve follow-up";
-  if (actionType === "customer_checkin") return "Set follow-up";
+  if (actionType === "customer_checkin") return "Review check-in";
   if (actionType === "update_reminder" || actionType === "create_reminder") return "Save reminder";
   if (actionType === "appointment") return "Change time";
   if (actionType === "send_quotation") return "Open draft";
@@ -107,7 +107,8 @@ export function copilotDisplayTitle(row: PresentableWork, now: Date): string {
   const proposedPast = row.proposedAt != null && Number.isFinite(new Date(row.proposedAt).getTime()) && new Date(row.proposedAt).getTime() < now.getTime();
 
   if (row.actionType === "customer_checkin") {
-    return saved ? "Check in if the customer has not replied" : "Approve a check-in if they have not replied";
+    const persisted = row.reviewStatus === "approved" && row.executionStatus === "succeeded";
+    return persisted ? "Scheduled check-in" : "Suggested check-in";
   }
   if (row.actionType === "contact_later" && saved) return "Check in while they compare options";
   if (saved && meetingLike(row) && /save|suggest|approve|remind/i.test(row.title)) return "Follow up on the meeting";

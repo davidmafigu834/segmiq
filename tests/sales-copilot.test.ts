@@ -736,7 +736,7 @@ describe("Sales Copilot quotation reasoning", () => {
     const source = readFileSync(new URL("../lib/sales-copilot/present.ts", import.meta.url), "utf8");
     assert.match(source, /quotation_missing"\) return "Add missing details"/);
     assert.match(source, /quotation_draft"\) return "Review draft"/);
-    assert.match(source, /return "Set follow-up"/);
+    assert.match(source, /return "Review check-in"/);
     assert.match(source, /answer_question"\) return "Draft reply"/);
   });
 

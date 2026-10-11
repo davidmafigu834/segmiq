@@ -138,7 +138,8 @@ describe("Sales task lifecycle presentation", () => {
     assert.equal(view.deadlineAt, null);
     assert.equal(view.schedule.overdue, false);
     assert.equal(view.schedule.expectedReplyAt, "2026-10-14T13:00:00.000Z");
-    assert.match(view.title, /check-in/i);
+    assert.equal(view.title, "Suggested check-in");
+    assert.equal(view.actionLabel, "Review check-in");
     assert.equal(view.primaryAction, "review");
     assert.equal(view.explanation, "The customer said they would get back to you tomorrow.");
   });
@@ -159,13 +160,29 @@ describe("Sales task lifecycle presentation", () => {
       NOW
     );
     assert.equal(view.listState, "todo");
-    assert.equal(view.title, "Check in if the customer has not replied");
+    assert.equal(view.title, "Scheduled check-in");
     assert.equal(view.schedule.kind, "check_in");
     assert.equal(view.schedule.label, "Check-in");
     assert.equal(view.schedule.overdue, false);
     assert.equal(view.deadlineAt, "2026-10-15T13:00:00.000Z");
     assert.equal(view.schedule.expectedReplyAt, "2026-10-14T13:00:00.000Z");
     assert.equal(view.primaryAction, "complete");
+  });
+
+  it("does not title a failed check-in as scheduled", () => {
+    const view = presentCopilotWork(
+      work({
+        actionType: "customer_checkin",
+        title: "Customer is expected to reply first",
+        reviewStatus: "approved",
+        executionStatus: "failed",
+        proposedAt: "2026-10-15T13:00:00.000Z",
+        payload: { customerPromisedAt: "2026-10-14T13:00:00.000Z" },
+      }),
+      NOW
+    );
+    assert.equal(view.title, "Suggested check-in");
+    assert.equal(view.actionLabel, "Retry");
   });
 
   it("does not call a passed meeting suggestion an overdue approved meeting", () => {

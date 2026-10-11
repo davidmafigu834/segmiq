@@ -994,47 +994,36 @@ html[data-crm]:not([data-crm-theme="light"])
 
 /* Sales Copilot daily workspace — charcoal surfaces already used by the sales inbox. */
 .sales-copilot-daily {
-  --sales-bg: #0b1014;
-  --sales-surface: #171f24;
-  --sales-surface-subtle: #12181c;
-  --sales-surface-hover: #242b30;
-  --sales-text-primary: #f5f7f8;
-  --sales-text-secondary: #c5d0d6;
-  --sales-text-muted: #99a6ad;
-  --sales-border: #263137;
-  --sales-border-subtle: #263137;
   --sales-brand: #d4ff4f;
-  --sales-brand-hover: #c8f23f;
-  --sales-brand-active: #b8e935;
-  --sales-brand-text: #101828;
-  --sales-ink: #101828;
-  --sales-btn-shadow: none;
-  --sales-btn-shadow-hover: none;
-  --sales-btn-shadow-active: none;
-  --sales-btn-shadow-secondary: none;
+  --sales-brand-text: #0c0c0c;
   min-width: 0;
   max-width: 100%;
   overflow-x: clip;
-  border: 1px solid var(--sales-border);
-  border-radius: 12px;
-  background: var(--sales-surface);
-  color: var(--sales-text-primary);
-  padding: 12px 12px 8px;
+  border: 0;
+  background: #0c0c0c;
+  color: #f2f5f7;
+  padding: 12px;
+}
+
+@media (min-width: 390px) {
+  .sales-copilot-daily {
+    padding: 16px;
+  }
 }
 
 .sales-copilot-greeting {
   margin: 0;
   font-size: 14px;
   line-height: 1.3;
-  color: var(--sales-text-secondary);
+  color: #a5b1bc;
 }
 
 .sales-copilot-kicker {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--sales-text-muted);
+  letter-spacing: 0.02em;
+  color: #a5b1bc;
 }
 
 .sales-copilot-title {
@@ -1044,90 +1033,213 @@ html[data-crm]:not([data-crm-theme="light"])
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.02em;
-  overflow-wrap: anywhere;
-}
-
-.sales-copilot-briefing,
-.sales-copilot-explanation,
-.sales-copilot-note,
-.sales-copilot-meta,
-.sales-copilot-date {
-  margin: 0;
+  color: #f2f5f7;
   overflow-wrap: anywhere;
 }
 
 .sales-copilot-briefing {
-  margin-top: 8px;
-  font-size: 15px;
-  line-height: 1.4;
-  color: var(--sales-text-primary);
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: #a5b1bc;
+  overflow-wrap: anywhere;
 }
 
 .sales-copilot-note {
-  margin-top: 8px;
+  margin: 8px 0 0;
   font-size: 13px;
   line-height: 1.4;
-  color: var(--sales-text-secondary);
+  color: #a5b1bc;
 }
 
-.sales-copilot-list {
-  margin: 12px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.sales-copilot-row {
+.sales-copilot-board {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
   min-width: 0;
-  padding: 12px 0;
-  border-top: 1px solid var(--sales-border);
+}
+
+.sales-copilot-secondary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sales-copilot-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #2c363e;
+  border-radius: 16px;
+  background: #192228;
+  box-shadow: none;
+}
+
+.sales-copilot-card--featured {
+  border-color: #284634;
+  background: #142820;
+}
+
+.sales-copilot-card-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: #a5b1bc;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sales-copilot-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sales-copilot-icon {
+  display: flex;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+}
+
+.sales-copilot-icon--review,
+.sales-copilot-badge--review {
+  background: rgba(255, 190, 74, 0.14);
+  color: #ffbe4a;
+}
+
+.sales-copilot-icon--todo,
+.sales-copilot-badge--todo {
+  background: rgba(130, 191, 255, 0.14);
+  color: #82bfff;
+}
+
+.sales-copilot-icon--waiting,
+.sales-copilot-badge--waiting {
+  background: rgba(165, 177, 188, 0.14);
+  color: #b7c4ce;
+}
+
+.sales-copilot-icon--failed,
+.sales-copilot-badge--failed {
+  background: rgba(255, 190, 74, 0.12);
+  color: #ffbe4a;
+}
+
+.sales-copilot-icon--done,
+.sales-copilot-badge--done {
+  background: rgba(165, 177, 188, 0.1);
+  color: #a5b1bc;
+}
+
+.sales-copilot-card-body {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .sales-copilot-action-title {
   margin: 0;
-  font-size: 17px;
+  color: #f2f5f7;
+  font-size: 18px;
   font-style: normal;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 24px;
   overflow-wrap: anywhere;
 }
 
-.sales-copilot-meta {
-  margin-top: 4px;
-  font-size: 13px;
-  line-height: 1.35;
-  color: var(--sales-text-secondary);
+.sales-copilot-card:not(.sales-copilot-card--featured) .sales-copilot-action-title {
+  font-size: 16px;
+  line-height: 22px;
 }
 
-.sales-copilot-meta a {
-  color: var(--sales-text-primary);
+.sales-copilot-customer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 8px;
+  min-width: 0;
+}
+
+.sales-copilot-avatar {
+  display: inline-flex;
+  flex: 0 0 22px;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #243038;
+  color: #f2f5f7;
+  font-size: 11px;
   font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+}
+
+.sales-copilot-card--featured .sales-copilot-avatar {
+  background: #1d3328;
+}
+
+.sales-copilot-name {
+  min-width: 0;
+  flex: 1 1 8rem;
+  overflow: hidden;
+  color: #f2f5f7;
+  font-size: 13px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sales-copilot-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
 }
 
 .sales-copilot-date {
-  margin-top: 2px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 8px 0 0;
+  color: #a5b1bc;
   font-size: 13px;
-  line-height: 1.35;
+  line-height: 18px;
 }
 
-.sales-copilot-date--overdue {
-  color: var(--sales-danger);
+.sales-copilot-date svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
 }
 
-.sales-copilot-date--attention {
-  color: var(--sales-brand);
+.sales-copilot-date.is-overdue {
+  color: #ffbe4a;
 }
 
-.sales-copilot-date--neutral {
-  color: var(--sales-text-secondary);
-}
-
-.sales-copilot-explanation {
-  margin-top: 6px;
+.sales-copilot-explanation,
+.sales-copilot-error {
+  margin: 10px 0 0;
+  color: #a5b1bc;
   font-size: 14px;
-  line-height: 1.4;
-  color: var(--sales-text-secondary);
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.sales-copilot-error {
+  color: #ffbe4a;
+  font-size: 13px;
+  line-height: 18px;
 }
 
 .sales-copilot-actions {
@@ -1135,41 +1247,121 @@ html[data-crm]:not([data-crm-theme="light"])
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 12px;
-  margin-top: 10px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #2c363e;
   min-width: 0;
 }
 
-.sales-copilot-daily .sales-btn-primary {
+.sales-copilot-card--featured .sales-copilot-actions {
+  border-top-color: #284634;
+}
+
+.sales-copilot-primary,
+.sales-copilot-secondary-action,
+.sales-copilot-chat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.sales-copilot-primary {
+  max-width: 100%;
+  padding: 8px 14px;
+  border: 0;
+  background: #d4ff4f;
+  color: #0c0c0c;
   box-shadow: none;
 }
 
-.sales-copilot-chat,
-.sales-copilot-view-all {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  color: var(--sales-text-primary);
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+.sales-copilot-secondary-action {
+  max-width: 100%;
+  padding: 8px 14px;
+  border: 1px solid #2c363e;
+  background: transparent;
+  color: #f2f5f7;
+}
+
+.sales-copilot-primary:disabled,
+.sales-copilot-secondary-action:disabled {
+  opacity: 0.55;
+}
+
+.sales-copilot-primary:focus-visible,
+.sales-copilot-secondary-action:focus-visible,
+.sales-copilot-chat:focus-visible,
+.sales-copilot-view-all:focus-visible,
+.sales-copilot-update:focus-visible {
+  outline: 2px solid #d4ff4f;
+  outline-offset: 2px;
+}
+
+.sales-copilot-chat {
+  gap: 6px;
+  padding: 0 4px;
+  color: #a5b1bc;
 }
 
 .sales-copilot-view-all {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
   margin-top: 4px;
+  padding: 0 2px;
+  color: #f2f5f7;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sales-copilot-view-all-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #a5b1bc;
+}
+
+.sales-copilot-view-all-count {
+  font-variant-numeric: tabular-nums;
 }
 
 .sales-copilot-updates {
-  margin-top: 8px;
-  padding-top: 10px;
-  border-top: 1px solid var(--sales-border);
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid #2c363e;
+  border-radius: 16px;
+  background: #192228;
+}
+
+.sales-copilot-updates-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
 }
 
 .sales-copilot-updates-title {
   margin: 0;
-  font-size: 15px;
+  color: #f2f5f7;
+  font-size: 16px;
   font-style: normal;
   font-weight: 600;
+  line-height: 1.3;
+}
+
+.sales-copilot-updates-time {
+  margin: 0;
+  color: #a5b1bc;
+  font-size: 12px;
   line-height: 1.3;
 }
 
@@ -1179,15 +1371,60 @@ html[data-crm]:not([data-crm-theme="light"])
   list-style: none;
 }
 
-.sales-copilot-updates li + li {
-  margin-top: 10px;
+.sales-copilot-update {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 0;
+  color: inherit;
+  text-decoration: none;
 }
 
-.sales-copilot-updates li p:first-child {
-  margin: 0;
+.sales-copilot-updates li + li .sales-copilot-update {
+  border-top: 1px solid #2c363e;
+}
+
+.sales-copilot-update-icon {
+  display: flex;
+  flex: 0 0 30px;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: #243038;
+  color: #a5b1bc;
+}
+
+.sales-copilot-update-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sales-copilot-update-name {
+  overflow: hidden;
+  color: #f2f5f7;
   font-size: 14px;
-  line-height: 1.4;
+  font-weight: 600;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sales-copilot-update-detail {
+  color: #a5b1bc;
+  font-size: 13px;
+  line-height: 18px;
   overflow-wrap: anywhere;
+}
+
+.sales-copilot-update svg:last-child {
+  flex: 0 0 auto;
+  color: #a5b1bc;
 }
 
 .sales-copilot-fallback {
@@ -1203,19 +1440,18 @@ html[data-crm]:not([data-crm-theme="light"])
   margin-top: 10px;
 }
 
-@media (max-width: 400px) {
-  .sales-copilot-daily {
-    padding: 10px 10px 6px;
+@media (min-width: 390px) {
+  .sales-copilot-card,
+  .sales-copilot-updates {
+    padding: 16px;
   }
+}
 
-  .sales-copilot-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .sales-copilot-actions > * {
-    width: 100%;
-    justify-content: center;
+@media (min-width: 1100px) {
+  .sales-copilot-board:not(.is-single) {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+    align-items: start;
   }
 }
 

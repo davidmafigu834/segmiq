@@ -4,22 +4,181 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addDays } from "date-fns";
+import {
+  Calendar,
+  CalendarClock,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  FileText,
+  MessageCircle,
+  Phone,
+  UserPlus,
+} from "lucide-react";
 import { TaskDetailDrawer, type TaskActionBody } from "@/components/sales/tasks/TaskDetailDrawer";
 import { Button } from "@/components/sales/ui";
 import { useSalesToast } from "@/components/sales/ui/Toast";
 import { customerDraft, stageCopilotDraft } from "@/lib/sales-copilot/draft";
-import type { DailyWorkspacePayload } from "@/lib/sales/dashboard/load-daily-workspace";
+import type { DailyWorkspacePayload, } from "@/lib/sales/dashboard/load-daily-workspace";
+import type { RecentUpdate } from "@/lib/sales/dashboard/recent-updates";
 import { notifySalesWorkChanged, SALES_WORK_CHANGED_EVENT } from "@/lib/sales/dashboard/refresh";
 import {
+  workspaceCardStatus,
   workspaceDateLine,
   workspaceExplanation,
   workspacePrimary,
 } from "@/lib/sales/dashboard/daily-workspace";
-import { formatScheduleWhen } from "@/lib/sales/tasks/format";
+import { formatScheduleWhen, scheduleLine } from "@/lib/sales/tasks/format";
 import type { SalesTaskItem } from "@/lib/sales/tasks/types";
 import { toDateKey } from "@/lib/sales/calendar/format";
 
 const VISIT_KEY = "segmiq:dashboard-visit";
+
+function customerInitial(name: string): string {
+  const trimmed = name.trim();
+  return trimmed ? trimmed.charAt(0).toUpperCase() : "?";
+}
+
+function taskKindIcon(task: SalesTaskItem) {
+  const action = task.copilot?.actionType ?? "";
+  const title = `${task.title} ${task.typeLabel}`.toLowerCase();
+  const iconProps = { size: 18, strokeWidth: 1.8, "aria-hidden": true as const };
+  if (action === "appointment" || /\b(meeting|viewing|visit)\b/.test(title)) return <Calendar {...iconProps} />;
+  if (
+    action === "quotation_draft" ||
+    action === "quotation_missing" ||
+    action === "quotation_choice" ||
+    action === "send_quotation" ||
+    action === "listing_shortlist" ||
+    task.type === "quote_review"
+  ) {
+    return <FileText {...iconProps} />;
+  }
+  if (action === "customer_checkin" || action === "answer_question" || action === "contact_later" || task.type === "whatsapp") {
+    return <MessageCircle {...iconProps} />;
+  }
+  if (action === "open_commitment" || /\b(team review|internal review)\b/.test(title)) return <ClipboardList {...iconProps} />;
+  if (task.type === "call" || /\b(call|callback|phone)\b/.test(title)) return <Phone {...iconProps} />;
+  if (action === "create_reminder" || action === "update_reminder" || task.type === "follow_up") return <Clock {...iconProps} />;
+  return <CalendarClock {...iconProps} />;
+}
+
+function updateIcon(kind: RecentUpdate["kind"]) {
+  const props = { size: 16, strokeWidth: 1.8, "aria-hidden": true as const };
+  if (kind === "reply") return <MessageCircle {...props} />;
+  if (kind === "quotation") return <FileText {...props} />;
+  if (kind === "arrangement") return <Calendar {...props} />;
+  return <UserPlus {...props} />;
+}
+
+function WorkspaceCard({
+  task,
+  featured,
+  timeZone,
+  generatedAt,
+  busy,
+  disabled,
+  onPrimary,
+}: {
+  task: SalesTaskItem;
+  featured: boolean;
+  timeZone: string;
+  generatedAt: string;
+  busy: boolean;
+  disabled: boolean;
+  onPrimary: (task: SalesTaskItem, button: HTMLButtonElement) => void;
+}) {
+  const status = workspaceCardStatus(task);
+  const primary = workspacePrimary(task);
+  const now = new Date(generatedAt);
+  const dateLine = workspaceDateLine(task, timeZone, now);
+  const explanation = workspaceExplanation(task, now, timeZone);
+  const executionError = task.copilot?.executionError;
+  const dateText =
+    executionError && dateLine.text === executionError
+      ? task.schedule.at
+        ? scheduleLine(task.schedule, timeZone, now)
+        : "No date set"
+      : dateLine.text;
+  const realOverdue = (task.schedule.kind === "due" || task.schedule.kind === "check_in") && task.schedule.overdue;
+  return (
+    <article className={featured ? "sales-copilot-card sales-copilot-card--featured" : "sales-copilot-card"}>
+      {featured ? (
+        <div className="sales-copilot-card-kicker">
+          <span>Next action</span>
+          <span className={`sales-copilot-badge sales-copilot-badge--${status.tone}`}>{status.label}</span>
+        </div>
+      ) : null}
+      <div className="sales-copilot-card-main">
+        <div className={`sales-copilot-icon sales-copilot-icon--${status.tone}`} aria-hidden>
+          {taskKindIcon(task)}
+        </div>
+        <div className="sales-copilot-card-body">
+          <h2 className="sales-copilot-action-title">{task.title}</h2>
+          <div className="sales-copilot-customer">
+            <span className="sales-copilot-avatar" aria-hidden>
+              {customerInitial(task.relatedName)}
+            </span>
+            <span className="sales-copilot-name" title={task.relatedName}>
+              {task.relatedName}
+            </span>
+            {featured ? null : (
+              <span className={`sales-copilot-badge sales-copilot-badge--${status.tone}`}>{status.label}</span>
+            )}
+          </div>
+          <p className={`sales-copilot-date${realOverdue ? " is-overdue" : ""}`}>
+            <Clock size={14} strokeWidth={1.8} aria-hidden />
+            <span>{dateText}</span>
+          </p>
+        </div>
+      </div>
+      {explanation ? <p className="sales-copilot-explanation">{explanation}</p> : null}
+      {executionError ? <p className="sales-copilot-error">{executionError}</p> : null}
+      <div className="sales-copilot-actions">
+        <button
+          type="button"
+          className={featured ? "sales-copilot-primary" : "sales-copilot-secondary-action"}
+          disabled={disabled}
+          onClick={(event) => onPrimary(task, event.currentTarget)}
+        >
+          {busy ? "Working…" : primary.label}
+        </button>
+        {task.whatsappHref ? (
+          <Link href={task.whatsappHref} className="sales-copilot-chat">
+            <MessageCircle size={16} strokeWidth={1.8} aria-hidden />
+            View chat
+          </Link>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function UpdateRow({ item, timeZone }: { item: RecentUpdate; timeZone: string }) {
+  const when = formatScheduleWhen(item.at, timeZone);
+  return (
+    <li>
+      <Link
+        href={item.href}
+        className="sales-copilot-update"
+        aria-label={`${item.leadName}. ${item.detail}. ${when}. ${item.linkLabel}`}
+      >
+        <span className="sales-copilot-update-icon" aria-hidden>
+          {updateIcon(item.kind)}
+        </span>
+        <span className="sales-copilot-update-copy">
+          <span className="sales-copilot-update-name">{item.leadName}</span>
+          <span className="sales-copilot-update-detail">
+            {item.detail}
+            {" · "}
+            <time dateTime={item.at}>{when}</time>
+          </span>
+        </span>
+        <ChevronRight size={16} strokeWidth={1.8} aria-hidden />
+      </Link>
+    </li>
+  );
+}
 
 function visitStorageKey(userHint: string): string {
   return `${VISIT_KEY}:${userHint}`;
@@ -232,50 +391,48 @@ export function SalesCopilotDailyWorkspace({ firstName }: { firstName: string })
           {data.actions.length === 0 ? (
             <p className="sales-copilot-note">No actions need you right now.</p>
           ) : (
-            <ol className="sales-copilot-list">
-              {data.actions.map((task) => {
-                const primary = workspacePrimary(task);
-                const dateLine = workspaceDateLine(task, data.timezone);
-                const chatHref = task.whatsappHref ?? (task.isWhatsAppCapable ? task.leadHref : null);
-                const explanation = workspaceExplanation(task, new Date(data.generatedAt), data.timezone);
-                return (
-                  <li key={task.id} className="sales-copilot-row">
-                    <h2 className="sales-copilot-action-title">{task.title}</h2>
-                    <p className="sales-copilot-meta">{task.relatedName}</p>
-                    <p className={`sales-copilot-date sales-copilot-date--${dateLine.tone}`}>{dateLine.text}</p>
-                    <p className="sales-copilot-explanation">{explanation}</p>
-                    <div className="sales-copilot-actions">
-                      <Button
-                        type="button"
-                        variant="primary"
-                        size="md"
-                        loading={busyId === task.id}
-                        disabled={busyId != null}
-                        onClick={(event) => onPrimary(task, event.currentTarget)}
-                      >
-                        {primary.label}
-                      </Button>
-                      {chatHref ? (
-                        <Link href={chatHref} className="sales-copilot-chat">
-                          View chat
-                        </Link>
-                      ) : null}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
+            <div className={data.actions.length > 1 ? "sales-copilot-board" : "sales-copilot-board is-single"}>
+              <WorkspaceCard
+                task={data.actions[0]!}
+                featured
+                timeZone={data.timezone}
+                generatedAt={data.generatedAt}
+                busy={busyId === data.actions[0]!.id}
+                disabled={busyId != null}
+                onPrimary={onPrimary}
+              />
+              {data.actions.length > 1 ? (
+                <div className="sales-copilot-secondary">
+                  {data.actions.slice(1, 3).map((task) => (
+                    <WorkspaceCard
+                      key={task.id}
+                      task={task}
+                      featured={false}
+                      timeZone={data.timezone}
+                      generatedAt={data.generatedAt}
+                      busy={busyId === task.id}
+                      disabled={busyId != null}
+                      onPrimary={onPrimary}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </div>
           )}
 
           <Link href={data.viewAllHref} className="sales-copilot-view-all">
-            View all Tasks ({data.openCount})
+            <span>View all Tasks</span>
+            <span className="sales-copilot-view-all-end">
+              <span className="sales-copilot-view-all-count">{data.openCount}</span>
+              <ChevronRight size={16} strokeWidth={1.8} aria-hidden />
+            </span>
           </Link>
 
-          <div className="sales-copilot-updates">
-            <h2 className="sales-copilot-updates-title">
-              {data.updates.heading}
-              {data.updates.timeframe ? <span> · {data.updates.timeframe}</span> : null}
-            </h2>
+          <section className="sales-copilot-updates" aria-label={data.updates.heading}>
+            <div className="sales-copilot-updates-heading">
+              <h2 className="sales-copilot-updates-title">{data.updates.heading}</h2>
+              {data.updates.timeframe ? <p className="sales-copilot-updates-time">{data.updates.timeframe}</p> : null}
+            </div>
             {data.updates.unavailable ? (
               <p className="sales-copilot-note">Recent updates could not be loaded.</p>
             ) : data.updates.items.length === 0 ? (
@@ -287,18 +444,11 @@ export function SalesCopilotDailyWorkspace({ firstName }: { firstName: string })
             ) : (
               <ul>
                 {data.updates.items.map((item) => (
-                  <li key={item.id}>
-                    <p>{item.summary}</p>
-                    <p className="sales-copilot-meta">
-                      <time dateTime={item.at}>{formatScheduleWhen(item.at, data.timezone)}</time>
-                      {" · "}
-                      <Link href={item.href}>{item.linkLabel}</Link>
-                    </p>
-                  </li>
+                  <UpdateRow key={item.id} item={item} timeZone={data.timezone} />
                 ))}
               </ul>
             )}
-          </div>
+          </section>
         </>
       ) : null}
 

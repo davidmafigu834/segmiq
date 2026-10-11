@@ -8,6 +8,7 @@ import {
   isDueOnLocalDay,
   rankNextActions,
   workspaceDateLine,
+  workspaceExplanation,
   workspacePrimary,
 } from "../lib/sales/dashboard/daily-workspace";
 import { mapLeadEvent, mapQuotationEvent, selectRecentUpdates } from "../lib/sales/dashboard/recent-updates";
@@ -484,5 +485,193 @@ describe("recent updates", () => {
     const picked = selectRecentUpdates([older, newer], 3);
     assert.equal(picked.length, 1);
     assert.match(picked[0]!.summary, /Second/);
+  });
+
+  it("keeps the assignment row to the customer name and a short event", () => {
+    const assigned = mapLeadEvent({
+      id: "assign",
+      eventType: "LEAD_ASSIGNED",
+      at: "2026-10-11T07:22:00.000Z",
+      leadId: "lead-9",
+      leadName: "France",
+      userId: "user-1",
+      data: { assigned_to_id: "user-1" },
+      timeZone: TZ,
+      now: NOW,
+    });
+    assert.equal(assigned?.leadName, "France");
+    assert.equal(assigned?.detail, "Assigned to you");
+    assert.equal(assigned?.href, "/sales/leads?lead=lead-9");
+  });
+});
+
+describe("dashboard check-in copy", () => {
+  it("summarises a suggested check-in without repeating the clock time", () => {
+    const suggested = task({
+      id: "check-review",
+      title: "Suggested check-in",
+      schedule: schedule({
+        kind: "suggested",
+        label: "Suggested time",
+        at: "2026-10-15T07:00:00.000Z",
+        overdue: false,
+        expectedReplyAt: "2026-10-14T07:00:00.000Z",
+      }),
+      copilot: {
+        workItemId: "check-review",
+        queue: "needs_review",
+        actionType: "customer_checkin",
+        explanation:
+          "The customer said they would get back to you Wednesday. A later check-in is suggested for Thursday, 9:00 AM so you are not contacting them before the time they agreed. The hour is a suggestion.",
+        reviewStatus: "pending",
+        executionStatus: "none",
+        fulfilmentStatus: "open",
+        listState: "needs_review",
+        waitingActor: "customer",
+        hourSuggested: true,
+        currentDueAt: null,
+        proposedAt: "2026-10-15T07:00:00.000Z",
+        linkedQuotationId: null,
+        linkedFollowUp: true,
+        missing: [],
+        evidenceMessageIds: [],
+        evidence: [],
+        payload: { customerPromisedAt: "2026-10-14T07:00:00.000Z", hourSuggested: true },
+        executionError: null,
+        primaryLabel: "Review check-in",
+        actionLabel: "Review check-in",
+        primaryAction: "review",
+      },
+    });
+    const copy = workspaceExplanation(suggested, NOW, TZ);
+    assert.match(copy, /expects to reply Wednesday/i);
+    assert.match(copy, /Review a Thursday check-in/i);
+    assert.doesNotMatch(copy, /9:00|suggested for Thursday/i);
+    assert.equal(workspacePrimary(suggested).label, "Review check-in");
+    const date = workspaceDateLine(suggested, TZ, NOW);
+    assert.match(date.text, /Suggested/);
+    assert.equal(date.tone, "neutral");
+  });
+
+  it("calls a saved future check-in saved, not suggested", () => {
+    const saved = task({
+      id: "check-saved",
+      title: "Scheduled check-in",
+      schedule: schedule({
+        kind: "check_in",
+        label: "Check-in",
+        at: "2026-10-15T07:00:00.000Z",
+        overdue: false,
+        expectedReplyAt: "2026-10-14T07:00:00.000Z",
+      }),
+      copilot: {
+        workItemId: "check-saved",
+        queue: "todo",
+        actionType: "customer_checkin",
+        explanation: "The customer said they would get back to you Wednesday. A later check-in is suggested for Thursday, 9:00 AM.",
+        reviewStatus: "approved",
+        executionStatus: "succeeded",
+        fulfilmentStatus: "open",
+        listState: "todo",
+        waitingActor: "customer",
+        hourSuggested: true,
+        currentDueAt: "2026-10-15T07:00:00.000Z",
+        proposedAt: "2026-10-15T07:00:00.000Z",
+        linkedQuotationId: null,
+        linkedFollowUp: true,
+        missing: [],
+        evidenceMessageIds: [],
+        evidence: [],
+        payload: {},
+        executionError: null,
+        primaryLabel: "View details",
+        actionLabel: "View details",
+        primaryAction: "complete",
+      },
+    });
+    const copy = workspaceExplanation(saved, NOW, TZ);
+    assert.match(copy, /saved for Thursday/i);
+    assert.doesNotMatch(copy, /suggested|9:00/i);
+    assert.equal(workspacePrimary(saved).label, "Draft check-in");
+  });
+
+  it("does not repeat that no date was given when the date line already says so", () => {
+    const undated = task({
+      id: "undated",
+      title: "Follow up on your promise",
+      schedule: schedule({ kind: "none", label: "No date set", at: null, overdue: false }),
+      copilot: {
+        workItemId: "undated",
+        queue: "needs_review",
+        actionType: "open_commitment",
+        explanation: "You promised a team review. No date was given, so nothing was scheduled.",
+        reviewStatus: "pending",
+        executionStatus: "none",
+        fulfilmentStatus: "open",
+        listState: "needs_review",
+        waitingActor: null,
+        hourSuggested: false,
+        currentDueAt: null,
+        proposedAt: null,
+        linkedQuotationId: null,
+        linkedFollowUp: false,
+        missing: ["Time"],
+        evidenceMessageIds: [],
+        evidence: [],
+        payload: {},
+        executionError: null,
+        primaryLabel: "Review",
+        actionLabel: "Review",
+        primaryAction: "review",
+      },
+    });
+    const copy = workspaceExplanation(undated, NOW, TZ);
+    assert.match(copy, /team review/i);
+    assert.doesNotMatch(copy, /No date was given/i);
+  });
+
+  it("ranks a follow-up due today ahead of a later meeting reminder", () => {
+    const dueToday = task({
+      id: "today",
+      title: "Follow up as promised",
+      schedule: schedule({ at: "2026-10-11T12:00:00.000Z" }),
+      deadlineAt: "2026-10-11T12:00:00.000Z",
+    });
+    const laterMeeting = task({
+      id: "meeting",
+      title: "Confirm a meeting time",
+      schedule: schedule({
+        kind: "suggested",
+        label: "Suggested time",
+        at: "2026-10-16T08:00:00.000Z",
+        overdue: false,
+      }),
+      deadlineAt: null,
+      copilot: {
+        workItemId: "meeting",
+        queue: "needs_review",
+        actionType: "appointment",
+        explanation: "A meeting was discussed. The time is still missing.",
+        reviewStatus: "pending",
+        executionStatus: "none",
+        fulfilmentStatus: "open",
+        listState: "needs_review",
+        waitingActor: null,
+        hourSuggested: false,
+        currentDueAt: null,
+        proposedAt: "2026-10-16T08:00:00.000Z",
+        linkedQuotationId: null,
+        linkedFollowUp: false,
+        missing: ["Time"],
+        evidenceMessageIds: [],
+        evidence: [],
+        payload: {},
+        executionError: null,
+        primaryLabel: "Change time",
+        actionLabel: "Set date & time",
+        primaryAction: "review",
+      },
+    });
+    assert.equal(rankNextActions([laterMeeting, dueToday], NOW, TZ)[0]?.id, "today");
   });
 });
