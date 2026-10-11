@@ -14,14 +14,14 @@ export const dynamic = "force-dynamic";
 
 function TasksFallback() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 px-4">
       <Skeleton className="h-10 w-full max-w-xl rounded-sales-md" />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
+      <div className="space-y-3 md:hidden">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 w-full rounded-sales-md" />
         ))}
       </div>
-      <Skeleton className="h-[420px] rounded-sales-xl" />
+      <Skeleton className="hidden h-[420px] rounded-sales-xl md:block" />
     </div>
   );
 }

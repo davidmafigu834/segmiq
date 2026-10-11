@@ -6,6 +6,23 @@ type DraftSource = {
   payload: Record<string, unknown>;
 };
 
+export function copilotDraftStorageKey(leadId: string): string {
+  return `segmiq:copilot-draft:${leadId}`;
+}
+
+export function stageCopilotDraft(leadId: string, text: string) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(copilotDraftStorageKey(leadId), text);
+}
+
+export function takeCopilotDraft(leadId: string): string | null {
+  if (typeof window === "undefined") return null;
+  const key = copilotDraftStorageKey(leadId);
+  const value = window.sessionStorage.getItem(key);
+  if (value) window.sessionStorage.removeItem(key);
+  return value;
+}
+
 export function customerDraft(item: DraftSource): string {
   const concerns = Array.isArray(item.payload.concerns) ? item.payload.concerns.map(String) : [];
   const discussed = Array.isArray(item.payload.discussed) ? item.payload.discussed.map(String) : [];

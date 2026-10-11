@@ -8,12 +8,14 @@ import {
   isTaskDueThisWeek,
   isTaskDueToday,
   isTaskOverdue,
+  manualTaskSchedule,
   previousWeekBounds,
   priorityFromLead,
   sortTasksByUrgency,
   titleForTask,
   weekBounds,
 } from "./format";
+import { resolveClientSalesTimezone } from "@/lib/sales/intelligence/daily-plan-service";
 import { loadCopilotTasksForOwner } from "@/lib/sales-copilot/project";
 import type {
   SalesTaskItem,
@@ -93,6 +95,8 @@ function buildOpenTask(
     phone: lead.phone,
     source: lead.source,
     dueAt: due.toISOString(),
+    deadlineAt: due.toISOString(),
+    schedule: manualTaskSchedule(due.toISOString(), false, now),
     priority,
     status: overdue ? "overdue" : "pending",
     completed: false,
@@ -138,6 +142,8 @@ function buildCompletedTask(
     phone: lead.phone,
     source: lead.source,
     dueAt: completedAt,
+    deadlineAt: null,
+    schedule: manualTaskSchedule(completedAt, true),
     priority: priorityFromLead({
       manualPriority: lead.manual_priority,
       score: lead.score,
@@ -192,7 +198,7 @@ function buildTip(
   now: Date
 ): SalesTasksPayload["tip"] {
   const highToday = open.filter(
-    (t) => t.priority === "high" && isTaskDueToday(t.dueAt, now)
+    (t) => t.priority === "high" && t.deadlineAt != null && isTaskDueToday(t.deadlineAt, now)
   ).length;
   const overdue = open.filter((t) => t.status === "overdue").length;
   if (highToday > 0) {
@@ -218,11 +224,20 @@ function buildTip(
 
 export async function fetchSalespersonTasks(opts: {
   userId: string;
+  clientId?: string | null;
   view?: SalesTaskView;
 }): Promise<SalesTasksPayload> {
   const supabase = createAdminClient();
   const now = new Date();
   const view = opts.view ?? "mine";
+  let timezone = "Africa/Harare";
+  if (opts.clientId) {
+    try {
+      timezone = await resolveClientSalesTimezone(opts.clientId);
+    } catch (err) {
+      console.error("[sales-tasks] timezone", err);
+    }
+  }
   const { start: weekStart, end: weekEnd } = weekBounds(now);
   const prev = previousWeekBounds(now);
 
@@ -280,6 +295,7 @@ export async function fetchSalespersonTasks(opts: {
     if (task) openTasks.push(task);
   }
 
+  let copilotUnavailable = false;
   try {
     const copilot = await loadCopilotTasksForOwner(opts.userId, now);
     for (let index = openTasks.length - 1; index >= 0; index -= 1) {
@@ -290,6 +306,7 @@ export async function fetchSalespersonTasks(opts: {
     }
     openTasks.push(...copilot.tasks);
   } catch (err) {
+    copilotUnavailable = true;
     console.error("[sales-tasks] copilot", err);
   }
 
@@ -367,8 +384,8 @@ export async function fetchSalespersonTasks(opts: {
         )
       : sortTasksByUrgency(scopedOpen, now);
 
-  const dueToday = scopedOpen.filter((t) => isTaskDueToday(t.dueAt, now));
-  const thisWeek = scopedOpen.filter((t) => isTaskDueThisWeek(t.dueAt, now));
+  const dueToday = scopedOpen.filter((t) => isTaskDueToday(t.deadlineAt, now));
+  const thisWeek = scopedOpen.filter((t) => isTaskDueThisWeek(t.deadlineAt, now));
   const overdue = scopedOpen.filter((t) => t.status === "overdue");
 
   const upcoming = sortTasksByUrgency(
@@ -411,13 +428,15 @@ export async function fetchSalespersonTasks(opts: {
       view,
       generatedAt: now.toISOString(),
       currentUserId: opts.userId,
+      timezone,
+      copilotUnavailable,
     },
     counts,
     kpis: {
       dueToday: dueToday.length,
       dueTodayHighPriority: dueToday.filter((t) => t.priority === "high").length,
       thisWeek: thisWeek.length,
-      thisWeekOverdue: overdue.filter((t) => isTaskDueThisWeek(t.dueAt, now)).length,
+      thisWeekOverdue: overdue.filter((t) => isTaskDueThisWeek(t.deadlineAt, now)).length,
       completedThisWeek: completedThisWeek.length,
       completedPrevWeek: completedPrevWeek.length,
       overdue: overdue.length,

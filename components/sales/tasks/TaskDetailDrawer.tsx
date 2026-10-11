@@ -1,114 +1,196 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarClock, FileText, Phone } from "lucide-react";
-import { SiWhatsapp } from "react-icons/si";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import { Badge, Button } from "@/components/sales/ui";
-import {
-  dueDateTone,
-  formatTaskDueDate,
-  formatTaskPriority,
-  formatTaskStatus,
-} from "@/lib/sales/tasks/format";
+import { Button } from "@/components/sales/ui";
+import { formatScheduleWhen, scheduleLine } from "@/lib/sales/tasks/format";
 import type { SalesTaskItem } from "@/lib/sales/tasks/types";
 
-function TypeIcon({ type }: { type: SalesTaskItem["type"] }) {
-  if (type === "whatsapp") return <SiWhatsapp size={16} color="#25D366" aria-hidden />;
-  if (type === "call") return <Phone size={16} strokeWidth={1.8} className="text-[#14B8A6]" />;
-  if (type === "quote_review")
-    return <FileText size={16} strokeWidth={1.8} className="text-sales-warning" />;
-  return <CalendarClock size={16} strokeWidth={1.8} className="text-sales-success" />;
+export type TaskActionBody = {
+  action: "approve" | "dismiss" | "snooze" | "retry" | "complete" | "choose";
+  proposedAt?: string;
+  snoozeUntil?: string;
+  productId?: string;
+};
+
+function datetimeLocalValue(iso: string | null): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function typeTint(type: SalesTaskItem["type"]) {
-  if (type === "whatsapp") return "bg-sales-success-soft";
-  if (type === "call") return "bg-[#F0FDFA]";
-  if (type === "quote_review") return "bg-[#FFFAEB]";
-  return "bg-sales-success-soft";
+function usesSchedule(task: SalesTaskItem): boolean {
+  const action = task.copilot?.actionType;
+  return (
+    action === "update_reminder" ||
+    action === "create_reminder" ||
+    action === "customer_checkin" ||
+    action === "contact_later" ||
+    action === "appointment" ||
+    Boolean(task.copilot?.linkedQuotationId) === false && Boolean(task.schedule.at) && task.copilot?.primaryAction === "review"
+  );
 }
 
-function statusTone(status: SalesTaskItem["status"]) {
-  if (status === "overdue") return "danger" as const;
-  if (status === "completed") return "success" as const;
-  return "warning" as const;
+function payloadLines(task: SalesTaskItem, timeZone: string): string[] {
+  const payload = task.copilot?.payload ?? {};
+  const lines: string[] = [];
+  const followUp = typeof payload.followUpAt === "string" ? payload.followUpAt : task.copilot?.proposedAt;
+  if (followUp) {
+    const suggested = payload.hourSuggested === true || task.copilot?.hourSuggested;
+    lines.push(`Proposed follow-up: ${formatScheduleWhen(followUp, timeZone)}${suggested ? " (suggested hour)" : ""}`);
+  }
+  if (task.schedule.expectedReplyAt) {
+    lines.push(`Expected reply: ${formatScheduleWhen(task.schedule.expectedReplyAt, timeZone)}`);
+  }
+  if (typeof payload.currentLabel === "string" && payload.currentLabel) {
+    lines.push(`Current reminder: ${payload.currentLabel}`);
+  }
+  if (typeof payload.subject === "string" && payload.subject) lines.push(`Subject: ${payload.subject}`);
+  if (typeof payload.source === "string" && payload.source) lines.push(`Source: ${payload.source.replaceAll("_", " ").toLowerCase()}`);
+  if (payload.awaitingCustomerConfirmation === true) lines.push("The customer has not confirmed this time.");
+  if (Array.isArray(payload.items)) {
+    for (const item of payload.items) {
+      if (!item || typeof item !== "object") continue;
+      const row = item as { name?: string; quantity?: number };
+      if (row.name) lines.push(`Draft item: ${row.quantity ?? ""} × ${row.name}`.replace("×  ", ""));
+    }
+  }
+  if (typeof payload.question === "string" && payload.question) lines.push(`Question: ${payload.question}`);
+  return lines;
 }
 
-function priorityDot(priority: SalesTaskItem["priority"]) {
-  if (priority === "high") return "bg-sales-danger";
-  if (priority === "medium") return "bg-sales-warning";
-  return "bg-sales-success";
+function statusWord(value: string): string {
+  if (value === "needs_review" || value === "pending") return "Pending review";
+  if (value === "none") return "Not run";
+  if (value === "succeeded") return "Saved";
+  if (value === "failed") return "Failed";
+  if (value === "approved") return "Approved";
+  if (value === "open") return "Open";
+  if (value === "fulfilled") return "Fulfilled";
+  return value.replaceAll("_", " ");
 }
 
 export function TaskDetailDrawer({
   task,
+  timeZone,
+  busy,
+  error,
   onClose,
   onComplete,
   onReschedule,
-  onRefresh,
+  onAct,
+  onDraft,
 }: {
   task: SalesTaskItem;
+  timeZone: string;
+  busy: boolean;
+  error: string | null;
   onClose: () => void;
   onComplete: (task: SalesTaskItem) => void;
   onReschedule: (task: SalesTaskItem) => void;
-  onRefresh?: () => void;
+  onAct: (task: SalesTaskItem, body: TaskActionBody) => void;
+  onDraft?: (task: SalesTaskItem) => void;
 }) {
-  const dueTone = dueDateTone(task);
-  const dueClass =
-    dueTone === "danger"
-      ? "text-sales-danger"
-      : dueTone === "warning"
-        ? "text-[#B54708]"
-        : "text-sales-text-secondary";
+  const [when, setWhen] = useState(() => datetimeLocalValue(task.copilot?.proposedAt ?? task.schedule.at));
+  const [edited, setEdited] = useState(false);
+  const [snoozeOpen, setSnoozeOpen] = useState(false);
+  const [snoozeUntil, setSnoozeUntil] = useState("");
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+
+  useEffect(() => {
+    setWhen(datetimeLocalValue(task.copilot?.proposedAt ?? task.schedule.at));
+    setEdited(false);
+    setSnoozeOpen(false);
+    setSnoozeUntil("");
+    setEvidenceOpen(false);
+  }, [task.id, task.copilot?.proposedAt, task.schedule.at]);
+
+  const copilot = task.copilot;
+  const scheduled = copilot ? usesSchedule(task) && copilot.primaryAction === "review" : false;
+  const options = Array.isArray(copilot?.payload.options)
+    ? (copilot.payload.options as Array<{ id?: string; name?: string }>).filter((option) => option.id)
+    : [];
+  const confirmLabel = copilot?.executionStatus === "failed"
+    ? "Retry"
+    : copilot?.primaryAction === "complete"
+      ? "Complete"
+      : copilot?.actionLabel ?? "Save";
+  const explanation = copilot?.explanation || task.notes;
 
   return (
     <PremiumSheet
       title={task.title}
       description={task.relatedName}
       onClose={onClose}
+      closeDisabled={busy}
       size="md"
       footer={
-        <div className="flex flex-wrap justify-end gap-2">
-          {!task.completed && task.copilot ? (
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {copilot ? (
             <>
-              <Button
-                variant="secondary"
-                size="md"
-                onClick={() => {
-                  void fetch(`/api/sales/copilot/work-items/${task.copilot?.workItemId}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "dismiss" }),
-                  }).then(() => {
-                    onRefresh?.();
-                    onClose();
-                  });
-                }}
-              >
+              <Button variant="secondary" size="md" disabled={busy} onClick={() => onAct(task, { action: "dismiss" })}>
                 Dismiss
               </Button>
-              {task.copilot.actionType === "quotation_draft" &&
-              task.copilot.linkedQuotationId &&
-              task.copilot.executionStatus === "succeeded" ? (
+              {snoozeOpen ? (
+                <Button
+                  variant="secondary"
+                  size="md"
+                  disabled={busy || !snoozeUntil}
+                  onClick={() => onAct(task, { action: "snooze", snoozeUntil: new Date(snoozeUntil).toISOString() })}
+                >
+                  Confirm snooze
+                </Button>
+              ) : (
+                <Button variant="secondary" size="md" disabled={busy} onClick={() => setSnoozeOpen(true)}>
+                  Snooze
+                </Button>
+              )}
+              {copilot.primaryAction === "quote" && copilot.linkedQuotationId ? (
                 <Link
-                  href={`/sales/quotes/${task.copilot.linkedQuotationId}`}
-                  className="inline-flex min-h-11 items-center rounded-[8px] bg-sales-brand px-3 text-[13px] font-semibold text-sales-brand-text"
+                  href={`/sales/quotes/${copilot.linkedQuotationId}`}
+                  className="inline-flex h-11 items-center rounded-[10px] bg-sales-brand px-3 text-[14px] font-semibold text-sales-brand-text"
                 >
                   Review draft
                 </Link>
-              ) : (
-                <Button variant="primary" size="md" onClick={() => onComplete(task)}>
-                  {task.copilot.executionStatus === "failed" ? "Retry" : task.copilot.primaryLabel}
+              ) : copilot.primaryAction === "draft" ? (
+                <Button variant="primary" size="md" disabled={busy} onClick={() => onDraft?.(task)}>
+                  Draft reply
+                </Button>
+              ) : copilot.primaryAction === "missing" || copilot.primaryAction === "choose" || copilot.primaryAction === "details" ? null : (
+                <Button
+                  variant="primary"
+                  size="md"
+                  loading={busy}
+                  disabled={busy || copilot.reviewStatus === "stale"}
+                  onClick={() => {
+                    if (copilot.executionStatus === "failed") {
+                      onAct(task, { action: "retry" });
+                      return;
+                    }
+                    if (copilot.primaryAction === "complete") {
+                      onAct(task, { action: "complete" });
+                      return;
+                    }
+                    onAct(task, {
+                      action: "approve",
+                      proposedAt: edited && when ? new Date(when).toISOString() : undefined,
+                    });
+                  }}
+                >
+                  {confirmLabel}
                 </Button>
               )}
             </>
           ) : !task.completed ? (
             <>
-              <Button variant="secondary" size="md" onClick={() => onReschedule(task)}>
+              <Button variant="secondary" size="md" disabled={busy} onClick={() => onReschedule(task)}>
                 Reschedule
               </Button>
-              <Button variant="primary" size="md" onClick={() => onComplete(task)}>
-                Mark complete
+              <Button variant="primary" size="md" loading={busy} onClick={() => onComplete(task)}>
+                Complete
               </Button>
             </>
           ) : (
@@ -119,110 +201,140 @@ export function TaskDetailDrawer({
         </div>
       }
     >
-      <div className="space-y-5">
-        {task.copilot ? (
-          <div className="space-y-2">
-            <p className="text-[13px] leading-5 text-sales-text-secondary">{task.copilot.explanation}</p>
-            {task.copilot.currentDueAt || task.copilot.proposedAt ? (
-              <p className="text-[12px] leading-5 text-sales-text-secondary">
-                {task.copilot.currentDueAt ? `Current: ${formatTaskDueDate(task.copilot.currentDueAt)}. ` : "No current reminder. "}
-                {task.copilot.proposedAt
-                  ? `Proposed: ${formatTaskDueDate(task.copilot.proposedAt)}${task.copilot.hourSuggested ? " (suggested time)." : "."}`
-                  : ""}
-              </p>
-            ) : null}
-            {task.copilot.executionStatus === "failed" ? (
-              <p className="text-[13px] font-medium text-sales-danger">Failed. Retry uses the same approved change.</p>
-            ) : null}
-            {task.copilot.linkedQuotationId ? (
-              <Link href={`/sales/quotes/${task.copilot.linkedQuotationId}`} className="inline-flex min-h-11 items-center text-[13px] font-semibold text-sales-text-primary">
-                Review draft
-              </Link>
+      <div className="space-y-4 text-[14px] leading-5">
+        {error ? (
+          <p role="alert" className="text-[13px] text-sales-danger">
+            {error}
+          </p>
+        ) : null}
+        {explanation ? <p className="text-sales-text-secondary">{explanation}</p> : null}
+        <p className={task.schedule.overdue ? "font-medium text-sales-danger" : "text-sales-text-primary"}>
+          {scheduleLine(task.schedule, timeZone)}
+        </p>
+        {task.schedule.expectedReplyAt ? (
+          <p className="text-sales-text-secondary">
+            Expected reply: {formatScheduleWhen(task.schedule.expectedReplyAt, timeZone)}
+          </p>
+        ) : null}
+        {task.schedule.passedSuggestion ? (
+          <p className="text-sales-text-secondary">This proposed time has passed. Choose a new time before it is saved.</p>
+        ) : null}
+        {copilot?.executionError ? <p className="text-sales-danger">{copilot.executionError}</p> : null}
+        {copilot ? (
+          <p className="text-[13px] text-sales-text-muted">Nothing is saved, dismissed, or completed until you use a button below.</p>
+        ) : null}
+
+        {payloadLines(task, timeZone).length ? (
+          <ul className="space-y-1 text-[13px] text-sales-text-secondary">
+            {payloadLines(task, timeZone).map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        ) : null}
+
+        {copilot?.missing.length ? (
+          <div>
+            <p className="font-semibold text-sales-text-primary">Still to confirm</p>
+            <ul className="mt-1 list-disc pl-4 text-sales-text-secondary">
+              {copilot.missing.map((label) => (
+                <li key={label}>{label}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {options.length ? (
+          <div className="flex flex-col gap-2">
+            {options.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                disabled={busy}
+                onClick={() => onAct(task, { action: "choose", productId: option.id })}
+                className="min-h-11 rounded-[8px] border border-sales-border px-3 text-left text-[14px] font-medium text-sales-text-primary disabled:opacity-50"
+              >
+                {option.name ?? "Choose"}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {scheduled ? (
+          <label className="block text-[12px] font-medium text-sales-text-secondary">
+            Date and time
+            <input
+              type="datetime-local"
+              value={when}
+              onChange={(event) => {
+                setWhen(event.target.value);
+                setEdited(true);
+              }}
+              className="mt-1 min-h-11 w-full rounded-[8px] border border-sales-border bg-transparent px-2 text-[16px] text-sales-text-primary"
+            />
+          </label>
+        ) : null}
+
+        {snoozeOpen ? (
+          <label className="block text-[12px] font-medium text-sales-text-secondary">
+            Snooze until
+            <input
+              type="datetime-local"
+              value={snoozeUntil}
+              onChange={(event) => setSnoozeUntil(event.target.value)}
+              className="mt-1 min-h-11 w-full rounded-[8px] border border-sales-border bg-transparent px-2 text-[16px] text-sales-text-primary"
+            />
+          </label>
+        ) : null}
+
+        {copilot?.evidence.length ? (
+          <div>
+            <button
+              type="button"
+              className="min-h-11 text-left text-[13px] font-semibold text-sales-text-primary"
+              aria-expanded={evidenceOpen}
+              onClick={() => setEvidenceOpen((open) => !open)}
+            >
+              {evidenceOpen ? "Hide supporting messages" : "View supporting messages"}
+            </button>
+            {evidenceOpen ? (
+              <ul className="space-y-2">
+                {copilot.evidence.map((item) => (
+                  <li key={item.id || item.text} className="text-[13px] leading-5 text-sales-text-secondary">
+                    {item.speaker === "customer" ? "Customer" : "You"}: “{item.text}”
+                  </li>
+                ))}
+              </ul>
             ) : null}
           </div>
         ) : null}
-        <div className="flex flex-wrap items-center gap-2">
-          <span
-            className={`flex h-9 w-9 items-center justify-center rounded-sales-md ${typeTint(task.type)}`}
-          >
-            <TypeIcon type={task.type} />
-          </span>
-          <Badge tone={statusTone(task.status)} appearance="soft">
-            {formatTaskStatus(task.status)}
-          </Badge>
-          <span className="inline-flex items-center gap-1.5 text-[13px] text-sales-text-secondary">
-            <span className={`h-1.5 w-1.5 rounded-full ${priorityDot(task.priority)}`} />
-            {formatTaskPriority(task.priority)}
-          </span>
-        </div>
 
-        <dl className="space-y-3 text-[13px]">
-          <div className="flex justify-between gap-3 border-b border-sales-border-subtle pb-3">
-            <dt className="text-sales-text-muted">Due date</dt>
-            <dd className={`font-medium tabular-nums ${dueClass}`}>
-              {formatTaskDueDate(task.dueAt)}
-            </dd>
-          </div>
-          <div className="flex justify-between gap-3 border-b border-sales-border-subtle pb-3">
-            <dt className="text-sales-text-muted">Type</dt>
-            <dd className="font-medium">{task.typeLabel}</dd>
-          </div>
-          <div className="flex justify-between gap-3 border-b border-sales-border-subtle pb-3">
-            <dt className="text-sales-text-muted">Related to</dt>
-            <dd className="text-right font-medium">
-              <Link href={task.leadHref} className="text-sales-brand-fg hover:underline">
-                {task.relatedName}
-              </Link>
-              {task.relatedSecondary ? (
-                <p className="mt-0.5 text-[12px] font-normal text-sales-text-muted">
-                  {task.relatedSecondary}
-                </p>
-              ) : null}
-            </dd>
-          </div>
-          {task.createdByName ? (
-            <div className="flex justify-between gap-3 border-b border-sales-border-subtle pb-3">
-              <dt className="text-sales-text-muted">Scheduled by</dt>
-              <dd className="font-medium">{task.createdByName}</dd>
+        {copilot ? (
+          <dl className="grid grid-cols-3 gap-2 text-[12px] text-sales-text-muted">
+            <div>
+              <dt>Review</dt>
+              <dd className="text-sales-text-secondary">{statusWord(copilot.reviewStatus)}</dd>
             </div>
-          ) : null}
-          {task.phone ? (
-            <div className="flex justify-between gap-3">
-              <dt className="text-sales-text-muted">Phone</dt>
-              <dd className="font-mono tabular-nums">{task.phone}</dd>
+            <div>
+              <dt>Execution</dt>
+              <dd className="text-sales-text-secondary">{statusWord(copilot.executionStatus)}</dd>
             </div>
-          ) : null}
-        </dl>
+            <div>
+              <dt>Fulfilment</dt>
+              <dd className="text-sales-text-secondary">{statusWord(copilot.fulfilmentStatus)}</dd>
+            </div>
+          </dl>
+        ) : null}
 
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href={task.leadHref}
-            className="inline-flex h-9 items-center rounded-sales-md border border-sales-border bg-sales-surface px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
-          >
-            Open lead
-          </Link>
-          {task.whatsappHref ? (
-            <Link
-              href={task.whatsappHref}
-              className="inline-flex h-9 items-center gap-1.5 rounded-sales-md border border-sales-border bg-sales-surface px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
-            >
-              <SiWhatsapp size={14} /> Message on WhatsApp
+        <div className="flex flex-wrap gap-3">
+          {task.whatsappHref || task.leadHref ? (
+            <Link href={task.whatsappHref ?? task.leadHref} className="inline-flex h-11 items-center text-[14px] font-semibold text-sales-text-primary">
+              View chat
             </Link>
           ) : null}
-          {task.phone ? (
-            <a
-              href={`tel:${task.phone}`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-sales-md border border-sales-border bg-sales-surface px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
-            >
-              <Phone size={14} strokeWidth={1.8} /> Call
-            </a>
+          {copilot?.primaryAction === "draft" ? (
+            <span className="text-[13px] text-sales-text-secondary">Draft reply from the task list. It is placed in the composer and is not sent.</span>
           ) : null}
         </div>
-
-        <p className="rounded-sales-md border border-sales-border-subtle bg-sales-surface-subtle px-3 py-2.5 text-[12px] text-sales-text-secondary">
-          Tasks are scheduled follow-ups on your assigned leads. Completing a task clears the
-          follow-up date.
-        </p>
       </div>
     </PremiumSheet>
   );

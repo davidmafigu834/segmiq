@@ -19,6 +19,7 @@ export async function GET(req: Request) {
   try {
     const data = await fetchSalespersonTasks({
       userId: session!.userId,
+      clientId: session!.clientId,
       view,
     });
     return NextResponse.json(data);

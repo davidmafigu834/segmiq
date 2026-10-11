@@ -47,6 +47,7 @@ import { AssetDrawer } from "./AssetDrawer";
 import { AgentComposerAssist } from "./AgentComposerAssist";
 import { AgentActionCards } from "./AgentActionCards";
 import { SALES_COPILOT_DRAFT_EVENT, SalesCopilotCard, SalesCopilotSheet, priorityWorkItem, useSalesCopilot } from "./SalesCopilotWorkspace";
+import { takeCopilotDraft } from "@/lib/sales-copilot/draft";
 import { useCompactKeyboardOpen } from "@/lib/shell/use-compact-keyboard";
 import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
 import { SalesCommandDrawer } from "@/components/sales/command/SalesCommandDrawer";
@@ -223,6 +224,13 @@ export function ChatThread({
     window.addEventListener(SALES_COPILOT_DRAFT_EVENT, onDraft);
     return () => window.removeEventListener(SALES_COPILOT_DRAFT_EVENT, onDraft);
   }, []);
+  useEffect(() => {
+    if (!conversation?.id) return;
+    const text = takeCopilotDraft(conversation.id);
+    if (!text?.trim()) return;
+    setInput(text);
+    composerRef.current?.focus();
+  }, [conversation?.id]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachmentRef = useRef<ComposerAttachment | null>(null);
   attachmentRef.current = attachment;

@@ -29,6 +29,17 @@ export type SalesTaskQuickFilter =
 
 export type SalesTaskStatusDisplay = "pending" | "overdue" | "completed";
 
+export type TaskScheduleKind = "due" | "suggested" | "expected_reply" | "check_in" | "none";
+
+export type TaskSchedule = {
+  kind: TaskScheduleKind;
+  label: "Due" | "Overdue" | "Suggested time" | "Expected reply" | "Check-in" | "No date set";
+  at: string | null;
+  overdue: boolean;
+  passedSuggestion: boolean;
+  expectedReplyAt: string | null;
+};
+
 export type SalesTaskItem = {
   id: string;
   leadId: string;
@@ -39,7 +50,10 @@ export type SalesTaskItem = {
   relatedSecondary: string | null;
   phone: string | null;
   source: string | null;
-  dueAt: string;
+  /** Real deadline when one exists. Suggestions and undated work leave this null. */
+  dueAt: string | null;
+  deadlineAt: string | null;
+  schedule: TaskSchedule;
   priority: SalesTaskPriority;
   status: SalesTaskStatusDisplay;
   completed: boolean;
@@ -60,6 +74,7 @@ export type SalesTaskItem = {
     reviewStatus: string;
     executionStatus: string;
     fulfilmentStatus: string;
+    listState: "needs_review" | "todo" | "waiting";
     waitingActor: string | null;
     hourSuggested: boolean;
     currentDueAt: string | null;
@@ -67,7 +82,12 @@ export type SalesTaskItem = {
     linkedQuotationId: string | null;
     missing: string[];
     evidenceMessageIds: string[];
+    evidence: Array<{ id: string; at: string; speaker: string; text: string }>;
+    payload: Record<string, unknown>;
+    executionError: string | null;
     primaryLabel: string;
+    actionLabel: string;
+    primaryAction: "review" | "quote" | "draft" | "retry" | "complete" | "details" | "choose" | "missing";
   } | null;
 };
 
@@ -76,6 +96,8 @@ export type SalesTasksPayload = {
     view: SalesTaskView;
     generatedAt: string;
     currentUserId: string;
+    timezone: string;
+    copilotUnavailable: boolean;
   };
   counts: {
     mine: number;

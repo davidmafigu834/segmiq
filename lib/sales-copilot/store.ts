@@ -1,5 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { presentCopilotWork, primaryLabel } from "./present";
 import type { CopilotQueue, CopilotWorkView, EvidenceExcerpt, WorkItemUpsert } from "./types";
+
+export { primaryLabel };
 
 export type WorkItemRow = {
   id: string;
@@ -75,32 +78,33 @@ export function rowFromUnknown(value: unknown): WorkItemRow | null {
   };
 }
 
-export function primaryLabel(actionType: string, executionStatus: string, missing: string[] = []): string {
-  if (executionStatus === "failed") return "Retry";
-  if (missing.length > 0 && (actionType === "appointment" || actionType === "create_reminder" || actionType === "update_reminder")) {
-    return "Change time";
-  }
-  if (actionType === "quotation_draft") return "Review draft";
-  if (actionType === "quotation_missing") return "Add missing details";
-  if (actionType === "quotation_choice" || actionType === "listing_shortlist") return "Choose product";
-  if (actionType === "contact_later") return "Approve follow-up";
-  if (actionType === "customer_checkin") return "Set follow-up";
-  if (actionType === "update_reminder" || actionType === "create_reminder") return "Save reminder";
-  if (actionType === "appointment") return "Change time";
-  if (actionType === "send_quotation") return "Open draft";
-  if (actionType === "answer_question") return "Draft reply";
-  return "Review";
-}
-
 export function toPublicItem(row: WorkItemRow): CopilotWorkView {
   const payload = row.proposed_payload;
   const evidence = Array.isArray(payload.evidence) ? (payload.evidence as EvidenceExcerpt[]) : [];
+  const view = presentCopilotWork({
+    actionType: row.action_type,
+    title: row.title,
+    explanation: row.explanation,
+    queue: row.queue,
+    reviewStatus: row.review_status,
+    executionStatus: row.execution_status,
+    fulfilmentStatus: row.fulfilment_status,
+    waitingActor: row.waiting_actor,
+    proposedAt: row.proposed_at,
+    currentDueAt: row.current_due_at,
+    linkedFollowUp: row.linked_follow_up,
+    missing: row.missing_information,
+    payload,
+    semanticKey: row.semantic_key,
+    executionError: row.execution_error,
+    linkedQuotationId: row.linked_quotation_id,
+  });
   return {
     id: row.id,
     leadId: row.lead_id,
     actionType: row.action_type,
     queue: row.queue,
-    title: row.title,
+    title: view.title,
     explanation: row.explanation,
     reviewStatus: row.review_status,
     executionStatus: row.execution_status,
