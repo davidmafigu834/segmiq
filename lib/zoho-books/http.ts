@@ -1,5 +1,5 @@
 import { quotaBackoff } from "./import-plan";
-import { booksUrl } from "./protocol";
+import { booksUrl, booksWriteUrl } from "./protocol";
 import { resolveZohoRegion } from "./regions";
 
 export class ZohoBooksRequestError extends Error {
@@ -11,14 +11,17 @@ export class ZohoBooksRequestError extends Error {
     message: string,
     readonly status: number,
     readonly revoked: boolean,
-    extra?: { quota?: boolean; retryAfterSeconds?: number | null; zohoCode?: number | null }
+    extra?: { quota?: boolean; retryAfterSeconds?: number | null; zohoCode?: number | null; uncertain?: boolean }
   ) {
     super(message);
     this.name = "ZohoBooksRequestError";
     this.quota = extra?.quota === true;
     this.retryAfterSeconds = extra?.retryAfterSeconds ?? null;
     this.zohoCode = extra?.zohoCode ?? null;
+    this.uncertain = extra?.uncertain === true;
   }
+
+  readonly uncertain: boolean;
 }
 
 function zohoCode(body: unknown): number | null {
@@ -68,6 +71,77 @@ export async function zohoBooksGet(input: {
       revoked,
       { quota, retryAfterSeconds: retryAfterSeconds(response.headers.get("retry-after")), zohoCode: code }
     );
+  }
+  return body;
+}
+
+const WRITE_TIMEOUT_MS = 20_000;
+
+export async function zohoBooksWrite(input: {
+  apiDomain: string;
+  accessToken: string;
+  method: "POST" | "PUT";
+  path: string;
+  query?: Record<string, string>;
+  body: Record<string, unknown>;
+  fetchImpl?: typeof fetch;
+}): Promise<unknown> {
+  const region = resolveZohoRegion({ apiDomain: input.apiDomain });
+  const url = booksWriteUrl(input.apiDomain, input.method, input.path, input.query ?? {});
+  if (!region || !url || !input.accessToken) {
+    throw new ZohoBooksRequestError("That Zoho Books write is not allowed.", 0, false);
+  }
+  let response: Response;
+  try {
+    response = await (input.fetchImpl ?? fetch)(url, {
+      method: input.method,
+      cache: "no-store",
+      headers: {
+        Authorization: `Zoho-oauthtoken ${input.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input.body),
+      signal: AbortSignal.timeout(WRITE_TIMEOUT_MS),
+    });
+  } catch {
+    throw new ZohoBooksRequestError(
+      "Zoho Books did not answer in time. The draft may already exist. Search Books before trying again.",
+      0,
+      false,
+      { uncertain: true }
+    );
+  }
+  const body = await response.json().catch(() => null);
+  if (body == null) {
+    throw new ZohoBooksRequestError(
+      "Zoho Books returned a response that could not be read. The draft may already exist.",
+      response.status,
+      false,
+      { uncertain: true }
+    );
+  }
+  if (!response.ok) {
+    const code = zohoCode(body);
+    const quota = response.status === 429 || code === 44 || code === 45 || code === 1070;
+    const revoked = !quota && (response.status === 401 || response.status === 403);
+    const message =
+      body && typeof body === "object" && typeof (body as { message?: unknown }).message === "string"
+        ? String((body as { message: string }).message).slice(0, 300)
+        : null;
+    throw new ZohoBooksRequestError(
+      quota ? quotaMessage(code) : revoked ? "Zoho Books rejected the connection." : message || "Zoho Books rejected the draft.",
+      response.status,
+      revoked,
+      { quota, retryAfterSeconds: retryAfterSeconds(response.headers.get("retry-after")), zohoCode: code }
+    );
+  }
+  const code = zohoCode(body);
+  if (code != null && code !== 0) {
+    const message =
+      body && typeof body === "object" && typeof (body as { message?: unknown }).message === "string"
+        ? String((body as { message: string }).message).slice(0, 300)
+        : "Zoho Books rejected the draft.";
+    throw new ZohoBooksRequestError(message, response.status || 422, false, { zohoCode: code });
   }
   return body;
 }

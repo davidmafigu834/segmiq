@@ -4,6 +4,7 @@ import { zohoBooksGet, zohoBooksGetWithBackoff, ZohoBooksRequestError } from "..
 import {
   advanceInvoiceCursor,
   booksItemStatus,
+  booksSyncAttention,
   classifyZohoFailure,
   commitAfterWrite,
   customerCandidates,
@@ -343,6 +344,9 @@ describe("zoho books import planning", () => {
     assert.equal(classifyZohoFailure(429, 1070), "quota");
     assert.deepEqual(quotaBackoff(0, 30), { stop: false, retryMs: 2000 });
     assert.deepEqual(quotaBackoff(1, 1), { stop: true });
+    assert.match(booksSyncAttention("paused", "Zoho Books daily API limit was reached for this organisation.") ?? "", /Sync now/);
+    assert.match(booksSyncAttention("failed", "Reconnect Zoho Books to continue.") ?? "", /links stay stored/);
+    assert.equal(booksSyncAttention("completed", null), null);
 
     let quotaCalls = 0;
     const slept: number[] = [];

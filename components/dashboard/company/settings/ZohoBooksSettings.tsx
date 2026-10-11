@@ -16,6 +16,7 @@ type PublicConnection = {
   connectedAt: string | null;
   syncEnabled: boolean;
   invoiceReadsGranted?: boolean;
+  draftWritesGranted?: boolean;
 };
 
 type ConnectionResponse = {
@@ -77,6 +78,18 @@ type SyncRun = {
   lastError: string | null;
   invoiceReconnect?: boolean;
 };
+type OperatorActivity = {
+  latestSync: {
+    kind: string;
+    status: string;
+    updatedAt: string;
+    finishedAt: string | null;
+    lastError: string | null;
+    attention: string | null;
+    counts: Record<string, number>;
+  } | null;
+  writes: Array<{ kind: string; status: string; updatedAt: string; safeError: string | null; quotationId: string | null }>;
+};
 type InvoiceRow = {
   invoiceNumber: string | null;
   status: string | null;
@@ -122,6 +135,7 @@ export function ZohoBooksSettingsSection() {
   const [itemPlan, setItemPlan] = useState<PlanRow[] | null>(null);
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const [run, setRun] = useState<SyncRun | null>(null);
+  const [activity, setActivity] = useState<OperatorActivity | null>(null);
   const [invoices, setInvoices] = useState<InvoiceRow[] | null>(null);
 
   async function loadOrganisations() {
@@ -142,6 +156,8 @@ export function ZohoBooksSettingsSection() {
       } else {
         setOrganisations([]);
       }
+      const activityRes = await fetch("/api/integrations/zoho-books/sync", { cache: "no-store" });
+      if (activityRes.ok) setActivity((await activityRes.json()) as OperatorActivity);
       if (body?.connection?.status === "connected") {
         const invoiceRes = await fetch("/api/integrations/zoho-books/invoices", { cache: "no-store" });
         const invoiceBody = (await invoiceRes.json().catch(() => ({}))) as { invoices?: InvoiceRow[] };
@@ -468,6 +484,28 @@ export function ZohoBooksSettingsSection() {
           {connection?.syncEnabled ? "" : " · Background sync is off"}
         </p>
         {connection?.lastError ? <p className="mt-2 text-[13px] text-sales-text-secondary">{connection.lastError}</p> : null}
+        <div className="mt-3 text-[13px] text-sales-text-secondary">
+          <p>
+            Last manual sync:{" "}
+            {activity?.latestSync
+              ? `${activity.latestSync.status} · ${new Date(activity.latestSync.finishedAt || activity.latestSync.updatedAt).toLocaleString()}`
+              : "None yet. Sync now is the only sync, and it runs only when a manager clicks it."}
+          </p>
+          {activity?.latestSync?.attention ? <p className="mt-1">{activity.latestSync.attention}</p> : null}
+          {activity?.writes?.length ? (
+            <ul className="mt-2 flex flex-col gap-1">
+              {activity.writes.map((item) => (
+                <li key={`${item.kind}-${item.updatedAt}`}>
+                  {item.kind} · {item.status === "uncertain" || item.status === "needs_reconciliation" ? "Needs reconciliation" : item.status}
+                  {item.safeError ? ` · ${item.safeError}` : ""}
+                  {` · ${new Date(item.updatedAt).toLocaleString()}`}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-1">No failed or unfinished Books drafts are waiting.</p>
+          )}
+        </div>
       </SettingsSectionCard>
 
       {showOrganisationPicker ? (
@@ -533,6 +571,11 @@ export function ZohoBooksSettingsSection() {
           {connection.invoiceReadsGranted === false ? (
             <p className="mt-3 text-[13px] text-sales-text-secondary">
               Invoice status needs a new approval. Reconnect Zoho Books so Zoho can grant ZohoBooks.invoices.READ. Customer and item import still works. Changing permissions requires the manager to authorise again.
+            </p>
+          ) : null}
+          {connection.status === "connected" && connection.draftWritesGranted === false ? (
+            <p className="mt-3 text-[13px] text-sales-text-secondary">
+              Draft quotations and invoices need a new approval. Reconnect Zoho Books. Zoho will ask for permission to create a customer, and to read, create, and update estimates and invoices. SegmiQ does not ask for delete, payment, or send permissions. Customer and item import still works until you reconnect.
             </p>
           ) : null}
           {customers || items ? (

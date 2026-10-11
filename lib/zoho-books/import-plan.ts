@@ -745,6 +745,16 @@ export function quotaBackoff(
   return { stop: false, retryMs: Math.min(headerMs, 2000) };
 }
 
+export function booksSyncAttention(status: string, lastError: string | null): string | null {
+  if (status === "reconnect_required" || (lastError && /reconnect/i.test(lastError))) {
+    return "Reconnect required. Customer and item links stay stored.";
+  }
+  if (lastError && /limit was reached|rate limit|too many requests/i.test(lastError)) {
+    return "Books paused this sync because the organisation hit a request limit. Wait, then use Sync now. Nothing retries it on a schedule.";
+  }
+  return lastError;
+}
+
 export function classifyZohoFailure(status: number, zohoCode: number | null): "revoked" | "quota" | "other" {
   if (zohoCode === 44 || zohoCode === 45 || zohoCode === 1070 || status === 429) return "quota";
   if (status === 401 || status === 403) return "revoked";

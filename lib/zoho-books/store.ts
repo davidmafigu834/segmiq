@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { zohoBooksGet, zohoBooksGetWithBackoff, ZohoBooksRequestError } from "./http";
+import { zohoBooksGet, zohoBooksGetWithBackoff, zohoBooksWrite, ZohoBooksRequestError } from "./http";
 import {
   accessTokenNeedsRefresh,
   buildRevokeRequest,
@@ -9,13 +9,14 @@ import {
   evaluateOAuthState,
   isRevokedZohoTokenError,
   OAUTH_STATE_TTL_MS,
+  draftWritesGranted,
   invoiceReadsGranted,
   parseCustomerPreview,
   parseHasMore,
   parseItemPreview,
   parseOrganisations,
   parseTokenResponse,
-  ZOHO_BOOKS_READ_SCOPES,
+  ZOHO_BOOKS_SCOPES,
   type OAuthStateDecision,
   type ZohoCustomerPreview,
   type ZohoItemPreview,
@@ -58,6 +59,7 @@ export type PublicZohoConnection = {
   connectedAt: string | null;
   syncEnabled: boolean;
   invoiceReadsGranted: boolean;
+  draftWritesGranted: boolean;
 };
 
 function toPublic(row: ConnectionRow): PublicZohoConnection {
@@ -73,6 +75,7 @@ function toPublic(row: ConnectionRow): PublicZohoConnection {
     connectedAt: row.connected_at,
     syncEnabled: row.sync_enabled === true,
     invoiceReadsGranted: invoiceReadsGranted(row.scopes),
+    draftWritesGranted: draftWritesGranted(row.scopes),
   };
 }
 
@@ -214,7 +217,7 @@ export async function saveGrantedTokens(input: {
     accounts_server: input.region.accounts,
     api_domain: input.region.api,
     location: input.region.location,
-    scopes: [...ZOHO_BOOKS_READ_SCOPES],
+    scopes: [...ZOHO_BOOKS_SCOPES],
     refresh_token_sealed: refreshTokenSealed,
     access_token_sealed: accessTokenSealed,
     access_token_expires_at: new Date(Date.now() + input.expiresIn * 1000).toISOString(),
@@ -499,6 +502,18 @@ export async function testConnection(clientId: string, userId: string): Promise<
 export async function zohoBooksRead(clientId: string, path: string, query: Record<string, string>): Promise<unknown> {
   return withToken(clientId, ({ apiDomain, accessToken }) =>
     zohoBooksGetWithBackoff({ apiDomain, accessToken, path, query })
+  );
+}
+
+export async function zohoBooksMutate(
+  clientId: string,
+  method: "POST" | "PUT",
+  path: string,
+  query: Record<string, string>,
+  body: Record<string, unknown>
+): Promise<unknown> {
+  return withToken(clientId, ({ apiDomain, accessToken }) =>
+    zohoBooksWrite({ apiDomain, accessToken, method, path, query, body })
   );
 }
 

@@ -88,15 +88,14 @@ describe("zoho books regions", () => {
 });
 
 describe("zoho books oauth request", () => {
-  it("asks only for the read scopes, with an offline code grant", () => {
+  it("asks for an offline code grant and does not request all-access or payment scopes", () => {
     assert.deepEqual([...ZOHO_BOOKS_READ_SCOPES], [
       "ZohoBooks.settings.READ",
       "ZohoBooks.contacts.READ",
       "ZohoBooks.invoices.READ",
     ]);
     assert.equal(ZOHO_BOOKS_SCOPE_PARAM.includes(".ALL"), false);
-    assert.equal(ZOHO_BOOKS_SCOPE_PARAM.includes("CREATE"), false);
-    assert.equal(ZOHO_BOOKS_SCOPE_PARAM.includes("estimates"), false);
+    assert.equal(ZOHO_BOOKS_SCOPE_PARAM.includes("DELETE"), false);
     assert.equal(ZOHO_BOOKS_SCOPE_PARAM.includes("customerpayments"), false);
     const url = buildAuthorizeUrl({
       accountsServer: "https://accounts.zoho.eu",

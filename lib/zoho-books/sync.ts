@@ -13,6 +13,7 @@ import {
   materializeItem,
   planCustomer,
   planItem,
+  booksSyncAttention,
   resolvePlanAction,
   sameTenant,
   type BooksCustomer,
@@ -946,6 +947,75 @@ export async function discardBooksSync(clientId: string, userId: string) {
   });
   await recordZohoEvent(clientId, userId, "sync_discarded", { status: "failed" });
   return publicRun({ ...existing, status: "failed", last_error: "Discarded by a manager." });
+}
+
+export async function readBooksOperatorStatus(clientId: string): Promise<{
+  latestSync: {
+    kind: string;
+    status: string;
+    updatedAt: string;
+    finishedAt: string | null;
+    lastError: string | null;
+    attention: string | null;
+    counts: Record<string, number>;
+  } | null;
+  writes: Array<{
+    kind: string;
+    status: string;
+    updatedAt: string;
+    safeError: string | null;
+    quotationId: string | null;
+  }>;
+}> {
+  const supabase = createAdminClient();
+  const { data: sync, error: syncError } = await supabase
+    .from("zoho_books_sync_runs")
+    .select("kind, status, counts, last_error, updated_at, finished_at")
+    .eq("client_id", clientId)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const syncMissing = migrationError(syncError);
+  if (syncMissing) throw syncMissing;
+  if (syncError) throw new Error("Could not load the last sync.");
+  const { data: writes, error: writeError } = await supabase
+    .from("zoho_books_write_operations")
+    .select("kind, status, safe_error, updated_at, quotation_id")
+    .eq("client_id", clientId)
+    .in("status", ["reserved", "uncertain", "failed", "needs_reconciliation"])
+    .order("updated_at", { ascending: false })
+    .limit(8);
+  const writeMissing = migrationError(writeError);
+  if (writeMissing) throw writeMissing;
+  if (writeError) throw new Error("Could not load draft operations.");
+  const row = sync as {
+    kind: string;
+    status: string;
+    counts: Record<string, number> | null;
+    last_error: string | null;
+    updated_at: string;
+    finished_at: string | null;
+  } | null;
+  return {
+    latestSync: row
+      ? {
+          kind: row.kind,
+          status: row.status,
+          updatedAt: row.updated_at,
+          finishedAt: row.finished_at,
+          lastError: row.last_error,
+          attention: booksSyncAttention(row.status, row.last_error),
+          counts: row.counts ?? {},
+        }
+      : null,
+    writes: (writes ?? []).map((item) => ({
+      kind: String(item.kind),
+      status: String(item.status),
+      updatedAt: String(item.updated_at),
+      safeError: item.safe_error ? String(item.safe_error) : null,
+      quotationId: item.quotation_id ? String(item.quotation_id) : null,
+    })),
+  };
 }
 
 export async function listBooksInvoices(clientId: string) {

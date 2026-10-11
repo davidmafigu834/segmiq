@@ -5,9 +5,10 @@ import { resolveZohoRegion, type ZohoRegion } from "./regions";
  * settings.READ covers items, taxes, and currencies.
  * contacts.READ covers customer contacts filtered with contact_type=customer.
  * invoices.READ covers invoice status, total, and unpaid balance.
- * Estimate and customer-payment scopes are not requested. Outstanding balance
- * is the invoice balance field. Adding a scope later requires the manager to
- * reconnect, because Zoho only applies new scopes after consent.
+ * Customer-payment scopes are not requested. Outstanding balance is the invoice
+ * balance field. Draft create and update scopes live in ZOHO_BOOKS_WRITE_SCOPES.
+ * Adding a scope later requires the manager to reconnect, because Zoho only
+ * applies new scopes after consent.
  */
 export const ZOHO_BOOKS_READ_SCOPES = [
   "ZohoBooks.settings.READ",
@@ -15,13 +16,37 @@ export const ZOHO_BOOKS_READ_SCOPES = [
   "ZohoBooks.invoices.READ",
 ] as const;
 
+/**
+ * Write scopes for reviewed draft documents only.
+ * contacts.CREATE is used solely by the separate "create Books customer" action.
+ * estimates and invoices CREATE/UPDATE save drafts. UPDATE is limited in SegmiQ
+ * to a document this company already linked, and only while Books still says draft.
+ * READ on estimates is required to reconcile a lost response by reference_number.
+ * DELETE, ALL, customer-payment, and email scopes are not requested.
+ * Adding these scopes requires the manager to reconnect and approve again.
+ */
+export const ZOHO_BOOKS_WRITE_SCOPES = [
+  "ZohoBooks.contacts.CREATE",
+  "ZohoBooks.estimates.READ",
+  "ZohoBooks.estimates.CREATE",
+  "ZohoBooks.estimates.UPDATE",
+  "ZohoBooks.invoices.CREATE",
+  "ZohoBooks.invoices.UPDATE",
+] as const;
+
+export const ZOHO_BOOKS_SCOPES = [...ZOHO_BOOKS_READ_SCOPES, ...ZOHO_BOOKS_WRITE_SCOPES] as const;
+
 export const ZOHO_BOOKS_INVOICE_SCOPE = "ZohoBooks.invoices.READ";
+
+export function draftWritesGranted(scopes: readonly string[] | null | undefined): boolean {
+  return ZOHO_BOOKS_WRITE_SCOPES.every((scope) => Boolean(scopes?.includes(scope)));
+}
 
 export function invoiceReadsGranted(scopes: readonly string[] | null | undefined): boolean {
   return Boolean(scopes?.includes(ZOHO_BOOKS_INVOICE_SCOPE));
 }
 
-export const ZOHO_BOOKS_SCOPE_PARAM = ZOHO_BOOKS_READ_SCOPES.join(",");
+export const ZOHO_BOOKS_SCOPE_PARAM = ZOHO_BOOKS_SCOPES.join(",");
 
 export const ACCESS_REFRESH_SKEW_MS = 120_000;
 export const OAUTH_STATE_TTL_MS = 10 * 60_000;
@@ -310,6 +335,20 @@ export function parseOrganisationCurrency(body: unknown, organizationId: string)
   return null;
 }
 
+export function parseOrganisationPlan(body: unknown, organizationId: string): string | null {
+  if (!body || typeof body !== "object") return null;
+  const rows = (body as { organizations?: unknown }).organizations;
+  if (!Array.isArray(rows)) return null;
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const item = row as Record<string, unknown>;
+    if (String(item.organization_id ?? "").trim() !== organizationId) continue;
+    const plan = stringOrNull(item.plan_name) ?? stringOrNull(item.plan_type);
+    return plan;
+  }
+  return null;
+}
+
 function stringOrNull(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -387,4 +426,37 @@ export function booksUrl(apiDomain: string, path: string, query: Record<string, 
   if (!url.pathname.startsWith("/books/v3/")) return null;
   for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
   return url.toString();
+}
+
+const BOOKS_WRITE_RULES: ReadonlyArray<{ method: "POST" | "PUT"; pattern: RegExp }> = [
+  { method: "POST", pattern: /^\/books\/v3\/estimates$/ },
+  { method: "PUT", pattern: /^\/books\/v3\/estimates\/[0-9]+$/ },
+  { method: "POST", pattern: /^\/books\/v3\/invoices$/ },
+  { method: "PUT", pattern: /^\/books\/v3\/invoices\/[0-9]+$/ },
+  { method: "POST", pattern: /^\/books\/v3\/contacts$/ },
+];
+
+/**
+ * Allow only the reviewed create/update calls. Email, status, approve, void,
+ * and payment paths are rejected even if a caller builds them by hand.
+ * Estimates and invoices always include send=false. Number generation stays
+ * with Books, so ignore_auto_number_generation is rejected.
+ */
+export function booksWriteUrl(
+  apiDomain: string,
+  method: "POST" | "PUT",
+  path: string,
+  query: Record<string, string>
+): string | null {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (!BOOKS_WRITE_RULES.some((rule) => rule.method === method && rule.pattern.test(normalized))) return null;
+  if (/email|status|approve|void|payment|creditnote/i.test(normalized)) return null;
+  const next = { ...query };
+  if ("ignore_auto_number_generation" in next) return null;
+  const document = /\/estimates|\/invoices/.test(normalized);
+  if (document) {
+    if (next.send && next.send !== "false") return null;
+    next.send = "false";
+  }
+  return booksUrl(apiDomain, normalized, next);
 }

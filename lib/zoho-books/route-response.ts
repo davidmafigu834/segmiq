@@ -11,8 +11,13 @@ export function zohoRouteError(error: unknown) {
   }
   if (error instanceof ZohoBooksRequestError) {
     return NextResponse.json(
-      { error: error.message, reconnect: error.revoked, quota: error.quota },
-      { status: error.status || 502 }
+      {
+        error: error.message,
+        reconnect: error.revoked,
+        quota: error.quota,
+        needsReconciliation: error.uncertain,
+      },
+      { status: error.uncertain ? 409 : error.status || 502 }
     );
   }
   return NextResponse.json({ error: "Zoho Books could not be reached." }, { status: 502 });
