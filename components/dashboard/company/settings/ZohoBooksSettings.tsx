@@ -77,6 +77,7 @@ type SyncRun = {
   counts: Record<string, number>;
   lastError: string | null;
   invoiceReconnect?: boolean;
+  hold?: PlanRow | null;
 };
 type OperatorActivity = {
   latestSync: {
@@ -325,6 +326,50 @@ export function ZohoBooksSettingsSection() {
         setItemPlan(null);
       } else {
         toast({ title: body.run?.lastError || "Import paused. You can resume it.", tone: "warning" });
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function importAllProducts(decision?: Decision) {
+    setBusy("catalog");
+    try {
+      let latest: SyncRun | null = run;
+      for (let step = 0; step < 120; step += 1) {
+        const res = await fetch("/api/integrations/zoho-books/import/catalog", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            runId: latest?.id,
+            decision: step === 0 ? decision : undefined,
+          }),
+        });
+        const body = (await res.json().catch(() => ({}))) as { error?: string; run?: SyncRun };
+        if (!res.ok) {
+          toast({ title: body.error || "Product import paused", tone: "error" });
+          if (body.run) setRun(body.run);
+          break;
+        }
+        latest = body.run ?? null;
+        setRun(latest);
+        if (latest?.hold) {
+          setItemPlan([latest.hold]);
+          setCustomerPlan(null);
+          toast({ title: "Choose link or skip for the matching product, then continue.", tone: "warning" });
+          break;
+        }
+        if (!latest || latest.status !== "running") break;
+      }
+      if (latest?.status === "completed") {
+        const created = latest.counts.itemsCreated ?? 0;
+        const updated = latest.counts.itemsUpdated ?? 0;
+        const blocked = latest.counts.itemsBlocked ?? 0;
+        toast({
+          title: `Products imported. ${created} created, ${updated} updated${blocked ? `, ${blocked} skipped because price or currency was missing` : ""}.`,
+          tone: "success",
+        });
+        setItemPlan(null);
       }
     } finally {
       setBusy(null);
@@ -744,14 +789,17 @@ export function ZohoBooksSettingsSection() {
 
       {connection?.status === "connected" ? (
         <SettingsSectionCard
-          title="Sync now"
-          description="Manual only. This refreshes records already imported and reads invoice status for those customers. It does not turn on a schedule, and it does not write to Books."
+          title="Products and sync"
+          description="Import all Books products into this company, or refresh records that are already linked. Neither action writes to Books or starts a schedule."
         >
           <p className="text-[13px] text-sales-text-secondary">
             Books allows 100 requests a minute per organisation. Daily limits depend on the Books plan: 1,000 on Free, 2,000 on Standard, 5,000 on Professional, and 10,000 on Premium, Elite, and Ultimate. Those limits are shared with every other app using this organisation. A later nightly sync of the imported records would be a small number of calls. This phase does not start it.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button size="sm" loading={busy === "sync"} onClick={() => void syncNow()}>
+            <Button size="sm" loading={busy === "catalog"} onClick={() => void importAllProducts()}>
+              Import all products
+            </Button>
+            <Button size="sm" variant="secondary" loading={busy === "sync"} onClick={() => void syncNow()}>
               Sync now
             </Button>
             {run && run.status !== "completed" ? (
@@ -760,6 +808,55 @@ export function ZohoBooksSettingsSection() {
               </Button>
             ) : null}
           </div>
+          {run?.hold ? (
+            <div className="mt-3">
+              <p className="text-[13px] text-sales-text-secondary">
+                {run.hold.name} matches an existing product by SKU. Link it or skip it. The import continues with the next product after that.
+              </p>
+              <div className="mt-2 flex flex-col gap-1 text-[13px] text-sales-text-secondary">
+                {run.hold.candidates.map((candidate) => (
+                  <label key={candidate.id} className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name={`catalog-${run.hold!.zohoId}`}
+                      disabled={candidate.alreadyLinked}
+                      checked={decisions[run.hold!.zohoId]?.linkToId === candidate.id}
+                      onChange={() => chooseDecision(run.hold!.zohoId, "link", candidate.id)}
+                    />
+                    <span>
+                      Link {candidate.name}
+                      {candidate.alreadyLinked ? " · already linked to another Books record" : ""}
+                    </span>
+                  </label>
+                ))}
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name={`catalog-${run.hold.zohoId}`}
+                    checked={decisions[run.hold.zohoId]?.decision === "skip"}
+                    onChange={() => chooseDecision(run.hold!.zohoId, "skip")}
+                  />
+                  <span>Skip</span>
+                </label>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  loading={busy === "catalog"}
+                  onClick={() => {
+                    const choice = decisions[run.hold!.zohoId];
+                    if (!choice || (choice.decision !== "skip" && !choice.linkToId)) {
+                      toast({ title: "Choose link or skip for this product.", tone: "warning" });
+                      return;
+                    }
+                    void importAllProducts(choice);
+                  }}
+                >
+                  Continue import
+                </Button>
+              </div>
+            </div>
+          ) : null}
           {run ? (
             <p className="mt-2 text-[13px] text-sales-text-secondary">
               {run.status}

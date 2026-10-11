@@ -41,6 +41,7 @@ function fallbackE164(input: string, country?: CountryCode): string | null {
 }
 
 export const PREVIEW_PAGE_SIZE = 5;
+export const CATALOG_PAGE_SIZE = 25;
 export const MAX_PREVIEW_PAGE = 20;
 export const IMPORT_BATCH_LIMIT = 5;
 export const INVOICE_PAGE_SIZE = 20;
@@ -192,6 +193,22 @@ export function customerListQuery(organizationId: string, page: number): Record<
     page: String(clampPreviewPage(String(page))),
     per_page: String(PREVIEW_PAGE_SIZE),
   };
+}
+
+export function itemCatalogQuery(organizationId: string, page: number): Record<string, string> {
+  const safePage = Number.isInteger(page) && page > 0 ? Math.min(page, 400) : 1;
+  return {
+    organization_id: organizationId,
+    filter_by: "Status.All",
+    page: String(safePage),
+    per_page: String(CATALOG_PAGE_SIZE),
+  };
+}
+
+export function catalogItemDisposition(action: "create" | "update" | "conflict" | "blocked"): "apply" | "hold" | "skip" {
+  if (action === "conflict") return "hold";
+  if (action === "blocked") return "skip";
+  return "apply";
 }
 
 export function itemListQuery(organizationId: string, page: number): Record<string, string> {

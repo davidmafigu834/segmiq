@@ -4,6 +4,8 @@ import { zohoBooksGet, zohoBooksGetWithBackoff, ZohoBooksRequestError } from "..
 import {
   advanceInvoiceCursor,
   booksItemStatus,
+  catalogItemDisposition,
+  itemCatalogQuery,
   booksSyncAttention,
   classifyZohoFailure,
   commitAfterWrite,
@@ -80,6 +82,12 @@ describe("zoho books import planning", () => {
     assert.equal(query.per_page, "5");
     assert.equal(query.page, "2");
     assert.equal(itemListQuery("20096054919", 1).filter_by, "Status.All");
+    assert.equal(itemCatalogQuery("20096054919", 21).page, "21");
+    assert.equal(itemCatalogQuery("20096054919", 21).per_page, "25");
+    assert.equal(catalogItemDisposition("create"), "apply");
+    assert.equal(catalogItemDisposition("update"), "apply");
+    assert.equal(catalogItemDisposition("conflict"), "hold");
+    assert.equal(catalogItemDisposition("blocked"), "skip");
     assert.equal(invoiceListQuery("20096054919", "100", 1).customer_id, "100");
     assert.equal(parseCustomerRecord({ contact: { contact_id: "9", contact_name: "Vendor", contact_type: "vendor" } }), null);
   });

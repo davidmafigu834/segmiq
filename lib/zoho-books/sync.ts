@@ -11,6 +11,9 @@ import {
   invoiceListQuery,
   materializeCustomer,
   materializeItem,
+  CATALOG_PAGE_SIZE,
+  catalogItemDisposition,
+  itemCatalogQuery,
   planCustomer,
   planItem,
   booksSyncAttention,
@@ -29,6 +32,7 @@ import {
   parseCustomerRecord,
   parseHasMore,
   parseInvoicePage,
+  parseItemPreview,
   parseItemRecord,
   parseOrganisationCurrency,
   type ZohoCustomerPreview,
@@ -60,6 +64,9 @@ type Checkpoint = {
   invoicePage: number;
   invoiceTruncated: boolean;
   unavailableCustomerIds: string[];
+  catalogActive: boolean;
+  catalogPage: number;
+  catalogHoldId: string | null;
 };
 
 type RunRow = {
@@ -82,6 +89,7 @@ export type PublicRun = {
   counts: Record<string, number>;
   lastError: string | null;
   invoiceReconnect: boolean;
+  hold: ItemPlan | null;
 };
 
 function emptyCheckpoint(): Checkpoint {
@@ -93,6 +101,9 @@ function emptyCheckpoint(): Checkpoint {
     invoicePage: 1,
     invoiceTruncated: false,
     unavailableCustomerIds: [],
+    catalogActive: false,
+    catalogPage: 1,
+    catalogHoldId: null,
   };
 }
 
@@ -107,6 +118,9 @@ function readCheckpoint(value: Partial<Checkpoint> | null): Checkpoint {
     invoicePage: Number.isInteger(value.invoicePage) && Number(value.invoicePage) > 0 ? Number(value.invoicePage) : 1,
     invoiceTruncated: value.invoiceTruncated === true,
     unavailableCustomerIds: Array.isArray(value.unavailableCustomerIds) ? value.unavailableCustomerIds.map(String) : [],
+    catalogActive: value.catalogActive === true,
+    catalogPage: Number.isInteger(value.catalogPage) && Number(value.catalogPage) > 0 ? Number(value.catalogPage) : 1,
+    catalogHoldId: typeof value.catalogHoldId === "string" && value.catalogHoldId.trim() ? value.catalogHoldId : null,
   };
 }
 
@@ -419,7 +433,7 @@ async function saveRun(clientId: string, runId: string, patch: Record<string, un
   if (error) throw new Error("Could not save sync progress.");
 }
 
-function publicRun(row: RunRow, invoiceReconnect = false): PublicRun {
+function publicRun(row: RunRow, invoiceReconnect = false, hold: ItemPlan | null = null): PublicRun {
   return {
     id: row.id,
     kind: row.kind,
@@ -427,6 +441,7 @@ function publicRun(row: RunRow, invoiceReconnect = false): PublicRun {
     counts: row.counts ?? {},
     lastError: row.last_error,
     invoiceReconnect,
+    hold,
   };
 }
 
@@ -553,16 +568,47 @@ async function persistCustomer(
   return material.mode;
 }
 
+async function planCatalogItem(
+  connection: Connected,
+  books: BooksItem,
+  currency: string | null,
+  fetchedAt: string
+): Promise<{ plan: ItemPlan; books: BooksItem }> {
+  const link = await findLink(connection.clientId, connection.organizationId, "item", books.zohoId);
+  const product = link?.segmiqId ? await findProduct(connection.clientId, link.segmiqId) : null;
+  const products = await candidateProducts(connection.clientId, books.sku);
+  const links = await linkedExternalMap(
+    connection.clientId,
+    connection.organizationId,
+    "item",
+    products.map((row) => row.id)
+  );
+  return {
+    books,
+    plan: planItem({
+      actorClientId: connection.clientId,
+      books,
+      organisationCurrency: currency,
+      link: link?.segmiqId ? { segmiqId: link.segmiqId, clientId: link.clientId } : null,
+      product,
+      products,
+      linkedExternalBySegmiqId: links,
+      fetchedAt,
+    }),
+  };
+}
+
 async function persistItem(
   connection: Connected,
   userId: string,
   zohoId: string,
   decision: ImportDecision,
   currency: string | null,
-  checkpoint: Checkpoint
+  checkpoint: Checkpoint,
+  prepared?: { plan: ItemPlan; books: BooksItem }
 ) {
   const fetchedAt = new Date().toISOString();
-  const built = await buildItemPlan(connection, zohoId, currency, fetchedAt);
+  const built = prepared ?? (await buildItemPlan(connection, zohoId, currency, fetchedAt));
   const resolved = resolvePlanAction(built.plan, decision);
   if (!resolved.ok) throw new ImportDecisionError(resolved.reason);
   if (resolved.mode === "skip") return "skipped" as const;
@@ -762,6 +808,142 @@ async function listLinks(clientId: string, organizationId: string, resourceType:
   return (data ?? [])
     .filter((row) => sameTenant(clientId, String(row.client_id)) && row.segmiq_id)
     .map((row) => ({ externalId: String(row.external_id), segmiqId: String(row.segmiq_id) }));
+}
+
+async function openCatalogRun(clientId: string, userId: string, connection: Connected, runId?: string): Promise<RunRow> {
+  let existing = await activeRun(clientId);
+  if (existing && !sameTenant(clientId, existing.client_id)) {
+    throw new ZohoBooksRequestError("This sync belongs to another company.", 403, false);
+  }
+  if (existing && Date.now() - new Date(existing.updated_at).getTime() > STALE_RUN_MS) {
+    await saveRun(clientId, existing.id, {
+      status: "failed",
+      last_error: "The previous sync stopped responding.",
+      finished_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    existing = null;
+  } else if (existing && !readCheckpoint(existing.checkpoint).catalogActive) {
+    throw new ZohoBooksRequestError("A sync is already in progress for this company. Resume it or discard it first.", 409, false);
+  }
+  if (existing && runId && existing.id !== runId) {
+    throw new ZohoBooksRequestError("This product import belongs to another run.", 409, false);
+  }
+  if (existing) return existing;
+  const checkpoint = emptyCheckpoint();
+  checkpoint.catalogActive = true;
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("zoho_books_sync_runs")
+    .insert({
+      client_id: clientId,
+      connection_id: connection.id,
+      zoho_organization_id: connection.organizationId,
+      kind: "import",
+      status: "running",
+      actor_user_id: userId,
+      checkpoint,
+      counts: {},
+    })
+    .select("id, client_id, connection_id, zoho_organization_id, kind, status, checkpoint, counts, last_error, updated_at")
+    .single();
+  if (error || !data) throw new ZohoBooksRequestError("A sync is already in progress for this company.", 409, false);
+  return data as RunRow;
+}
+
+export async function stepProductCatalog(
+  clientId: string,
+  userId: string,
+  input: { runId?: string; decision?: ImportDecision }
+) {
+  const connection = await requireConnected(clientId);
+  const run = await openCatalogRun(clientId, userId, connection, input.runId);
+  const checkpoint = readCheckpoint(run.checkpoint);
+  checkpoint.catalogActive = true;
+  const counts = { ...(run.counts ?? {}) };
+  const currency = await organisationCurrency(clientId, connection.organizationId);
+  const fetchedAt = new Date().toISOString();
+
+  if (checkpoint.catalogHoldId) {
+    if (!input.decision || input.decision.zohoId !== checkpoint.catalogHoldId) {
+      const built = await buildItemPlan(connection, checkpoint.catalogHoldId, currency, fetchedAt);
+      await saveRun(clientId, run.id, { checkpoint, counts, status: "needs_decision", last_error: null, updated_at: new Date().toISOString() });
+      return publicRun({ ...run, status: "needs_decision", counts, last_error: null }, false, built.plan);
+    }
+    if (input.decision.decision !== "link" && input.decision.decision !== "skip") {
+      throw new ZohoBooksRequestError("Link the matching product or skip it.", 400, false);
+    }
+    await persistItem(connection, userId, checkpoint.catalogHoldId, input.decision, currency, checkpoint);
+    checkpoint.completedItemIds.push(checkpoint.catalogHoldId);
+    bump(counts, input.decision.decision === "skip" ? "itemsSkipped" : "itemsLinked");
+    checkpoint.catalogHoldId = null;
+  }
+
+  const body = await zohoBooksRead(clientId, "/books/v3/items", itemCatalogQuery(connection.organizationId, checkpoint.catalogPage));
+  const page = parseItemPreview(body, CATALOG_PAGE_SIZE);
+  for (const row of page) {
+    if (checkpoint.completedItemIds.includes(row.id)) continue;
+    const built = await planCatalogItem(connection, asBooksItem(row), currency, fetchedAt);
+    const disposition = catalogItemDisposition(built.plan.action);
+    if (disposition === "hold") {
+      checkpoint.catalogHoldId = row.id;
+      await saveRun(clientId, run.id, {
+        checkpoint,
+        counts,
+        status: "needs_decision",
+        last_error: "A product SKU matches an existing SegmiQ product. Link it or skip it, then continue.",
+        updated_at: new Date().toISOString(),
+      });
+      return publicRun(
+        { ...run, status: "needs_decision", counts, last_error: "A product SKU matches an existing SegmiQ product. Link it or skip it, then continue." },
+        false,
+        built.plan
+      );
+    }
+    if (disposition === "skip") {
+      checkpoint.completedItemIds.push(row.id);
+      bump(counts, "itemsBlocked");
+      continue;
+    }
+    try {
+      const mode = await persistItem(
+        connection,
+        userId,
+        row.id,
+        { zohoId: row.id, decision: built.plan.action === "update" ? "update" : "create" },
+        currency,
+        checkpoint,
+        built
+      );
+      checkpoint.completedItemIds.push(row.id);
+      bump(counts, mode === "update" ? "itemsUpdated" : mode === "skipped" ? "itemsSkipped" : "itemsCreated");
+    } catch (error) {
+      await saveRun(clientId, run.id, { checkpoint, counts, status: "running", updated_at: new Date().toISOString() });
+      return finishPaused(clientId, userId, run, checkpoint, counts, safeMessage(error));
+    }
+  }
+
+  if (page.length > 0 && parseHasMore(body)) {
+    checkpoint.catalogPage += 1;
+    await saveRun(clientId, run.id, { checkpoint, counts, status: "running", last_error: null, updated_at: new Date().toISOString() });
+    return publicRun({ ...run, status: "running", counts, last_error: null });
+  }
+
+  await saveRun(clientId, run.id, {
+    checkpoint,
+    counts,
+    status: "completed",
+    last_error: null,
+    finished_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+  await recordZohoEvent(clientId, userId, "catalog_import_completed", {
+    items: String((counts.itemsCreated ?? 0) + (counts.itemsUpdated ?? 0) + (counts.itemsLinked ?? 0)),
+    blocked: String(counts.itemsBlocked ?? 0),
+    skipped: String(counts.itemsSkipped ?? 0),
+    status: "completed",
+  });
+  return publicRun({ ...run, status: "completed", counts, last_error: null });
 }
 
 export async function stepBooksSync(clientId: string, userId: string) {
