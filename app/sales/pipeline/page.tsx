@@ -286,6 +286,7 @@ export default async function SalesPipelinePage() {
         breadcrumb="Sales / Pipeline"
         title="My pipeline"
         description="Track and manage the Deals you're actively working to win."
+        shellClassName="sales-pipeline-phone"
       >
         <Suspense fallback={<PipelineSkeleton />}>
           <DealsBoard

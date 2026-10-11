@@ -1955,3 +1955,68 @@ html[data-crm]:not([data-crm-theme="light"])
     padding: 16px;
   }
 }
+
+/* Phone pipeline only. Wider layouts keep the existing board. */
+@media (max-width: 767px) {
+  html .sales-dashboard-premium.sales-pipeline-phone .sales-mobile-scroll {
+    --sales-bg: #0c0c0c;
+    --sales-surface: #192228;
+    --sales-surface-subtle: #243038;
+    --sales-surface-hover: #243038;
+    --sales-text-primary: #f2f5f7;
+    --sales-text-secondary: #a5b1bc;
+    --sales-text-muted: #8e9ba6;
+    --sales-border: #2c363e;
+    --sales-border-subtle: #2c363e;
+    --sales-brand: #d4ff4f;
+    --sales-brand-text: #0c0c0c;
+    --sales-brand-fg: #d4ff4f;
+    overflow-x: hidden;
+    color: #f2f5f7;
+    background-color: #0c0c0c;
+    background-image: none;
+  }
+
+  html .sales-dashboard-premium.sales-pipeline-phone .segmiq-dot-wave,
+  html .sales-dashboard-premium.sales-pipeline-phone .sales-page-header {
+    display: none;
+  }
+
+  html .sales-dashboard-premium.sales-pipeline-phone .sales-page-stack {
+    overflow-x: hidden;
+  }
+}
+
+.sales-pipeline-sheet {
+  --sales-bg: #0c0c0c;
+  --sales-surface: #192228;
+  --sales-surface-subtle: #243038;
+  --sales-surface-hover: #243038;
+  --sales-text-primary: #f2f5f7;
+  --sales-text-secondary: #a5b1bc;
+  --sales-text-muted: #8e9ba6;
+  --sales-border: #2c363e;
+  --sales-border-subtle: #2c363e;
+  --sales-brand: #d4ff4f;
+  --sales-brand-text: #0c0c0c;
+  --sales-brand-fg: #d4ff4f;
+  --sales-ink: #0c0c0c;
+  color: #f2f5f7;
+  background-color: #192228;
+  animation: sales-pipeline-sheet-in 180ms ease-out;
+}
+
+@keyframes sales-pipeline-sheet-in {
+  from {
+    transform: translateY(16px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-pipeline-sheet {
+    animation: none;
+  }
+}

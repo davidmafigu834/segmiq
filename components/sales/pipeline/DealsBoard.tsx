@@ -27,6 +27,16 @@ import {
   type DealActiveStage,
 } from "@/lib/sales/deals";
 import { formatLeadSource } from "@/lib/sales/leads-directory/format";
+import {
+  EMPTY_FILTERS,
+  activeFilterGroupCount,
+  applyBoardFilters,
+  filtersActive,
+  type BoardFilters,
+  type DealBoardSort,
+  type NextActionBucket,
+} from "@/lib/sales/pipeline-board-query";
+import { MobilePipeline } from "@/components/sales/pipeline/MobilePipeline";
 import type { DealRow } from "@/types";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import { cn } from "@/lib/ui/cn";
@@ -38,22 +48,6 @@ const INITIAL_VISIBLE = 6;
 
 type ViewMode = "board" | "picks";
 type ClosedFilter = "all" | "won" | "lost";
-
-type BoardFilters = {
-  stages: DealActiveStage[];
-  atRisk: boolean;
-  noNextAction: boolean;
-  sources: string[];
-  hasQuote: "any" | "yes" | "no";
-};
-
-const EMPTY_FILTERS: BoardFilters = {
-  stages: [],
-  atRisk: false,
-  noNextAction: false,
-  sources: [],
-  hasQuote: "any",
-};
 
 function matchesSearch(item: DealBoardItem, q: string): boolean {
   const hay = [
@@ -74,32 +68,6 @@ function matchesSearch(item: DealBoardItem, q: string): boolean {
 function parseStageParam(raw: string | null): DealActiveStage | null {
   if (!raw) return null;
   return isDealActiveStage(raw) ? raw : null;
-}
-
-function filtersActive(f: BoardFilters): boolean {
-  return (
-    f.stages.length > 0 ||
-    f.atRisk ||
-    f.noNextAction ||
-    f.sources.length > 0 ||
-    f.hasQuote !== "any"
-  );
-}
-
-function applyFilters(item: DealBoardItem, f: BoardFilters, now: Date): boolean {
-  if (f.stages.length && !f.stages.includes(item.deal.stage as DealActiveStage)) {
-    return false;
-  }
-  const att = getDealAttentionState(item.deal, now);
-  if (f.atRisk && !att.atRisk) return false;
-  if (f.noNextAction && item.deal.next_action_at) return false;
-  if (f.sources.length) {
-    const key = formatLeadSource(item.leadSource).key;
-    if (!f.sources.includes(key)) return false;
-  }
-  if (f.hasQuote === "yes" && item.quoteCount === 0) return false;
-  if (f.hasQuote === "no" && item.quoteCount > 0) return false;
-  return true;
 }
 
 export function DealsBoard({
@@ -134,6 +102,7 @@ export function DealsBoard({
   );
   const [filterOpen, setFilterOpen] = useState(false);
   const [closedFilter, setClosedFilter] = useState<ClosedFilter>("all");
+  const [sortMode, setSortMode] = useState<DealBoardSort>("attention");
   const [mobileCol, setMobileCol] = useState<DealActiveStage>(stageFromUrl ?? "QUALIFIED");
   const [selectedDealId, setSelectedDealId] = useState<string | null>(dealFromUrl);
   const [visibleByCol, setVisibleByCol] = useState<Record<DealActiveStage, number>>({
@@ -193,6 +162,7 @@ export function DealsBoard({
 
   const clearFilters = useCallback(() => {
     setFilters(EMPTY_FILTERS);
+    setSortMode("attention");
     const params = new URLSearchParams(searchParams.toString());
     params.delete("stage");
     const qs = params.toString();
@@ -209,7 +179,7 @@ export function DealsBoard({
         if (closedFilter === "won" && it.deal.stage !== "WON") return false;
         if (closedFilter === "lost" && it.deal.stage !== "LOST") return false;
       }
-      if (tab === "active" && !applyFilters(it, filters, now)) return false;
+      if (tab === "active" && !applyBoardFilters(it, filters, now)) return false;
       if (debouncedQuery && !matchesSearch(it, debouncedQuery)) return false;
       return true;
     });
@@ -223,13 +193,22 @@ export function DealsBoard({
         const att = getDealAttentionState(it.deal, now);
         return { item: it, urgency: att.urgency, att };
       })
-      .sort((a, b) =>
-        compareDealsByAttention(
+      .sort((a, b) => {
+        if (sortMode === "updated_desc" || sortMode === "updated_asc") {
+          const delta = Date.parse(a.item.deal.updated_at) - Date.parse(b.item.deal.updated_at);
+          return sortMode === "updated_desc" ? -delta : delta;
+        }
+        if (sortMode === "next_soonest") {
+          const aDue = a.item.deal.next_action_at ? Date.parse(a.item.deal.next_action_at) : Number.POSITIVE_INFINITY;
+          const bDue = b.item.deal.next_action_at ? Date.parse(b.item.deal.next_action_at) : Number.POSITIVE_INFINITY;
+          return aDue - bDue;
+        }
+        return compareDealsByAttention(
           { deal: a.item.deal, urgency: a.urgency },
           { deal: b.item.deal, urgency: b.urgency }
-        )
-      );
-  }, [filtered]);
+        );
+      });
+  }, [filtered, sortMode]);
 
   const byColumn = useMemo(() => {
     const map: Record<DealActiveStage, typeof enrichedActive> = {
@@ -312,8 +291,94 @@ export function DealsBoard({
         clear: () => setFilters((f) => ({ ...f, hasQuote: "any" })),
       });
     }
+    for (const temperature of filters.temperatures) {
+      chips.push({
+        key: `temp-${temperature}`,
+        label: "Temperature",
+        value: temperature.charAt(0).toUpperCase() + temperature.slice(1),
+        clear: () =>
+          setFilters((f) => ({
+            ...f,
+            temperatures: f.temperatures.filter((value) => value !== temperature),
+          })),
+      });
+    }
+    const nextLabels: Record<NextActionBucket, string> = {
+      overdue: "Overdue",
+      today: "Due today",
+      upcoming: "Upcoming",
+      none: "No next action",
+    };
+    for (const bucket of filters.nextActions) {
+      chips.push({
+        key: `next-${bucket}`,
+        label: "Next action",
+        value: nextLabels[bucket],
+        clear: () =>
+          setFilters((f) => ({
+            ...f,
+            nextActions: f.nextActions.filter((value) => value !== bucket),
+          })),
+      });
+    }
     return chips;
   }, [filters]);
+
+  const moveStage = useCallback(
+    async (dealId: string, stage: DealActiveStage) => {
+      const current = items.find((it) => it.deal.id === dealId);
+      if (!current || current.deal.stage === stage) return true;
+      const prev = items;
+      setItems((cur) =>
+        cur.map((it) => (it.deal.id === dealId ? { ...it, deal: { ...it.deal, stage } } : it))
+      );
+      const res = await fetch(`/api/deals/${dealId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage }),
+      });
+      if (!res.ok) {
+        setItems(prev);
+        toast({ tone: "error", title: "We couldn't move this deal. Try again." });
+        return false;
+      }
+      const json = (await res.json().catch(() => ({}))) as { deal?: DealRow };
+      if (json.deal) {
+        setItems((cur) => cur.map((it) => (it.deal.id === json.deal!.id ? { ...it, deal: json.deal! } : it)));
+      }
+      toast({ tone: "success", title: `Moved to ${DEAL_STAGE_LABEL[stage]}.` });
+      return true;
+    },
+    [items, toast]
+  );
+
+  const visibleCount = useCallback(
+    (draft: BoardFilters) => {
+      const now = new Date();
+      const rows = items.filter((it) => {
+        const closed = isDealClosedStage(it.deal.stage);
+        if (tab === "active" && closed) return false;
+        if (tab === "closed" && !closed) return false;
+        if (tab === "closed") {
+          if (closedFilter === "won" && it.deal.stage !== "WON") return false;
+          if (closedFilter === "lost" && it.deal.stage !== "LOST") return false;
+        }
+        if (tab === "active" && !applyBoardFilters(it, viewMode === "board" ? { ...draft, stages: [] } : draft, now)) return false;
+        if (debouncedQuery && !matchesSearch(it, debouncedQuery)) return false;
+        return true;
+      });
+      if (tab === "closed") return rows.length;
+      if (viewMode === "picks") {
+        return rows.filter((it) => {
+          if (!isDealActiveStage(it.deal.stage)) return false;
+          const attention = getDealAttentionState(it.deal, now);
+          return attention.needsAttention && (attention.atRisk || attention.urgency >= 50 || attention.badge);
+        }).length;
+      }
+      return rows.filter((it) => it.deal.stage === mobileCol).length;
+    },
+    [closedFilter, debouncedQuery, items, mobileCol, tab, viewMode]
+  );
 
   const onMoved = useCallback((deal: DealRow) => {
     setItems((prev) =>
@@ -635,6 +700,99 @@ export function DealsBoard({
       onDealUpdated={onMoved}
     />
   );
+
+  const activeDealCount = items.filter((it) => isDealActiveStage(it.deal.stage)).length;
+  const phoneBoardItems = useMemo(() => {
+    const now = new Date();
+    const relaxed = { ...filters, stages: [] as DealActiveStage[] };
+    return items
+      .filter((it) => it.deal.stage === mobileCol)
+      .filter((it) => applyBoardFilters(it, relaxed, now))
+      .filter((it) => !debouncedQuery || matchesSearch(it, debouncedQuery))
+      .map((it) => {
+        const attention = getDealAttentionState(it.deal, now);
+        return { item: it, urgency: attention.urgency };
+      })
+      .sort((a, b) => {
+        if (sortMode === "updated_desc" || sortMode === "updated_asc") {
+          const delta = Date.parse(a.item.deal.updated_at) - Date.parse(b.item.deal.updated_at);
+          return sortMode === "updated_desc" ? -delta : delta;
+        }
+        if (sortMode === "next_soonest") {
+          const aDue = a.item.deal.next_action_at ? Date.parse(a.item.deal.next_action_at) : Number.POSITIVE_INFINITY;
+          const bDue = b.item.deal.next_action_at ? Date.parse(b.item.deal.next_action_at) : Number.POSITIVE_INFINITY;
+          return aDue - bDue;
+        }
+        return compareDealsByAttention(
+          { deal: a.item.deal, urgency: a.urgency },
+          { deal: b.item.deal, urgency: b.urgency }
+        );
+      })
+      .map((row) => row.item);
+  }, [debouncedQuery, filters, items, mobileCol, sortMode]);
+
+  if (isMobileDrawer) {
+    return (
+      <div className="relative w-full min-w-0 overflow-x-hidden">
+        <MobilePipeline
+          tab={tab}
+          viewMode={viewMode}
+          closedFilter={closedFilter}
+          query={query}
+          filters={filters}
+          sortMode={sortMode}
+          mobileCol={mobileCol}
+          stageCounts={COLS.reduce(
+            (acc, col) => {
+              const now = new Date();
+              const relaxed = { ...filters, stages: [] as DealActiveStage[] };
+              acc[col] = items.filter((it) => {
+                if (it.deal.stage !== col) return false;
+                if (!applyBoardFilters(it, relaxed, now)) return false;
+                if (debouncedQuery && !matchesSearch(it, debouncedQuery)) return false;
+                return true;
+              }).length;
+              return acc;
+            },
+            {} as Record<DealActiveStage, number>
+          )}
+          activeDealCount={activeDealCount}
+          filterGroupCount={activeFilterGroupCount(filters)}
+          chips={activeFilterChips}
+          boardItems={phoneBoardItems}
+          pickItems={picks.map((row) => row.item)}
+          closedItems={closedItems}
+          sourceOptions={[...new Set(items.map((it) => formatLeadSource(it.leadSource).key))].map((key) => ({
+            key,
+            label: formatLeadSource(key).label,
+          }))}
+          selectedDealId={selectedDealId}
+          repName={repName}
+          emptyKind={
+            searchNoMatch ? "search" : filterNoMatch ? "filter" : enrichedActive.length === 0 && tab === "active" && viewMode === "board" ? "none" : null
+          }
+          visibleCount={visibleCount}
+          onTab={(value) => {
+            setTab(value);
+            if (value === "closed") setViewMode("board");
+          }}
+          onViewMode={setViewMode}
+          onClosedFilter={setClosedFilter}
+          onQuery={setQuery}
+          onStage={setMobileCol}
+          onApplyFilters={setFilters}
+          onSort={setSortMode}
+          onClearFilters={() => {
+            clearFilters();
+            setSortMode("attention");
+          }}
+          onOpen={openDeal}
+          onMoveStage={moveStage}
+        />
+        {drawer}
+      </div>
+    );
+  }
 
   if (tab === "closed") {
     return (
