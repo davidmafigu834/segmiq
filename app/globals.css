@@ -4120,7 +4120,7 @@ label[for="photo-input"] {
   --sales-mobile-nav-height: 64px;
   --sales-mobile-page-padding: 16px;
   --sales-mobile-content-pb: calc(
-    var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 10px
+    var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 28px
   );
   --sales-mobile-fab-bottom: calc(
     var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 10px

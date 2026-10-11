@@ -183,6 +183,15 @@ html[data-crm-theme="light"] .segmiq-dot-wave {
   }
 }
 
+/* Page padding shorthand above resets padding-bottom to 16px and covers the
+   fixed mobile nav. Restore clearance after those rules. */
+@media (max-width: 1099.98px) {
+  .sales-dashboard-premium:not([data-hide-mobile-nav="true"]) .sales-mobile-scroll.sales-page-content,
+  .sales-dashboard-premium:not([data-hide-mobile-nav="true"]) .sales-mobile-scroll.sales-page-content--dense {
+    padding-bottom: var(--sales-mobile-content-pb);
+  }
+}
+
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .rounded-xl.border {
   border-radius: 8px;
   background: linear-gradient(145deg, #081a35, #07162e);
@@ -779,6 +788,24 @@ html[data-crm]:not([data-crm-theme="light"]) .dashboard-focus-kicker {
   width: 100%;
   max-width: 1600px;
   margin-inline: auto;
+}
+
+@media (max-width: 1099.98px) {
+  .sales-dashboard-premium[data-mobile-full-bleed="true"] .sales-page-content {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .sales-dashboard-premium[data-mobile-full-bleed="true"] .sales-page-stack {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+
+  .sales-dashboard-premium[data-mobile-full-bleed="true"] .sales-page-header {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
 
 .sales-dashboard-premium[data-sales-portal="true"] .sales-mobile-scroll {

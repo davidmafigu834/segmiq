@@ -377,8 +377,8 @@ export function SalesTasksClient() {
     : null;
 
   return (
-    <div className="w-full space-y-3 px-4 pb-2 md:space-y-4 md:px-6">
-      <div className="flex h-10 min-w-0 items-center gap-3">
+    <div className="w-full max-w-none space-y-3 px-4 pb-2 text-left layout:space-y-4 layout:px-6">
+      <div className="flex h-10 w-full min-w-0 items-center justify-start gap-3">
         <div className="min-w-0 flex-1 overflow-x-auto">
           <SegmentedControl
             aria-label="Task ownership"
@@ -394,7 +394,7 @@ export function SalesTasksClient() {
         </div>
 
         <div className="flex h-10 shrink-0 items-center gap-2">
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden items-center gap-2 layout:flex">
             <MenuSelect
               aria-label="Sales Copilot queue"
               value={copilotQueue}
@@ -444,7 +444,7 @@ export function SalesTasksClient() {
             </Button>
             {filtersOpen ? (
               <>
-                <div className="hidden md:block">
+                <div className="hidden layout:block">
                   <button
                     type="button"
                     className="fixed inset-0 z-20"
@@ -497,7 +497,7 @@ export function SalesTasksClient() {
                     ) : null}
                   </div>
                 </div>
-                <div className="md:hidden">
+                <div className="layout:hidden">
                   <PremiumSheet
                     title="Filters"
                     description="Status, due date, and quick filters"
@@ -605,7 +605,7 @@ export function SalesTasksClient() {
           <IconButton
             aria-label="More actions"
             size="md"
-            className="hidden h-10 w-10 shrink-0 rounded-[10px] md:inline-flex"
+            className="hidden h-10 w-10 shrink-0 rounded-[10px] layout:inline-flex"
           >
             <MoreHorizontal strokeWidth={1.8} />
           </IconButton>
@@ -631,7 +631,7 @@ export function SalesTasksClient() {
       {data ? (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="min-w-0 space-y-4">
-            <div className="hidden space-y-3 md:block">
+            <div className="hidden space-y-3 layout:block">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <ReportKpiCard
                   label="Due today"
@@ -694,8 +694,8 @@ export function SalesTasksClient() {
                 Sales Copilot could not load. Manual follow-ups are still listed.
               </p>
             ) : null}
-            <div className="md:hidden">
-              <p className="text-[13px] text-sales-text-secondary">
+            <div className="-mx-4 w-[calc(100%+2rem)] layout:hidden">
+              <p className="px-4 text-[13px] text-sales-text-secondary">
                 <span className="font-semibold tabular-nums text-sales-text-primary">{filteredTasks.length}</span>
                 {" "}
                 {filteredTasks.length === 1 ? "task" : "tasks"}
@@ -706,7 +706,7 @@ export function SalesTasksClient() {
                   </span>
                 ) : null}
               </p>
-              <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+              <div className="mt-2 flex gap-2 overflow-x-auto px-4 pb-1">
                 {(
                   [
                     ["all", "All"],
@@ -747,7 +747,7 @@ export function SalesTasksClient() {
               {selecting && selectedIds.length > 0 ? (
                 <button
                   type="button"
-                  className="mt-2 inline-flex h-11 items-center text-[14px] font-semibold text-sales-text-primary"
+                  className="mt-2 inline-flex h-11 items-center px-4 text-[14px] font-semibold text-sales-text-primary"
                   onClick={() => {
                     const chosen = filteredTasks.filter((task) => selectedIds.includes(task.id) && canSelect(task));
                     setSelectedIds([]);
@@ -760,15 +760,17 @@ export function SalesTasksClient() {
               ) : null}
               <div className="mt-1 divide-y divide-sales-border-subtle">
                 {pageRows.length === 0 ? (
-                  <TaskEmpty
-                    view={view}
-                    filtered={activeFilterCount > 0 || copilotQueue !== "all"}
-                    onAdd={() => setAddOpen(true)}
-                    onClear={() => {
-                      clearFilters();
-                      setCopilotQueue("all");
-                    }}
-                  />
+                  <div className="px-4">
+                    <TaskEmpty
+                      view={view}
+                      filtered={activeFilterCount > 0 || copilotQueue !== "all"}
+                      onAdd={() => setAddOpen(true)}
+                      onClear={() => {
+                        clearFilters();
+                        setCopilotQueue("all");
+                      }}
+                    />
+                  </div>
                 ) : (
                   pageRows.map((task) => (
                     <MobileTaskCard
@@ -794,7 +796,7 @@ export function SalesTasksClient() {
                 )}
               </div>
               {pageCount > 1 ? (
-                <div className="flex items-center justify-between py-3">
+                <div className="flex items-center justify-between px-4 py-3">
                   <button
                     type="button"
                     className="inline-flex h-11 items-center px-1 text-[14px] font-semibold text-sales-text-primary disabled:opacity-40"
@@ -818,14 +820,14 @@ export function SalesTasksClient() {
               ) : null}
             </div>
 
-            <DataTableWorkspace className="hidden md:block">
-              <DataTableScroll className="hidden md:block">
-                <DataTableEl className="min-w-[620px] table-fixed">
+            <DataTableWorkspace className="hidden w-full layout:block">
+              <DataTableScroll className="hidden w-full layout:block">
+                <DataTableEl className="min-w-[760px] table-fixed">
                   <colgroup>
                     <col className="w-11" />
                     <col />
-                    <col className="w-[28%]" />
-                    <col className="w-11" />
+                    <col className="w-[22%]" />
+                    <col className="w-[16.5rem]" />
                   </colgroup>
                   <DataTableHead>
                     <tr>
@@ -833,14 +835,14 @@ export function SalesTasksClient() {
                         <span className="sr-only">Complete</span>
                       </DataTableTh>
                       <DataTableTh compact>Task</DataTableTh>
-                      <DataTableTh compact className="w-[28%]">
+                      <DataTableTh compact className="w-[22%]">
                         <span className="inline-flex items-center gap-1 normal-case tracking-normal">
                           Due / Status
                           <ChevronDown size={12} strokeWidth={1.8} aria-hidden />
                         </span>
                       </DataTableTh>
-                      <DataTableTh compact className="w-11">
-                        <span className="sr-only">Actions</span>
+                      <DataTableTh compact align="right" className="w-[16.5rem]">
+                        Actions
                       </DataTableTh>
                     </tr>
                   </DataTableHead>
@@ -862,7 +864,9 @@ export function SalesTasksClient() {
                           key={task.id}
                           task={task}
                           timeZone={data.meta.timezone}
+                          busy={busyId === task.id}
                           onOpen={() => setDetail(task)}
+                          onPrimary={() => onPrimary(task)}
                           onComplete={() => void completeTask(task)}
                           onReschedule={() => {
                             setRescheduleDate(toDateKey(addDays(new Date(), 1)));
@@ -1233,13 +1237,17 @@ function TaskEmpty({
 function TaskTableRow({
   task,
   timeZone,
+  busy,
   onOpen,
+  onPrimary,
   onComplete,
   onReschedule,
 }: {
   task: SalesTaskItem;
   timeZone: string;
+  busy: boolean;
   onOpen: () => void;
+  onPrimary: () => void;
   onComplete: () => void;
   onReschedule: () => void;
 }) {
@@ -1333,12 +1341,28 @@ function TaskTableRow({
           </span>
         </div>
       </DataTableTd>
-      <DataTableActionsCell className="align-top !py-3">
-        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+      <DataTableActionsCell className="!w-auto min-w-[15rem] align-top !py-3">
+        <div className="flex flex-wrap items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+          {!task.completed ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onPrimary}
+              className="inline-flex h-9 shrink-0 items-center rounded-[10px] bg-sales-brand px-3 text-[13px] font-semibold text-sales-brand-text disabled:opacity-50"
+            >
+              {busy ? "Working…" : task.copilot?.actionLabel ?? "View details"}
+            </button>
+          ) : null}
+          <Link
+            href={task.whatsappHref ?? task.leadHref}
+            className="inline-flex h-9 shrink-0 items-center text-[13px] font-semibold text-sales-text-primary"
+          >
+            View chat
+          </Link>
           <DropdownMenu align="end">
             <DropdownMenuTrigger
               aria-label={`Open ${task.title} actions`}
-              className="rounded-[8px] p-1.5 text-sales-text-muted opacity-70 transition-opacity hover:bg-sales-surface-hover hover:text-sales-text-primary group-hover:opacity-100"
+              className="rounded-[8px] p-1.5 text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
             >
               <MoreHorizontal size={16} strokeWidth={1.8} />
             </DropdownMenuTrigger>
@@ -1416,7 +1440,7 @@ function MobileTaskCard({
             : null;
   const chatHref = task.whatsappHref ?? task.leadHref;
   return (
-    <article className="py-3">
+    <article className="w-full px-4 py-3 text-left">
       <div className="flex items-start gap-2.5">
         {selecting && selectable ? (
           <Checkbox
@@ -1495,12 +1519,12 @@ function TasksSkeleton() {
   return (
     <div className="space-y-3">
       <Skeleton className="h-10 w-full max-w-xl rounded-sales-md" />
-      <div className="space-y-3 md:hidden">
+      <div className="space-y-3 layout:hidden">
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-28 w-full rounded-sales-md" />
         ))}
       </div>
-      <div className="hidden gap-4 md:grid xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="hidden gap-4 layout:grid xl:grid-cols-[minmax(0,1fr)_320px]">
         <Skeleton className="h-[420px] rounded-sales-xl" />
         <Skeleton className="h-[220px] rounded-sales-xl" />
       </div>

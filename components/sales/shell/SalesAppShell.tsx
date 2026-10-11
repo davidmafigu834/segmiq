@@ -54,7 +54,7 @@ export function SalesPageHeader({
   titleActions?: ReactNode;
 }) {
   return (
-    <header className="min-w-0">
+    <header className="sales-page-header w-full min-w-0 text-left">
       <div className="hidden items-center gap-3 layout:flex">
         {breadcrumb ? <SalesBreadcrumbs value={breadcrumb} /> : <span className="min-w-0" />}
         {actions ? (
@@ -171,6 +171,7 @@ function SalesAppShellInner({
   searchPlaceholder,
   hideMobileChrome = false,
   contentFlush = false,
+  mobileFullBleed = false,
   realEstate = false,
 }: {
   children: ReactNode;
@@ -199,6 +200,8 @@ function SalesAppShellInner({
   hideMobileChrome?: boolean;
   /** Full-height workspace (WhatsApp hub) — no page padding, column flex scroll */
   contentFlush?: boolean;
+  /** Below the mobile shell breakpoint, drop the centered page column. */
+  mobileFullBleed?: boolean;
   realEstate?: boolean;
 }) {
   const router = useRouter();
@@ -254,6 +257,7 @@ function SalesAppShellInner({
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideBottomNav ? "true" : "false"}
       data-content-flush={contentFlush ? "true" : "false"}
+      data-mobile-full-bleed={mobileFullBleed ? "true" : "false"}
       data-sales-portal="true"
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
     >

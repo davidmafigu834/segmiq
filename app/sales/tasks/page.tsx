@@ -16,12 +16,12 @@ function TasksFallback() {
   return (
     <div className="space-y-3 px-4">
       <Skeleton className="h-10 w-full max-w-xl rounded-sales-md" />
-      <div className="space-y-3 md:hidden">
+      <div className="space-y-3 layout:hidden">
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-28 w-full rounded-sales-md" />
         ))}
       </div>
-      <Skeleton className="hidden h-[420px] rounded-sales-xl md:block" />
+      <Skeleton className="hidden h-[420px] rounded-sales-xl layout:block" />
     </div>
   );
 }
@@ -47,6 +47,7 @@ export default async function SalesTasksPage() {
         title="Tasks"
         description="Know what needs attention now and keep every opportunity moving."
         searchPlaceholder="Search leads, customers, tasks..."
+        mobileFullBleed
       >
         <Suspense fallback={<TasksFallback />}>
           <SalesTasksClient />
