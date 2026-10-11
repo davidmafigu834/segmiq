@@ -991,3 +991,230 @@ html[data-crm]:not([data-crm-theme="light"])
 .weekly-report-toolbar {
   scroll-margin-top: 0;
 }
+
+/* Sales Copilot daily workspace — charcoal surfaces already used by the sales inbox. */
+.sales-copilot-daily {
+  --sales-bg: #0b1014;
+  --sales-surface: #171f24;
+  --sales-surface-subtle: #12181c;
+  --sales-surface-hover: #242b30;
+  --sales-text-primary: #f5f7f8;
+  --sales-text-secondary: #c5d0d6;
+  --sales-text-muted: #99a6ad;
+  --sales-border: #263137;
+  --sales-border-subtle: #263137;
+  --sales-brand: #d4ff4f;
+  --sales-brand-hover: #c8f23f;
+  --sales-brand-active: #b8e935;
+  --sales-brand-text: #101828;
+  --sales-ink: #101828;
+  --sales-btn-shadow: none;
+  --sales-btn-shadow-hover: none;
+  --sales-btn-shadow-active: none;
+  --sales-btn-shadow-secondary: none;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  border: 1px solid var(--sales-border);
+  border-radius: 12px;
+  background: var(--sales-surface);
+  color: var(--sales-text-primary);
+  padding: 12px 12px 8px;
+}
+
+.sales-copilot-greeting {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--sales-text-secondary);
+}
+
+.sales-copilot-kicker {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--sales-text-muted);
+}
+
+.sales-copilot-title {
+  margin: 2px 0 0;
+  font-size: 22px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.sales-copilot-briefing,
+.sales-copilot-explanation,
+.sales-copilot-note,
+.sales-copilot-meta,
+.sales-copilot-date {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.sales-copilot-briefing {
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--sales-text-primary);
+}
+
+.sales-copilot-note {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--sales-text-secondary);
+}
+
+.sales-copilot-list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sales-copilot-row {
+  min-width: 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--sales-border);
+}
+
+.sales-copilot-action-title {
+  margin: 0;
+  font-size: 17px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.sales-copilot-meta {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--sales-text-secondary);
+}
+
+.sales-copilot-meta a {
+  color: var(--sales-text-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sales-copilot-date {
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.sales-copilot-date--overdue {
+  color: var(--sales-danger);
+}
+
+.sales-copilot-date--attention {
+  color: var(--sales-brand);
+}
+
+.sales-copilot-date--neutral {
+  color: var(--sales-text-secondary);
+}
+
+.sales-copilot-explanation {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--sales-text-secondary);
+}
+
+.sales-copilot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 10px;
+  min-width: 0;
+}
+
+.sales-copilot-daily .sales-btn-primary {
+  box-shadow: none;
+}
+
+.sales-copilot-chat,
+.sales-copilot-view-all {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--sales-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sales-copilot-view-all {
+  margin-top: 4px;
+}
+
+.sales-copilot-updates {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--sales-border);
+}
+
+.sales-copilot-updates-title {
+  margin: 0;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.sales-copilot-updates ul {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sales-copilot-updates li + li {
+  margin-top: 10px;
+}
+
+.sales-copilot-updates li p:first-child {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.sales-copilot-fallback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.sales-copilot-skeleton {
+  margin-top: 10px;
+}
+
+@media (max-width: 400px) {
+  .sales-copilot-daily {
+    padding: 10px 10px 6px;
+  }
+
+  .sales-copilot-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sales-copilot-actions > * {
+    width: 100%;
+    justify-content: center;
+  }
+}

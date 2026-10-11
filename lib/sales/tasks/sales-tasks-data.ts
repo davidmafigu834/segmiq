@@ -241,7 +241,7 @@ export async function fetchSalespersonTasks(opts: {
   const { start: weekStart, end: weekEnd } = weekBounds(now);
   const prev = previousWeekBounds(now);
 
-  const { data: openLeadsRaw, error: openErr } = await supabase
+  let openLeadsQuery = supabase
     .from("leads")
     .select(
       "id, name, phone, source, status, follow_up_date, assigned_to_id, score, manual_priority, project_type, form_data, clients!leads_client_id_fkey ( name )"
@@ -249,6 +249,8 @@ export async function fetchSalespersonTasks(opts: {
     .eq("assigned_to_id", opts.userId)
     .not("follow_up_date", "is", null)
     .order("follow_up_date", { ascending: true });
+  if (opts.clientId) openLeadsQuery = openLeadsQuery.eq("client_id", opts.clientId);
+  const { data: openLeadsRaw, error: openErr } = await openLeadsQuery;
 
   if (openErr) {
     console.error("[sales-tasks] open leads", openErr);
@@ -297,7 +299,7 @@ export async function fetchSalespersonTasks(opts: {
 
   let copilotUnavailable = false;
   try {
-    const copilot = await loadCopilotTasksForOwner(opts.userId, now);
+    const copilot = await loadCopilotTasksForOwner(opts.userId, now, opts.clientId);
     for (let index = openTasks.length - 1; index >= 0; index -= 1) {
       const leadId = openTasks[index]?.leadId;
       if (leadId && copilot.suppressFollowUpLeadIds.has(leadId)) {
@@ -311,7 +313,7 @@ export async function fetchSalespersonTasks(opts: {
   }
 
   // Completed this week / previous week via FOLLOW_UP_SET with completed flag
-  const { data: completedEventsRaw } = await supabase
+  let completedEventsQuery = supabase
     .from("lead_events")
     .select("lead_id, actor_id, actor_name, event_type, event_data, created_at")
     .eq("event_type", "FOLLOW_UP_SET")
@@ -319,6 +321,8 @@ export async function fetchSalespersonTasks(opts: {
     .gte("created_at", prev.start.toISOString())
     .order("created_at", { ascending: false })
     .limit(300);
+  if (opts.clientId) completedEventsQuery = completedEventsQuery.eq("client_id", opts.clientId);
+  const { data: completedEventsRaw } = await completedEventsQuery;
 
   const completedEvents = ((completedEventsRaw ?? []) as EventRow[]).filter((ev) => {
     const data = ev.event_data ?? {};
@@ -328,13 +332,15 @@ export async function fetchSalespersonTasks(opts: {
   const completedLeadIds = Array.from(new Set(completedEvents.map((e) => e.lead_id)));
   const completedLeadMap = new Map<string, LeadRow>();
   if (completedLeadIds.length > 0) {
-    const { data: completedLeads } = await supabase
+    let completedLeadsQuery = supabase
       .from("leads")
       .select(
         "id, name, phone, source, status, follow_up_date, assigned_to_id, score, manual_priority, project_type, form_data, clients!leads_client_id_fkey ( name )"
       )
       .in("id", completedLeadIds)
       .eq("assigned_to_id", opts.userId);
+    if (opts.clientId) completedLeadsQuery = completedLeadsQuery.eq("client_id", opts.clientId);
+    const { data: completedLeads } = await completedLeadsQuery;
     for (const l of (completedLeads ?? []) as LeadRow[]) {
       completedLeadMap.set(l.id, l);
     }
@@ -388,13 +394,15 @@ export async function fetchSalespersonTasks(opts: {
   const upcoming = sortTasksByUrgency(scopedOpen.filter((t) => t.status !== "overdue")).slice(0, 4);
 
   // Assignable leads: assigned to me (for Add task)
-  const { data: assignableRaw } = await supabase
+  let assignableQuery = supabase
     .from("leads")
     .select("id, name, phone, source, status, follow_up_date")
     .eq("assigned_to_id", opts.userId)
     .in("status", ["NEW", "CONTACTED", "NEGOTIATING", "PROPOSAL_SENT"])
     .order("updated_at", { ascending: false })
     .limit(80);
+  if (opts.clientId) assignableQuery = assignableQuery.eq("client_id", opts.clientId);
+  const { data: assignableRaw } = await assignableQuery;
 
   const assignableLeads = ((assignableRaw ?? []) as Array<{
     id: string;

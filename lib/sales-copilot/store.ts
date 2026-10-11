@@ -308,14 +308,16 @@ export async function appendAudit(id: string, entry: Record<string, unknown>, pa
     .eq("id", id);
 }
 
-export async function listOwnerItems(ownerId: string): Promise<WorkItemRow[]> {
+export async function listOwnerItems(ownerId: string, clientId?: string | null): Promise<WorkItemRow[]> {
   const supabase = createAdminClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("sales_copilot_work_items")
     .select("*")
     .eq("owner_id", ownerId)
     .eq("fulfilment_status", "open")
     .order("proposed_at", { ascending: true });
+  if (clientId) query = query.eq("client_id", clientId);
+  const { data, error } = await query;
   if (error) {
     if (/sales_copilot_work_items|does not exist|relation/i.test(error.message)) return [];
     throw new Error(error.message);

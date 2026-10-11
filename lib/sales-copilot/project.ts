@@ -103,6 +103,7 @@ export function copilotRowToTask(row: WorkItemRow, now: Date, relatedName: strin
       currentDueAt: row.current_due_at,
       proposedAt: row.proposed_at,
       linkedQuotationId: row.linked_quotation_id,
+      linkedFollowUp: row.linked_follow_up,
       missing: row.missing_information,
       evidenceMessageIds: row.evidence_message_ids,
       evidence: evidenceOf(row.proposed_payload),
@@ -115,12 +116,12 @@ export function copilotRowToTask(row: WorkItemRow, now: Date, relatedName: strin
   };
 }
 
-export async function loadCopilotTasksForOwner(ownerId: string, now: Date): Promise<{
+export async function loadCopilotTasksForOwner(ownerId: string, now: Date, clientId?: string | null): Promise<{
   tasks: SalesTaskItem[];
   suppressFollowUpLeadIds: Set<string>;
   notesByLead: Map<string, string>;
 }> {
-  const rows = await listOwnerItems(ownerId);
+  const rows = await listOwnerItems(ownerId, clientId);
   const leadIds = Array.from(new Set(rows.map((row) => row.lead_id)));
   const names = new Map<string, string>();
   const phones = new Map<string, string>();

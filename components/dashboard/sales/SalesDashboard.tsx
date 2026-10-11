@@ -13,11 +13,11 @@ import { KpiCard } from "./KpiCard";
 import { PerformanceCard } from "./PerformanceCard";
 import { RecentActivityCard } from "./RecentActivityCard";
 import { SourceMixCard } from "./SourceMixCard";
-import { TodaysFocusCard } from "./TodaysFocusCard";
 import { LeadDealFunnelCard } from "./LeadDealFunnelCard";
 import { ActivityTodayCard } from "./ActivityTodayCard";
 import { PipelineSnapshotCard } from "./PipelineSnapshotCard";
 import { AgentDailyWorkspace } from "@/components/real-estate/AgentDailyWorkspace";
+import { SalesCopilotDailyWorkspace } from "./SalesCopilotDailyWorkspace";
 
 /** Action-oriented KPIs stay elevated; the rest demote to a dense strip. */
 const PRIMARY_KPI_IDS = new Set(["new-enquiries", "followups", "active-deals"]);
@@ -67,9 +67,6 @@ function SalesDashboardInner({
     daysLeftLabel: data.goal?.daysLeftLabel ?? null,
   };
 
-  const planQueue = data.plan?.queue ?? [];
-  const planProgress = data.plan?.progress ?? null;
-
   const matchedPrimary = data.kpis.filter((item) => PRIMARY_KPI_IDS.has(item.id));
   const primaryKpis = matchedPrimary.length > 0 ? matchedPrimary : data.kpis.slice(0, 3);
   const secondaryKpis =
@@ -109,7 +106,9 @@ function SalesDashboardInner({
             description="Here's what needs attention across your inquiries and viewings today."
             userRoleLabel={roleLabel}
             realEstate
+            toolbar
           />
+          <SalesCopilotDailyWorkspace firstName={firstName} />
           <AgentDailyWorkspace clientId={data.clientId!} data={data.realEstate!} />
         </>
       ) : (
@@ -122,7 +121,10 @@ function SalesDashboardInner({
             notificationRole={notificationRole}
             onOpenLog={() => openLogSheet("")}
             onAddLead={openAddHubSheet}
+            toolbar
           />
+
+          <SalesCopilotDailyWorkspace firstName={firstName} />
 
           {!data.hasAnyLeads && !data.hasAnyDeals ? (
             <div className="dashboard-panel dashboard-panel--attention overflow-hidden border-0 p-5 shadow-none">
@@ -144,20 +146,6 @@ function SalesDashboardInner({
               </p>
             </div>
           ) : null}
-
-          {/* Focus first — work queue before metrics */}
-          <div className="space-y-4">
-            <TodaysFocusCard
-              focus={data.focus}
-              queue={planQueue}
-              progress={planProgress}
-              error={data.planError}
-              clientId={data.clientId}
-              onAddProspect={openAddHubSheet}
-              fallbackEnquiries={data.priorityEnquiries}
-              fallbackDeals={data.priorityDeals}
-            />
-          </div>
 
           <div className="dashboard-group relative z-[1] space-y-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -207,7 +195,6 @@ function SalesDashboardSkeletonShell() {
   return (
     <div className="sales-dashboard-premium min-h-[100dvh] bg-sales-bg p-4 layout:pl-[228px] layout:p-6">
       <div className="shimmer mb-5 h-20 rounded-[10px]" />
-      <div className="shimmer mb-4 h-[220px] rounded-[10px]" />
       <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {[1, 2, 3].map((i) => (
           <div key={i} className="shimmer h-[96px] rounded-[10px]" />

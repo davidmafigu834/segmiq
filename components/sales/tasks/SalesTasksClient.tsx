@@ -161,6 +161,14 @@ export function SalesTasksClient() {
   }, [load]);
 
   useEffect(() => {
+    const onChange = () => {
+      void load();
+    };
+    window.addEventListener("segmiq:sales-work-changed", onChange);
+    return () => window.removeEventListener("segmiq:sales-work-changed", onChange);
+  }, [load]);
+
+  useEffect(() => {
     setPage(1);
   }, [statusFilter, dueFilter, quickFilters, view]);
 

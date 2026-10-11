@@ -43,7 +43,14 @@ export function useSalesCopilot(leadId: string | null) {
     void load();
     if (!leadId) return;
     const timer = window.setInterval(() => void load(), 20000);
-    return () => window.clearInterval(timer);
+    const onChange = () => {
+      void load();
+    };
+    window.addEventListener("segmiq:sales-work-changed", onChange);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("segmiq:sales-work-changed", onChange);
+    };
   }, [leadId, load]);
 
   const act = useCallback(

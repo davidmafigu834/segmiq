@@ -45,6 +45,7 @@ export function SalesPageHeader({
   note,
   actions,
   titleActions,
+  toolbar = false,
 }: {
   breadcrumb?: string;
   title: string;
@@ -52,6 +53,8 @@ export function SalesPageHeader({
   note?: string;
   actions?: ReactNode;
   titleActions?: ReactNode;
+  /** Desktop breadcrumb and actions only. The page supplies its own heading. */
+  toolbar?: boolean;
 }) {
   return (
     <header className="sales-page-header w-full min-w-0 text-left">
@@ -62,7 +65,7 @@ export function SalesPageHeader({
         ) : null}
       </div>
 
-      <div className="min-w-0 layout:mt-3.5 layout:border-t layout:border-sales-border-subtle layout:pt-4">
+      {toolbar ? null : <div className="min-w-0 layout:mt-3.5 layout:border-t layout:border-sales-border-subtle layout:pt-4">
         <div className="flex min-w-0 flex-col gap-3 layout:flex-row layout:items-start layout:justify-between">
           <div className="min-w-0">
             <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[24px] layout:text-[26px]">
@@ -81,7 +84,7 @@ export function SalesPageHeader({
             <div className="flex shrink-0 flex-wrap items-center gap-2 layout:justify-end">{titleActions}</div>
           ) : null}
         </div>
-      </div>
+      </div>}
     </header>
   );
 }

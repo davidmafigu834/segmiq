@@ -22,6 +22,7 @@ export function DashboardHeader({
   description = "Here's what needs attention across your enquiries and deals today.",
   userRoleLabel = "Sales Executive",
   realEstate = false,
+  toolbar = false,
 }: {
   firstName: string;
   userName: string;
@@ -33,14 +34,16 @@ export function DashboardHeader({
   description?: string;
   userRoleLabel?: string;
   realEstate?: boolean;
+  toolbar?: boolean;
 }) {
   const greeting = `Good ${greetingPart()}, ${firstName}`;
 
   return (
     <SalesPageHeader
       breadcrumb="Sales / Dashboard"
-      title={greeting}
-      description={description}
+      title={toolbar ? "Dashboard" : greeting}
+      description={toolbar ? undefined : description}
+      toolbar={toolbar}
       actions={
         <>
           <div className="sd-search-wrap hidden min-w-0 shrink layout:inline-flex">

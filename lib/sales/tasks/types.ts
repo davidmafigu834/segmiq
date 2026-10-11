@@ -80,6 +80,7 @@ export type SalesTaskItem = {
     currentDueAt: string | null;
     proposedAt: string | null;
     linkedQuotationId: string | null;
+    linkedFollowUp: boolean;
     missing: string[];
     evidenceMessageIds: string[];
     evidence: Array<{ id: string; at: string; speaker: string; text: string }>;
