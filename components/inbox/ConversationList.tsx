@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { InboxFilter, InboxConversation } from "@/lib/inbox/types";
 import { applyInboxFilter } from "@/lib/inbox/apply-filter";
 import { COMPANY_INBOX_FILTER_ORDER, INBOX_FILTER_LABELS } from "@/lib/inbox/queue-filters";
@@ -83,7 +83,9 @@ export function ConversationList({
   const [ownerFilter, setOwnerFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState<"all" | "SALES" | "SUPPORT" | "GENERAL">("all");
   const [page, setPage] = useState(1);
-  const [visibleCount, setVisibleCount] = useState(50);
+  const [visibleCount, setVisibleCount] = useState(40);
+  const listScrollRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
     const base = applyInboxFilter(conversations, filter, search, currentUserId).filter((row) => {
@@ -134,8 +136,25 @@ export function ConversationList({
 
   useEffect(() => {
     setPage(1);
-    setVisibleCount(50);
+    setVisibleCount(40);
   }, [filter, ownerFilter, typeFilter, search, sort]);
+
+  useEffect(() => {
+    if (companyMode || visibleCount >= filtered.length) return;
+    const root = listScrollRef.current;
+    const target = loadMoreRef.current;
+    if (!root || !target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVisibleCount((value) => Math.min(value + 40, filtered.length));
+        }
+      },
+      { root, rootMargin: "320px" }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [companyMode, visibleCount, filtered.length]);
 
   useEffect(() => {
     if (filter === "unassigned") setOwnerFilter("all");
@@ -425,6 +444,7 @@ export function ConversationList({
         </div>
       )}
       <div
+        ref={listScrollRef}
         className={`inbox-scroll min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain ${
           whatsappMode ? "bg-sales-surface" : "bg-[var(--bg-secondary)]"
         }`}
@@ -447,20 +467,25 @@ export function ConversationList({
             />
           )
         ) : (
-          visibleRows.map((c) => (
-            <ConversationRow
-              key={c.id}
-              conversation={c}
-              active={c.id === activeId}
-              currentRepName={currentRepName}
-              onSelect={() => onSelect(c.id)}
-              onClaim={onClaim}
-              claiming={claimingId === c.id}
-              canClaim={canClaim}
-              companyMode={companyMode}
-              solarWorkflow={solarWorkflow}
-            />
-          ))
+          <>
+            {visibleRows.map((c) => (
+              <ConversationRow
+                key={c.id}
+                conversation={c}
+                active={c.id === activeId}
+                currentRepName={currentRepName}
+                onSelect={() => onSelect(c.id)}
+                onClaim={onClaim}
+                claiming={claimingId === c.id}
+                canClaim={canClaim}
+                companyMode={companyMode}
+                solarWorkflow={solarWorkflow}
+              />
+            ))}
+            {!companyMode && visibleCount < filtered.length ? (
+              <div ref={loadMoreRef} className="h-8" aria-hidden />
+            ) : null}
+          </>
         )}
       </div>
       {companyMode && filtered.length > 0 ? (
@@ -473,22 +498,6 @@ export function ConversationList({
             <span className="min-w-7 text-center text-[10px] font-semibold tabular-nums text-sales-text-primary">{page}/{pageCount}</span>
             <button type="button" disabled={page >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} className="wa-icon-btn !h-7 !w-7 disabled:opacity-35" aria-label="Next page"><ChevronRight size={13} /></button>
           </div>
-        </div>
-      ) : null}
-      {!companyMode && whatsappMode && filtered.length > 0 ? (
-        <div className="flex min-h-8 shrink-0 items-center justify-between gap-2 border-t border-sales-border bg-sales-surface px-3 max-[1099px]:min-h-11">
-          <span className="truncate text-[10px] text-sales-text-secondary">
-            Showing {Math.min(visibleCount, filtered.length)} of {filtered.length}
-          </span>
-          {visibleCount < filtered.length ? (
-            <button
-              type="button"
-              onClick={() => setVisibleCount((value) => value + 50)}
-              className="rounded-[7px] border border-sales-border bg-sales-surface px-2.5 py-1.5 text-[10px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
-            >
-              Load more
-            </button>
-          ) : null}
         </div>
       ) : null}
     </div>

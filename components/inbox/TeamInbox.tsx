@@ -283,30 +283,36 @@ export function TeamInbox({
   }, [whatsappMode]);
 
   function handleSelect(id: string) {
-    if (id === activeId) return;
-    pendingSelectionRef.current = id;
-    appliedUrlLeadRef.current = id;
-    setActiveId(id);
-    // Clear green unread badge immediately; messages fetch marks notifications read.
-    setConversations((prev) =>
-      prev.map((c) => (c.id === id && c.unread > 0 ? { ...c, unread: 0 } : c))
-    );
-    if (whatsappMode) {
-      try {
-        localStorage.setItem(activeConversationStorageKey(clientId, companyMode), id);
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("conversation", id);
-        params.delete("lead");
-        const query = params.toString();
-        startTransition(() => {
-          router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-        });
-      } catch {
-        /* selection remains functional without persistence */
+    const compact =
+      isCompact ||
+      (typeof window !== "undefined" && window.matchMedia("(max-width: 1099.98px)").matches);
+    // Going back to the list keeps the open chat selected. Tapping it again must
+    // still open the thread; bailing out here is why that tap does nothing.
+    if (id !== activeId) {
+      pendingSelectionRef.current = id;
+      appliedUrlLeadRef.current = id;
+      setActiveId(id);
+      // Clear green unread badge immediately; messages fetch marks notifications read.
+      setConversations((prev) =>
+        prev.map((c) => (c.id === id && c.unread > 0 ? { ...c, unread: 0 } : c))
+      );
+      if (whatsappMode) {
+        try {
+          localStorage.setItem(activeConversationStorageKey(clientId, companyMode), id);
+          const params = new URLSearchParams(searchParams.toString());
+          params.set("conversation", id);
+          params.delete("lead");
+          const query = params.toString();
+          startTransition(() => {
+            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+          });
+        } catch {
+          /* selection remains functional without persistence */
+        }
       }
     }
     setIntelSheetOpen(false);
-    if (isCompact && whatsappMode) {
+    if (compact && whatsappMode) {
       setMobilePane("thread");
       return;
     }
