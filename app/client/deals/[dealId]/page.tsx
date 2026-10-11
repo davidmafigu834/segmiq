@@ -17,6 +17,7 @@ import {
 } from "@/lib/sales/deals";
 import type { DealRow, LeadRow, QuotationRow } from "@/types";
 import { isRealEstate } from "@/lib/terminology";
+import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 import { companyOwners } from "@/lib/work-projects/page-data";
 import { findWorkProjectIdForDeal } from "@/lib/work-projects/service";
 
@@ -91,7 +92,10 @@ export default async function CompanyDealWorkspacePage({
     ]);
 
   const companyRow = clientRes.data as { name?: string; logo_url?: string | null; business_type?: string | null } | null;
-  const tradesDelivery = demoDeal.mode !== "demo" && !isRealEstate(companyRow?.business_type);
+  const tradesDelivery =
+    demoDeal.mode !== "demo" &&
+    !isRealEstate(companyRow?.business_type) &&
+    (await companyUsesSolarWorkflow(dealRow.client_id));
   const [existingWorkProjectId, projectOwners] = tradesDelivery
     ? await Promise.all([
         findWorkProjectIdForDeal(dealRow.client_id, dealRow.id),

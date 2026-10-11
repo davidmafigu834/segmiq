@@ -122,12 +122,15 @@ async function assertTradesClient(clientId: string): Promise<ServiceResult<{ nam
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("clients")
-    .select("id, name, business_type")
+    .select("id, name, business_type, sales_workflow_preset")
     .eq("id", clientId)
     .maybeSingle();
   if (!data) return fail(404, "Company not found.");
   if (isRealEstate(data.business_type as string | null)) {
     return fail(404, "Projects are available for trades companies.");
+  }
+  if ((data as { sales_workflow_preset?: string | null }).sales_workflow_preset !== "SOLAR_INSTALLATION") {
+    return fail(404, "Projects are part of the solar installation workflow.");
   }
   return { ok: true, data: { name: (data.name as string) ?? "Company" } };
 }

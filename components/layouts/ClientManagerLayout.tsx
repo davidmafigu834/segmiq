@@ -7,6 +7,7 @@ import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWor
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { CompanyWorkspaceProvider } from "@/components/company/CompanyWorkspaceContext";
 import { getTerminology, isRealEstate, normalizeBusinessType } from "@/lib/terminology";
+import { isSalesWorkflowPreset } from "@/lib/sales/solar-workflow/types";
 
 export async function ClientManagerLayout({
   children,
@@ -58,15 +59,18 @@ export async function ClientManagerLayout({
   let clientName: string | null = null;
   let logoUrl: string | null = null;
   let businessType: string = "trades";
+  let solarWorkflow = false;
   if (cid) {
     const { data: c } = await supabase
       .from("clients")
-      .select("name, logo_url, business_type")
+      .select("name, logo_url, business_type, sales_workflow_preset")
       .eq("id", cid)
       .maybeSingle();
     clientName = (c?.name as string) ?? null;
     logoUrl = (c?.logo_url as string | null) ?? null;
     businessType = (c?.business_type as string) ?? "trades";
+    const preset = (c as { sales_workflow_preset?: string | null } | null)?.sales_workflow_preset;
+    solarWorkflow = isSalesWorkflowPreset(preset) && preset === "SOLAR_INSTALLATION";
   }
 
     const breadcrumb =
@@ -121,8 +125,12 @@ export async function ClientManagerLayout({
         { href: "/client/leads", label: "Leads", icon: "users" as const },
         { href: "/client/inbox", label: "WhatsApp Sales Hub", icon: "inbox" as const },
         { href: "/client/quotations", label: "Quotations", icon: "file-text" as const },
-        { href: "/client/projects", label: "Projects", icon: "workflow" as const },
-        { href: "/client/work", label: "My work", icon: "workflow" as const },
+        ...(solarWorkflow
+          ? [
+              { href: "/client/projects", label: "Projects", icon: "workflow" as const },
+              { href: "/client/work", label: "My work", icon: "workflow" as const },
+            ]
+          : []),
         { href: "/client/calendar", label: "Calendar", icon: "calendar" as const },
         { href: "/client/customers", label: "Customers", icon: "users" as const },
         { href: "/client/event-capture", label: "Event Capture", icon: "calendar" as const },
@@ -144,10 +152,14 @@ export async function ClientManagerLayout({
             ["/client/leads/pipeline", "/client/leads", "/client/inbox", "/client/quotations"].includes(item.href)
           ),
         },
-        {
-          label: "Delivery",
-          items: primaryNav.filter((item) => ["/client/projects", "/client/work"].includes(item.href)),
-        },
+        ...(solarWorkflow
+          ? [
+              {
+                label: "Delivery",
+                items: primaryNav.filter((item) => ["/client/projects", "/client/work"].includes(item.href)),
+              },
+            ]
+          : []),
         {
           label: "Customers",
           items: primaryNav.filter((item) => item.href === "/client/customers"),
@@ -167,7 +179,7 @@ export async function ClientManagerLayout({
   ];
 
   const pageContent = workspaceShell ? (
-    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)}>
+    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={solarWorkflow}>
       <CompanyWorkspaceShell
       companyName={clientName ?? undefined}
       companyLogoUrl={logoUrl}
@@ -177,6 +189,7 @@ export async function ClientManagerLayout({
       notificationRole={session?.role ?? "CLIENT_MANAGER"}
       whatsappBadge={whatsappBadge}
       immersive={immersive}
+      solarWorkflow={solarWorkflow}
     >
       {workspaceTitle ? (
         <CompanyDashboardHeader

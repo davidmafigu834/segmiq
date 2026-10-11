@@ -8,7 +8,7 @@ import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { DemoWorkspaceChip } from "@/components/demo/DemoWorkspaceChip";
 import { useCompanySidebarCollapsed } from "@/lib/sales/navigation/use-company-sidebar-collapsed";
 import { PresenceHeartbeat } from "@/components/sales/PresenceHeartbeat";
-import { CompanyWorkspaceProvider } from "@/components/company/CompanyWorkspaceContext";
+import { CompanyWorkspaceProvider, useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { normalizeBusinessType, type BusinessType } from "@/lib/terminology";
 import type { UserRole } from "@/types";
 
@@ -25,6 +25,7 @@ export function CompanyWorkspaceShell({
   hideMobileChrome = false,
   preferCollapsedSidebar = false,
   businessType,
+  solarWorkflow,
 }: {
   children: ReactNode;
   companyName?: string;
@@ -41,7 +42,10 @@ export function CompanyWorkspaceShell({
   /** Workspace routes may prefer the compact sidebar only when no user preference exists yet. */
   preferCollapsedSidebar?: boolean;
   businessType?: BusinessType | string | null;
+  solarWorkflow?: boolean;
 }) {
+  const parentWorkspace = useCompanyWorkspace();
+  const resolvedSolarWorkflow = solarWorkflow ?? parentWorkspace.solarWorkflow;
   const { collapsed, toggleCollapsed, width } = useCompanySidebarCollapsed({
     preferCollapsedOnFirstVisit: preferCollapsedSidebar,
   });
@@ -103,7 +107,7 @@ export function CompanyWorkspaceShell({
 
   if (businessType == null) return shell;
   return (
-    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)}>
+    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={resolvedSolarWorkflow}>
       {shell}
     </CompanyWorkspaceProvider>
   );

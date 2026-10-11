@@ -327,7 +327,7 @@ describe("real-estate offers architecture — source contracts", () => {
     assert.equal(navRe.some((i) => i.id === "quotes"), false);
     assert.deepEqual(
       resolveSalesNavItems(false, "trades").map((i) => i.id),
-      SALES_NAVIGATION.map((i) => i.id)
+      SALES_NAVIGATION.map((i) => i.id).filter((id) => id !== "projects" && id !== "myWork")
     );
   });
 });

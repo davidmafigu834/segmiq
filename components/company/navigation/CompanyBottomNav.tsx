@@ -60,8 +60,8 @@ function NavIcon({
 
 export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number }) {
   const pathname = usePathname();
-  const { businessType } = useCompanyWorkspace();
-  const navigation = getCompanyNavigation(businessType);
+  const { businessType, solarWorkflow } = useCompanyWorkspace();
+  const navigation = getCompanyNavigation(businessType, { solarWorkflow });
   const [moreOpen, setMoreOpen] = useState(false);
   const items = companyMobilePrimaryItems(navigation);
   const moreItems = companyMobileMoreItems(navigation);

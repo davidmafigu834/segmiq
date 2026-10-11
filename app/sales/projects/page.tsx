@@ -8,12 +8,14 @@ import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
 import { ProjectListClient } from "@/components/work-projects/ProjectListClient";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import { companyOwners, loadProjectList, tradesProjectActor } from "@/lib/work-projects/page-data";
+import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 
 export const dynamic = "force-dynamic";
 
 export default async function SalesProjectsPage() {
   const session = await getServerSession(authOptions);
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
+  if (!(await companyUsesSolarWorkflow(session.clientId))) redirect("/sales/dashboard");
   const actor = await tradesProjectActor();
   const [items, owners, shell] = await Promise.all([
     loadProjectList(actor),

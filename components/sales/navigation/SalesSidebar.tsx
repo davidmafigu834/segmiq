@@ -39,12 +39,12 @@ export function SalesSidebar({
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
 }) {
-  const { businessType } = useCompanyWorkspace();
+  const { businessType, solarWorkflow } = useCompanyWorkspace();
   const pathname = usePathname();
   const crmTheme = useCrmThemeOptional();
   const wordmarkSrc =
     crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
-  const items = resolveSalesNavItems(isSolo, businessType);
+  const items = resolveSalesNavItems(isSolo, businessType, { solarWorkflow });
   const salesItems = salesNavItemsBySection(items, "sales");
   const toolsItems = salesNavItemsBySection(items, "tools");
   const dashboardHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";

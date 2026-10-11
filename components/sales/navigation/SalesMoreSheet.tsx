@@ -78,10 +78,10 @@ export function SalesMoreSheet({
 }) {
   const pathname = usePathname();
   const { moreOpen, setMoreOpen } = useSalesMobileChrome();
-  const { businessType } = useCompanyWorkspace();
+  const { businessType, solarWorkflow } = useCompanyWorkspace();
   if (!moreOpen) return null;
 
-  const items = resolveSalesNavItems(isSolo, businessType);
+  const items = resolveSalesNavItems(isSolo, businessType, { solarWorkflow });
   const more = salesMobileMoreItems(items);
   const salesMore = salesNavItemsBySection(more, "sales");
   const toolsMore = salesNavItemsBySection(more, "tools");

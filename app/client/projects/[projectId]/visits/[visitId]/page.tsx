@@ -6,6 +6,7 @@ import { AssessmentForm } from "@/components/work-projects/AssessmentForm";
 import { documentsEnabledFor, loadProjectOrNotFound, tradesProjectActor } from "@/lib/work-projects/page-data";
 import { emptySolarAssessment } from "@/lib/work-projects/field-rules";
 import { loadProjectField } from "@/lib/work-projects/field-service";
+import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function ClientVisitPage({ params }: { params: { projectId:
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");
   if (session.role === "SALESPERSON") redirect(`/sales/projects/${params.projectId}/visits/${params.visitId}`);
+  if (!(await companyUsesSolarWorkflow(session.clientId))) redirect("/client/dashboard");
   const actor = await tradesProjectActor();
   const [workspace, field, documentsEnabled] = await Promise.all([
     loadProjectOrNotFound(actor, params.projectId),

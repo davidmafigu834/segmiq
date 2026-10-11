@@ -271,7 +271,7 @@ describe("sales navigation — trades unchanged", () => {
     const trades = resolveSalesNavItems(false, "trades");
     assert.deepEqual(
       trades.map((i) => i.id),
-      SALES_NAVIGATION.map((i) => (i.id === "dashboard" ? "dashboard" : i.id))
+      SALES_NAVIGATION.map((i) => i.id).filter((id) => id !== "projects" && id !== "myWork")
     );
     assert.ok(trades.some((i) => i.id === "quotes"));
     const re = resolveSalesNavItems(false, "real_estate");

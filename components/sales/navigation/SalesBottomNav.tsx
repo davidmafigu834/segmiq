@@ -68,8 +68,8 @@ export function SalesBottomNav({
 }) {
   const pathname = usePathname();
   const { setMoreOpen, moreOpen } = useSalesMobileChrome();
-  const { businessType } = useCompanyWorkspace();
-  const items = salesMobilePrimaryItems(resolveSalesNavItems(isSolo, businessType));
+  const { businessType, solarWorkflow } = useCompanyWorkspace();
+  const items = salesMobilePrimaryItems(resolveSalesNavItems(isSolo, businessType, { solarWorkflow }));
   const badges: Partial<Record<SalesNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
     tasks: tasksBadge,

@@ -143,10 +143,10 @@ export function CompanySidebar({
 }) {
   const pathname = usePathname();
   const crmTheme = useCrmThemeOptional();
-  const { businessType } = useCompanyWorkspace();
+  const { businessType, solarWorkflow } = useCompanyWorkspace();
   const wordmarkSrc =
     crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
-  const navigation = getCompanyNavigation(businessType);
+  const navigation = getCompanyNavigation(businessType, { solarWorkflow });
   const sectionOrder = getCompanyNavSectionOrder(businessType);
 
   const badges: Partial<Record<CompanyNavBadgeKey, number>> = {

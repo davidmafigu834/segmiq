@@ -8,6 +8,7 @@ import { loadCommercialOperations } from "@/lib/work-projects/commercial-service
 import { procurementGroups } from "@/lib/work-projects/commercial-rules";
 import { loadOperationsSummary } from "@/lib/work-projects/field-service";
 import { loadInstallationOperations } from "@/lib/work-projects/installation-service";
+import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export default async function ClientProjectsPage() {
   if (!session?.userId) redirect("/login");
   if (session.role === "SALESPERSON") redirect("/sales/projects");
   if (!["CLIENT_MANAGER", "SUPER_ADMIN"].includes(session.role)) redirect("/login");
+  if (!(await companyUsesSolarWorkflow(session.clientId))) redirect("/client/dashboard");
   const actor = await tradesProjectActor();
   const [items, owners, operations, commercial, installationOps] = await Promise.all([
     loadProjectList(actor),

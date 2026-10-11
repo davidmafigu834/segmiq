@@ -207,10 +207,11 @@ describe("work project handoff safeguards", () => {
     assert.match(permissions, /P\.PROJECTS_MANAGE/);
   });
 
-  it("shows Projects to trades and hides them from real estate", () => {
+  it("shows Projects only for the solar installation workflow", () => {
     assert.equal(COMPANY_NAVIGATION.some((item) => item.id === "projects"), true);
     assert.equal(REAL_ESTATE_COMPANY_NAVIGATION.some((item) => item.id === "projects"), false);
-    assert.equal(resolveSalesNavItems(false, "trades").some((item) => item.id === "projects"), true);
+    assert.equal(resolveSalesNavItems(false, "trades").some((item) => item.id === "projects"), false);
+    assert.equal(resolveSalesNavItems(false, "trades", { solarWorkflow: true }).some((item) => item.id === "projects"), true);
     assert.equal(resolveSalesNavItems(false, "real_estate").some((item) => item.id === "projects"), false);
   });
 });

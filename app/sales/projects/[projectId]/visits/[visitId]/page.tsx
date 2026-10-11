@@ -10,12 +10,14 @@ import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import { documentsEnabledFor, loadProjectOrNotFound, tradesProjectActor } from "@/lib/work-projects/page-data";
 import { emptySolarAssessment } from "@/lib/work-projects/field-rules";
 import { loadProjectField } from "@/lib/work-projects/field-service";
+import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 
 export const dynamic = "force-dynamic";
 
 export default async function SalesVisitPage({ params }: { params: { projectId: string; visitId: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
+  if (!(await companyUsesSolarWorkflow(session.clientId))) redirect("/sales/dashboard");
   const actor = await tradesProjectActor();
   const [workspace, field, documentsEnabled, shell] = await Promise.all([
     loadProjectOrNotFound(actor, params.projectId),

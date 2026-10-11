@@ -27,7 +27,11 @@ const RE_PHASE1_IDS = [
 describe("company navigation — trades", () => {
   it("keeps the existing trades information architecture", () => {
     const nav = getCompanyNavigation("trades");
-    assert.equal(nav, COMPANY_NAVIGATION);
+    assert.equal(nav.some((item) => item.id === "projects" || item.id === "myWork"), false);
+    assert.equal(
+      getCompanyNavigation("trades", { solarWorkflow: true }).some((item) => item.id === "projects"),
+      true
+    );
     assert.equal(companyNavHasTradesCatalog(nav), true);
     for (const id of TRADE_CATALOG_IDS) {
       assert.ok(nav.some((item) => item.id === id), `trades nav missing ${id}`);
@@ -75,7 +79,8 @@ describe("company navigation — real_estate", () => {
   });
 
   it("does not change trades navigation when business_type is omitted", () => {
-    assert.equal(getCompanyNavigation(), COMPANY_NAVIGATION);
-    assert.equal(getCompanyNavigation(null), COMPANY_NAVIGATION);
+    assert.equal(getCompanyNavigation().some((item) => item.id === "leads"), true);
+    assert.equal(getCompanyNavigation(null).some((item) => item.id === "projects"), false);
+    assert.equal(COMPANY_NAVIGATION.some((item) => item.id === "projects"), true);
   });
 });

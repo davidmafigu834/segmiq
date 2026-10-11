@@ -8,6 +8,7 @@ import { companyCalendarQueryRange } from "@/lib/sales/company-calendar/format";
 import { getCompanyCalendarData } from "@/lib/sales/get-company-calendar-data";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { isRealEstate } from "@/lib/terminology";
+import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 import { listOperationalCalendar } from "@/lib/work-projects/field-service";
 import type { CompanyCalendarEvent } from "@/lib/sales/company-calendar/types";
 import { CompanyCalendarPage } from "@/components/dashboard/company/calendar/CompanyCalendarPage";
@@ -79,7 +80,7 @@ export default async function CompanyCalendarRoute({
 
   const company = clientRes.data as { logo_url?: string | null; business_type?: string | null; name?: string | null } | null;
   let calendarData = data;
-  if (!isRealEstate(company?.business_type)) {
+  if (!isRealEstate(company?.business_type) && (await companyUsesSolarWorkflow(clientId))) {
     const operational = await listOperationalCalendar(clientId, `${queryRange.startKey}T00:00:00.000Z`, `${queryRange.endKey}T00:00:00.000Z`);
     const extra: CompanyCalendarEvent[] = [
       ...operational.visits.map((visit) => {

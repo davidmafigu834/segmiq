@@ -118,6 +118,7 @@ describe("operational attention and calendar", () => {
   it("keeps My work off the real-estate navigation", () => {
     assert.equal(REAL_ESTATE_COMPANY_NAVIGATION.some((item) => item.id === "myWork"), false);
     assert.equal(resolveSalesNavItems(false, "real_estate").some((item) => item.id === "myWork"), false);
-    assert.equal(resolveSalesNavItems(false, "trades").some((item) => item.id === "myWork"), true);
+    assert.equal(resolveSalesNavItems(false, "trades").some((item) => item.id === "myWork"), false);
+    assert.equal(resolveSalesNavItems(false, "trades", { solarWorkflow: true }).some((item) => item.id === "myWork"), true);
   });
 });

@@ -139,6 +139,11 @@ function manager(actor: SolarActor) {
   return actor.role === "CLIENT_MANAGER" || actor.role === "SUPER_ADMIN";
 }
 
+export async function companyUsesSolarWorkflow(clientId: string | null | undefined): Promise<boolean> {
+  if (!clientId) return false;
+  return (await readSalesWorkflowPreset(clientId)) === "SOLAR_INSTALLATION";
+}
+
 export async function readSalesWorkflowPreset(clientId: string): Promise<SalesWorkflowPreset> {
   const supabase = createAdminClient();
   const { data, error } = await supabase

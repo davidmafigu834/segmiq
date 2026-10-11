@@ -613,10 +613,15 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
   },
 ];
 
+const SOLAR_COMPANY_NAV_IDS = new Set(["projects", "myWork"]);
+
 export function getCompanyNavigation(
-  businessType?: BusinessType | string | null
+  businessType?: BusinessType | string | null,
+  options?: { solarWorkflow?: boolean }
 ): CompanyNavItemConfig[] {
-  return isRealEstate(businessType) ? REAL_ESTATE_COMPANY_NAVIGATION : COMPANY_NAVIGATION;
+  const nav = isRealEstate(businessType) ? REAL_ESTATE_COMPANY_NAVIGATION : COMPANY_NAVIGATION;
+  if (options?.solarWorkflow) return nav;
+  return nav.filter((item) => !SOLAR_COMPANY_NAV_IDS.has(item.id));
 }
 
 export function getCompanyNavSectionOrder(

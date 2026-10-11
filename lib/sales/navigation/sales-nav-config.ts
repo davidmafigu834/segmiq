@@ -258,9 +258,15 @@ export function salesMobileMoreItems(items: SalesNavItemConfig[]): SalesNavItemC
   return items.filter((i) => i.mobileSlot === "more");
 }
 
+function withoutSolarDelivery(items: SalesNavItemConfig[], solarWorkflow?: boolean): SalesNavItemConfig[] {
+  if (solarWorkflow) return items;
+  return items.filter((item) => item.id !== "projects" && item.id !== "myWork");
+}
+
 export function resolveSalesNavItems(
   isSolo: boolean,
-  businessType?: BusinessType | string | null
+  businessType?: BusinessType | string | null,
+  options?: { solarWorkflow?: boolean }
 ): SalesNavItemConfig[] {
   const items = SALES_NAVIGATION.map((item) => {
     if (item.id === "dashboard") {
@@ -271,7 +277,7 @@ export function resolveSalesNavItems(
     }
     return item;
   });
-  if (!isRealEstate(businessType)) return items;
+  if (!isRealEstate(businessType)) return withoutSolarDelivery(items, options?.solarWorkflow);
   const listingsItem: SalesNavItemConfig = {
     id: "listings",
     label: "Listings",

@@ -17,6 +17,7 @@ import {
 } from "@/lib/sales/deals";
 import type { DealRow, LeadRow, QuotationRow } from "@/types";
 import { isRealEstate } from "@/lib/terminology";
+import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 import { companyOwners } from "@/lib/work-projects/page-data";
 import { findWorkProjectIdForDeal } from "@/lib/work-projects/service";
 
@@ -80,7 +81,8 @@ export default async function DealWorkspacePage({
       : await supabase.from("clients").select("business_type").eq("id", dealRow.client_id).maybeSingle();
   const tradesDelivery =
     demoDeal.mode !== "demo" &&
-    !isRealEstate((company as { business_type?: string | null } | null)?.business_type);
+    !isRealEstate((company as { business_type?: string | null } | null)?.business_type) &&
+    (await companyUsesSolarWorkflow(dealRow.client_id));
   const [existingWorkProjectId, projectOwners] = tradesDelivery
     ? await Promise.all([
         findWorkProjectIdForDeal(dealRow.client_id, dealRow.id),

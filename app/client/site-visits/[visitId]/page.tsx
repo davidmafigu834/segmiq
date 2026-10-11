@@ -3,13 +3,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { AssessmentForm } from "@/components/work-projects/AssessmentForm";
-import { loadSalesSiteVisit } from "@/lib/sales/solar-workflow/service";
+import { companyUsesSolarWorkflow, loadSalesSiteVisit } from "@/lib/sales/solar-workflow/service";
 
 export const dynamic = "force-dynamic";
 
 export default async function CompanySiteVisitPage({ params }: { params: { visitId: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId || !session.clientId || !session.role) redirect("/login");
+  if (!(await companyUsesSolarWorkflow(session.clientId))) redirect("/client/dashboard");
   const loaded = await loadSalesSiteVisit(
     { userId: session.userId, role: session.role, clientId: session.clientId },
     params.visitId

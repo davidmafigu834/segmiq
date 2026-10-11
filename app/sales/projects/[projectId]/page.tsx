@@ -16,6 +16,7 @@ import {
 import { loadProjectCommercial, type ProjectCommercialSnapshot } from "@/lib/work-projects/commercial-service";
 import { loadProjectField, type ProjectFieldSnapshot } from "@/lib/work-projects/field-service";
 import { emptyInstallationSnapshot, loadProjectInstallation } from "@/lib/work-projects/installation-service";
+import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 
 function emptyField(): ProjectFieldSnapshot {
   return { members: [], tasks: [], visits: [], assessments: [], attention: [], canManageTeam: false };
@@ -53,6 +54,7 @@ export default async function SalesProjectPage({
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
+  if (!(await companyUsesSolarWorkflow(session.clientId))) redirect("/sales/dashboard");
   const actor = await tradesProjectActor();
   const [workspace, owners, documentsEnabled, shell, fieldResult, commercialResult, installationResult] = await Promise.all([
     loadProjectOrNotFound(actor, params.projectId),

@@ -12,19 +12,23 @@ type CompanyWorkspaceValue = {
   businessType: BusinessType;
   terminology: Terminology;
   isRealEstate: boolean;
+  solarWorkflow: boolean;
 };
 
 const CompanyWorkspaceContext = createContext<CompanyWorkspaceValue>({
   businessType: "trades",
   terminology: getTerminology("trades"),
   isRealEstate: false,
+  solarWorkflow: false,
 });
 
 export function CompanyWorkspaceProvider({
   businessType,
+  solarWorkflow = false,
   children,
 }: {
   businessType: BusinessType | string | null | undefined;
+  solarWorkflow?: boolean;
   children: ReactNode;
 }) {
   const normalized = normalizeBusinessType(businessType);
@@ -32,6 +36,7 @@ export function CompanyWorkspaceProvider({
     businessType: normalized,
     terminology: getTerminology(normalized),
     isRealEstate: normalized === "real_estate",
+    solarWorkflow,
   };
   return (
     <CompanyWorkspaceContext.Provider value={value}>{children}</CompanyWorkspaceContext.Provider>

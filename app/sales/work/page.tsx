@@ -9,12 +9,14 @@ import { MyWorkClient } from "@/components/work-projects/MyWorkClient";
 import { listMyWork } from "@/lib/work-projects/field-service";
 import { tradesProjectActor } from "@/lib/work-projects/page-data";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
+import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 
 export const dynamic = "force-dynamic";
 
 export default async function SalesMyWorkPage() {
   const session = await getServerSession(authOptions);
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
+  if (!(await companyUsesSolarWorkflow(session.clientId))) redirect("/sales/dashboard");
   const actor = await tradesProjectActor();
   const [work, shell] = await Promise.all([listMyWork(actor), loadSalesShellProps(session)]);
   const data = work.ok ? work.data : { tasks: [], visits: [] };

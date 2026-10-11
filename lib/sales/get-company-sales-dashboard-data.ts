@@ -1437,8 +1437,11 @@ export async function getCompanySalesDashboard(opts: {
     reAgentTeam = reDashboard.team;
   } else {
     try {
-      const { loadWorkProjectSummary } = await import("@/lib/work-projects/service");
-      workProjects = await loadWorkProjectSummary(clientId);
+      const { companyUsesSolarWorkflow } = await import("@/lib/sales/solar-workflow/service");
+      if (await companyUsesSolarWorkflow(clientId)) {
+        const { loadWorkProjectSummary } = await import("@/lib/work-projects/service");
+        workProjects = await loadWorkProjectSummary(clientId);
+      }
     } catch {
       workProjects = null;
     }
