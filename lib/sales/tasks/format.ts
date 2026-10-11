@@ -186,7 +186,7 @@ export function titleForTask(type: SalesTaskType, relatedName: string): string {
   }
 }
 
-export function sortTasksByUrgency(tasks: SalesTaskItem[], now = new Date()): SalesTaskItem[] {
+export function sortTasksByUrgency(tasks: SalesTaskItem[]): SalesTaskItem[] {
   const priorityRank: Record<SalesTaskPriority, number> = {
     high: 0,
     medium: 1,

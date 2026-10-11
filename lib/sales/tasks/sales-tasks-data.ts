@@ -357,7 +357,7 @@ export async function fetchSalespersonTasks(opts: {
     return at >= prev.start && at <= prev.end;
   });
 
-  const allForCounts = sortTasksByUrgency([...openTasks, ...completedThisWeek], now);
+  const allForCounts = sortTasksByUrgency([...openTasks, ...completedThisWeek]);
 
   const counts = {
     mine: openTasks.filter((t) => t.assignedToId === opts.userId).length,
@@ -375,23 +375,17 @@ export async function fetchSalespersonTasks(opts: {
   // For created/all views include completed this week when relevant
   const scoped =
     view === "created" || view === "all"
-      ? sortTasksByUrgency(
-          [
-            ...filterByView(openTasks, view, opts.userId),
-            ...filterByView(completedThisWeek, view, opts.userId),
-          ],
-          now
-        )
-      : sortTasksByUrgency(scopedOpen, now);
+      ? sortTasksByUrgency([
+          ...filterByView(openTasks, view, opts.userId),
+          ...filterByView(completedThisWeek, view, opts.userId),
+        ])
+      : sortTasksByUrgency(scopedOpen);
 
   const dueToday = scopedOpen.filter((t) => isTaskDueToday(t.deadlineAt, now));
   const thisWeek = scopedOpen.filter((t) => isTaskDueThisWeek(t.deadlineAt, now));
   const overdue = scopedOpen.filter((t) => t.status === "overdue");
 
-  const upcoming = sortTasksByUrgency(
-    scopedOpen.filter((t) => t.status !== "overdue"),
-    now
-  ).slice(0, 4);
+  const upcoming = sortTasksByUrgency(scopedOpen.filter((t) => t.status !== "overdue")).slice(0, 4);
 
   // Assignable leads: assigned to me (for Add task)
   const { data: assignableRaw } = await supabase
