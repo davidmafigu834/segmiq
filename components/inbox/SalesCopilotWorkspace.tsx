@@ -100,6 +100,14 @@ function knownValues(item: CopilotWorkView): Array<{ key: string; value: string 
   });
 }
 
+function datetimeLocalValue(iso: string | null): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 function usesSchedule(item: CopilotWorkView) {
   return (
     item.actionType === "update_reminder" ||
@@ -286,8 +294,9 @@ export function SalesCopilotSheet({
   onAct: (item: CopilotWorkView, body: Record<string, unknown>) => void;
   onDraft: (text: string) => void;
 }) {
-  const [when, setWhen] = useState("");
+  const [times, setTimes] = useState<Record<string, string>>({});
   const [snoozeFor, setSnoozeFor] = useState<string | null>(null);
+  const [snoozeUntil, setSnoozeUntil] = useState("");
   const [evidenceFor, setEvidenceFor] = useState<string | null>(null);
   void summary;
   if (!open) return null;
@@ -314,6 +323,7 @@ export function SalesCopilotSheet({
           {items.map((item) => {
             const ready = quoteReady(item);
             const scheduled = usesSchedule(item);
+            const when = times[item.id] ?? datetimeLocalValue(item.proposedAt);
             return (
               <li key={item.id} className="rounded-[12px] border border-sales-border p-3">
                 <p className="text-[12px] font-medium text-sales-text-muted">{statusLabel(item)}</p>
@@ -386,7 +396,7 @@ export function SalesCopilotSheet({
                     <input
                       type="datetime-local"
                       value={when}
-                      onChange={(event) => setWhen(event.target.value)}
+                      onChange={(event) => setTimes((current) => ({ ...current, [item.id]: event.target.value }))}
                       className="mt-1 min-h-11 w-full rounded-[8px] border border-sales-border bg-transparent px-2 text-[16px] text-inherit"
                     />
                   </label>
@@ -395,8 +405,8 @@ export function SalesCopilotSheet({
                     Snooze until
                     <input
                       type="datetime-local"
-                      value={when}
-                      onChange={(event) => setWhen(event.target.value)}
+                      value={snoozeUntil}
+                      onChange={(event) => setSnoozeUntil(event.target.value)}
                       className="mt-1 min-h-11 w-full rounded-[8px] border border-sales-border bg-transparent px-2 text-[16px] text-inherit"
                     />
                   </label>
@@ -439,8 +449,8 @@ export function SalesCopilotSheet({
                   {snoozeFor === item.id ? (
                     <button
                       type="button"
-                      disabled={busy || !when}
-                      onClick={() => onAct(item, { action: "snooze", snoozeUntil: new Date(when).toISOString() })}
+                      disabled={busy || !snoozeUntil}
+                      onClick={() => onAct(item, { action: "snooze", snoozeUntil: new Date(snoozeUntil).toISOString() })}
                       className={cardSecondary}
                     >
                       Confirm snooze
@@ -477,7 +487,10 @@ function SalesCopilotPanelItem({
   busy: boolean;
   onAct: (itemId: string, body: Record<string, unknown>) => void;
 }) {
-  const [when, setWhen] = useState("");
+  const [when, setWhen] = useState(() => datetimeLocalValue(item.proposedAt));
+  useEffect(() => {
+    setWhen(datetimeLocalValue(item.proposedAt));
+  }, [item.id, item.proposedAt]);
   const options = Array.isArray(item.payload.options)
     ? (item.payload.options as Array<{ id: string; name?: string }>)
     : [];

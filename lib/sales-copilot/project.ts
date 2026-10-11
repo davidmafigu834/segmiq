@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SalesTaskItem, SalesTaskPriority } from "@/lib/sales/tasks/types";
 import { isTaskOverdue } from "@/lib/sales/tasks/format";
+import { withoutMeetingDuplicateReminders } from "./dedupe";
 import { listOwnerItems, primaryLabel, type WorkItemRow } from "./store";
 
 function taskType(actionType: string): SalesTaskItem["type"] {
@@ -90,8 +91,15 @@ export async function loadCopilotTasksForOwner(ownerId: string, now: Date): Prom
   const tasks: SalesTaskItem[] = [];
   const suppressFollowUpLeadIds = new Set<string>();
   const notesByLead = new Map<string, string>();
-  for (const row of rows) {
-    if (!visible(row, now)) continue;
+  const visibleRows = withoutMeetingDuplicateReminders(
+    rows.filter((row) => visible(row, now)).map((row) => ({
+      ...row,
+      semanticKey: row.semantic_key,
+      actionType: row.action_type,
+      evidenceMessageIds: row.evidence_message_ids,
+    }))
+  );
+  for (const row of visibleRows) {
     if (row.linked_follow_up && row.review_status === "approved" && row.execution_status === "succeeded") {
       suppressFollowUpLeadIds.add(row.lead_id);
       notesByLead.set(row.lead_id, row.explanation);

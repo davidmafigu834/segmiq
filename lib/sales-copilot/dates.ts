@@ -96,7 +96,7 @@ export type ResolvedWhen = {
   ymd: string;
 };
 
-export function parseExplicitTime(text: string): { hour: number; minute: number } | null {
+export function parseExplicitTime(text: string): { hour: number; minute: number; approximate?: boolean } | null {
   const ampm = text.match(/\b(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
   if (ampm) {
     let hour = Number(ampm[1]);
@@ -114,10 +114,10 @@ export function parseExplicitTime(text: string): { hour: number; minute: number 
     if (hour > 23 || minute > 59) return null;
     return { hour, minute };
   }
-  if (/\bmorning\b/i.test(text)) return { hour: 9, minute: 0 };
-  if (/\bnoon\b/i.test(text)) return { hour: 12, minute: 0 };
-  if (/\bafternoon\b/i.test(text)) return { hour: 14, minute: 0 };
-  if (/\bevening\b/i.test(text)) return { hour: 17, minute: 0 };
+  if (/\bmorning\b/i.test(text)) return { hour: 9, minute: 0, approximate: true };
+  if (/\bnoon\b/i.test(text)) return { hour: 12, minute: 0, approximate: true };
+  if (/\bafternoon\b/i.test(text)) return { hour: 14, minute: 0, approximate: true };
+  if (/\bevening\b/i.test(text)) return { hour: 17, minute: 0, approximate: true };
   return null;
 }
 
@@ -180,7 +180,7 @@ export function resolveCommitmentWhen(
   const minute = explicit?.minute ?? 0;
   return {
     at: atLocalHour(ymd, hour, minute, timeZone),
-    hourSuggested: !explicit,
+    hourSuggested: !explicit || explicit.approximate === true,
     dayLabel,
     ymd: ymdKey(ymd),
   };
@@ -212,7 +212,7 @@ export function resolveAnchoredSlot(input: {
   const [year, month, date] = day.ymd.split("-").map(Number);
   return {
     at: atLocalHour({ year, month, day: date }, explicit.hour, explicit.minute, input.timeZone),
-    hourSuggested: false,
+    hourSuggested: explicit.approximate === true,
     dayLabel: day.dayLabel,
     ymd: day.ymd,
   };

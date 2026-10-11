@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { canReadLead } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { withoutMeetingDuplicateReminders } from "@/lib/sales-copilot/dedupe";
 import { loadAnalysis, listWorkItems, toPublicItem } from "@/lib/sales-copilot/store";
 import { runDueCopilotJobs } from "@/lib/sales-copilot/jobs";
 
@@ -41,7 +42,14 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
       if (job?.status === "scheduled" || job?.status === "running") status = "pending";
     }
     const now = Date.now();
-    const publicItems = items.map(toPublicItem).filter((item) => visible(item, now));
+    const publicItems = withoutMeetingDuplicateReminders(
+      items
+        .filter((row) => visible(toPublicItem(row), now))
+        .map((row) => ({
+          ...toPublicItem(row),
+          evidenceMessageIds: row.evidence_message_ids,
+        }))
+    );
     publicItems.sort((a, b) => {
       const rank = (queue: string, execution: string) =>
         execution === "failed" ? 0 : queue === "needs_review" ? 1 : queue === "todo" ? 2 : 3;

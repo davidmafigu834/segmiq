@@ -7,6 +7,7 @@ import { defaultRequiredFields } from "../lib/sales-copilot/catalogue";
 import { reconcileProposals } from "../lib/sales-copilot/reconcile";
 import { payloadHash } from "../lib/sales-copilot/hash";
 import { existingLocalDay, followUpCalendarDate, formatLocalWhen, resolveCommitmentWhen } from "../lib/sales-copilot/dates";
+import { withoutMeetingDuplicateReminders } from "../lib/sales-copilot/dedupe";
 import { carryCopilotSummary, readableCopilotSummary } from "../lib/sales-copilot/summary";
 import type { CopilotEngineInput, ProposalDraft } from "../lib/sales-copilot/types";
 
@@ -90,6 +91,18 @@ describe("Sales Copilot dates", () => {
     );
     assert.equal(resolved?.hourSuggested, false);
     assert.equal(existingLocalDay(resolved!.at, TZ), "2026-10-09");
+  });
+
+  it("treats morning as a suggested hour, not an agreed clock time", () => {
+    const resolved = resolveCommitmentWhen(
+      "I'll call you Tuesday in the morning",
+      new Date("2026-10-11T08:00:00.000Z"),
+      TZ,
+      9
+    );
+    assert.equal(resolved?.hourSuggested, true);
+    assert.equal(resolved?.ymd, "2026-10-13");
+    assert.equal(resolved?.at, "2026-10-13T07:00:00.000Z");
   });
 });
 
@@ -831,6 +844,52 @@ describe("Sales Copilot quiet observation", () => {
     assert.equal(meetings.length, 1);
     assert.equal(meetings[0].payload.awaitingCustomerConfirmation, false);
     assert.match(meetings[0].explanation, /accepted/i);
+  });
+
+  it("keeps one review when a call promise is the reply that confirms the meeting", () => {
+    const analysis = analyseConversation(
+      baseInput({
+        followUpAt: null,
+        messages: [
+          {
+            ...customer,
+            id: "in-tue",
+            createdAt: "2026-10-11T08:00:00.000Z",
+            body: "That meeting can we do it on Tuesday",
+          },
+          {
+            ...salesperson,
+            id: "out-tue",
+            createdAt: "2026-10-11T08:05:00.000Z",
+            body: "Yes Tuesday I will call you in the morning",
+          },
+        ],
+      })
+    );
+    const reminders = analysis.proposals.filter(
+      (item) => item.actionType === "create_reminder" || item.actionType === "update_reminder"
+    );
+    assert.equal(reminders.length, 1);
+    assert.equal(reminders[0].title, "Save a meeting reminder?");
+    assert.equal(reminders[0].hourSuggested, true);
+    assert.equal(reminders[0].proposedAt, "2026-10-13T07:00:00.000Z");
+    assert.match(reminders[0].explanation, /suggested time 09:00/);
+    assert.equal(analysis.proposals.some((item) => /promised to contact/i.test(item.explanation)), false);
+  });
+
+  it("hides a stored call reminder that repeats the meeting reply", () => {
+    const meeting = {
+      semanticKey: "meeting:2026-10-13",
+      actionType: "create_reminder",
+      evidenceMessageIds: ["in-tue", "out-tue"],
+    };
+    const call = {
+      semanticKey: "salesperson:contact:2026-10-13",
+      actionType: "create_reminder",
+      evidenceMessageIds: ["out-tue"],
+    };
+    const kept = withoutMeetingDuplicateReminders([meeting, call]);
+    assert.deepEqual(kept.map((item) => item.semanticKey), ["meeting:2026-10-13"]);
   });
 
   it("offers quotation help after the salesperson commits, not after the request alone", () => {

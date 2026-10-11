@@ -11,6 +11,7 @@ import {
   resolveCommitmentWhen,
   ymdKey,
 } from "./dates";
+import { withoutMeetingDuplicateReminders } from "./dedupe";
 import { contextRevision } from "./hash";
 import type {
   CopilotAnalysis,
@@ -485,7 +486,7 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
     const subjectMatch = request.body.match(/\bfor\s+(.{3,80}?)(?:[?.!]|$)/i);
     const subject = subjectMatch?.[1]?.trim() || statedNeed(messages)?.text || "this enquiry";
     const whenLabel = slot?.at
-      ? formatLocalWhen(slot.at, input.timezone, false)
+      ? formatLocalWhen(slot.at, input.timezone, slot.hourSuggested)
       : slot
         ? slot.dayLabel
         : "a time you still need to choose";
@@ -508,7 +509,7 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
       evidenceMessageIds: [request.id, reply.id],
       evidence: [excerpt(request), excerpt(reply)],
       proposedAt: changed ? null : slot?.at ?? null,
-      hourSuggested: false,
+      hourSuggested: Boolean(slot?.hourSuggested),
       currentDueAt: input.followUpAt,
       waitingActor: accepted ? "salesperson" : "customer",
       priority: "high",
@@ -517,7 +518,7 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
         kind: "follow_up",
         mode: input.followUpAt ? "update" : "create",
         followUpAt: slot?.at ?? null,
-        hourSuggested: false,
+        hourSuggested: Boolean(slot?.hourSuggested),
         source: "HUMAN_CREATED",
         awaitingCustomerConfirmation: !accepted,
         subject,
@@ -955,7 +956,7 @@ export function analyseConversation(input: CopilotEngineInput): CopilotAnalysis 
 
   const uniqueProposals = new Map<string, ProposalDraft>();
   for (const proposal of proposals) uniqueProposals.set(proposal.semanticKey, proposal);
-  const deduped = Array.from(uniqueProposals.values());
+  const deduped = withoutMeetingDuplicateReminders(Array.from(uniqueProposals.values()));
   const waitingActor = deduped.find((proposal) => proposal.waitingActor)?.waitingActor ?? null;
   const summaryParts = [deduped[0] ? deduped[0].explanation : "No action is waiting on this conversation."];
 
