@@ -105,19 +105,19 @@ type CopilotQueue = "all" | "needs_review" | "todo" | "waiting" | "contact_later
 
 type TaskCardTone = "review" | "todo" | "waiting" | "later" | "failed" | "done";
 
-const SCOPE_OPTIONS: { value: SalesTaskView; label: string; countKey: "mine" | "assigned" | "created" | "all" }[] = [
-  { value: "mine", label: "My tasks", countKey: "mine" },
-  { value: "assigned", label: "Assigned to me", countKey: "assigned" },
-  { value: "created", label: "Created by me", countKey: "created" },
-  { value: "all", label: "All tasks", countKey: "all" },
+const SCOPE_OPTIONS: { value: SalesTaskView; label: string; aria: string; countKey: "mine" | "assigned" | "created" | "all" }[] = [
+  { value: "mine", label: "Mine", aria: "My tasks", countKey: "mine" },
+  { value: "assigned", label: "Assigned", aria: "Assigned to me", countKey: "assigned" },
+  { value: "created", label: "Created", aria: "Created by me", countKey: "created" },
+  { value: "all", label: "All", aria: "All tasks", countKey: "all" },
 ];
 
-const QUEUE_FILTERS: { value: CopilotQueue; label: string; full: string; tone: string }[] = [
-  { value: "all", label: "All", full: "All", tone: "all" },
-  { value: "needs_review", label: "Review", full: "Needs review", tone: "review" },
-  { value: "todo", label: "To do", full: "To do", tone: "todo" },
-  { value: "waiting", label: "Waiting", full: "Waiting", tone: "waiting" },
-  { value: "contact_later", label: "Later", full: "Contact later", tone: "later" },
+const QUEUE_FILTERS: { value: CopilotQueue; label: string; full: string }[] = [
+  { value: "all", label: "All", full: "All" },
+  { value: "needs_review", label: "Review", full: "Needs review" },
+  { value: "todo", label: "To do", full: "To do" },
+  { value: "waiting", label: "Waiting", full: "Waiting" },
+  { value: "contact_later", label: "Later", full: "Contact later" },
 ];
 
 function matchesCopilotQueue(task: SalesTaskItem, queue: CopilotQueue): boolean {
@@ -206,11 +206,6 @@ function cardDateText(task: SalesTaskItem, timeZone: string): string {
   const line = scheduleLine(task.schedule, timeZone);
   if (line.startsWith("Suggested time:")) return `Suggested:${line.slice("Suggested time:".length)}`;
   return line;
-}
-
-function customerInitial(name: string): string {
-  const trimmed = name.trim();
-  return trimmed ? trimmed.charAt(0).toUpperCase() : "?";
 }
 
 function parseView(raw: string | null): SalesTaskView {
@@ -519,21 +514,6 @@ export function SalesTasksClient() {
               Add
             </button>
           </div>
-        </div>
-        <div className="sales-tasks-scopes" role="radiogroup" aria-label="Task ownership">
-          {SCOPE_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={view === option.value}
-              className={cn("sales-task-scope", view === option.value && "is-selected")}
-              onClick={() => setView(option.value)}
-            >
-              <span>{option.label}</span>
-              <span className="sales-task-scope-count">{data?.counts[option.countKey] ?? 0}</span>
-            </button>
-          ))}
         </div>
       </div>
       <div className="hidden h-10 w-full min-w-0 items-center justify-start gap-3 layout:flex">
@@ -855,6 +835,23 @@ export function SalesTasksClient() {
             <div className="layout:hidden">
               <div className="sales-task-filters-wrap">
                 <div className="sales-task-filters">
+                  <div className="sales-task-filters-group" role="radiogroup" aria-label="Task ownership">
+                    {SCOPE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={view === option.value}
+                        aria-label={`${option.aria}, ${data?.counts[option.countKey] ?? 0}`}
+                        className={cn("sales-task-filter", view === option.value && "is-selected")}
+                        onClick={() => setView(option.value)}
+                      >
+                        {option.label}
+                        <span className="sales-task-filter-count">{data?.counts[option.countKey] ?? 0}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <span className="sales-task-filter-sep" aria-hidden />
                   <div className="sales-task-filters-group" role="radiogroup" aria-label="Task status">
                     {QUEUE_FILTERS.map((filter) => (
                       <button
@@ -863,7 +860,6 @@ export function SalesTasksClient() {
                         role="radio"
                         aria-checked={copilotQueue === filter.value}
                         aria-label={`${filter.full}, ${queueCounts[filter.value]}`}
-                        data-tone={filter.tone}
                         className={cn("sales-task-filter", copilotQueue === filter.value && "is-selected")}
                         onClick={() => {
                           setCopilotQueue(filter.value);
@@ -1572,42 +1568,33 @@ function MobileTaskCard({
     Boolean(task.schedule.expectedReplyAt) &&
     !/expected reply/i.test(explanation);
   return (
-    <article className={cn("sales-task-card", status.tone === "review" && "sales-task-card--review")}>
+    <article className="sales-task-card">
       <div className="sales-task-card-main">
         {selecting && selectable ? (
           <Checkbox
             checked={selected}
             onCheckedChange={(value) => onSelect(value === true)}
-            aria-label={`Select ${task.title}`}
+            aria-label={`Select ${task.relatedName || task.title}`}
             className="mt-1"
           />
         ) : null}
-        <div className={cn("sales-task-icon", `sales-task-icon--${status.tone}`)} aria-hidden>
-          {taskKindIcon(task)}
-        </div>
         <div className="sales-task-body">
+          <p className="sales-task-customer-line">
+            {task.relatedName || "Customer"}
+            {task.relatedSecondary ? <span className="sales-task-name-meta"> · {task.relatedSecondary}</span> : null}
+          </p>
           <button type="button" className="sales-task-title-btn" onClick={onOpen}>
             <span className="sales-task-title">{task.title}</span>
           </button>
-          <div className="sales-task-customer">
-            <span className="sales-task-avatar" aria-hidden>
-              {customerInitial(task.relatedName)}
-            </span>
-            <span className="sales-task-name" title={task.relatedName}>
-              {task.relatedName}
-              {task.relatedSecondary ? <span className="sales-task-name-meta"> · {task.relatedSecondary}</span> : null}
-            </span>
-            <span className={cn("sales-task-badge", `sales-task-badge--${status.tone}`)}>{status.label}</span>
-          </div>
-          {showDate ? (
-            <p className={cn("sales-task-date", realOverdue && "is-overdue")}>
-              <Clock size={14} strokeWidth={1.8} aria-hidden />
-              <span>{dateText}</span>
+          {showDate || status.tone === "review" || status.tone === "failed" ? (
+            <p className={cn("sales-task-date", (realOverdue || status.tone === "failed") && "is-overdue", status.tone === "review" && !realOverdue && "is-review")}>
+              {status.tone === "review" || status.tone === "failed" || realOverdue ? taskKindIcon(task) : null}
+              {showDate ? <span>{dateText}</span> : null}
+              {status.tone === "review" || status.tone === "failed" ? <span>{status.label}</span> : null}
             </p>
           ) : null}
           {showExpected && task.schedule.expectedReplyAt ? (
             <p className="sales-task-date">
-              <Clock size={14} strokeWidth={1.8} aria-hidden />
               <span>Expected reply: {formatScheduleWhen(task.schedule.expectedReplyAt, timeZone)}</span>
             </p>
           ) : null}

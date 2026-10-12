@@ -1455,25 +1455,21 @@ html[data-crm]:not([data-crm-theme="light"])
   }
 }
 
-/* Tasks mobile: Design 1 charcoal cards. Scoped below the layout breakpoint. */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4
+ * Hallmark · macrostructure: Workbench · design-system: design.md · tone: utilitarian · anchor hue: lime
+ * paper: var(--sales-bg) · ink: var(--sales-neutral-900) · accent fill: var(--sales-brand)
+ * Tasks and pipeline phone views use the locked light sales tokens.
+ */
 @media (max-width: 1099.98px) {
   html .sales-dashboard-premium.sales-tasks-page .sales-mobile-scroll {
-    --sales-bg: #0c0c0c;
-    --sales-surface: #192228;
-    --sales-surface-subtle: #243038;
-    --sales-surface-hover: #243038;
-    --sales-text-primary: #f2f5f7;
-    --sales-text-secondary: #a5b1bc;
-    --sales-text-muted: #8e9ba6;
-    --sales-border: #2c363e;
-    --sales-border-subtle: #2c363e;
-    --sales-brand: #d4ff4f;
-    --sales-brand-text: #0c0c0c;
-    --sales-brand-fg: #d4ff4f;
-    overflow-x: hidden;
+    --sales-text-primary: var(--sales-neutral-900);
+    --sales-text-secondary: var(--sales-neutral-500);
+    --sales-text-muted: var(--sales-neutral-400);
+    --sales-text-label: var(--sales-neutral-700);
+    overflow-x: clip;
     overflow-y: auto;
-    color: #f2f5f7;
-    background-color: #0c0c0c;
+    color: var(--sales-neutral-900);
+    background-color: var(--sales-bg);
     background-image: none;
     padding-bottom: calc(var(--sales-mobile-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 16px);
   }
@@ -1498,7 +1494,7 @@ html[data-crm]:not([data-crm-theme="light"])
 
 .sales-tasks-heading h1 {
   margin: 0;
-  color: #f2f5f7;
+  color: var(--sales-text-primary);
   font-size: 25px;
   font-weight: 600;
   line-height: 1.2;
@@ -1512,10 +1508,10 @@ html[data-crm]:not([data-crm-theme="light"])
   min-width: 22px;
   height: 22px;
   padding: 0 6px;
-  border: 1px solid #2c363e;
+  border: 1px solid var(--sales-border);
   border-radius: 999px;
-  background: #192228;
-  color: #a5b1bc;
+  background: var(--sales-surface);
+  color: var(--sales-text-secondary);
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -1536,17 +1532,33 @@ html[data-crm]:not([data-crm-theme="light"])
   justify-content: center;
   height: 44px;
   min-width: 44px;
-  border: 1px solid #2c363e;
+  border: 1px solid var(--sales-border);
   border-radius: 11px;
-  background: transparent;
-  color: #f2f5f7;
+  background: var(--sales-surface);
+  color: var(--sales-text-primary);
   font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .sales-tasks-add {
   gap: 6px;
   padding: 0 12px;
+  border: 0;
+  background: var(--sales-brand);
+  color: var(--sales-brand-text);
+}
+
+.sales-tasks-icon-btn:focus-visible,
+.sales-tasks-add:focus-visible,
+.sales-task-filter:focus-visible,
+.sales-task-primary:focus-visible,
+.sales-task-chat:focus-visible,
+.sales-task-complete:focus-visible,
+.sales-task-title-btn:focus-visible,
+.sales-task-pager button:focus-visible {
+  outline: 2px solid var(--sales-brand);
+  outline-offset: 2px;
 }
 
 .sales-tasks-filter-count {
@@ -1556,48 +1568,7 @@ html[data-crm]:not([data-crm-theme="light"])
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: #d4ff4f;
-}
-
-.sales-tasks-scopes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  margin-top: 12px;
-  padding: 4px;
-  border: 1px solid #2c363e;
-  border-radius: 12px;
-  background: #111618;
-}
-
-.sales-task-scope {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 44px;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: #a5b1bc;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.25;
-  text-align: center;
-  flex-wrap: wrap;
-}
-
-.sales-task-scope.is-selected {
-  background: #192228;
-  color: #d4ff4f;
-  box-shadow: inset 0 0 0 1px #3d4c34;
-}
-
-.sales-task-scope-count {
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.85;
+  background: var(--sales-text-primary);
 }
 
 .sales-task-filters-wrap {
@@ -1611,7 +1582,7 @@ html[data-crm]:not([data-crm-theme="light"])
   right: 0;
   bottom: 0;
   width: 14px;
-  background: linear-gradient(to right, transparent, #0c0c0c);
+  background: linear-gradient(to right, transparent, var(--sales-bg));
   pointer-events: none;
 }
 
@@ -1632,6 +1603,15 @@ html[data-crm]:not([data-crm-theme="light"])
   gap: 2px;
 }
 
+.sales-task-filter-sep {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 1px;
+  height: 20px;
+  margin: 0 6px;
+  background: var(--sales-border);
+}
+
 .sales-task-filter {
   display: inline-flex;
   flex: 0 0 auto;
@@ -1642,38 +1622,21 @@ html[data-crm]:not([data-crm-theme="light"])
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .sales-task-filter.is-selected {
-  background: rgba(255, 255, 255, 0.03);
-  color: #f2f5f7;
-  box-shadow: inset 0 -2px 0 rgba(212, 255, 79, 0.8);
-}
-
-.sales-task-filter.is-selected[data-tone="review"] {
-  color: #ffbe4a;
-}
-
-.sales-task-filter.is-selected[data-tone="todo"] {
-  color: #82bfff;
-}
-
-.sales-task-filter.is-selected[data-tone="waiting"] {
-  color: #b7c4ce;
-}
-
-.sales-task-filter.is-selected[data-tone="later"] {
-  color: #d5e2c2;
+  background: transparent;
+  color: var(--sales-text-primary);
+  box-shadow: inset 0 -2px 0 var(--sales-brand);
 }
 
 .sales-task-filter-count {
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  opacity: 0.8;
 }
 
 .sales-task-complete {
@@ -1684,9 +1647,10 @@ html[data-crm]:not([data-crm-theme="light"])
   padding: 0 2px;
   border: 0;
   background: transparent;
-  color: #f2f5f7;
+  color: var(--sales-text-primary);
   font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .sales-task-list {
@@ -1699,14 +1663,9 @@ html[data-crm]:not([data-crm-theme="light"])
 .sales-task-card {
   min-width: 0;
   padding: 14px;
-  border: 1px solid #2c363e;
+  border: 1px solid var(--sales-border);
   border-radius: 16px;
-  background: #192228;
-  box-shadow: none;
-}
-
-.sales-task-card--review {
-  box-shadow: inset 3px 0 0 #ffbe4a;
+  background: var(--sales-surface);
 }
 
 .sales-task-card-main {
@@ -1716,72 +1675,31 @@ html[data-crm]:not([data-crm-theme="light"])
   min-width: 0;
 }
 
-.sales-task-icon {
-  display: flex;
-  flex: 0 0 38px;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-}
-
-.sales-task-icon--review,
-.sales-task-badge--review {
-  background: rgba(255, 190, 74, 0.14);
-  color: #ffbe4a;
-}
-
-.sales-task-icon--todo,
-.sales-task-badge--todo {
-  background: rgba(130, 191, 255, 0.14);
-  color: #82bfff;
-}
-
-.sales-task-icon--waiting,
-.sales-task-badge--waiting {
-  background: rgba(165, 177, 188, 0.14);
-  color: #b7c4ce;
-}
-
-.sales-task-icon--later,
-.sales-task-badge--later {
-  background: rgba(212, 255, 79, 0.1);
-  color: #d5e2c2;
-}
-
-.sales-task-icon--failed,
-.sales-task-badge--failed {
-  background: rgba(255, 190, 74, 0.12);
-  color: #ffbe4a;
-}
-
-.sales-task-icon--done,
-.sales-task-badge--done {
-  background: rgba(165, 177, 188, 0.1);
-  color: #a5b1bc;
-}
-
-.sales-task-badge {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  padding: 2px 7px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 16px;
-}
-
 .sales-task-body {
   min-width: 0;
   flex: 1 1 auto;
 }
 
+.sales-task-customer-line {
+  margin: 0;
+  overflow: hidden;
+  color: var(--sales-text-primary);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 23px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sales-task-name-meta {
+  color: var(--sales-text-secondary);
+  font-weight: 500;
+}
+
 .sales-task-title-btn {
   display: block;
   width: 100%;
-  margin: 0;
+  margin: 2px 0 0;
   padding: 0;
   border: 0;
   background: transparent;
@@ -1791,49 +1709,11 @@ html[data-crm]:not([data-crm-theme="light"])
 
 .sales-task-title {
   display: block;
-  color: #f2f5f7;
-  font-size: 17px;
-  font-weight: 600;
-  line-height: 23px;
+  color: var(--sales-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
   overflow-wrap: anywhere;
-}
-
-.sales-task-customer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
-  margin-top: 8px;
-  min-width: 0;
-}
-
-.sales-task-avatar {
-  display: inline-flex;
-  flex: 0 0 22px;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: #243038;
-  color: #f2f5f7;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.sales-task-name {
-  min-width: 0;
-  flex: 1 1 8rem;
-  overflow: hidden;
-  color: #f2f5f7;
-  font-size: 13px;
-  line-height: 18px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sales-task-name-meta {
-  color: #a5b1bc;
 }
 
 .sales-task-date,
@@ -1842,7 +1722,7 @@ html[data-crm]:not([data-crm-theme="light"])
   align-items: flex-start;
   gap: 6px;
   margin: 8px 0 0;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
   font-size: 13px;
   line-height: 18px;
 }
@@ -1850,10 +1730,15 @@ html[data-crm]:not([data-crm-theme="light"])
 .sales-task-date svg {
   flex: 0 0 auto;
   margin-top: 2px;
+  color: currentColor;
 }
 
 .sales-task-date.is-overdue {
-  color: #ffbe4a;
+  color: var(--sales-danger-fg);
+}
+
+.sales-task-date.is-review {
+  color: var(--sales-warning-fg);
 }
 
 .sales-task-note {
@@ -1864,7 +1749,7 @@ html[data-crm]:not([data-crm-theme="light"])
   display: -webkit-box;
   margin: 10px 0 0;
   overflow: hidden;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
   font-size: 14px;
   line-height: 20px;
   overflow-wrap: anywhere;
@@ -1874,7 +1759,7 @@ html[data-crm]:not([data-crm-theme="light"])
 
 .sales-task-error {
   margin: 8px 0 0;
-  color: #ffbe4a;
+  color: var(--sales-danger-fg);
   font-size: 13px;
   line-height: 18px;
 }
@@ -1886,7 +1771,7 @@ html[data-crm]:not([data-crm-theme="light"])
   gap: 8px 12px;
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid #2c363e;
+  border-top: 1px solid var(--sales-border);
 }
 
 .sales-task-primary,
@@ -1899,15 +1784,15 @@ html[data-crm]:not([data-crm-theme="light"])
   font-size: 14px;
   font-weight: 600;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .sales-task-primary {
   max-width: 100%;
   padding: 0 14px;
   border: 0;
-  background: #d4ff4f;
-  color: #0c0c0c;
-  box-shadow: none;
+  background: var(--sales-brand);
+  color: var(--sales-brand-text);
 }
 
 .sales-task-primary:disabled {
@@ -1917,7 +1802,7 @@ html[data-crm]:not([data-crm-theme="light"])
 .sales-task-chat {
   gap: 6px;
   padding: 0 4px;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
 }
 
 .sales-task-empty {
@@ -1929,7 +1814,7 @@ html[data-crm]:not([data-crm-theme="light"])
   align-items: center;
   justify-content: space-between;
   margin-top: 4px;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
@@ -1941,9 +1826,10 @@ html[data-crm]:not([data-crm-theme="light"])
   padding: 0 2px;
   border: 0;
   background: transparent;
-  color: #f2f5f7;
+  color: var(--sales-text-primary);
   font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .sales-task-pager button:disabled {
@@ -1956,24 +1842,16 @@ html[data-crm]:not([data-crm-theme="light"])
   }
 }
 
-/* Phone pipeline only. Wider layouts keep the existing board. */
+/* Phone pipeline. Wider layouts keep the existing board. */
 @media (max-width: 767px) {
   html .sales-dashboard-premium.sales-pipeline-phone .sales-mobile-scroll {
-    --sales-bg: #0c0c0c;
-    --sales-surface: #192228;
-    --sales-surface-subtle: #243038;
-    --sales-surface-hover: #243038;
-    --sales-text-primary: #f2f5f7;
-    --sales-text-secondary: #a5b1bc;
-    --sales-text-muted: #8e9ba6;
-    --sales-border: #2c363e;
-    --sales-border-subtle: #2c363e;
-    --sales-brand: #d4ff4f;
-    --sales-brand-text: #0c0c0c;
-    --sales-brand-fg: #d4ff4f;
-    overflow-x: hidden;
-    color: #f2f5f7;
-    background-color: #0c0c0c;
+    --sales-text-primary: var(--sales-neutral-900);
+    --sales-text-secondary: var(--sales-neutral-500);
+    --sales-text-muted: var(--sales-neutral-400);
+    --sales-text-label: var(--sales-neutral-700);
+    overflow-x: clip;
+    color: var(--sales-neutral-900);
+    background-color: var(--sales-bg);
     background-image: none;
   }
 
@@ -1983,40 +1861,17 @@ html[data-crm]:not([data-crm-theme="light"])
   }
 
   html .sales-dashboard-premium.sales-pipeline-phone .sales-page-stack {
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 }
 
-.sales-pipeline-sheet {
-  --sales-bg: #0c0c0c;
-  --sales-surface: #192228;
-  --sales-surface-subtle: #243038;
-  --sales-surface-hover: #243038;
-  --sales-text-primary: #f2f5f7;
-  --sales-text-secondary: #a5b1bc;
-  --sales-text-muted: #8e9ba6;
-  --sales-border: #2c363e;
-  --sales-border-subtle: #2c363e;
-  --sales-brand: #d4ff4f;
-  --sales-brand-text: #0c0c0c;
-  --sales-brand-fg: #d4ff4f;
-  --sales-ink: #0c0c0c;
-  color: #f2f5f7;
-  background-color: #192228;
-  animation: sales-pipeline-sheet-in 180ms ease-out;
-}
-
-@keyframes sales-pipeline-sheet-in {
-  from {
-    transform: translateY(16px);
-  }
-  to {
-    transform: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sales-pipeline-sheet {
-    animation: none;
-  }
+html[data-crm]:not([data-crm-theme="light"]) .sales-pipeline-sheet.sales-dashboard-premium,
+html .sales-pipeline-sheet.sales-dashboard-premium {
+  --sales-text-primary: var(--sales-neutral-900);
+  --sales-text-secondary: var(--sales-neutral-500);
+  --sales-text-muted: var(--sales-neutral-400);
+  --sales-text-label: var(--sales-neutral-700);
+  color: var(--sales-neutral-900);
+  background-color: var(--sales-surface);
+  background-image: none;
 }

@@ -244,68 +244,106 @@ export function MobilePipeline({
       ) : null}
 
       <p className="mt-3 text-[13px] text-sales-text-secondary">
-        Active deals <span className="font-semibold tabular-nums text-sales-text-primary">{activeDealCount}</span>
+        {tab === "closed" ? "Closed deals" : viewMode === "picks" ? "Priority deals" : "Active deals"}{" "}
+        <span className="font-semibold tabular-nums text-sales-text-primary">
+          {tab === "closed" ? closedItems.length : viewMode === "picks" ? pickItems.length : activeDealCount}
+        </span>
       </p>
 
-      <div className="mt-3 grid grid-cols-2 gap-1.5 rounded-[12px] border border-sales-border bg-sales-surface-subtle p-1" role="tablist" aria-label="Pipeline status">
-        {(["active", "closed"] as const).map((value) => (
-          <button
-            key={value}
-            type="button"
-            role="tab"
-            aria-selected={tab === value}
-            className={cn(
-              "min-h-11 rounded-[9px] text-[13px] font-semibold",
-              tab === value ? "bg-sales-surface text-sales-brand shadow-[inset_0_0_0_1px_rgba(212,255,79,0.35)]" : "text-sales-text-secondary"
-            )}
-            onClick={() => onTab(value)}
-          >
-            {value === "active" ? "Active" : "Closed"}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-2 grid grid-cols-3 gap-1.5 rounded-[12px] border border-sales-border bg-sales-surface-subtle p-1" role="tablist" aria-label={tab === "active" ? "Board view" : "Closed deals"}>
+      <div
+        className="mt-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="tablist"
+        aria-label={tab === "active" ? "Pipeline" : "Closed deals"}
+        data-course-target="pipeline-board"
+      >
         {tab === "active" ? (
           <>
-            <button type="button" role="tab" aria-selected={viewMode === "board"} className={cn("min-h-11 rounded-[9px] text-[13px] font-semibold", viewMode === "board" ? "bg-sales-surface text-sales-brand" : "text-sales-text-secondary")} onClick={() => onViewMode("board")}>
-              Board
+            {DEAL_ACTIVE_STAGES.map((stage) => {
+              const selected = viewMode === "board" && mobileCol === stage;
+              return (
+                <button
+                  key={stage}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  data-course-target={`pipeline-stage-${stage.toLowerCase().replace(/_/g, "-")}`}
+                  className={cn(
+                    "inline-flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sales-brand",
+                    selected
+                      ? "border-sales-brand bg-sales-brand text-sales-brand-text"
+                      : "border-sales-border bg-sales-surface text-sales-text-primary"
+                  )}
+                  onClick={() => {
+                    onViewMode("board");
+                    onStage(stage);
+                  }}
+                >
+                  {DEAL_STAGE_LABEL[stage]}
+                  <span className="tabular-nums">{stageCounts[stage]}</span>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={viewMode === "picks"}
+              className={cn(
+                "inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sales-brand",
+                viewMode === "picks"
+                  ? "border-sales-brand bg-sales-brand text-sales-brand-text"
+                  : "border-sales-border bg-sales-surface text-sales-text-primary"
+              )}
+              onClick={() => onViewMode("picks")}
+            >
+              Picks{pickItems.length > 0 ? ` ${pickItems.length}` : ""}
             </button>
-            <button type="button" role="tab" aria-selected={viewMode === "picks"} className={cn("col-span-2 min-h-11 rounded-[9px] text-[13px] font-semibold", viewMode === "picks" ? "bg-sales-surface text-sales-brand" : "text-sales-text-secondary")} onClick={() => onViewMode("picks")}>
-              Picks{pickItems.length > 0 ? ` · ${pickItems.length}` : ""}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={false}
+              className="inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold text-sales-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sales-brand"
+              onClick={() => onTab("closed")}
+            >
+              Closed
             </button>
           </>
         ) : (
-          (["all", "won", "lost"] as const).map((value) => (
-            <button key={value} type="button" role="tab" aria-selected={closedFilter === value} className={cn("min-h-11 rounded-[9px] text-[13px] font-semibold capitalize", closedFilter === value ? "bg-sales-surface text-sales-brand" : "text-sales-text-secondary")} onClick={() => onClosedFilter(value)}>
-              {value}
+          <>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={false}
+              className="inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold text-sales-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sales-brand"
+              onClick={() => onTab("active")}
+            >
+              Active
             </button>
-          ))
+            {(
+              [
+                ["all", "All"],
+                ["won", "Won"],
+                ["lost", "Lost"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={closedFilter === value}
+                className={cn(
+                  "inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sales-brand",
+                  closedFilter === value
+                    ? "border-sales-brand bg-sales-brand text-sales-brand-text"
+                    : "border-sales-border bg-sales-surface text-sales-text-primary"
+                )}
+                onClick={() => onClosedFilter(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </>
         )}
       </div>
-
-      {tab === "active" && viewMode === "board" ? (
-        <div className="mt-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-course-target="pipeline-board">
-          {DEAL_ACTIVE_STAGES.map((stage) => (
-            <button
-              key={stage}
-              type="button"
-              data-course-target={`pipeline-stage-${stage.toLowerCase().replace(/_/g, "-")}`}
-              aria-pressed={mobileCol === stage}
-              className={cn(
-                "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold",
-                mobileCol === stage
-                  ? "border-sales-brand bg-sales-brand text-sales-brand-text"
-                  : "border-sales-border bg-sales-surface text-sales-text-secondary"
-              )}
-              onClick={() => onStage(stage)}
-            >
-              {DEAL_STAGE_LABEL[stage]}
-              <span className="tabular-nums">{stageCounts[stage]}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
 
       {chips.length > 0 || sortMode !== "attention" ? (
         <div className="mt-3 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -441,12 +479,12 @@ function EmptyPipeline({
       <p className="mt-3 text-[16px] font-semibold text-sales-text-primary">{title}</p>
       <p className="mt-1 text-[13px] text-sales-text-secondary">{description}</p>
       {filtered ? (
-        <button type="button" className="mt-4 min-h-11 text-[14px] font-semibold text-sales-brand" onClick={onClear}>
+        <button type="button" className="mt-4 min-h-11 whitespace-nowrap text-[14px] font-semibold text-sales-text-primary underline underline-offset-4" onClick={onClear}>
           Clear filters
         </button>
       ) : null}
       {kind === "none" ? (
-        <Link href="/sales/leads" className="mt-4 inline-flex min-h-11 items-center text-[14px] font-semibold text-sales-brand">
+        <Link href="/sales/leads" className="mt-4 inline-flex min-h-11 items-center whitespace-nowrap text-[14px] font-semibold text-sales-text-primary underline underline-offset-4">
           View leads
         </Link>
       ) : null}
@@ -589,35 +627,24 @@ function NextActionNote({
       </p>
     );
   }
-  if (bucket === "none") {
-    return (
-      <div className="rounded-[12px] bg-sales-warning-soft px-3 py-2.5">
-        <p className="text-[13px] font-semibold text-sales-warning-fg">No next action planned</p>
-        <p className="mt-0.5 text-[12px] text-sales-text-secondary">Plan your next follow-up to keep this deal moving.</p>
-      </div>
-    );
-  }
   const when = item.deal.next_action_at ? formatWhen(item.deal.next_action_at) : "";
   const label = item.deal.next_action_label?.trim() || "Follow-up";
+  if (bucket === "none") {
+    return <p className="text-[13px] font-semibold text-sales-warning-fg">No next action planned</p>;
+  }
   if (bucket === "overdue") {
     return (
-      <div className="rounded-[12px] bg-sales-danger-soft px-3 py-2.5">
-        <p className="text-[13px] font-semibold text-sales-danger-fg">Follow-up overdue</p>
-        <p className="mt-0.5 text-[12px] text-sales-text-secondary">
-          {label}
-          {when ? ` · ${when}` : ""}
-        </p>
-      </div>
+      <p className="text-[13px] font-semibold text-sales-danger-fg">
+        Follow-up overdue · {label}
+        {when ? ` · ${when}` : ""}
+      </p>
     );
   }
   return (
-    <div className="rounded-[12px] bg-sales-surface-subtle px-3 py-2.5">
-      <p className="text-[13px] font-semibold text-sales-text-primary">{bucket === "today" ? "Follow-up due today" : "Next follow-up scheduled"}</p>
-      <p className="mt-0.5 text-[12px] text-sales-text-secondary">
-        {label}
-        {when ? ` · ${when}` : ""}
-      </p>
-    </div>
+    <p className="text-[13px] text-sales-text-secondary">
+      {bucket === "today" ? "Due today" : "Next follow-up"} · {label}
+      {when ? ` · ${when}` : ""}
+    </p>
   );
 }
 
@@ -693,7 +720,7 @@ function MoveDealSheet({
               disabled={Boolean(saving) || selected}
               className={cn(
                 "flex min-h-11 items-center justify-between rounded-[12px] border px-3 text-left text-[15px] font-semibold",
-                selected ? "border-sales-brand text-sales-brand" : "border-sales-border text-sales-text-primary"
+                selected ? "border-sales-brand bg-sales-brand-soft text-sales-text-primary" : "border-sales-border text-sales-text-primary"
               )}
               onClick={() => void choose(stage)}
             >
@@ -827,7 +854,7 @@ function FilterDealsSheet({
               onClick={() => onSort(option.value)}
             >
               {option.label}
-              {draftSort === option.value ? <Check size={16} className="text-sales-brand" aria-hidden /> : null}
+              {draftSort === option.value ? <Check size={16} className="text-sales-text-primary" aria-hidden /> : null}
             </button>
           ))}
         </div>
@@ -839,7 +866,7 @@ function FilterDealsSheet({
 function FilterGroup({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section className="mb-5">
-      <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">{label}</h3>
+      <h3 className="mb-2 text-[13px] font-semibold text-sales-text-secondary">{label}</h3>
       {children}
     </section>
   );
@@ -851,7 +878,7 @@ function ChipButton({ selected, onClick, children }: { selected: boolean; onClic
       type="button"
       aria-pressed={selected}
       className={cn(
-        "min-h-11 rounded-full border px-3 text-[13px] font-semibold",
+        "min-h-11 whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold",
         selected ? "border-sales-brand bg-sales-brand-soft text-sales-text-primary" : "border-sales-border text-sales-text-secondary"
       )}
       onClick={onClick}
@@ -873,10 +900,8 @@ function ActionRow({
   onClick: () => void;
 }) {
   return (
-    <button type="button" className="flex min-h-[56px] w-full items-center gap-3 py-2 text-left" onClick={onClick}>
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-sales-surface-subtle text-sales-text-secondary">
-        {icon}
-      </span>
+    <button type="button" className="flex min-h-11 w-full items-center gap-3 py-2 text-left" onClick={onClick}>
+      <span className="shrink-0 text-sales-text-secondary">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-semibold text-sales-text-primary">{title}</span>
         {detail ? <span className="block text-[12px] text-sales-text-secondary">{detail}</span> : null}
@@ -917,7 +942,7 @@ function PhoneSheet({
           aria-labelledby={titleId}
           tabIndex={-1}
           className={cn(
-            "sales-pipeline-sheet relative z-[1] flex w-full flex-col overflow-hidden rounded-t-[22px] border border-b-0 border-sales-border bg-sales-surface shadow-sales-modal",
+            "sales-pipeline-sheet sales-dashboard-premium relative z-[1] flex w-full flex-col overflow-hidden rounded-t-[22px] border border-b-0 border-sales-border bg-sales-surface shadow-sales-modal",
             tall ? "max-h-[min(88dvh,100%)]" : "max-h-[min(70dvh,100%)]"
           )}
         >
