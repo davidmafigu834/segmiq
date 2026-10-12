@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, X } from "lucide-react";
+import { OverlayPortal } from "@/components/sales/ui/OverlayPortal";
 import { CRM_PLANS, ONBOARDING_COUNTRIES, type OnboardingCountryCode } from "@/lib/onboarding/constants";
 import { suggestSlugFromName } from "@/lib/onboarding/slug";
 
@@ -70,6 +71,15 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
     setError(null);
     setSuccess(null);
   }, [open, reset]);
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (creationMode !== "manual" || slugTouched || !companyName) return;
@@ -256,13 +266,22 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
     process.env.NEXT_PUBLIC_CLOUD_DOMAIN?.replace(/^https?:\/\//, "") ?? "cloud.segmiq.com";
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-surface-overlay md:items-center md:justify-center md:px-4 md:py-8">
-      <div className="flex h-full w-full flex-col border border-border bg-surface-card shadow-lg md:h-auto md:max-h-[90vh] md:max-w-lg md:rounded-lg">
-        <header className="flex h-14 items-center gap-3 border-b border-border px-4 md:h-auto md:border-b-0 md:px-6 md:pt-6">
+    <OverlayPortal>
+      <div
+        className="fixed inset-0 z-[80] flex flex-col bg-surface-overlay md:items-center md:justify-center md:p-6"
+        role="presentation"
+      >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-client-title"
+        className="flex h-[100dvh] max-h-[100dvh] w-full min-h-0 flex-col border border-border bg-surface-card shadow-lg md:h-auto md:max-h-[calc(100dvh-3rem)] md:max-w-lg md:rounded-lg"
+      >
+        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4 md:h-auto md:border-b-0 md:px-6 md:pt-6">
           <button type="button" className="flex h-9 w-9 items-center justify-center md:hidden" onClick={onClose} aria-label="Back">
             <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
           </button>
-          <h2 className="min-w-0 flex-1 truncate font-display text-xl text-ink-primary">New client</h2>
+          <h2 id="create-client-title" className="min-w-0 flex-1 truncate font-display text-xl text-ink-primary">New client</h2>
           <button
             type="button"
             className="hidden text-ink-tertiary hover:text-ink-primary md:block"
@@ -532,6 +551,7 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
           </div>
         </form>
       </div>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }
