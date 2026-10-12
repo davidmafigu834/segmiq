@@ -992,16 +992,17 @@ html[data-crm]:not([data-crm-theme="light"])
   scroll-margin-top: 0;
 }
 
-/* Sales Copilot daily workspace — charcoal surfaces already used by the sales inbox. */
+/* Sales Copilot daily workspace. Workbench on the locked light sales tokens. */
 .sales-copilot-daily {
-  --sales-brand: #d4ff4f;
-  --sales-brand-text: #0c0c0c;
+  --sales-text-primary: var(--sales-neutral-900);
+  --sales-text-secondary: var(--sales-neutral-500);
+  --sales-text-muted: var(--sales-neutral-400);
   min-width: 0;
   max-width: 100%;
   overflow-x: clip;
   border: 0;
-  background: #0c0c0c;
-  color: #f2f5f7;
+  background: var(--sales-bg);
+  color: var(--sales-neutral-900);
   padding: 12px;
 }
 
@@ -1015,25 +1016,17 @@ html[data-crm]:not([data-crm-theme="light"])
   margin: 0;
   font-size: 14px;
   line-height: 1.3;
-  color: #a5b1bc;
-}
-
-.sales-copilot-kicker {
-  margin: 10px 0 0;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
 }
 
 .sales-copilot-title {
-  margin: 2px 0 0;
-  font-size: 22px;
+  margin: 4px 0 0;
+  font-size: 1.5rem;
   font-style: normal;
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.02em;
-  color: #f2f5f7;
+  color: var(--sales-text-primary);
   overflow-wrap: anywhere;
 }
 
@@ -1041,7 +1034,7 @@ html[data-crm]:not([data-crm-theme="light"])
   margin: 8px 0 0;
   font-size: 14px;
   line-height: 20px;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
   overflow-wrap: anywhere;
 }
 
@@ -1049,7 +1042,7 @@ html[data-crm]:not([data-crm-theme="light"])
   margin: 8px 0 0;
   font-size: 13px;
   line-height: 1.4;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
 }
 
 .sales-copilot-board {
@@ -1070,142 +1063,39 @@ html[data-crm]:not([data-crm-theme="light"])
 .sales-copilot-card {
   min-width: 0;
   padding: 14px;
-  border: 1px solid #2c363e;
+  border: 1px solid var(--sales-border);
   border-radius: 16px;
-  background: #192228;
-  box-shadow: none;
-}
-
-.sales-copilot-card--featured {
-  border-color: #284634;
-  background: #142820;
-}
-
-.sales-copilot-card-kicker {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  color: #a5b1bc;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.sales-copilot-card-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  min-width: 0;
-}
-
-.sales-copilot-icon {
-  display: flex;
-  flex: 0 0 38px;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-}
-
-.sales-copilot-icon--review,
-.sales-copilot-badge--review {
-  background: rgba(255, 190, 74, 0.14);
-  color: #ffbe4a;
-}
-
-.sales-copilot-icon--todo,
-.sales-copilot-badge--todo {
-  background: rgba(130, 191, 255, 0.14);
-  color: #82bfff;
-}
-
-.sales-copilot-icon--waiting,
-.sales-copilot-badge--waiting {
-  background: rgba(165, 177, 188, 0.14);
-  color: #b7c4ce;
-}
-
-.sales-copilot-icon--failed,
-.sales-copilot-badge--failed {
-  background: rgba(255, 190, 74, 0.12);
-  color: #ffbe4a;
-}
-
-.sales-copilot-icon--done,
-.sales-copilot-badge--done {
-  background: rgba(165, 177, 188, 0.1);
-  color: #a5b1bc;
+  background: var(--sales-surface);
 }
 
 .sales-copilot-card-body {
   min-width: 0;
-  flex: 1 1 auto;
 }
 
-.sales-copilot-action-title {
+.sales-copilot-customer-line {
   margin: 0;
-  color: #f2f5f7;
+  overflow: hidden;
+  color: var(--sales-text-primary);
   font-size: 18px;
   font-style: normal;
   font-weight: 600;
   line-height: 24px;
-  overflow-wrap: anywhere;
-}
-
-.sales-copilot-card:not(.sales-copilot-card--featured) .sales-copilot-action-title {
-  font-size: 16px;
-  line-height: 22px;
-}
-
-.sales-copilot-customer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
-  margin-top: 8px;
-  min-width: 0;
-}
-
-.sales-copilot-avatar {
-  display: inline-flex;
-  flex: 0 0 22px;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: #243038;
-  color: #f2f5f7;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.sales-copilot-card--featured .sales-copilot-avatar {
-  background: #1d3328;
-}
-
-.sales-copilot-name {
-  min-width: 0;
-  flex: 1 1 8rem;
-  overflow: hidden;
-  color: #f2f5f7;
-  font-size: 13px;
-  line-height: 18px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.sales-copilot-badge {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  padding: 2px 7px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 16px;
+.sales-copilot-card:not(.sales-copilot-card--featured) .sales-copilot-customer-line {
+  font-size: 16px;
+  line-height: 22px;
+}
+
+.sales-copilot-action-title {
+  margin: 2px 0 0;
+  color: var(--sales-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  overflow-wrap: anywhere;
 }
 
 .sales-copilot-date {
@@ -1213,7 +1103,7 @@ html[data-crm]:not([data-crm-theme="light"])
   align-items: flex-start;
   gap: 6px;
   margin: 8px 0 0;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
   font-size: 13px;
   line-height: 18px;
 }
@@ -1221,23 +1111,28 @@ html[data-crm]:not([data-crm-theme="light"])
 .sales-copilot-date svg {
   flex: 0 0 auto;
   margin-top: 2px;
+  color: currentColor;
 }
 
 .sales-copilot-date.is-overdue {
-  color: #ffbe4a;
+  color: var(--sales-danger-fg);
+}
+
+.sales-copilot-date.is-review {
+  color: var(--sales-warning-fg);
 }
 
 .sales-copilot-explanation,
 .sales-copilot-error {
   margin: 10px 0 0;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
   font-size: 14px;
   line-height: 20px;
   overflow-wrap: anywhere;
 }
 
 .sales-copilot-error {
-  color: #ffbe4a;
+  color: var(--sales-danger-fg);
   font-size: 13px;
   line-height: 18px;
 }
@@ -1249,12 +1144,15 @@ html[data-crm]:not([data-crm-theme="light"])
   gap: 8px 12px;
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid #2c363e;
+  border-top: 1px solid var(--sales-border);
   min-width: 0;
 }
 
-.sales-copilot-card--featured .sales-copilot-actions {
-  border-top-color: #284634;
+.sales-copilot-primary,
+.sales-copilot-secondary-action,
+.sales-copilot-chat,
+.sales-copilot-view-all {
+  white-space: nowrap;
 }
 
 .sales-copilot-primary,
@@ -1275,17 +1173,16 @@ html[data-crm]:not([data-crm-theme="light"])
   max-width: 100%;
   padding: 8px 14px;
   border: 0;
-  background: #d4ff4f;
-  color: #0c0c0c;
-  box-shadow: none;
+  background: var(--sales-brand);
+  color: var(--sales-brand-text);
 }
 
 .sales-copilot-secondary-action {
   max-width: 100%;
   padding: 8px 14px;
-  border: 1px solid #2c363e;
+  border: 1px solid var(--sales-border);
   background: transparent;
-  color: #f2f5f7;
+  color: var(--sales-text-primary);
 }
 
 .sales-copilot-primary:disabled,
@@ -1298,14 +1195,14 @@ html[data-crm]:not([data-crm-theme="light"])
 .sales-copilot-chat:focus-visible,
 .sales-copilot-view-all:focus-visible,
 .sales-copilot-update:focus-visible {
-  outline: 2px solid #d4ff4f;
+  outline: 2px solid var(--sales-brand);
   outline-offset: 2px;
 }
 
 .sales-copilot-chat {
   gap: 6px;
   padding: 0 4px;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
 }
 
 .sales-copilot-view-all {
@@ -1316,7 +1213,7 @@ html[data-crm]:not([data-crm-theme="light"])
   min-height: 44px;
   margin-top: 4px;
   padding: 0 2px;
-  color: #f2f5f7;
+  color: var(--sales-text-primary);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -1326,7 +1223,7 @@ html[data-crm]:not([data-crm-theme="light"])
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
 }
 
 .sales-copilot-view-all-count {
@@ -1335,10 +1232,9 @@ html[data-crm]:not([data-crm-theme="light"])
 
 .sales-copilot-updates {
   margin-top: 16px;
-  padding: 14px;
-  border: 1px solid #2c363e;
-  border-radius: 16px;
-  background: #192228;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .sales-copilot-updates-heading {
@@ -1351,7 +1247,7 @@ html[data-crm]:not([data-crm-theme="light"])
 
 .sales-copilot-updates-title {
   margin: 0;
-  color: #f2f5f7;
+  color: var(--sales-text-primary);
   font-size: 16px;
   font-style: normal;
   font-weight: 600;
@@ -1360,7 +1256,7 @@ html[data-crm]:not([data-crm-theme="light"])
 
 .sales-copilot-updates-time {
   margin: 0;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
   font-size: 12px;
   line-height: 1.3;
 }
@@ -1382,19 +1278,7 @@ html[data-crm]:not([data-crm-theme="light"])
 }
 
 .sales-copilot-updates li + li .sales-copilot-update {
-  border-top: 1px solid #2c363e;
-}
-
-.sales-copilot-update-icon {
-  display: flex;
-  flex: 0 0 30px;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: #243038;
-  color: #a5b1bc;
+  border-top: 1px solid var(--sales-border);
 }
 
 .sales-copilot-update-copy {
@@ -1407,7 +1291,7 @@ html[data-crm]:not([data-crm-theme="light"])
 
 .sales-copilot-update-name {
   overflow: hidden;
-  color: #f2f5f7;
+  color: var(--sales-text-primary);
   font-size: 14px;
   font-weight: 600;
   line-height: 18px;
@@ -1416,7 +1300,7 @@ html[data-crm]:not([data-crm-theme="light"])
 }
 
 .sales-copilot-update-detail {
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
   font-size: 13px;
   line-height: 18px;
   overflow-wrap: anywhere;
@@ -1424,7 +1308,7 @@ html[data-crm]:not([data-crm-theme="light"])
 
 .sales-copilot-update svg:last-child {
   flex: 0 0 auto;
-  color: #a5b1bc;
+  color: var(--sales-text-secondary);
 }
 
 .sales-copilot-fallback {
@@ -1441,8 +1325,7 @@ html[data-crm]:not([data-crm-theme="light"])
 }
 
 @media (min-width: 390px) {
-  .sales-copilot-card,
-  .sales-copilot-updates {
+  .sales-copilot-card {
     padding: 16px;
   }
 }
@@ -1454,6 +1337,7 @@ html[data-crm]:not([data-crm-theme="light"])
     align-items: start;
   }
 }
+
 
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4
  * Hallmark · macrostructure: Workbench · design-system: design.md · tone: utilitarian · anchor hue: lime

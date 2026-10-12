@@ -13,7 +13,6 @@ import {
   FileText,
   MessageCircle,
   Phone,
-  UserPlus,
 } from "lucide-react";
 import { TaskDetailDrawer, type TaskActionBody } from "@/components/sales/tasks/TaskDetailDrawer";
 import { Button } from "@/components/sales/ui";
@@ -33,11 +32,6 @@ import type { SalesTaskItem } from "@/lib/sales/tasks/types";
 import { toDateKey } from "@/lib/sales/calendar/format";
 
 const VISIT_KEY = "segmiq:dashboard-visit";
-
-function customerInitial(name: string): string {
-  const trimmed = name.trim();
-  return trimmed ? trimmed.charAt(0).toUpperCase() : "?";
-}
 
 function taskKindIcon(task: SalesTaskItem) {
   const action = task.copilot?.actionType ?? "";
@@ -61,14 +55,6 @@ function taskKindIcon(task: SalesTaskItem) {
   if (task.type === "call" || /\b(call|callback|phone)\b/.test(title)) return <Phone {...iconProps} />;
   if (action === "create_reminder" || action === "update_reminder" || task.type === "follow_up") return <Clock {...iconProps} />;
   return <CalendarClock {...iconProps} />;
-}
-
-function updateIcon(kind: RecentUpdate["kind"]) {
-  const props = { size: 16, strokeWidth: 1.8, "aria-hidden": true as const };
-  if (kind === "reply") return <MessageCircle {...props} />;
-  if (kind === "quotation") return <FileText {...props} />;
-  if (kind === "arrangement") return <Calendar {...props} />;
-  return <UserPlus {...props} />;
 }
 
 function WorkspaceCard({
@@ -101,36 +87,24 @@ function WorkspaceCard({
         : "No date set"
       : dateLine.text;
   const realOverdue = (task.schedule.kind === "due" || task.schedule.kind === "check_in") && task.schedule.overdue;
+  const showException = status.tone === "review" || status.tone === "failed" || realOverdue;
+  const dateClass = [
+    "sales-copilot-date",
+    realOverdue || status.tone === "failed" ? "is-overdue" : "",
+    status.tone === "review" && !realOverdue ? "is-review" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
     <article className={featured ? "sales-copilot-card sales-copilot-card--featured" : "sales-copilot-card"}>
-      {featured ? (
-        <div className="sales-copilot-card-kicker">
-          <span>Next action</span>
-          <span className={`sales-copilot-badge sales-copilot-badge--${status.tone}`}>{status.label}</span>
-        </div>
-      ) : null}
-      <div className="sales-copilot-card-main">
-        <div className={`sales-copilot-icon sales-copilot-icon--${status.tone}`} aria-hidden>
-          {taskKindIcon(task)}
-        </div>
-        <div className="sales-copilot-card-body">
-          <h2 className="sales-copilot-action-title">{task.title}</h2>
-          <div className="sales-copilot-customer">
-            <span className="sales-copilot-avatar" aria-hidden>
-              {customerInitial(task.relatedName)}
-            </span>
-            <span className="sales-copilot-name" title={task.relatedName}>
-              {task.relatedName}
-            </span>
-            {featured ? null : (
-              <span className={`sales-copilot-badge sales-copilot-badge--${status.tone}`}>{status.label}</span>
-            )}
-          </div>
-          <p className={`sales-copilot-date${realOverdue ? " is-overdue" : ""}`}>
-            <Clock size={14} strokeWidth={1.8} aria-hidden />
-            <span>{dateText}</span>
-          </p>
-        </div>
+      <div className="sales-copilot-card-body">
+        <h2 className="sales-copilot-customer-line">{task.relatedName || "Customer"}</h2>
+        <p className="sales-copilot-action-title">{task.title}</p>
+        <p className={dateClass}>
+          {showException ? taskKindIcon(task) : null}
+          <span>{dateText}</span>
+          {status.tone === "review" || status.tone === "failed" ? <span>{status.label}</span> : null}
+        </p>
       </div>
       {explanation ? <p className="sales-copilot-explanation">{explanation}</p> : null}
       {executionError ? <p className="sales-copilot-error">{executionError}</p> : null}
@@ -163,9 +137,6 @@ function UpdateRow({ item, timeZone }: { item: RecentUpdate; timeZone: string })
         className="sales-copilot-update"
         aria-label={`${item.leadName}. ${item.detail}. ${when}. ${item.linkLabel}`}
       >
-        <span className="sales-copilot-update-icon" aria-hidden>
-          {updateIcon(item.kind)}
-        </span>
         <span className="sales-copilot-update-copy">
           <span className="sales-copilot-update-name">{item.leadName}</span>
           <span className="sales-copilot-update-detail">
@@ -361,7 +332,6 @@ export function SalesCopilotDailyWorkspace({ firstName }: { firstName: string })
   return (
     <section className="sales-copilot-daily" aria-labelledby={headingId}>
       <p className="sales-copilot-greeting">{loading ? "Loading your sales today" : greeting}</p>
-      <p className="sales-copilot-kicker">Sales Copilot</p>
       <h1 id={headingId} className="sales-copilot-title">
         Your sales today
       </h1>
