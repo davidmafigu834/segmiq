@@ -32,7 +32,7 @@ import { ROSSI_ACTORS } from "../lib/demo/actors";
 import { demoId } from "../lib/demo/ids";
 import { findDemoPersona } from "../lib/demo/personas";
 import { appendSessionMutationWithRepo, type SessionMutationRepo } from "../lib/demo/session-store";
-import { hashToken } from "../lib/demo/tokens";
+import { hashToken } from "../lib/demo/token-hash";
 import type { DemoMutation } from "../lib/demo/types";
 
 const originalDeployment = process.env.SEGMQ_DEPLOYMENT;

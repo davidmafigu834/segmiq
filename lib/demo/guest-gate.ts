@@ -9,7 +9,7 @@ import {
   type DemoGuestRole,
 } from "@/lib/demo/allowlist";
 import { DEMO_SESSION_COOKIE, isGuestAccessEnabled } from "@/lib/demo/deployment";
-import { hashToken } from "@/lib/demo/tokens";
+import { hashToken } from "@/lib/demo/token-hash";
 import { invitationAccess } from "@/lib/demo/invitation-access";
 import { findDemoPersona } from "@/lib/demo/personas";
 import { fetchMiddlewareFirstRowResult } from "@/lib/supabase/middleware-admin";

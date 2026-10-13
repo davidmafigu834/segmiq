@@ -12,7 +12,7 @@ import { demoId } from "@/lib/demo/ids";
 import { getWorkspaceConfig } from "@/lib/demo/mode";
 import { DEFAULT_DEMO_PERSONA, findDemoPersona } from "@/lib/demo/personas";
 import { invitationAccess } from "@/lib/demo/invitation-access";
-import { hashToken } from "@/lib/demo/tokens";
+import { hashToken } from "@/lib/demo/token-hash";
 
 export type LoadedGuest = DemoGuestContext & { expiresAt: string };
 

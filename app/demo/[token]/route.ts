@@ -10,7 +10,7 @@ import {
   isGuestAccessEnabled,
 } from "@/lib/demo/deployment";
 import { redeemInvitation } from "@/lib/demo/guest-session";
-import { hashToken } from "@/lib/demo/tokens";
+import { hashToken } from "@/lib/demo/token-hash";
 
 export const dynamic = "force-dynamic";
 
