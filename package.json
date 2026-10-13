@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true}); try{require('fs').rmSync('node_modules/.cache',{recursive:true,force:true})}catch(e){}\"",
     "dev": "node --max-http-header-size=65536 ./node_modules/next/dist/bin/next dev",
-    "build": "next build",
+    "build": "node --max-old-space-size=3072 ./node_modules/next/dist/bin/next lint && node --max-old-space-size=4096 ./node_modules/typescript/lib/tsc.js --noEmit --pretty false && node ./node_modules/next/dist/bin/next build",
     "typecheck": "node --max-old-space-size=4096 ./node_modules/typescript/lib/tsc.js --noEmit --pretty false",
     "test": "tsx --test tests/*.test.ts",
     "security:status": "tsx scripts/security-status.ts",

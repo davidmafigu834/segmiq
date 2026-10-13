@@ -116,6 +116,10 @@ function securityHeaders() {
 }
 
 const nextConfig = {
+  // Lint and types run in `npm run build` before Next starts. Repeating them
+  // while the compiled app is still in memory fills Vercel's 8 GB builder.
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
   // Avoid webpack splitting issues with Supabase in Server Components / RSC (missing vendor-chunks).
   experimental: {
     outputFileTracingIncludes: {
