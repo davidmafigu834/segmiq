@@ -8,7 +8,8 @@ create table if not exists public.demo_invitations (
   expires_at timestamptz not null,
   revoked_at timestamptz,
   created_by uuid references public.users(id) on delete set null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint demo_invitations_id_client_unique unique (id, client_id)
 );
 
 create table if not exists public.demo_sessions (
@@ -19,7 +20,11 @@ create table if not exists public.demo_sessions (
   secret_hash text not null unique,
   expires_at timestamptz not null,
   revoked_at timestamptz,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint demo_sessions_invitation_client_match
+    foreign key (invitation_id, client_id)
+    references public.demo_invitations (id, client_id)
+    on delete cascade
 );
 
 create index if not exists demo_sessions_invitation_id_idx
@@ -30,7 +35,8 @@ create table if not exists public.demo_session_mutations (
   mutations jsonb not null default '[]'::jsonb,
   version integer not null default 0,
   updated_at timestamptz not null default now(),
-  constraint demo_session_mutations_version_nonnegative check (version >= 0)
+  constraint demo_session_mutations_version_nonnegative check (version >= 0),
+  constraint demo_mutations_must_be_array check (jsonb_typeof(mutations) = 'array')
 );
 
 -- Compare-and-swap is one UPDATE filtered by session_id and version.
