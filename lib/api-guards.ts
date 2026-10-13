@@ -4,10 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
-import {
-  requirePermission as requirePermissionRbac,
-  type Permission,
-} from "@/lib/auth/rbac";
+import { requirePermission as requirePermissionRbac } from "@/lib/auth/rbac/require";
+import type { Permission } from "@/lib/auth/rbac/permissions";
 import {
   assertMfaApiAccess,
   evaluateMfaAssurance,

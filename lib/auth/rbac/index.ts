@@ -12,4 +12,3 @@ export {
   listPermissions,
   type PermissionActor,
 } from "./resolve";
-export { requirePermission, requireAnyPermission, type AuthzContext } from "./require";

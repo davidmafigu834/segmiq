@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requirePermission } from "@/lib/auth/rbac";
+import { requirePermission } from "@/lib/auth/rbac/require";
 import { P, type Permission } from "@/lib/auth/rbac/permissions";
 import { canSeeConversation, socialActorFrom } from "./access";
 import { getConversationRow } from "./store";
