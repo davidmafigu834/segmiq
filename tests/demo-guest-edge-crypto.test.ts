@@ -76,7 +76,7 @@ describe("edge guest token hashing", () => {
 
   it("accepts only the hashed session secret and rejects invalid, expired, and revoked credentials", async () => {
     const now = Date.parse("2026-10-13T12:00:00.000Z");
-    let stored: { secret_hash: string; expires_at: string } | null = null;
+    const stored: { current: { secret_hash: string; expires_at: string } | null } = { current: null };
     const store: DemoRedeemStore = {
       async findByTokenHash(tokenHash) {
         assert.equal(tokenHash, await hashToken("invite-secret"));
@@ -92,7 +92,7 @@ describe("edge guest token hashing", () => {
         return { mode: "demo", industry: "tyres", scenario: "rossi" };
       },
       async insertSession(row) {
-        stored = { secret_hash: row.secret_hash, expires_at: row.expires_at };
+        stored.current = { secret_hash: row.secret_hash, expires_at: row.expires_at };
         return "session-1";
       },
       async insertMutationLog() {
@@ -102,7 +102,7 @@ describe("edge guest token hashing", () => {
     };
 
     const issued = await redeemInvitationWithStore("invite-secret", store, now);
-    const saved = stored;
+    const saved = stored.current;
     assert.ok(saved);
     assert.equal(issued.ok, true);
     if (!issued.ok) return;
