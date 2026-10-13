@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireSalesActorFromRequest } from "@/lib/api-guards";
+import { fetchSalespersonLeadsDirectory } from "@/lib/sales/leads-directory/leads-data";
 import {
-  fetchSalespersonLeadsDirectory,
   isAttentionFilter,
   isLeadsIntent,
   isLeadsPeriod,

@@ -1,17 +1,14 @@
 export * from "./types";
 export * from "./format";
 export {
-  fetchSalespersonLeadsDirectory,
-  leadMatchesDirectorySearch,
-  resolveLeadsRange,
+  CONVERSION_FORMULA,
+  LEADS_INTENT_FILTERS,
   LEADS_PERIODS,
   LEADS_SOURCES,
   LEADS_STAGE_FILTERS,
-  LEADS_INTENT_FILTERS,
-  CONVERSION_FORMULA,
+  isAttentionFilter,
+  isLeadsIntent,
   isLeadsPeriod,
   isLeadsSource,
   isLeadsStage,
-  isLeadsIntent,
-  isAttentionFilter,
-} from "./leads-data";
+} from "./filters";
