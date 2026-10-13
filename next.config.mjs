@@ -135,6 +135,11 @@ const nextConfig = {
     if (isServer) {
       const externals = Array.isArray(config.externals) ? config.externals : [];
       config.externals = [...externals, "puppeteer-core", "@sparticuz/chromium-min", "archiver"];
+    } else {
+      config.resolve.fallback = {
+        ...(config.resolve.fallback ?? {}),
+        async_hooks: false,
+      };
     }
     return config;
   },
