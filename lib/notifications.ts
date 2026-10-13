@@ -867,7 +867,10 @@ export async function notifySlaBreachToSalesperson(
 
 export async function checkUncontactedLeads(): Promise<{ flagged: number }> {
   const supabase = createAdminClient();
-  const { data: clients } = await supabase.from("clients").select("id, name, response_time_limit_hours, twilio_whatsapp_override");
+  const { data: clients } = await supabase
+    .from("clients")
+    .select("id, name, response_time_limit_hours, twilio_whatsapp_override")
+    .neq("workspace_mode", "demo");
   if (!clients?.length) return { flagged: 0 };
 
   const { data: admins } = await supabase

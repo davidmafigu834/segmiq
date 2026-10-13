@@ -93,6 +93,7 @@ export function DealWorkspaceClient({
   projectBasePath = "/sales/projects",
   existingWorkProjectId = null,
   projectOwners = [],
+  demonstration = false,
 }: {
   initialDeal: DealRow;
   lead: LeadRow | null;
@@ -111,6 +112,8 @@ export function DealWorkspaceClient({
   projectBasePath?: "/sales/projects" | "/client/projects";
   existingWorkProjectId?: string | null;
   projectOwners?: Array<{ id: string; name: string | null }>;
+  /** Fictional guest demo. Stage changes stay available. Live contact actions do not. */
+  demonstration?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -415,7 +418,7 @@ export function DealWorkspaceClient({
               </div>
             </div>
 
-            {!closed ? (
+            {!closed && !demonstration ? (
               <div className="flex shrink-0 flex-wrap gap-2">
                 <Button
                   variant="secondary"
@@ -702,7 +705,7 @@ export function DealWorkspaceClient({
                           }).format(Number(currentQuote.total) || 0)}
                         </p>
                       </div>
-                      {!closed && canCreateQuote && canCreateDealRevision(currentQuote) ? (
+                      {!closed && !demonstration && canCreateQuote && canCreateDealRevision(currentQuote) ? (
                         <div className="mt-3 flex flex-wrap gap-2">
                           <Button
                             variant="secondary"

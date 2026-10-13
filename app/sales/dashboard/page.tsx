@@ -1,6 +1,5 @@
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { redirect } from "next/navigation";
 import { getSalesDashboardData } from "@/lib/sales/get-sales-dashboard-data";
@@ -12,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 export default async function SalesDashboardPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
 
   if (!session || !canActAsSalesperson(session)) {
     redirect("/login");
@@ -29,6 +28,7 @@ export default async function SalesDashboardPage() {
   let unread = 0;
   let avatarUrl: string | null = null;
   try {
+    if (session.demoGuest) throw new Error("demo");
     const { createAdminClient } = await import("@/lib/supabase/admin");
     const supabase = createAdminClient();
     const [unreadRes, userRes] = await Promise.all([

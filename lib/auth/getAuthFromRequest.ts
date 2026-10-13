@@ -1,5 +1,3 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { resolveApiAuth, type ApiAuth } from "@/lib/auth/resolveApiAuth";
 import { assertMfaApiAccess, evaluateMfaAssurance } from "@/lib/auth/mfa/assurance";
 
@@ -15,8 +13,23 @@ export async function getAuthFromRequest(req?: Request): Promise<ApiAuth | null>
     return resolveApiAuth(req);
   }
 
-  const session = await getServerSession(authOptions);
+  const { getOperationalSession } = await import("@/lib/auth/operational-session");
+  const session = await getOperationalSession();
   if (!session?.userId) return null;
+  if (session.demoGuest) {
+    if (session.role === "SUPER_ADMIN") return null;
+    return {
+      userId: session.userId,
+      role: session.role,
+      clientId: session.clientId ?? null,
+      alsoSells: false,
+      sessionId: session.sessionId ?? null,
+      demoGuest: true,
+      mfaRequired: false,
+      mfaSatisfied: true,
+      mfaEnrolmentRequired: false,
+    };
+  }
 
   const mfa = await evaluateMfaAssurance({
     userId: session.userId,

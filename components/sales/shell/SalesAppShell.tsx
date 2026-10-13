@@ -176,6 +176,7 @@ function SalesAppShellInner({
   contentFlush = false,
   mobileFullBleed = false,
   realEstate = false,
+  demoGuest = false,
 }: {
   children: ReactNode;
   userName: string;
@@ -206,6 +207,8 @@ function SalesAppShellInner({
   /** Below the mobile shell breakpoint, drop the centered page column. */
   mobileFullBleed?: boolean;
   realEstate?: boolean;
+  /** Guest demonstrations do not call live search, notifications, or quick actions. */
+  demoGuest?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -225,7 +228,7 @@ function SalesAppShellInner({
 
   const desktopActions = (
     <>
-      {showSearch ? (
+      {showSearch && !demoGuest ? (
         <div className="sd-search-wrap hidden min-w-0 shrink layout:inline-flex">
           <GlobalSearch role={notificationRole} placeholder={searchPlaceholder} />
         </div>
@@ -234,10 +237,10 @@ function SalesAppShellInner({
       <div className="hidden shrink-0 items-center gap-2 layout:flex">
         <div className="flex items-center gap-1">
           <DemoWorkspaceChip />
-          <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
+          {demoGuest ? null : <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />}
           <SalesThemeToggle />
         </div>
-        {showQuickActions ? (
+        {showQuickActions && !demoGuest ? (
           <SalesQuickActions onAddLead={openAddHubSheet} onLogCall={onLogCall} realEstate={realEstate} />
         ) : null}
         <SalesProfileMenu

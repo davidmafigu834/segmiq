@@ -623,6 +623,16 @@ export async function runAgentTool(
   rawInput: unknown,
   opts?: { humanApproved?: boolean }
 ): Promise<ExecutedToolCall> {
+  const { egressDecision } = await import("@/lib/demo/egress");
+  if ((await egressDecision({ clientId: ctx.clientId })) === "refuse") {
+    return {
+      toolName,
+      status: "BLOCKED",
+      riskLevel: "HIGH",
+      blockedReason: "DEMO_EGRESS_BLOCKED",
+      result: toolFailure("This action is not available in a demonstration."),
+    };
+  }
   if (!isRegisteredTool(toolName)) {
     return {
       toolName,

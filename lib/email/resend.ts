@@ -26,6 +26,10 @@ export async function sendEmail({
   html: string;
   attachments?: EmailAttachment[];
 }): Promise<{ success: boolean; error?: string }> {
+  const { egressDecision, DEMO_EGRESS_BLOCKED } = await import("@/lib/demo/egress");
+  if ((await egressDecision()) === "refuse") {
+    return { success: false, error: DEMO_EGRESS_BLOCKED };
+  }
   try {
     const resend = getResend();
     if (!resend) {

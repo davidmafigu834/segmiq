@@ -56,6 +56,7 @@ export function CompanyDashboardHeader({
   primaryAction,
   titleActions,
   hideTitleBlock = false,
+  fictional = false,
 }: {
   unreadNotifications: number;
   notificationRole: UserRole;
@@ -71,6 +72,7 @@ export function CompanyDashboardHeader({
   titleActions?: ReactNode;
   /** Product record workspaces put identity inside the content card. */
   hideTitleBlock?: boolean;
+  fictional?: boolean;
 }) {
   const { terminology } = useCompanyWorkspace();
   const router = useRouter();
@@ -102,16 +104,18 @@ export function CompanyDashboardHeader({
         <div className="hidden items-center gap-3 layout:flex">
           <BreadcrumbTrail value={breadcrumb} />
           <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-2">
-            <div className="sd-search-wrap min-w-0">
-              <GlobalSearch role={notificationRole} appearance="icon" />
-            </div>
+            {fictional ? null : (
+              <div className="sd-search-wrap min-w-0">
+                <GlobalSearch role={notificationRole} appearance="icon" />
+              </div>
+            )}
 
             <div className="flex items-center gap-1">
-              <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
+              {fictional ? null : <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />}
               <SalesThemeToggle />
             </div>
 
-            {primaryAction !== undefined ? (
+            {fictional ? null : primaryAction !== undefined ? (
               primaryAction
             ) : (
               <SalesHeaderQuickActions items={quickActionItems} />

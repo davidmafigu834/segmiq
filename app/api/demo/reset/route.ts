@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const auth = await getAuthFromRequest(req);
   if (!auth?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (auth.demoGuest) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!auth.clientId) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (auth.role !== "CLIENT_MANAGER" && auth.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

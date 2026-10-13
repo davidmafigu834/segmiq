@@ -45,7 +45,7 @@ export async function fetchMiddlewareFirstRow<T extends Record<string, unknown>>
   return result.status === "found" ? result.row : null;
 }
 
-async function fetchMiddlewareFirstRowResult<T extends Record<string, unknown>>(
+export async function fetchMiddlewareFirstRowResult<T extends Record<string, unknown>>(
   table: string,
   query: string,
   options?: { fetchImpl?: MiddlewareFetch; timeoutMs?: number }

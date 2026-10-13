@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
+import { readPinnedDemoWorkspace } from "@/lib/demo/workspace-lookup";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
@@ -53,15 +53,19 @@ function PipelineSkeleton() {
 }
 
 export default async function SalesPipelinePage() {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
 
   const supabase = createAdminClient();
-  const { data: clientRow } = session.clientId
-    ? await supabase.from("clients").select("name, business_type").eq("id", session.clientId).maybeSingle()
-    : { data: null };
+  const { data: clientRow } = session.demoGuest
+    ? await readPinnedDemoWorkspace(session.clientId ?? "").then((pinned) => ({
+        data: pinned ? { name: pinned.name, business_type: pinned.businessType } : null,
+      }))
+    : session.clientId
+      ? await supabase.from("clients").select("name, business_type").eq("id", session.clientId).maybeSingle()
+      : { data: null };
 
-  if (session.clientId && isRealEstate(clientRow?.business_type)) {
+  if (!session.demoGuest && session.clientId && isRealEstate(clientRow?.business_type)) {
     const [reData, navBadges, unreadRes, userRes] = await Promise.all([
       getRealEstatePipelineData({ clientId: session.clientId, assignedToId: session.userId }),
       fetchSalesNavBadges(session.userId, session.clientId),
@@ -112,7 +116,7 @@ export default async function SalesPipelinePage() {
     );
   }
 
-  if (session.clientId && (await readSalesWorkflowPreset(session.clientId)) === "SOLAR_INSTALLATION") {
+  if (!session.demoGuest && session.clientId && (await readSalesWorkflowPreset(session.clientId)) === "SOLAR_INSTALLATION") {
     const navBadges = await fetchSalesNavBadges(session.userId, session.clientId);
     const [unreadRes, userRes] = await Promise.all([
       supabase.from("notifications").select("*", { count: "exact", head: true }).eq("user_id", session.userId).eq("read", false),
@@ -147,6 +151,11 @@ export default async function SalesPipelinePage() {
   let dealRows: DealRow[];
   let quotes: QuotationRow[] | null;
   let leads: unknown[] | null;
+  if (session.demoGuest && !demo) {
+    const { DemoAccessDenied } = await import("@/lib/demo/errors");
+    throw new DemoAccessDenied();
+  }
+
   if (demo) {
     dealRows = demo.deals
       .filter((deal) => deal.owner_id === session.userId)
@@ -247,6 +256,7 @@ export default async function SalesPipelinePage() {
   let unread = 0;
   let avatarUrl: string | null = null;
   try {
+    if (session.demoGuest) throw new Error("demo");
     const [unreadRes, userRes] = await Promise.all([
       supabase
         .from("notifications")
@@ -287,6 +297,7 @@ export default async function SalesPipelinePage() {
         title="My pipeline"
         description="Track and manage the Deals you're actively working to win."
         shellClassName="sales-pipeline-phone"
+        demoGuest={Boolean(session.demoGuest)}
       >
         <Suspense fallback={<PipelineSkeleton />}>
           <DealsBoard

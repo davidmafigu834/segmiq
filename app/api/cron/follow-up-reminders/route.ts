@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCronRequest } from "@/lib/cron-auth";
+import { demoCronSkip } from "@/lib/demo/cron";
 import { executeFollowUpReminders } from "@/lib/follow-up-reminders";
 
 export async function GET(req: Request) {
@@ -9,6 +10,8 @@ export async function GET(req: Request) {
   if (!isAuthorizedCronRequest(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const demoSkip = demoCronSkip();
+  if (demoSkip) return demoSkip;
   try {
     const r = await executeFollowUpReminders();
     return NextResponse.json(r);

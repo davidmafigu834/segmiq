@@ -29,9 +29,17 @@ export function gatewayUserError(error: unknown): string {
   return error instanceof Error ? error.message : "WhatsApp gateway unavailable";
 }
 
+async function refuseGatewayInDemo(): Promise<void> {
+  const { egressDecision, DEMO_EGRESS_BLOCKED } = await import("@/lib/demo/egress");
+  if ((await egressDecision()) === "refuse") {
+    throw new Error(DEMO_EGRESS_BLOCKED);
+  }
+}
+
 export async function wakeWhatsAppGateway(
   timeoutMs = GATEWAY_WAKE_TIMEOUT_MS
 ): Promise<{ ok: boolean; waking: boolean }> {
+  await refuseGatewayInDemo();
   try {
     const response = await fetch(`${gatewayBase()}/health`, {
       method: "GET",
@@ -52,6 +60,7 @@ export async function callWhatsAppGateway<T>(input: {
   body?: Record<string, unknown>;
   timeoutMs?: number;
 }): Promise<T> {
+  await refuseGatewayInDemo();
   const method = input.method ?? "POST";
   const body = input.body ? JSON.stringify(input.body) : "";
   const headers = await signGatewayRequest({ method, path: input.path, body });

@@ -50,6 +50,10 @@ export async function zohoBooksGet(input: {
   query?: Record<string, string>;
   fetchImpl?: typeof fetch;
 }): Promise<unknown> {
+  const { egressDecision, DEMO_EGRESS_BLOCKED } = await import("@/lib/demo/egress");
+  if ((await egressDecision()) === "refuse") {
+    throw new ZohoBooksRequestError(DEMO_EGRESS_BLOCKED, 403, false);
+  }
   const region = resolveZohoRegion({ apiDomain: input.apiDomain });
   const url = booksUrl(input.apiDomain, input.path, input.query ?? {});
   if (!region || !url || !input.accessToken) {
@@ -86,6 +90,10 @@ export async function zohoBooksWrite(input: {
   body: Record<string, unknown>;
   fetchImpl?: typeof fetch;
 }): Promise<unknown> {
+  const { egressDecision, DEMO_EGRESS_BLOCKED } = await import("@/lib/demo/egress");
+  if ((await egressDecision()) === "refuse") {
+    throw new ZohoBooksRequestError(DEMO_EGRESS_BLOCKED, 403, false);
+  }
   const region = resolveZohoRegion({ apiDomain: input.apiDomain });
   const url = booksWriteUrl(input.apiDomain, input.method, input.path, input.query ?? {});
   if (!region || !url || !input.accessToken) {

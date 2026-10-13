@@ -168,6 +168,10 @@ export async function putObject(
   contentType: string,
   options?: { contentDisposition?: string; cacheControl?: string }
 ): Promise<void> {
+  const { egressDecision, DEMO_EGRESS_BLOCKED } = await import("@/lib/demo/egress");
+  if ((await egressDecision()) === "refuse") {
+    throw new Error(DEMO_EGRESS_BLOCKED);
+  }
   const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
   if (!bucket) throw new Error("CLOUDFLARE_R2_BUCKET_NAME is not configured");
   await getR2Client().send(

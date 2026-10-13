@@ -3,6 +3,10 @@
  * Callers must not branch on demo email addresses.
  */
 
+import { getGuestContext } from "@/lib/demo/context";
+import { DemoAccessDenied } from "@/lib/demo/errors";
+import { readPinnedDemoWorkspace } from "@/lib/demo/workspace-lookup";
+
 export type WorkspaceMode = "production" | "demo";
 
 export type WorkspaceConfig = {
@@ -37,6 +41,20 @@ function asMode(value: unknown): WorkspaceMode {
  */
 export async function getWorkspaceConfig(clientId: string | null | undefined): Promise<WorkspaceConfig | null> {
   if (!clientId) return null;
+  const guest = getGuestContext();
+  if (guest) {
+    if (guest.clientId !== clientId) throw new DemoAccessDenied();
+    const pinned = await readPinnedDemoWorkspace(guest.clientId);
+    if (!pinned) return null;
+    return {
+      clientId: pinned.id,
+      mode: pinned.mode,
+      industry: pinned.industry,
+      scenario: pinned.scenario,
+      name: pinned.name,
+      timezone: "Africa/Harare",
+    };
+  }
   const hit = cache.get(clientId);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.config;
 
@@ -83,7 +101,8 @@ export async function getWorkspaceConfig(clientId: string | null | undefined): P
     };
     cache.set(clientId, { config, at: Date.now() });
     return config;
-  } catch {
+  } catch (error) {
+    if (error instanceof DemoAccessDenied) throw error;
     return null;
   }
 }

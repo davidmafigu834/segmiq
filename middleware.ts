@@ -35,6 +35,9 @@ export async function middleware(req: NextRequest) {
   // Phase 6.2 — API MFA enrolment gate (matcher includes /api/*).
   // Does not redirect unauthenticated APIs; only blocks restricted sessions.
   if (req.nextUrl.pathname.startsWith("/api/")) {
+    const { enforceDemoGuestApi } = await import("@/lib/demo/guest-gate");
+    const demoGate = await enforceDemoGuestApi(req);
+    if (demoGate) return demoGate;
     return enforceApiMfaEnrolmentGate(req);
   }
 
@@ -231,13 +234,19 @@ export async function middleware(req: NextRequest) {
     path === "/cloud/reset-password" ||
     path.startsWith("/cloud/share/") ||
     path === "/blog" ||
-    path.startsWith("/blog/");
+    path.startsWith("/blog/") ||
+    path === "/demo" ||
+    path.startsWith("/demo/");
 
   if (marketingPublic || isPublic) {
     const cloudEntryRedirect = await redirectIfAuthenticatedCloudEntry(req, path, false);
     if (cloudEntryRedirect) return cloudEntryRedirect;
     return NextResponse.next();
   }
+
+  const { enforceDemoGuestPage } = await import("@/lib/demo/guest-gate");
+  const demoPage = await enforceDemoGuestPage(req);
+  if (demoPage) return demoPage;
 
   const token = await getToken({
     req,

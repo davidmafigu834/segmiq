@@ -29,6 +29,7 @@ export function CompanyDashboard({
   avatarUrl,
   companyLogoUrl,
   whatsappBadge = 0,
+  fictional = false,
 }: {
   data: CompanySalesDashboardData;
   unreadNotifications: number;
@@ -37,6 +38,7 @@ export function CompanyDashboard({
   avatarUrl?: string | null;
   companyLogoUrl?: string | null;
   whatsappBadge?: number;
+  fictional?: boolean;
 }) {
   return (
     <CompanyWorkspaceShell
@@ -54,7 +56,8 @@ export function CompanyDashboard({
         notificationRole={notificationRole}
         userName={userName}
         avatarUrl={avatarUrl}
-        canAddLead
+        canAddLead={!fictional}
+        fictional={fictional}
       />
 
       {data.businessType === "real_estate" && data.reAgentOvernight ? (
@@ -101,7 +104,7 @@ export function CompanyDashboard({
         <CompanyFocusAreasCard signals={data.focusAreas} viewAllHref={data.focusAreasViewAllHref} />
       </div>
 
-      <CompanyWeeklyReportCardContainer />
+      {fictional ? null : <CompanyWeeklyReportCardContainer />}
       <CompanyDailyTeamReportCard report={data.dailyTeamReport} />
 
       <div className="grid w-full grid-cols-1 items-start gap-2.5 layout:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] layout:gap-3">

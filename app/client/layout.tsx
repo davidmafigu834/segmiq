@@ -1,5 +1,5 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
+import { readPinnedDemoWorkspace } from "@/lib/demo/workspace-lookup";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CompanyWorkspaceProvider } from "@/components/company/CompanyWorkspaceContext";
 import { CompanyClientProviders } from "@/components/dashboard/company/CompanyClientProviders";
@@ -9,10 +9,14 @@ import { isSalesWorkflowPreset } from "@/lib/sales/solar-workflow/types";
 export const dynamic = "force-dynamic";
 
 export default async function ClientRootLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   let businessType: string = "trades";
   let solarWorkflow = false;
-  if (session?.clientId) {
+  if (session?.demoGuest && session.clientId) {
+    const pinned = await readPinnedDemoWorkspace(session.clientId);
+    businessType = pinned?.businessType ?? "trades";
+    solarWorkflow = isSalesWorkflowPreset(pinned?.salesWorkflowPreset) && pinned?.salesWorkflowPreset === "SOLAR_INSTALLATION";
+  } else if (session?.clientId) {
     const supabase = createAdminClient();
     const { data } = await supabase
       .from("clients")

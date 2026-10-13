@@ -15,12 +15,16 @@ export function demoBlocksExternalSend(mode: WorkspaceMode | null | undefined): 
 export async function simulatedExternalSend(
   clientId: string | null | undefined
 ): Promise<(SendResult & { simulated: true }) | null> {
-  if (!clientId) return null;
-  if (!(await isDemoWorkspaceId(clientId))) return null;
-  return {
-    ok: true,
-    simulated: true,
-    providerId: "demo-simulated",
-    errorCode: "DEMO_SIMULATED",
-  };
+  const { isDemoDeployment } = await import("@/lib/demo/deployment");
+  const { getGuestContext } = await import("@/lib/demo/context");
+  if (!clientId && !isDemoDeployment() && !getGuestContext()) return null;
+  if (isDemoDeployment() || getGuestContext() || (clientId && (await isDemoWorkspaceId(clientId)))) {
+    return {
+      ok: true,
+      simulated: true,
+      providerId: "demo-simulated",
+      errorCode: "DEMO_SIMULATED",
+    };
+  }
+  return null;
 }

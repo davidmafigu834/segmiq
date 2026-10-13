@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCronRequest } from "@/lib/cron-auth";
+import { demoCronSkip } from "@/lib/demo/cron";
 import { processActiveCampaigns } from "@/lib/marketing/campaign-send";
 import { runJourneyEngine } from "@/lib/marketing/journeys";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -14,6 +15,8 @@ export async function GET(req: Request) {
   if (!isAuthorizedCronRequest(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const demoSkip = demoCronSkip();
+  if (demoSkip) return demoSkip;
 
   try {
     const [result, journeys] = await Promise.all([
@@ -26,7 +29,8 @@ export async function GET(req: Request) {
       .from("clients")
       .select("id")
       .eq("is_active", true)
-      .eq("is_archived", false);
+      .eq("is_archived", false)
+      .neq("workspace_mode", "demo");
 
     let templatesSynced = 0;
     for (const client of clients ?? []) {

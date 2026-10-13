@@ -7,6 +7,6 @@ export * from "./create-deal-form";
 export * from "./close-deal";
 export * from "./timeline";
 export * from "./current-quotation";
-export * from "./permissions";
+// Deal permission checks stay a direct import so client boards do not load next/headers.
 export * from "./customer-deals";
 export * from "./attention";

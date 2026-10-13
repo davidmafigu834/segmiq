@@ -3,7 +3,10 @@ import { buildRossiDataset } from "@/lib/demo/industries/tyres/rossi/dataset";
 import { harareDateKey } from "@/lib/demo/dates";
 import { demoId } from "@/lib/demo/ids";
 import { applyDemoMutations } from "@/lib/demo/mutations";
+import { getGuestContext } from "@/lib/demo/context";
+import { DemoAccessDenied } from "@/lib/demo/errors";
 import { getWorkspaceConfig, type WorkspaceConfig } from "@/lib/demo/mode";
+import { readSessionMutations } from "@/lib/demo/session-store";
 import { readDemoMutations } from "@/lib/demo/store";
 import type { DemoActor, DemoDataset, DemoWorkspaceRef } from "@/lib/demo/types";
 
@@ -81,18 +84,42 @@ async function resolveActors(clientId: string): Promise<Record<DemoActorKey, Dem
   return actors;
 }
 
-export async function loadDemoDatasetForClient(clientId: string, now = new Date()): Promise<DemoDataset | null> {
-  const config = await getWorkspaceConfig(clientId);
-  if (!config || config.mode !== "demo") return null;
-  return loadFromConfig(config, now);
+export async function resolveDemoPersona(clientId: string, personaKey: string): Promise<DemoActor | null> {
+  if (!ROSSI_ACTORS.some((actor) => actor.key === personaKey)) return null;
+  const actors = await resolveActors(clientId);
+  return actors[personaKey as DemoActorKey] ?? null;
 }
 
-async function loadFromConfig(config: WorkspaceConfig, now: Date): Promise<DemoDataset | null> {
-  const industry = config.industry ?? "tyres";
-  const scenario = config.scenario ?? "rossi";
+export async function loadDemoDatasetForClient(clientId: string, now = new Date()): Promise<DemoDataset | null> {
+  const guest = getGuestContext();
+  if (guest) {
+    if (guest.clientId !== clientId) throw new DemoAccessDenied();
+    const config = await getWorkspaceConfig(clientId);
+    if (!config || config.mode !== "demo" || config.industry !== "tyres" || config.scenario !== "rossi") {
+      throw new DemoAccessDenied();
+    }
+    const dataset = await loadFromConfig(config, now, { sessionId: guest.sessionId, strictTemplate: true });
+    if (!dataset) throw new DemoAccessDenied();
+    return dataset;
+  }
+  const config = await getWorkspaceConfig(clientId);
+  if (!config || config.mode !== "demo") return null;
+  return loadFromConfig(config, now, { sessionId: null, strictTemplate: false });
+}
+
+async function loadFromConfig(
+  config: WorkspaceConfig,
+  now: Date,
+  scope: { sessionId: string | null; strictTemplate: boolean }
+): Promise<DemoDataset | null> {
+  const industry = scope.strictTemplate ? config.industry : config.industry ?? "tyres";
+  const scenario = scope.strictTemplate ? config.scenario : config.scenario ?? "rossi";
+  if (!industry || !scenario) return null;
   const actors = await resolveActors(config.clientId);
-  const mutations = await readDemoMutations(config.clientId);
-  const key = `${config.clientId}:${harareDateKey(now)}:${mutations.length}:${mutations.at(-1)?.id ?? "base"}`;
+  const mutations = scope.sessionId
+    ? await readSessionMutations(scope.sessionId)
+    : await readDemoMutations(config.clientId);
+  const key = `${scope.sessionId ?? "org"}:${config.clientId}:${harareDateKey(now)}:${mutations.length}:${mutations.at(-1)?.id ?? "base"}`;
   const cached = snapshotCache.get(key);
   if (cached && Date.now() - cached.at < 20_000) return cached.dataset;
 

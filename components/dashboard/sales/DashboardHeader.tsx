@@ -23,6 +23,7 @@ export function DashboardHeader({
   userRoleLabel = "Sales Executive",
   realEstate = false,
   toolbar = false,
+  demoGuest = false,
 }: {
   firstName: string;
   userName: string;
@@ -35,6 +36,7 @@ export function DashboardHeader({
   userRoleLabel?: string;
   realEstate?: boolean;
   toolbar?: boolean;
+  demoGuest?: boolean;
 }) {
   const greeting = `Good ${greetingPart()}, ${firstName}`;
 
@@ -46,15 +48,17 @@ export function DashboardHeader({
       toolbar={toolbar}
       actions={
         <>
-          <div className="sd-search-wrap hidden min-w-0 shrink layout:inline-flex">
-            <GlobalSearch role={notificationRole} appearance="icon" />
-          </div>
+          {demoGuest ? null : (
+            <div className="sd-search-wrap hidden min-w-0 shrink layout:inline-flex">
+              <GlobalSearch role={notificationRole} appearance="icon" />
+            </div>
+          )}
           <div className="hidden shrink-0 items-center gap-2 layout:flex">
             <div className="flex items-center gap-1">
-              <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
+              {demoGuest ? null : <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />}
               <SalesThemeToggle />
             </div>
-            <SalesQuickActions onAddLead={onAddLead} onLogCall={onOpenLog} realEstate={realEstate} />
+            {demoGuest ? null : <SalesQuickActions onAddLead={onAddLead} onLogCall={onOpenLog} realEstate={realEstate} />}
             <SalesProfileMenu
               userName={userName}
               userRoleLabel={userRoleLabel}

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { canModifyDeal, canReadDeal } from "@/lib/sales/deals/permissions";
 import {
-  canModifyDeal,
-  canReadDeal,
   closeDealLost,
   closeDealWon,
   getDealCompleteness,

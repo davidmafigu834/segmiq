@@ -6,7 +6,7 @@
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true}); try{require('fs').rmSync('node_modules/.cache',{recursive:true,force:true})}catch(e){}\"",
     "dev": "node --max-http-header-size=65536 ./node_modules/next/dist/bin/next dev",
     "build": "next build",
-    "typecheck": "node ./node_modules/typescript/lib/tsc.js --noEmit --pretty false --incremental false",
+    "typecheck": "node --max-old-space-size=4096 ./node_modules/typescript/lib/tsc.js --noEmit --pretty false",
     "test": "tsx --test tests/*.test.ts",
     "security:status": "tsx scripts/security-status.ts",
     "verify": "npm run test && npm run typecheck",

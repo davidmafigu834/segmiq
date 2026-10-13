@@ -17,6 +17,8 @@ export type ApiAuth = {
   mfaRequired?: boolean;
   mfaSatisfied?: boolean;
   mfaEnrolmentRequired?: boolean;
+  /** Demonstration guest. Never a platform administrator. */
+  demoGuest?: boolean;
 };
 
 function getSecret(): Uint8Array | null {
@@ -99,7 +101,29 @@ async function verifyBearerToken(req: Request): Promise<ApiAuth | null> {
 
 /** Cookie session first (web unchanged), then Bearer JWT for the field app. */
 export async function resolveApiAuth(req: Request): Promise<ApiAuth | null> {
+  const { readDemoSessionCookie } = await import("@/lib/demo/cookie");
+  const { credentialsConflict } = await import("@/lib/demo/allowlist");
+  const demoSecret = readDemoSessionCookie(req.headers.get("cookie"));
   const session = await getServerSession(authOptions);
+  if (credentialsConflict(Boolean(session?.userId), Boolean(demoSecret))) return null;
+  if (!session?.userId && demoSecret) {
+    const { loadGuestBySecret, bindGuest } = await import("@/lib/demo/guest-session");
+    const guest = await loadGuestBySecret(demoSecret);
+    if (!guest) return null;
+    bindGuest(guest);
+    return {
+      userId: guest.userId,
+      role: guest.role,
+      clientId: guest.clientId,
+      alsoSells: false,
+      isImpersonating: false,
+      sessionId: guest.sessionId,
+      demoGuest: true,
+      mfaRequired: false,
+      mfaSatisfied: true,
+      mfaEnrolmentRequired: false,
+    };
+  }
   if (session?.userId) {
     // Re-validate with request context so idle/absolute/revocation + activity touch apply.
     const valid = await validateAuthClaims(

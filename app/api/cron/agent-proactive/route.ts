@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCronRequest } from "@/lib/cron-auth";
+import { demoCronSkip } from "@/lib/demo/cron";
 import { runProactiveWorker } from "@/lib/agent/proactive";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,8 @@ export async function GET(req: Request) {
   if (!isAuthorizedCronRequest(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const demoSkip = demoCronSkip();
+  if (demoSkip) return demoSkip;
   try {
     const result = await runProactiveWorker();
     const { recoverStaleAgentConversations } = await import("@/lib/agent/stale-resume");

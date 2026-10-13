@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
@@ -30,12 +29,13 @@ export default async function DealWorkspacePage({
   params: { dealId: string };
   searchParams?: { close?: string };
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
 
   const supabase = createAdminClient();
   const { lookupDemoDeal } = await import("@/lib/demo/acl");
   const demoDeal = await lookupDemoDeal(session.clientId, params.dealId);
+  if (session.demoGuest && demoDeal.mode !== "demo") notFound();
   const { data: deal } = demoDeal.mode === "demo"
     ? { data: demoDeal.row }
     : await supabase.from("deals").select("*").eq("id", params.dealId).maybeSingle();
@@ -136,6 +136,7 @@ export default async function DealWorkspacePage({
           projectBasePath="/sales/projects"
           existingWorkProjectId={existingWorkProjectId}
           projectOwners={projectOwners}
+          demonstration={Boolean(session.demoGuest)}
         />
       </SalesAppShell>
     </Layout>

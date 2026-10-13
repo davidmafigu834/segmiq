@@ -1,4 +1,8 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { getGuestContext } from "@/lib/demo/context";
+import { assertDemoDatabaseAllowed } from "@/lib/demo/deployment";
+import { DemoAccessDenied } from "@/lib/demo/errors";
+import { assertGuestRepositoryAccess } from "@/lib/demo/repository-guard";
 
 /** Cap hung PostgREST/Auth calls so serverless routes fail fast instead of burning maxDuration. */
 export const ADMIN_FETCH_TIMEOUT_MS = 12_000;
@@ -14,7 +18,48 @@ function withAdminFetchTimeout(existing: AbortSignal | null | undefined, timeout
   return timeout;
 }
 
+function guardGuestAdminClient(client: SupabaseClient): SupabaseClient {
+  return new Proxy(client, {
+    get(target, prop, receiver) {
+      if (prop === "from") {
+        return (table: string) => {
+          assertGuestRepositoryAccess(table);
+          return target.from(table);
+        };
+      }
+      if (prop === "rpc" || prop === "storage" || prop === "auth") {
+        const denied = () => {
+          throw new DemoAccessDenied();
+        };
+        return new Proxy(denied, {
+          get() {
+            throw new DemoAccessDenied();
+          },
+        });
+      }
+      const value = Reflect.get(target, prop, receiver);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+}
+
 export function createAdminClient(): SupabaseClient {
+  assertDemoDatabaseAllowed();
+  const client = rawAdminClient();
+  if (getGuestContext()) return guardGuestAdminClient(client);
+  return client;
+}
+
+/**
+ * Service-role client with no guest table guard.
+ * Only the pinned demo-workspace lookup may use this while a guest context is active.
+ */
+export function createUnguardedAdminClient(): SupabaseClient {
+  assertDemoDatabaseAllowed();
+  return rawAdminClient();
+}
+
+function rawAdminClient(): SupabaseClient {
   if (cached) return cached;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

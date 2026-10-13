@@ -1,3 +1,5 @@
+import { getGuestContext } from "@/lib/demo/context";
+import { DemoAccessDenied } from "@/lib/demo/errors";
 import { loadDemoDatasetForClient } from "@/lib/demo/provider";
 import { isDemoWorkspaceId } from "@/lib/demo/mode";
 import type { DemoDataset } from "@/lib/demo/types";
@@ -8,6 +10,11 @@ export type DemoLookup<T> =
   | { mode: "demo"; row: T | null; dataset: DemoDataset | null };
 
 async function datasetFor(clientId: string | null | undefined): Promise<DemoDataset | null | "production"> {
+  const guest = getGuestContext();
+  if (guest) {
+    if (!clientId || clientId !== guest.clientId) throw new DemoAccessDenied();
+    return loadDemoDatasetForClient(clientId);
+  }
   if (!clientId) return "production";
   if (!(await isDemoWorkspaceId(clientId))) return "production";
   return loadDemoDatasetForClient(clientId);

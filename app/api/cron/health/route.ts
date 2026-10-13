@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { runHealthChecks } from "@/lib/health-checks";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAuthorizedCronRequest } from "@/lib/cron-auth";
+import { demoCronSkip } from "@/lib/demo/cron";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,8 @@ export async function GET(req: NextRequest) {
   if (!isAuthorizedCronRequest(req)) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
+  const demoSkip = demoCronSkip();
+  if (demoSkip) return demoSkip;
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 503 });

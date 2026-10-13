@@ -44,7 +44,9 @@ function SalesDashboardInner({
   const s = session as {
     user?: { name?: string | null };
     role?: UserRole;
+    demoGuest?: boolean;
   } | null;
+  const demoGuest = Boolean(s?.demoGuest);
   const fullName = s?.user?.name ?? "there";
   const firstName = fullName.split(" ")[0] ?? "there";
   const notificationRole = (s?.role ?? "SALESPERSON") as UserRole;
@@ -92,6 +94,7 @@ function SalesDashboardInner({
       showDefaultHeader={false}
       onLogCall={() => openLogSheet("")}
       realEstate={isRealEstate}
+      demoGuest={demoGuest}
     >
       {isRealEstate ? (
         <>
@@ -107,8 +110,9 @@ function SalesDashboardInner({
             userRoleLabel={roleLabel}
             realEstate
             toolbar
+            demoGuest={demoGuest}
           />
-          <SalesCopilotDailyWorkspace firstName={firstName} />
+          {demoGuest ? null : <SalesCopilotDailyWorkspace firstName={firstName} />}
           <AgentDailyWorkspace clientId={data.clientId!} data={data.realEstate!} />
         </>
       ) : (
@@ -122,9 +126,10 @@ function SalesDashboardInner({
             onOpenLog={() => openLogSheet("")}
             onAddLead={openAddHubSheet}
             toolbar
+            demoGuest={demoGuest}
           />
 
-          <SalesCopilotDailyWorkspace firstName={firstName} />
+          {demoGuest ? null : <SalesCopilotDailyWorkspace firstName={firstName} />}
 
           {!data.hasAnyLeads && !data.hasAnyDeals ? (
             <div className="dashboard-panel dashboard-panel--attention overflow-hidden border-0 p-5 shadow-none">

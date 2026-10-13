@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCronRequest } from "@/lib/cron-auth";
+import { demoCronSkip } from "@/lib/demo/cron";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/resend";
 import { weeklyDigestEmail } from "@/lib/email/templates/weekly-digest";
@@ -17,6 +18,8 @@ export async function GET(req: Request) {
   if (!isAuthorizedCronRequest(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const demoSkip = demoCronSkip();
+  if (demoSkip) return demoSkip;
 
   const supabase = createAdminClient();
 
@@ -37,7 +40,8 @@ export async function GET(req: Request) {
     .from("clients")
     .select("id, name, slug")
     .eq("is_active", true)
-    .eq("is_archived", false);
+    .eq("is_archived", false)
+    .neq("workspace_mode", "demo");
 
   if (!clients || clients.length === 0) {
     return NextResponse.json({ success: true, sent: 0, weekRange });

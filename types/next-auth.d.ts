@@ -16,6 +16,8 @@ declare module "next-auth" {
     mfaEnrolmentRequired?: boolean;
     /** Set when a super admin is impersonating a client team member. */
     realUserId?: string | null;
+    /** Present only for a server-built demonstration guest session. Never set by NextAuth login. */
+    demoGuest?: boolean;
     realUserName?: string | null;
     isImpersonating?: boolean;
     user: DefaultSession["user"] & {

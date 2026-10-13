@@ -25,6 +25,15 @@ export type SendCampaignTemplateParams = {
 export async function sendCampaignTemplate(
   params: SendCampaignTemplateParams
 ): Promise<SendResult & { channel: "whatsapp" }> {
+  const { egressDecision, DEMO_EGRESS_BLOCKED } = await import("@/lib/demo/egress");
+  if ((await egressDecision({ clientId: params.context.clientId })) === "refuse") {
+    return {
+      ok: false,
+      error: "Demonstration workspaces cannot send campaigns.",
+      errorCode: DEMO_EGRESS_BLOCKED,
+      channel: "whatsapp",
+    };
+  }
   const defaultCc = (process.env.DEFAULT_COUNTRY_CODE || "ZW").toUpperCase() as CountryCode;
   const rawInput = resolveWhatsAppRecipient(params.to, null, defaultCc);
   const normalized = normalizeToE164(rawInput, defaultCc);
