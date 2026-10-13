@@ -10,6 +10,8 @@ type GuestStorage = {
 function createGuestStorage(): GuestStorage | null {
   if (typeof window !== "undefined") return null;
   try {
+    // Server-only. A static import is pulled into client components that share this module.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { AsyncLocalStorage } = require(/* webpackIgnore: true */ "async_hooks") as {
       AsyncLocalStorage: new () => GuestStorage;
     };
