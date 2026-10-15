@@ -1,0 +1,118 @@
+import { BRAIN_SETTINGS_DEFAULTS, type CompanyBrainSnapshot } from "@/lib/company-brain/types";
+import { demoIso, daysAgo } from "@/lib/demo/dates";
+import { demoId } from "@/lib/demo/ids";
+import { BSA_WORKSPACE } from "@/lib/demo/industries/vehicle-hire/bsa/identity";
+
+/** Fictional operating context for the BSA Mobility demonstration. */
+export function bsaCompanyBrain(clientId: string, now = new Date()): CompanyBrainSnapshot {
+  const at = demoIso(daysAgo(21, now));
+  return {
+    exists: true,
+    settings: {
+      ...BRAIN_SETTINGS_DEFAULTS,
+      clientId,
+      tradingName: BSA_WORKSPACE.name,
+      businessKind: "rental_company",
+      customerModel: "BOTH",
+      agentBusinessExplanation:
+        "Fictional demonstration. Executive mobility, luxury vehicle hire, and chauffeur services in Harare. Two salespeople handle airport transfers, corporate hire, weddings, and premium vehicle enquiries. Published marketing examples are not live availability or a confirmed price list.",
+      primaryOffering: "Executive chauffeur, airport transfers, and luxury vehicle hire",
+      catalogueCustomerType: "Individuals, families, and corporate accounts",
+      typicalOrderType: "A dated hire, transfer, or wedding booking",
+      pricingGuidance:
+        "Use a published marketing example only when this demonstration labels it as such. Otherwise say price on request. Never describe a figure as a confirmed BSA rate or a confirmed vehicle.",
+      neverEstimatePrices: true,
+      voicePrimary: "premium",
+      voiceSecondary: "warm",
+      greetingStyle: "Use the customer's name and acknowledge the journey.",
+      claimsToAvoid: ["Vehicle is confirmed available", "This is BSA's official price list", "A driver has been assigned"],
+      createdAt: at,
+      updatedAt: at,
+    },
+    idealCustomers: [
+      {
+        id: demoId("bsa:brain:corporate"),
+        name: "Corporate travel booker",
+        description: "An office that books airport transfers and executive days for visitors.",
+        typicalRequirements: "Dates, pickup points, passenger count, and who approves the quotation.",
+        minProjectSize: null,
+        typicalDecisionMaker: "Office manager or the travelling executive",
+        primaryInterest: "Reliability and a clear quotation",
+        geographicRequirements: "Harare and the airport",
+        goodFitIndicators: "Repeat account or a dated itinerary",
+        poorFitIndicators: "No date and no approver",
+        disqualifyingConditions: null,
+        sortOrder: 1,
+        active: true,
+      },
+    ],
+    playbooks: [],
+    stageGuidance: [],
+    serviceAreas: [
+      {
+        id: demoId("bsa:brain:harare"),
+        label: "Harare",
+        country: "Zimbabwe",
+        province: "Harare",
+        city: "Harare",
+        region: null,
+        radiusKm: 40,
+        serviceCategory: "Chauffeur and hire",
+        status: "PRIMARY",
+        travelChargeApplies: false,
+        travelChargeNote: null,
+        minOrder: null,
+        managerConfirmationRequired: false,
+        assignedNote: "Fictional demonstration area",
+        active: true,
+      },
+    ],
+    appointmentTypes: [],
+    faqs: [
+      {
+        id: demoId("bsa:brain:faq-e400"),
+        question: "What does the Mercedes-Benz E400 demonstration quotation use?",
+        approvedAnswer:
+          "The published marketing examples in this demonstration are USD 200 per standard day and USD 50 for a pickup or drop. Availability is not confirmed.",
+        aliases: ["E400 price", "airport pickup"],
+        category: "PRICING",
+        active: true,
+        productIds: [],
+        lastReviewedAt: at,
+        reviewerId: null,
+        version: 1,
+        updatedAt: at,
+      },
+    ],
+    examples: [],
+    rules: [],
+    escalationRules: [],
+    knowledgeDocuments: [],
+    canonical: {
+      companyName: BSA_WORKSPACE.name,
+      industry: "Vehicle hire",
+      timezone: BSA_WORKSPACE.timezone,
+      website: "https://www.bsamobility.co.zw/",
+      phone: null,
+      email: null,
+      address: BSA_WORKSPACE.location,
+      country: "Zimbabwe",
+      productCount: 9,
+      serviceCount: 1,
+      packageCount: 0,
+      quoteTemplateCount: 0,
+      currency: "USD",
+      paymentTerms: null,
+      allowQuotationDiscount: false,
+      priceEditPolicy: null,
+      hasOperatingHoursRow: true,
+      workingDays: [1, 2, 3, 4, 5, 6],
+      workStartTime: "07:00",
+      workEndTime: "19:00",
+      hasQualificationFlow: false,
+      teamUserCount: 2,
+      agentAutonomyMode: null,
+      quoteAutoSendLimit: null,
+    },
+  };
+}

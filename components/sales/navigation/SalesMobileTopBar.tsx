@@ -8,6 +8,7 @@ import { GlobalSearch } from "@/components/shell/GlobalSearch";
 import { SalesProfileMenu } from "@/components/sales/navigation/SalesProfileMenu";
 import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
 import type { UserRole } from "@/types";
+import { DemoWorkspaceChip } from "@/components/demo/DemoWorkspaceChip";
 
 export function SalesMobileTopBar({
   isSolo,
@@ -16,6 +17,7 @@ export function SalesMobileTopBar({
   avatarUrl,
   unreadNotifications,
   notificationRole,
+  demoGuest = false,
 }: {
   isSolo: boolean;
   userName: string;
@@ -23,6 +25,7 @@ export function SalesMobileTopBar({
   avatarUrl?: string | null;
   unreadNotifications: number;
   notificationRole: UserRole;
+  demoGuest?: boolean;
 }) {
   const homeHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";
   const crmTheme = useCrmThemeOptional();
@@ -45,11 +48,14 @@ export function SalesMobileTopBar({
         />
       </Link>
 
-      <div className="flex shrink-0 items-center gap-1">
-        <div className="sd-search-wrap">
-          <GlobalSearch role={notificationRole} appearance="icon" />
-        </div>
-        <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
+      <div className="flex min-w-0 shrink items-center gap-1">
+        {demoGuest ? <DemoWorkspaceChip /> : null}
+        {demoGuest ? null : (
+          <div className="sd-search-wrap">
+            <GlobalSearch role={notificationRole} appearance="icon" />
+          </div>
+        )}
+        {demoGuest ? null : <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />}
         <SalesThemeToggle size="mobile" />
         <SalesProfileMenu
           userName={userName}

@@ -10,7 +10,8 @@ import {
 import { DemoAccessDenied } from "@/lib/demo/errors";
 import { demoId } from "@/lib/demo/ids";
 import { getWorkspaceConfig } from "@/lib/demo/mode";
-import { DEFAULT_DEMO_PERSONA, findDemoPersona } from "@/lib/demo/personas";
+import { defaultDemoPersona, findDemoPersona } from "@/lib/demo/personas";
+import { findDemoTemplate } from "@/lib/demo/template-catalog";
 import { invitationAccess } from "@/lib/demo/invitation-access";
 import { hashToken } from "@/lib/demo/token-hash";
 
@@ -53,15 +54,16 @@ export async function loadGuestBySecret(secret: string): Promise<LoadedGuest | n
 
   const config = await getWorkspaceConfig(row.client_id);
   if (!config || config.mode !== "demo") return null;
+  const template = findDemoTemplate(config.industry, config.scenario);
   const persona = findDemoPersona(config.industry, config.scenario, row.persona_key);
-  if (!persona) return null;
+  if (!template || !persona) return null;
 
   return {
     kind: "demo-guest",
     sessionId: row.id,
     clientId: row.client_id,
     personaKey: persona.key,
-    userId: demoId(`rossi:actor:${persona.key}`),
+    userId: demoId(`${template.idPrefix}:actor:${persona.key}`),
     role: persona.role,
     name: persona.name,
     expiresAt: row.expires_at,
@@ -130,7 +132,9 @@ export async function redeemInvitationWithStore(
 
   const config = await store.workspace(invitation.client_id);
   if (!config || config.mode !== "demo") return { ok: false, status: 404, error: "Not found" };
-  if (!findDemoPersona(config.industry, config.scenario, DEFAULT_DEMO_PERSONA)) {
+  const personaKey = defaultDemoPersona(config.industry, config.scenario);
+  const persona = personaKey ? findDemoPersona(config.industry, config.scenario, personaKey) : null;
+  if (!personaKey || !persona) {
     return { ok: false, status: 404, error: "Not found" };
   }
 
@@ -141,7 +145,7 @@ export async function redeemInvitationWithStore(
   const sessionId = await store.insertSession({
     invitation_id: invitation.id,
     client_id: invitation.client_id,
-    persona_key: DEFAULT_DEMO_PERSONA,
+    persona_key: personaKey,
     secret_hash: secretHash,
     expires_at: expiresAt,
   });
@@ -151,7 +155,8 @@ export async function redeemInvitationWithStore(
     await store.deleteSession(sessionId);
     throw new Error("Demo session state could not be created.");
   }
-  return { ok: true, secret, redirectTo: "/sales/dashboard", expiresAt };
+  const redirectTo = persona.role === "CLIENT_MANAGER" ? "/client/dashboard" : "/sales/dashboard";
+  return { ok: true, secret, redirectTo, expiresAt };
 }
 
 export async function redeemInvitation(input: {
@@ -206,8 +211,9 @@ export async function redeemInvitation(input: {
 export async function switchGuestPersona(sessionId: string, clientId: string, personaKey: string): Promise<DemoGuestContext> {
   const config = await getWorkspaceConfig(clientId);
   if (!config || config.mode !== "demo") throw new DemoAccessDenied();
+  const template = findDemoTemplate(config.industry, config.scenario);
   const persona = findDemoPersona(config.industry, config.scenario, personaKey);
-  if (!persona) throw new DemoAccessDenied();
+  if (!template || !persona) throw new DemoAccessDenied();
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const supabase = createAdminClient();
   const { error } = await supabase
@@ -222,7 +228,7 @@ export async function switchGuestPersona(sessionId: string, clientId: string, pe
     sessionId,
     clientId,
     personaKey: persona.key,
-    userId: demoId(`rossi:actor:${persona.key}`),
+    userId: demoId(`${template.idPrefix}:actor:${persona.key}`),
     role: persona.role,
     name: persona.name,
   };
@@ -241,7 +247,7 @@ export async function createDemoInvitation(input: {
 }): Promise<{ invitationId: string; token: string; expiresAt: string }> {
   const config = await getWorkspaceConfig(input.clientId);
   if (!config || config.mode !== "demo") throw new DemoAccessDenied();
-  if (config.industry !== "tyres" || config.scenario !== "rossi") throw new DemoAccessDenied();
+  if (!findDemoTemplate(config.industry, config.scenario)) throw new DemoAccessDenied();
   const expiresAt = invitationExpiry(input.lifetimeMs ?? null);
   if (!expiresAt) throw new DemoAccessDenied();
   const { generateOpaqueToken } = await import("@/lib/demo/tokens");

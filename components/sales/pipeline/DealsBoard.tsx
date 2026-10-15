@@ -20,7 +20,6 @@ import {
   DEAL_ACTIVE_STAGES,
   DEAL_STAGE_LABEL,
   compareDealsByAttention,
-  formatDealStage,
   getDealAttentionState,
   isDealActiveStage,
   isDealClosedStage,
@@ -37,7 +36,7 @@ import {
   type NextActionBucket,
 } from "@/lib/sales/pipeline-board-query";
 import { MobilePipeline } from "@/components/sales/pipeline/MobilePipeline";
-import type { DealRow } from "@/types";
+import type { DealRow, DealStage } from "@/types";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import { cn } from "@/lib/ui/cn";
 
@@ -75,12 +74,15 @@ export function DealsBoard({
   initialTab = "active",
   initialStage = null,
   repName = "",
+  stageLabels,
 }: {
   initialItems: DealBoardItem[];
   initialTab?: "active" | "closed";
+  stageLabels?: Partial<Record<DealStage, string>>;
   initialStage?: DealActiveStage | null;
   repName?: string;
 }) {
+  const stageName = (stage: DealStage) => stageLabels?.[stage] ?? stageName(stage);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -242,7 +244,7 @@ export function DealsBoard({
       chips.push({
         key: `stage-${s}`,
         label: "Stage",
-        value: DEAL_STAGE_LABEL[s],
+        value: stageName(s),
         clear: () =>
           setFilters((f) => ({ ...f, stages: f.stages.filter((x) => x !== s) })),
       });
@@ -346,7 +348,7 @@ export function DealsBoard({
       if (json.deal) {
         setItems((cur) => cur.map((it) => (it.deal.id === json.deal!.id ? { ...it, deal: json.deal! } : it)));
       }
-      toast({ tone: "success", title: `Moved to ${DEAL_STAGE_LABEL[stage]}.` });
+      toast({ tone: "success", title: `Moved to ${stageName(stage)}.` });
       return true;
     },
     [items, toast]
@@ -577,7 +579,7 @@ export function DealsBoard({
                               : "bg-sales-surface-subtle text-sales-text-secondary hover:bg-sales-surface-hover"
                           )}
                         >
-                          {DEAL_STAGE_LABEL[s]}
+                          {stageName(s)}
                         </button>
                       );
                     })}
@@ -850,7 +852,7 @@ export function DealsBoard({
                             : "bg-sales-danger-soft text-sales-danger-fg"
                         )}
                       >
-                        {formatDealStage(it.deal.stage)}
+                        {stageName(it.deal.stage)}
                       </span>
                       <p className="mt-1 text-[12px] tabular-nums text-sales-text-secondary">
                         {it.commercial.display}
@@ -907,7 +909,7 @@ export function DealsBoard({
                         ) : null}
                       </p>
                       <p className="mt-1 text-[12px] text-sales-text-secondary">
-                        {formatDealStage(it.deal.stage)}
+                        {stageName(it.deal.stage)}
                         {" · "}
                         <span className="font-semibold tabular-nums text-sales-text-primary">
                           {it.commercial.kind === "pending"
@@ -1006,14 +1008,14 @@ export function DealsBoard({
                     : "border border-sales-border bg-sales-surface text-sales-text-secondary"
                 )}
               >
-                {DEAL_STAGE_LABEL[col]} · {byColumn[col].length}
+                {stageName(col)} · {byColumn[col].length}
               </button>
             ))}
           </div>
           <div className="space-y-2">
             {byColumn[mobileCol].length === 0 ? (
               <p className="py-8 text-center text-[13px] text-sales-text-muted">
-                No Deals in {DEAL_STAGE_LABEL[mobileCol]}.
+                No Deals in {stageName(mobileCol)}.
               </p>
             ) : (
               byColumn[mobileCol].map(({ item: it }) => (
@@ -1046,7 +1048,7 @@ export function DealsBoard({
                 <div className="mb-2.5 flex items-center justify-between gap-2 border-t border-sales-border-subtle px-0.5 pt-2.5">
                   <div className="flex items-center gap-2">
                     <h3 className="text-[13px] font-semibold tracking-[-0.01em] text-sales-text-primary">
-                      {DEAL_STAGE_LABEL[col]}
+                      {stageName(col)}
                     </h3>
                     <span className="rounded-sales-sm px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-sales-text-muted">
                       {rows.length}
@@ -1065,7 +1067,7 @@ export function DealsBoard({
                     >
                       {shown.length === 0 ? (
                         <p className="px-2 py-6 text-center text-[12px] text-sales-text-muted">
-                          No Deals in {DEAL_STAGE_LABEL[col]}.
+                          No Deals in {stageName(col)}.
                         </p>
                       ) : null}
                       {shown.map(({ item: it }, index) => (

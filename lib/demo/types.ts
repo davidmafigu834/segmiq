@@ -86,7 +86,7 @@ export type DemoDataset = {
   organisationName: string;
   timezone: string;
   generatedAt: string;
-  actors: Record<DemoActorKey, DemoActor>;
+  actors: Record<string, DemoActor>;
   products: DemoProduct[];
   contacts: ContactRow[];
   leads: LeadRow[];

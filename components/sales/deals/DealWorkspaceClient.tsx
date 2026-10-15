@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, Circle, FileText, MessageSquare, Phone } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
-import type { DealRow, LeadRow, QuotationRow } from "@/types";
+import type { DealRow, DealStage, LeadRow, QuotationRow } from "@/types";
 import type { DealCommercialValue } from "@/lib/sales/deals/commercial-value";
 import {
   getDealCommercialValue,
@@ -94,6 +94,7 @@ export function DealWorkspaceClient({
   existingWorkProjectId = null,
   projectOwners = [],
   demonstration = false,
+  stageLabels,
 }: {
   initialDeal: DealRow;
   lead: LeadRow | null;
@@ -114,7 +115,9 @@ export function DealWorkspaceClient({
   projectOwners?: Array<{ id: string; name: string | null }>;
   /** Fictional guest demo. Stage changes stay available. Live contact actions do not. */
   demonstration?: boolean;
+  stageLabels?: Partial<Record<DealStage, string>>;
 }) {
+  const stageName = (stage: DealStage) => stageLabels?.[stage] ?? DEAL_STAGE_LABEL[stage];
   const router = useRouter();
   const searchParams = useSearchParams();
   const [deal, setDeal] = useState(initialDeal);
@@ -511,7 +514,7 @@ export function DealWorkspaceClient({
                           : "border border-sales-border bg-sales-surface text-sales-text-secondary hover:bg-sales-surface-hover"
                     )}
                   >
-                    {DEAL_STAGE_LABEL[stage]}
+                    {stageName(stage)}
                   </button>
                 );
               })}
@@ -522,14 +525,14 @@ export function DealWorkspaceClient({
                     onClick={() => setCloseMode("won")}
                     className="min-h-10 shrink-0 rounded-sales-md border border-sales-border bg-sales-success-soft px-3.5 text-[12px] font-medium text-sales-success-fg"
                   >
-                    Won
+                    {stageName("WON")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setCloseMode("lost")}
                     className="min-h-10 shrink-0 rounded-sales-md border border-sales-border bg-sales-danger-soft px-3.5 text-[12px] font-medium text-sales-danger-fg"
                   >
-                    Lost
+                    {stageName("LOST")}
                   </button>
                 </>
               ) : null}

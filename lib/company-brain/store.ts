@@ -404,10 +404,58 @@ async function loadCanonical(clientId: string): Promise<CanonicalSignals> {
 }
 
 export async function loadCompanyBrainSnapshot(clientId: string): Promise<CompanyBrainSnapshot> {
-  const { isDemoWorkspaceId } = await import("@/lib/demo/mode");
-  if (await isDemoWorkspaceId(clientId)) {
-    const { rossiCompanyBrain } = await import("@/lib/demo/industries/tyres/rossi/brain");
-    return rossiCompanyBrain(clientId);
+  const { getWorkspaceConfig } = await import("@/lib/demo/mode");
+  const workspace = await getWorkspaceConfig(clientId);
+  if (workspace?.mode === "demo") {
+    if (workspace.industry === "tyres" && workspace.scenario === "rossi") {
+      const { rossiCompanyBrain } = await import("@/lib/demo/industries/tyres/rossi/brain");
+      return rossiCompanyBrain(clientId);
+    }
+    if (workspace.industry === "vehicle_hire" && workspace.scenario === "bsa_mobility") {
+      const { bsaCompanyBrain } = await import("@/lib/demo/industries/vehicle-hire/bsa/brain");
+      return bsaCompanyBrain(clientId);
+    }
+    const { BRAIN_SETTINGS_DEFAULTS } = await import("@/lib/company-brain/types");
+    return {
+      exists: false,
+      settings: { ...BRAIN_SETTINGS_DEFAULTS, clientId, tradingName: "Fictional demonstration" },
+      idealCustomers: [],
+      playbooks: [],
+      stageGuidance: [],
+      serviceAreas: [],
+      appointmentTypes: [],
+      faqs: [],
+      examples: [],
+      rules: [],
+      escalationRules: [],
+      knowledgeDocuments: [],
+      canonical: {
+        companyName: "Fictional demonstration",
+        industry: null,
+        timezone: "Africa/Harare",
+        website: null,
+        phone: null,
+        email: null,
+        address: null,
+        country: null,
+        productCount: 0,
+        serviceCount: 0,
+        packageCount: 0,
+        quoteTemplateCount: 0,
+        currency: "USD",
+        paymentTerms: null,
+        allowQuotationDiscount: null,
+        priceEditPolicy: null,
+        hasOperatingHoursRow: false,
+        workingDays: [],
+        workStartTime: "08:00",
+        workEndTime: "17:00",
+        hasQualificationFlow: false,
+        teamUserCount: 0,
+        agentAutonomyMode: null,
+        quoteAutoSendLimit: null,
+      },
+    };
   }
   const supabase = createAdminClient();
   const [

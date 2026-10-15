@@ -1,4 +1,4 @@
-import type { DemoActorKey } from "@/lib/demo/actors";
+import type { RossiActorKey } from "@/lib/demo/actors";
 import { ROSSI_WORKSPACE } from "@/lib/demo/actors";
 import {
   daysAgo,
@@ -29,7 +29,7 @@ import type {
   QuotationStatus,
 } from "@/types";
 
-type Owner = DemoActorKey;
+type Owner = RossiActorKey;
 
 type Spec = {
   key: string;
@@ -229,7 +229,7 @@ function threads(spec: Spec, ownerName: string): Array<{ direction: "customer" |
 export function buildRossiDataset(input: {
   now?: Date;
   clientId: string;
-  actors: Record<DemoActorKey, DemoActor>;
+  actors: Record<string, DemoActor>;
 }): DemoDataset {
   const now = input.now ?? new Date();
   const clientId = input.clientId;

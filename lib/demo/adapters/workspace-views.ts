@@ -13,7 +13,8 @@ import { demoToday, harareDateKey } from "@/lib/demo/dates";
 import type { DemoDataset } from "@/lib/demo/types";
 import { visibleDeals, visibleLeads } from "@/lib/demo/mutations";
 import { summariseDemo } from "@/lib/demo/totals";
-import { DEAL_STAGE_ACCENT, DEAL_STAGE_LABEL, type DealActiveStage } from "@/lib/sales/deals/display";
+import { labelForDemoStage } from "@/lib/demo/stage-labels";
+import { DEAL_STAGE_ACCENT, type DealActiveStage } from "@/lib/sales/deals/display";
 import { formatDealValue } from "@/lib/sales/sales-dashboard-display";
 import { timeAgo } from "@/lib/sales-priority-lead";
 import type { SalesDashboardData } from "@/lib/sales/get-sales-dashboard-data";
@@ -80,7 +81,7 @@ export function demoFocusQueue(dataset: DemoDataset, userId: string, role: strin
         phone: lead.phone,
         score: lead.score,
         scoreBand: scoreBand(lead.score),
-        source: "WHATSAPP_INBOUND",
+        source: lead.source,
         status: lead.status,
         projectType: lead.project_type,
         dealValue: deal.estimated_value,
@@ -113,7 +114,7 @@ export function demoFocusQueue(dataset: DemoDataset, userId: string, role: strin
         phone: lead.phone,
         score: lead.score,
         scoreBand: scoreBand(lead.score),
-        source: "WHATSAPP_INBOUND",
+        source: lead.source,
         status: lead.status,
         projectType: lead.project_type,
         dealValue: lead.deal_value,
@@ -153,6 +154,16 @@ function legacy(dataset: DemoDataset, userId: string, role: string): SalesDashbo
   }));
   const summary = summariseDemo(dataset);
   const mine = summary.byOwner[userId];
+  const myFollows = dataset.followUps.filter((row) => dataset.actors[row.ownerKey]?.id === userId);
+  const overdueFollowUps = myFollows.filter((row) => !row.completed && Date.parse(row.dueAt) < Date.now()).length;
+  const ownedDeals = visibleDeals(dataset, userId, role);
+  const wonN = ownedDeals.filter((deal) => deal.stage === "WON").length;
+  const lostN = ownedDeals.filter((deal) => deal.stage === "LOST").length;
+  const sourceCounts = new Map<string, number>();
+  for (const lead of visibleLeads(dataset, userId, role)) {
+    const key = String(lead.source || "other").toLowerCase();
+    sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
+  }
   return {
     assignmentMode: "direct",
     priorityLeads,
@@ -164,9 +175,9 @@ function legacy(dataset: DemoDataset, userId: string, role: string): SalesDashbo
     numbers: {
       totalActive: leads.length,
       callNow: leads.filter((lead) => (lead.score ?? 0) >= 80).length,
-      calledToday: 3,
-      followUpToday: dataset.followUps.filter((row) => row.ownerKey && dataset.actors[row.ownerKey]?.id === userId && !row.completed).length,
-      slipped: 1,
+      calledToday: dataset.activities.filter((row) => row.kind === "call" && dataset.actors[row.actorKey]?.id === userId && harareDateKey(new Date(row.at)) === harareDateKey(new Date())).length,
+      followUpToday: myFollows.filter((row) => !row.completed).length,
+      slipped: overdueFollowUps,
       convertLaterCount: 0,
       wonThisMonth: mine?.wonCount ?? summary.wonCount,
     },
@@ -177,49 +188,50 @@ function legacy(dataset: DemoDataset, userId: string, role: string): SalesDashbo
       .map((deal) => ({
         id: deal.id,
         deal_value: deal.won_value,
-        days_to_close: 6,
+        days_to_close: deal.won_at ? Math.max(0, Math.round((Date.parse(deal.won_at) - Date.parse(deal.created_at)) / 86_400_000)) : 0,
         created_at: deal.won_at ?? deal.updated_at,
         lead_id: deal.originating_lead_id,
         leads: { name: dataset.leads.find((lead) => lead.id === deal.originating_lead_id)?.name ?? null },
       })),
     insights: {
-      overdueFollowUps: 2,
+      overdueFollowUps,
       pipelineValue: mine?.pipeline ?? summary.pipelineValue,
-      pipelineValueChangePct: 8,
-      conversionRate: 28,
-      conversionChangePct: 4,
-      avgResponseMinutes: 18,
+      pipelineValueChangePct: null,
+      conversionRate: wonN + lostN === 0 ? 0 : Math.round((wonN / (wonN + lostN)) * 100),
+      conversionChangePct: null,
+      avgResponseMinutes: null,
       wonValueThisMonth: mine?.wonValue ?? summary.wonValue,
-      wonChangePct: 12,
-      leadSources: [
-        { key: "facebook", label: "Facebook", count: 6, changePct: 2 },
-        { key: "whatsapp", label: "WhatsApp", count: 5, changePct: 1 },
-        { key: "referral", label: "Referral", count: 3, changePct: null },
-      ],
-      performanceTarget: 8000,
+      wonChangePct: null,
+      leadSources: [...sourceCounts.entries()].map(([key, count]) => ({
+        key,
+        label: key.replaceAll("_", " "),
+        count,
+        changePct: null,
+      })),
+      performanceTarget: null,
       performanceSeries: [
-        { label: "W1", value: Math.round((mine?.wonValue ?? summary.wonValue) * 0.2) },
-        { label: "W2", value: Math.round((mine?.wonValue ?? summary.wonValue) * 0.35) },
-        { label: "W3", value: Math.round((mine?.wonValue ?? summary.wonValue) * 0.55) },
+        { label: "W1", value: 0 },
+        { label: "W2", value: 0 },
+        { label: "W3", value: 0 },
         { label: "Now", value: mine?.wonValue ?? summary.wonValue },
       ],
     },
   };
 }
 
-function pipelineStages(deals: DealRow[]): SalesPipelineSnapshotStage[] {
+function pipelineStages(deals: DealRow[], industry: string): SalesPipelineSnapshotStage[] {
   const stages: DealActiveStage[] = ["QUALIFIED", "SCOPING", "PROPOSAL_SENT", "NEGOTIATING"];
   return stages.map((stage) => {
     const rows = deals.filter((deal) => deal.stage === stage);
     const known = rows.reduce((sum, deal) => sum + (Number(deal.estimated_value) || 0), 0);
     return {
       id: stage,
-      label: DEAL_STAGE_LABEL[stage],
+      label: labelForDemoStage(industry, stage),
       color: DEAL_STAGE_ACCENT[stage],
       dealCount: rows.length,
       valueLabel: money(known),
       knownValue: known,
-      awaitingEstimate: 0,
+      awaitingEstimate: rows.filter((deal) => deal.value_status === "PENDING_ESTIMATE").length,
       href: "/sales/pipeline",
     };
   });
@@ -262,11 +274,11 @@ export function buildDemoSalesDashboard(dataset: DemoDataset, userId: string, ro
     },
     coverage: {
       available: true,
-      remainingGoalValue: Math.max(0, 8000 - (mine?.wonValue ?? 0)),
+      remainingGoalValue: null,
       activePipelineValue: pipeline,
-      coverageRatio: 1.4,
-      coverageLabel: "Covered",
-      interpretation: "Open quotations are the main movement opportunity.",
+      coverageRatio: null,
+      coverageLabel: "No quota set",
+      interpretation: "Open quotations are the main movement opportunity. This demonstration does not invent a sales quota.",
     },
     progress: {
       priorityCompleted: 1,
@@ -283,13 +295,13 @@ export function buildDemoSalesDashboard(dataset: DemoDataset, userId: string, ro
       href: item.customer?.leadId ? `/sales/inbox?lead=${item.customer.leadId}` : "/sales/pipeline",
     })),
     goal: {
-      hasGoal: true,
-      targetValue: 8000,
+      hasGoal: false,
+      targetValue: null,
       achievedValue: mine?.wonValue ?? summary.wonValue,
-      remainingValue: Math.max(0, 8000 - (mine?.wonValue ?? 0)),
+      remainingValue: null,
       currency: "USD",
-      workingDaysLeft: 6,
-      daysLeftLabel: "6 working days left",
+      workingDaysLeft: null,
+      daysLeftLabel: null,
       dailyFocus: null,
     },
     settingsConfigured: true,
@@ -312,13 +324,13 @@ export function buildDemoSalesDashboard(dataset: DemoDataset, userId: string, ro
   ];
 
   const activityToday: SalesActivityTodayMetric[] = [
-    { id: "calls", label: "Calls", completed: 2, target: 6, status: "in_progress" },
-    { id: "follow", label: "Follow-ups", completed: 1, target: focusCount, status: "in_progress" },
-    { id: "quotes", label: "Quotes", completed: 1, target: 2, status: "in_progress" },
+    { id: "calls", label: "Calls", completed: dataset.activities.filter((row) => row.kind === "call" && dataset.actors[row.actorKey]?.id === userId).length, target: null, status: "in_progress" },
+    { id: "follow", label: "Follow-ups", completed: dataset.followUps.filter((row) => row.completed && dataset.actors[row.ownerKey]?.id === userId).length, target: focusCount, status: "in_progress" },
+    { id: "quotes", label: "Quotes", completed: dataset.quotations.filter((quote) => quote.prepared_by_id === userId && quote.sent_at).length, target: null, status: "in_progress" },
   ];
 
   const recentActivity: SalesActivityItem[] = dataset.activities
-    .filter((item) => item.actorKey === "tinashe" || role !== "SALESPERSON" || dataset.actors[item.actorKey]?.id === userId)
+    .filter((item) => role !== "SALESPERSON" || dataset.actors[item.actorKey]?.id === userId)
     .slice(0, 8)
     .map((item) => ({
       id: item.id,
@@ -337,7 +349,7 @@ export function buildDemoSalesDashboard(dataset: DemoDataset, userId: string, ro
       name: deal.name,
       customerName: lead?.name ?? "Customer",
       stage: deal.stage,
-      stageLabel: DEAL_STAGE_LABEL[deal.stage] ?? deal.stage,
+      stageLabel: labelForDemoStage(dataset.industry, deal.stage) ?? deal.stage,
       valueLabel: money(Number(deal.estimated_value) || 0),
       valueBasisLabel: "Quotation",
       nextActionLabel: deal.next_action_label ?? "Review",
@@ -369,16 +381,19 @@ export function buildDemoSalesDashboard(dataset: DemoDataset, userId: string, ro
     legacy: legacy(dataset, userId, role),
     commercial: {
       newEnquiriesToday: leads.filter((lead) => Date.parse(lead.created_at) > Date.now() - 20 * 3_600_000).length,
-      newEnquiriesYesterday: 2,
+      newEnquiriesYesterday: leads.filter((lead) => {
+        const age = Date.now() - Date.parse(lead.created_at);
+        return age > 20 * 3_600_000 && age <= 44 * 3_600_000;
+      }).length,
       activeDeals: active.length,
       pipelineValueKnown: pipeline,
-      pipelineAwaitingEstimate: 0,
+      pipelineAwaitingEstimate: active.filter((deal) => deal.value_status === "PENDING_ESTIMATE").length,
       dealsWonThisMonth: mine?.wonCount ?? 0,
-      dealsWonLastMonth: 1,
+      dealsWonLastMonth: 0,
       wonValueThisMonth: mine?.wonValue ?? 0,
       followUpsDueToday: queue.length,
-      followUpsOverdue: 2,
-      avgResponseMinutes: 18,
+      followUpsOverdue: dataset.followUps.filter((row) => !row.completed && dataset.actors[row.ownerKey]?.id === userId && Date.parse(row.dueAt) < Date.now()).length,
+      avgResponseMinutes: null,
     },
     kpis,
     plan,
@@ -390,7 +405,7 @@ export function buildDemoSalesDashboard(dataset: DemoDataset, userId: string, ro
     priorityDeals,
     funnel,
     activityToday,
-    pipelineSnapshot: pipelineStages(active),
+    pipelineSnapshot: pipelineStages(active, dataset.industry),
     recentActivity,
     planSummary: {
       state: "active",
@@ -406,6 +421,37 @@ export function buildDemoSalesDashboard(dataset: DemoDataset, userId: string, ro
     clientId: dataset.clientId,
     realEstate: null,
   };
+}
+
+function sourceRows(dataset: DemoDataset): CompanySalesDashboardData["sources"] {
+  const counts = new Map<CompanySalesDashboardData["sources"][number]["brand"], number>();
+  for (const lead of dataset.leads) {
+    const raw = String(lead.source || "").toUpperCase();
+    const brand: CompanySalesDashboardData["sources"][number]["brand"] =
+      raw.includes("WHATSAPP") ? "whatsapp"
+      : raw.includes("FACEBOOK") || raw.includes("INSTAGRAM") ? "facebook"
+      : raw.includes("REFERRAL") ? "referral"
+      : raw.includes("WEBSITE") ? "website"
+      : raw.includes("WALK") ? "walkin"
+      : "other";
+    counts.set(brand, (counts.get(brand) ?? 0) + 1);
+  }
+  const total = dataset.leads.length || 1;
+  const labels: Record<CompanySalesDashboardData["sources"][number]["brand"], string> = {
+    whatsapp: "WhatsApp",
+    facebook: "Facebook and Instagram",
+    referral: "Referral",
+    website: "Website",
+    walkin: "Walk-in",
+    other: "Phone and other",
+  };
+  return [...counts.entries()].map(([brand, count]) => ({
+    id: brand,
+    label: labels[brand],
+    count,
+    pct: Math.round((count / total) * 100),
+    brand,
+  }));
 }
 
 export function buildDemoCompanyDashboard(dataset: DemoDataset): CompanySalesDashboardData {
@@ -424,12 +470,12 @@ export function buildDemoCompanyDashboard(dataset: DemoDataset): CompanySalesDas
       activeDeals: active.filter((deal) => deal.owner_id === actor.id).length,
       pipelineValueKnown: stats?.pipeline ?? 0,
       pipelineValueLabel: money(stats?.pipeline ?? 0),
-      pipelineAwaitingEstimate: 0,
+      pipelineAwaitingEstimate: active.filter((deal) => deal.owner_id === actor.id && deal.value_status === "PENDING_ESTIMATE").length,
       dealsWon: stats?.wonCount ?? 0,
       wonValue: stats?.wonValue ?? 0,
       followUpsDue: dataset.followUps.filter((row) => dataset.actors[row.ownerKey]?.id === actor.id && !row.completed).length,
-      hasGoal: true,
-      goalProgressPct: Math.min(100, Math.round(((stats?.wonValue ?? 0) / 8000) * 100)),
+      hasGoal: false,
+      goalProgressPct: null,
       href: `/client/team/${actor.id}`,
     };
   });
@@ -450,8 +496,8 @@ export function buildDemoCompanyDashboard(dataset: DemoDataset): CompanySalesDas
     kpis,
     focusAreas: [
       { id: "quotes", severity: "high", count: summary.awaitingQuotes, label: "Quotations awaiting a response", supporting: money(summary.awaitingValue), href: "/client/quotations", ctaLabel: "Review quotes" },
-      { id: "follow", severity: "high", count: dueFollowUps.length, label: "Follow-ups due", supporting: "Including Tendai Moyo and Westgate Logistics", href: "/client/leads/pipeline", ctaLabel: "Review" },
-      { id: "hot", severity: "critical", count: dataset.leads.filter((lead) => (lead.score ?? 0) >= 85 && openLead(lead)).length, label: "Hot enquiries", supporting: "Brian Ncube asked about availability today", href: "/client/leads", ctaLabel: "Open" },
+      { id: "follow", severity: "high", count: dueFollowUps.length, label: "Follow-ups due", supporting: dueFollowUps.slice(0, 2).map((row) => dataset.leads.find((lead) => lead.id === row.leadId)?.name).filter(Boolean).join(", ") || "Across the sales team", href: "/client/leads/pipeline", ctaLabel: "Review" },
+      { id: "hot", severity: "critical", count: dataset.leads.filter((lead) => (lead.score ?? 0) >= 85 && openLead(lead)).length, label: "Hot enquiries", supporting: dataset.leads.filter((lead) => (lead.score ?? 0) >= 85 && openLead(lead))[0]?.customer_need ?? "Score is a demonstration priority, not a prediction", href: "/client/leads", ctaLabel: "Open" },
     ],
     focusAreasViewAllHref: "/client/leads/pipeline",
     teamCalendar: dueFollowUps.slice(0, 6).map((row) => {
@@ -485,7 +531,7 @@ export function buildDemoCompanyDashboard(dataset: DemoDataset): CompanySalesDas
         roleLabel: "Sales",
         newLeads: dataset.leads.filter((lead) => lead.assigned_to_id === member.id && Date.parse(lead.created_at) > Date.now() - 86_400_000).length,
         qualified: active.filter((deal) => deal.owner_id === member.id && deal.stage === "QUALIFIED").length,
-        contacted: 2,
+        contacted: dataset.leads.filter((lead) => lead.assigned_to_id === member.id && lead.status === "CONTACTED").length,
         quotesPrepared: dataset.quotations.filter((quote) => quote.prepared_by_id === member.id).length,
         quotesSent: dataset.quotations.filter((quote) => quote.prepared_by_id === member.id && quote.status === "sent").length,
         dealsWon: member.dealsWon,
@@ -495,12 +541,12 @@ export function buildDemoCompanyDashboard(dataset: DemoDataset): CompanySalesDas
       totals: {
         newLeads: dataset.leads.filter((lead) => Date.parse(lead.created_at) > Date.now() - 86_400_000).length,
         qualified: active.filter((deal) => deal.stage === "QUALIFIED").length,
-        contacted: 6,
+        contacted: dataset.leads.filter((lead) => lead.status === "CONTACTED").length,
         quotesPrepared: dataset.quotations.length,
         quotesSent: summary.awaitingQuotes,
         dealsWon: summary.wonCount,
         followUpsDue: dueFollowUps.length,
-        unassignedLeads: 0,
+        unassignedLeads: dataset.leads.filter((lead) => !lead.assigned_to_id).length,
       },
       viewReportsHref: "/client/reports/weekly",
     },
@@ -511,18 +557,11 @@ export function buildDemoCompanyDashboard(dataset: DemoDataset): CompanySalesDas
       { id: "deals", label: "Negotiation", count: active.filter((deal) => deal.stage === "NEGOTIATING").length, icon: "deals" },
       { id: "won", label: "Won", count: summary.wonCount, icon: "won" },
     ],
-    conversionRate: 31,
-    conversionDefinition: "Won deals divided by qualified opportunities this month",
-    sources: [
-      { id: "facebook", label: "Facebook", count: 14, pct: 26, brand: "facebook" },
-      { id: "whatsapp", label: "WhatsApp", count: 12, pct: 22, brand: "whatsapp" },
-      { id: "referral", label: "Referral", count: 9, pct: 17, brand: "referral" },
-      { id: "website", label: "Website", count: 8, pct: 15, brand: "website" },
-      { id: "walkin", label: "Walk-in", count: 6, pct: 11, brand: "walkin" },
-      { id: "other", label: "Phone", count: 5, pct: 9, brand: "other" },
-    ],
+    conversionRate: summary.wonCount + summary.lost.length === 0 ? null : Math.round((summary.wonCount / (summary.wonCount + summary.lost.length)) * 100),
+    conversionDefinition: "Won bookings divided by won and lost bookings in this fictional demonstration",
+    sources: sourceRows(dataset),
     sourcesEmpty: false,
-    pipelineSnapshot: pipelineStages(active).map((stage) => ({ ...stage, href: "/client/leads/pipeline" })),
+    pipelineSnapshot: pipelineStages(active, dataset.industry).map((stage) => ({ ...stage, href: "/client/leads/pipeline" })),
     hasActiveDeals: active.length > 0,
     atRiskDeals: active
       .filter((deal) => deal.next_action_at && Date.parse(deal.next_action_at) <= Date.now())
@@ -537,15 +576,15 @@ export function buildDemoCompanyDashboard(dataset: DemoDataset): CompanySalesDas
         reasonCode: "FOLLOWUP_DUE_TODAY" as const,
         ownerName: actorName(dataset, deal.owner_id),
         ownerId: deal.owner_id,
-        stageLabel: DEAL_STAGE_LABEL[deal.stage] ?? deal.stage,
+        stageLabel: labelForDemoStage(dataset.industry, deal.stage) ?? deal.stage,
         urgency: 80,
         href: `/client/deals/${deal.id}`,
       })),
     atRiskTotal: dueFollowUps.length,
     atRiskViewAllHref: "/client/leads/pipeline",
     revenueTrend: [
-      { monthKey: "m-2", label: "Earlier", value: Math.round(summary.wonValue * 0.7) },
-      { monthKey: "m-1", label: "Last month", value: 4640 },
+      { monthKey: "m-2", label: "Earlier", value: 0 },
+      { monthKey: "m-1", label: "Last month", value: 0 },
       { monthKey: "m", label: "This month", value: summary.wonValue },
     ],
     revenueTotal: summary.wonValue,
@@ -566,15 +605,15 @@ export function buildDemoCompanyDashboard(dataset: DemoDataset): CompanySalesDas
       qualifiedLeads30d: dataset.leads.filter((lead) => lead.status === "QUALIFIED" || lead.status === "CONVERTED_TO_DEAL").length,
       activeDeals: summary.activeDeals,
       pipelineValueKnown: summary.pipelineValue,
-      pipelineAwaitingEstimate: 0,
+      pipelineAwaitingEstimate: active.filter((deal) => deal.value_status === "PENDING_ESTIMATE").length,
       dealsWonThisMonth: summary.wonCount,
       wonValueThisMonth: summary.wonValue,
       overdueFollowUps: dueFollowUps.filter((row) => Date.parse(row.dueAt) < Date.now() - 3_600_000).length,
       dealsAtRisk: dueFollowUps.length,
       hotAwaitingContact: dataset.leads.filter((lead) => (lead.score ?? 0) >= 85 && openLead(lead)).length,
       noNextAction: active.filter((deal) => !deal.next_action_at).length,
-      unassignedLeads: 0,
-      avgResponseMinutes: 18,
+      unassignedLeads: dataset.leads.filter((lead) => !lead.assigned_to_id).length,
+      avgResponseMinutes: null,
     },
   };
 }
@@ -598,7 +637,7 @@ export function buildDemoInbox(dataset: DemoDataset, userId: string, role: strin
       location: dataset.contacts.find((contact) => contact.id === lead.contact_id)?.location ?? null,
       source: lead.source,
       status: lead.status,
-      stageLabel: deal ? (DEAL_STAGE_LABEL[deal.stage] ?? deal.stage) : "Enquiry",
+      stageLabel: deal ? (labelForDemoStage(dataset.industry, deal.stage) ?? deal.stage) : "Enquiry",
       projectType: lead.project_type,
       leadBudget: lead.budget,
       leadTimeline: lead.timeline,

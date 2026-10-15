@@ -13,7 +13,9 @@ export const ROSSI_WORKSPACE = {
   businessSummary: "Tyre retail and fleet supply",
 } as const;
 
-export type DemoActorKey = "tendai" | "tinashe" | "rudo" | "tanaka";
+export type RossiActorKey = "tendai" | "tinashe" | "rudo" | "tanaka";
+export type VehicleHireActorKey = "owner" | "tariro" | "munashe";
+export type DemoActorKey = RossiActorKey | VehicleHireActorKey;
 
 export type DemoActorSeed = {
   key: DemoActorKey;

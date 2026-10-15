@@ -296,6 +296,7 @@ function SalesAppShellInner({
           avatarUrl={avatarUrl}
           unreadNotifications={unreadNotifications}
           notificationRole={notificationRole}
+          demoGuest={demoGuest}
         />
       ) : null}
 

@@ -3,6 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { getGuestContext } from "@/lib/demo/context";
 import { getWorkspaceConfig } from "@/lib/demo/mode";
 import { demoPersonasForTemplate } from "@/lib/demo/personas";
+import { findDemoTemplate } from "@/lib/demo/template-catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export async function GET(req: Request) {
 
   const config = await getWorkspaceConfig(auth.clientId);
   const demo = config?.mode === "demo";
+  const template = demo ? findDemoTemplate(config?.industry, config?.scenario) : null;
   const guest = Boolean(auth.demoGuest && getGuestContext());
   const canReset = demo && !guest && (auth.role === "CLIENT_MANAGER" || auth.role === "SUPER_ADMIN");
   return NextResponse.json(
@@ -24,6 +26,7 @@ export async function GET(req: Request) {
       fictional: guest,
       personaKey: guest ? getGuestContext()?.personaKey ?? null : null,
       personas: guest ? demoPersonasForTemplate(config?.industry ?? null, config?.scenario ?? null) : [],
+      intro: guest ? template?.intro ?? null : null,
     },
     { headers: { "Cache-Control": "no-store" } }
   );

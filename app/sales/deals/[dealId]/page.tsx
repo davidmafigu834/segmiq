@@ -19,6 +19,7 @@ import { isRealEstate } from "@/lib/terminology";
 import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 import { companyOwners } from "@/lib/work-projects/page-data";
 import { findWorkProjectIdForDeal } from "@/lib/work-projects/service";
+import { demoStageLabels } from "@/lib/demo/stage-labels";
 
 export const dynamic = "force-dynamic";
 
@@ -137,6 +138,7 @@ export default async function DealWorkspacePage({
           existingWorkProjectId={existingWorkProjectId}
           projectOwners={projectOwners}
           demonstration={Boolean(session.demoGuest)}
+          stageLabels={demoStageLabels(demoDeal.mode === "demo" ? demoDeal.dataset?.industry : null)}
         />
       </SalesAppShell>
     </Layout>

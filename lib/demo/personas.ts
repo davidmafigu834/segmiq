@@ -1,5 +1,6 @@
-import { ROSSI_ACTORS, type DemoActorKey } from "@/lib/demo/actors";
+import type { DemoActorKey } from "@/lib/demo/actors";
 import type { DemoGuestRole } from "@/lib/demo/allowlist";
+import { findDemoTemplate } from "@/lib/demo/template-catalog";
 
 export type DemoPersona = {
   key: DemoActorKey;
@@ -7,14 +8,19 @@ export type DemoPersona = {
   role: DemoGuestRole;
 };
 
-/** Phase 2A personas are the Rossi Tyres actors already defined for the dataset. */
+/** Personas registered for one industry template. Unknown templates have none. */
 export function demoPersonasForTemplate(industry: string | null, scenario: string | null): DemoPersona[] {
-  if (industry !== "tyres" || scenario !== "rossi") return [];
-  return ROSSI_ACTORS.map((actor) => ({
+  const template = findDemoTemplate(industry, scenario);
+  if (!template) return [];
+  return template.actors.map((actor) => ({
     key: actor.key,
     name: actor.name,
     role: actor.role,
   }));
+}
+
+export function defaultDemoPersona(industry: string | null, scenario: string | null): DemoActorKey | null {
+  return findDemoTemplate(industry, scenario)?.defaultPersona ?? null;
 }
 
 export function findDemoPersona(

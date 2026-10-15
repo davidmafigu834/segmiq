@@ -9,7 +9,11 @@ function clone<T>(value: T): T {
 }
 
 function actorKeyForUser(dataset: DemoDataset, userId: string) {
-  return Object.values(dataset.actors).find((actor) => actor.id === userId)?.key ?? "tinashe";
+  return (
+    Object.values(dataset.actors).find((actor) => actor.id === userId)?.key ??
+    Object.values(dataset.actors).find((actor) => actor.role === "SALESPERSON")?.key ??
+    "tinashe"
+  );
 }
 
 function pushActivity(dataset: DemoDataset, activity: Omit<DemoActivity, "id"> & { id?: string }): void {

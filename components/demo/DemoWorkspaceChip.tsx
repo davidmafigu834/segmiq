@@ -11,6 +11,7 @@ type DemoStatus = {
   fictional?: boolean;
   personaKey?: string | null;
   personas?: Persona[];
+  intro?: { headline: string; subtext: string } | null;
 };
 
 /** Subtle staff indicator. Hidden for production organisations. */
@@ -51,7 +52,15 @@ export function DemoWorkspaceChip({ className = "" }: { className?: string }) {
   }
 
   return (
-    <span className={`inline-flex items-center gap-2 ${className}`}>
+    <span className={`inline-flex max-w-full flex-col items-start gap-1 ${className}`}>
+      {status.intro ? (
+        <span className="max-w-md">
+          <span className="block text-[12px] font-semibold text-sales-text-primary">{status.name}</span>
+          <span className="block text-[12px] text-sales-text-primary">{status.intro.headline}</span>
+          <span className="block text-[11px] leading-snug text-sales-text-secondary">{status.intro.subtext}</span>
+        </span>
+      ) : null}
+      <span className="inline-flex items-center gap-2">
       <span
         className="inline-flex items-center rounded-full border border-sales-border bg-sales-surface px-2.5 py-1 text-[11px] font-medium tracking-wide text-sales-text-secondary"
         title={status.name ? `${status.name} is using fictional demonstration records` : "Fictional demonstration records"}
@@ -75,6 +84,7 @@ export function DemoWorkspaceChip({ className = "" }: { className?: string }) {
           </select>
         </label>
       ) : null}
+      </span>
     </span>
   );
 }

@@ -1,5 +1,3 @@
-import { ROSSI_ACTORS, type DemoActorKey } from "@/lib/demo/actors";
-import { buildRossiDataset } from "@/lib/demo/industries/tyres/rossi/dataset";
 import { harareDateKey } from "@/lib/demo/dates";
 import { demoId } from "@/lib/demo/ids";
 import { applyDemoMutations } from "@/lib/demo/mutations";
@@ -8,6 +6,9 @@ import { DemoAccessDenied } from "@/lib/demo/errors";
 import { getWorkspaceConfig, type WorkspaceConfig } from "@/lib/demo/mode";
 import { readSessionMutations } from "@/lib/demo/session-store";
 import { readDemoMutations } from "@/lib/demo/store";
+import { buildBsaDataset } from "@/lib/demo/industries/vehicle-hire/bsa/dataset";
+import { buildRossiDataset } from "@/lib/demo/industries/tyres/rossi/dataset";
+import { findDemoTemplate, type DemoTemplateMeta } from "@/lib/demo/template-catalog";
 import type { DemoActor, DemoDataset, DemoWorkspaceRef } from "@/lib/demo/types";
 
 export type DataProvider =
@@ -28,16 +29,22 @@ export function materializeDemoDataset(opts: {
   industry: string;
   scenario: string;
   clientId: string;
-  actors: Record<DemoActorKey, DemoActor>;
+  actors: Record<string, DemoActor>;
   now?: Date;
 }): DemoDataset | null {
-  if (opts.industry === "tyres" && opts.scenario === "rossi") {
-    return buildRossiDataset({
-      now: opts.now,
-      clientId: opts.clientId,
-      actors: opts.actors,
-    });
-  }
+  const template = findDemoTemplate(opts.industry, opts.scenario);
+  const build = template ? demoDatasetBuilder(template) : null;
+  if (!template || !build) return null;
+  return build({
+    now: opts.now,
+    clientId: opts.clientId,
+    actors: opts.actors,
+  });
+}
+
+function demoDatasetBuilder(template: DemoTemplateMeta) {
+  if (template.industry === "tyres" && template.scenario === "rossi") return buildRossiDataset;
+  if (template.industry === "vehicle_hire" && template.scenario === "bsa_mobility") return buildBsaDataset;
   return null;
 }
 
@@ -47,34 +54,37 @@ export function clearDemoSnapshotCache(): void {
   snapshotCache.clear();
 }
 
-async function resolveActors(clientId: string): Promise<Record<DemoActorKey, DemoActor>> {
+async function resolveActors(clientId: string, template: DemoTemplateMeta): Promise<Record<string, DemoActor>> {
+  const guest = getGuestContext();
   const found = new Map<string, { id: string; name: string; role: DemoActor["role"]; phone: string }>();
-  try {
-    const { createAdminClient } = await import("@/lib/supabase/admin");
-    const supabase = createAdminClient();
-    const { data } = await supabase
-      .from("users")
-      .select("id, name, email, role, phone")
-      .eq("client_id", clientId);
-    for (const row of data ?? []) {
-      const email = String((row as { email?: string }).email ?? "").toLowerCase();
-      found.set(email, {
-        id: String((row as { id: string }).id),
-        name: String((row as { name?: string }).name ?? ""),
-        role: ((row as { role?: DemoActor["role"] }).role ?? "SALESPERSON") as DemoActor["role"],
-        phone: String((row as { phone?: string | null }).phone ?? ""),
-      });
+  if (!guest) {
+    try {
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      const supabase = createAdminClient();
+      const { data } = await supabase
+        .from("users")
+        .select("id, name, email, role, phone")
+        .eq("client_id", clientId);
+      for (const row of data ?? []) {
+        const email = String((row as { email?: string }).email ?? "").toLowerCase();
+        found.set(email, {
+          id: String((row as { id: string }).id),
+          name: String((row as { name?: string }).name ?? ""),
+          role: ((row as { role?: DemoActor["role"] }).role ?? "SALESPERSON") as DemoActor["role"],
+          phone: String((row as { phone?: string | null }).phone ?? ""),
+        });
+      }
+    } catch {
+      // Deterministic ids keep tests and offline renders stable.
     }
-  } catch {
-    // Deterministic ids keep tests and offline renders stable.
   }
 
-  const actors = {} as Record<DemoActorKey, DemoActor>;
-  for (const seed of ROSSI_ACTORS) {
+  const actors: Record<string, DemoActor> = {};
+  for (const seed of template.actors) {
     const row = found.get(seed.email);
     actors[seed.key] = {
       key: seed.key,
-      id: row?.id ?? demoId(`rossi:actor:${seed.key}`),
+      id: guest || !row ? demoId(`${template.idPrefix}:actor:${seed.key}`) : row.id,
       name: seed.name,
       email: seed.email,
       role: seed.role,
@@ -85,9 +95,11 @@ async function resolveActors(clientId: string): Promise<Record<DemoActorKey, Dem
 }
 
 export async function resolveDemoPersona(clientId: string, personaKey: string): Promise<DemoActor | null> {
-  if (!ROSSI_ACTORS.some((actor) => actor.key === personaKey)) return null;
-  const actors = await resolveActors(clientId);
-  return actors[personaKey as DemoActorKey] ?? null;
+  const config = await getWorkspaceConfig(clientId);
+  const template = findDemoTemplate(config?.industry, config?.scenario);
+  if (!template?.actors.some((actor) => actor.key === personaKey)) return null;
+  const actors = await resolveActors(clientId, template);
+  return actors[personaKey] ?? null;
 }
 
 export async function loadDemoDatasetForClient(clientId: string, now = new Date()): Promise<DemoDataset | null> {
@@ -95,7 +107,7 @@ export async function loadDemoDatasetForClient(clientId: string, now = new Date(
   if (guest) {
     if (guest.clientId !== clientId) throw new DemoAccessDenied();
     const config = await getWorkspaceConfig(clientId);
-    if (!config || config.mode !== "demo" || config.industry !== "tyres" || config.scenario !== "rossi") {
+    if (!config || config.mode !== "demo" || !findDemoTemplate(config.industry, config.scenario)) {
       throw new DemoAccessDenied();
     }
     const dataset = await loadFromConfig(config, now, { sessionId: guest.sessionId, strictTemplate: true });
@@ -114,8 +126,9 @@ async function loadFromConfig(
 ): Promise<DemoDataset | null> {
   const industry = scope.strictTemplate ? config.industry : config.industry ?? "tyres";
   const scenario = scope.strictTemplate ? config.scenario : config.scenario ?? "rossi";
-  if (!industry || !scenario) return null;
-  const actors = await resolveActors(config.clientId);
+  const template = findDemoTemplate(industry, scenario);
+  if (!template) return null;
+  const actors = await resolveActors(config.clientId, template);
   const mutations = scope.sessionId
     ? await readSessionMutations(scope.sessionId)
     : await readDemoMutations(config.clientId);

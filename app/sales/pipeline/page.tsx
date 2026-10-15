@@ -23,6 +23,7 @@ import {
 } from "@/components/sales/solar/SolarWorkflowNavigator";
 import { readSalesWorkflowPreset } from "@/lib/sales/solar-workflow/service";
 import type { DealRow, QuotationRow } from "@/types";
+import { demoStageLabels } from "@/lib/demo/stage-labels";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -294,8 +295,12 @@ export default async function SalesPipelinePage() {
         tasksBadge={tasksBadge}
         isSolo={session.clientMode === "solo"}
         breadcrumb="Sales / Pipeline"
-        title="My pipeline"
-        description="Track and manage the Deals you're actively working to win."
+        title={demo?.industry === "vehicle_hire" ? "Booking pipeline" : "My pipeline"}
+        description={
+          demo?.industry === "vehicle_hire"
+            ? "Fictional booking enquiries by stage. Vehicle availability in this demonstration is not a live calendar."
+            : "Track and manage the Deals you're actively working to win."
+        }
         shellClassName="sales-pipeline-phone"
         demoGuest={Boolean(session.demoGuest)}
       >
@@ -303,6 +308,7 @@ export default async function SalesPipelinePage() {
           <DealsBoard
             initialItems={boardItems}
             repName={session.user?.name ?? "Sales"}
+            stageLabels={demoStageLabels(demo?.industry)}
           />
         </Suspense>
       </PipelinePageShell>
