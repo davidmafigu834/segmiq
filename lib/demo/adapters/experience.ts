@@ -241,7 +241,7 @@ export function buildDemoTasks(dataset: DemoDataset, userId: string, role: strin
 
 function closedRow(dataset: DemoDataset, deal: DealRow): ClosedDealRow {
   const lead = leadFor(dataset, deal.originating_lead_id);
-  const source = sourceBucket(lead?.source ?? deal.source);
+  const source = sourceBucket(lead?.source);
   const closeDate = (deal.stage === "WON" ? deal.won_at : deal.lost_at) || deal.updated_at;
   return {
     id: deal.id,
@@ -252,7 +252,7 @@ function closedRow(dataset: DemoDataset, deal: DealRow): ClosedDealRow {
     status: deal.stage === "LOST" ? "LOST" : "WON",
     dealValue: deal.stage === "WON" ? Number(deal.won_value) || 0 : Number(deal.estimated_value) || 0,
     closeDate,
-    source: lead?.source ?? deal.source,
+    source: lead?.source ?? null,
     sourceKey: source.key,
     sourceLabel: source.label,
     reason: deal.stage === "LOST" ? deal.lost_reason : null,
@@ -352,20 +352,20 @@ export function buildDemoReports(
     }))
     .filter((row) => row.count > 0);
   const stages = [
-    { id: "QUALIFIED", label: labelForDemoStage(dataset.industry, "QUALIFIED"), color: "#2563EB" },
-    { id: "SCOPING", label: labelForDemoStage(dataset.industry, "SCOPING"), color: "#0F766E" },
-    { id: "PROPOSAL_SENT", label: labelForDemoStage(dataset.industry, "PROPOSAL_SENT"), color: "#B54708" },
-    { id: "NEGOTIATING", label: labelForDemoStage(dataset.industry, "NEGOTIATING"), color: "#F59E0B" },
-  ];
+    { id: "NEW", label: "New", color: "#2563EB", dealStage: "QUALIFIED" },
+    { id: "CONTACTED", label: "Contacted", color: "#16A34A", dealStage: "SCOPING" },
+    { id: "NEGOTIATING", label: "Negotiating", color: "#F59E0B", dealStage: "NEGOTIATING" },
+    { id: "PROPOSAL_SENT", label: "Proposal sent", color: "#0F766E", dealStage: "PROPOSAL_SENT" },
+  ] as const;
   const funnel = [
     ...stages.map((stage) => ({
       id: stage.id,
       label: stage.label,
       color: stage.color,
-      count: open.filter((deal) => deal.stage === stage.id).length,
+      count: open.filter((deal) => deal.stage === stage.dealStage).length,
       rateOfPrevious: null as number | null,
     })),
-    { id: "WON", label: labelForDemoStage(dataset.industry, "WON"), color: "#16A34A", count: won.length, rateOfPrevious: null },
+    { id: "WON" as const, label: "Won" as const, color: "#16A34A" as const, count: won.length, rateOfPrevious: null },
   ];
   const messages = dataset.messages.filter((message) => leads.some((lead) => lead.id === message.leadId));
   const quotesSent = dataset.quotations.filter((quote) => String(quote.status).toUpperCase() !== "DRAFT").length;
@@ -474,7 +474,7 @@ export function buildDemoReports(
       };
     }),
     pipelineByStage: stages.map((stage) => {
-      const stageDeals = open.filter((deal) => deal.stage === stage.id);
+      const stageDeals = open.filter((deal) => deal.stage === stage.dealStage);
       return {
         id: stage.id,
         label: stage.label,
