@@ -102,6 +102,17 @@ function unavailable(req: NextRequest, clear: boolean): NextResponse {
   return clear ? clearDemoCookie(response) : response;
 }
 
+function leavesDemonstration(path: string, method: string): boolean {
+  if (method.toUpperCase() !== "POST") return false;
+  return (
+    path === "/api/auth/callback/credentials" ||
+    path === "/api/auth/signout" ||
+    path === "/api/auth/session/logout" ||
+    path === "/api/auth/mfa/login" ||
+    path.startsWith("/api/auth/signin/")
+  );
+}
+
 /**
  * Demo cookie on an API request. Returns a response to stop the request, or
  * null when the normal API path should continue.
@@ -109,7 +120,7 @@ function unavailable(req: NextRequest, clear: boolean): NextResponse {
 export async function enforceDemoGuestApi(req: NextRequest): Promise<NextResponse | null> {
   const secret = req.cookies.get(DEMO_SESSION_COOKIE)?.value;
   if (!secret) return null;
-  if (req.nextUrl.pathname.startsWith("/api/auth/")) {
+  if (leavesDemonstration(req.nextUrl.pathname, req.method)) {
     return releaseDemoSession(req);
   }
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
