@@ -7,6 +7,16 @@ import { createDemoInvitation } from "@/lib/demo/guest-session";
 
 export const dynamic = "force-dynamic";
 
+export async function GET() {
+  const admin = await requireSuperAdmin();
+  if ("error" in admin) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { loadDemoAdminDirectory } = await import("@/lib/demo/admin-directory");
+  const directory = await loadDemoAdminDirectory();
+  return NextResponse.json(directory, { headers: { "Cache-Control": "no-store" } });
+}
+
 export async function POST(req: Request) {
   if (!isGuestAccessEnabled()) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

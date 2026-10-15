@@ -26,7 +26,10 @@ export const PLATFORM_NAV_GROUPS: AppShellNavGroup[] = [
   },
   {
     label: "Security",
-    items: [{ href: "/dashboard/support-access", label: "Support Access", icon: "shield" }],
+    items: [
+      { href: "/dashboard/support-access", label: "Support Access", icon: "shield" },
+      { href: "/dashboard/demos", label: "Demonstrations", icon: "sparkles" },
+    ],
   },
   {
     label: "Configuration",
@@ -47,6 +50,7 @@ export const PLATFORM_COMMAND_PAGES: { href: string; label: string; hint: string
   { href: "/dashboard/billing", label: "Subscriptions", hint: "Billing" },
   { href: "/dashboard/status-incidents", label: "Platform health", hint: "Incidents and status" },
   { href: "/dashboard/support-access", label: "Support access", hint: "Privileged sessions" },
+  { href: "/dashboard/demos", label: "Demonstrations", hint: "Guest demonstration links" },
   { href: "/dashboard/whatsapp-templates", label: "WhatsApp", hint: "Templates" },
   { href: "/dashboard/follow-up-reminders", label: "Jobs", hint: "Follow-up jobs" },
   { href: "/dashboard/settings", label: "Platform settings", hint: "Configuration" },
