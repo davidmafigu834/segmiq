@@ -214,8 +214,8 @@ export async function switchGuestPersona(sessionId: string, clientId: string, pe
   const template = findDemoTemplate(config.industry, config.scenario);
   const persona = findDemoPersona(config.industry, config.scenario, personaKey);
   if (!template || !persona) throw new DemoAccessDenied();
-  const { createAdminClient } = await import("@/lib/supabase/admin");
-  const supabase = createAdminClient();
+  const { createUnguardedAdminClient } = await import("@/lib/supabase/admin");
+  const supabase = createUnguardedAdminClient();
   const { error } = await supabase
     .from("demo_sessions")
     .update({ persona_key: persona.key })
