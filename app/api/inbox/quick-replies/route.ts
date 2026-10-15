@@ -1,19 +1,31 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireSession } from "@/lib/api-guards";
+import { requireSession, requireSessionFromRequest } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_QUICK_REPLIES } from "@/lib/inbox/quick-reply-vars";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const g = await requireSession();
+export async function GET(req: Request) {
+  const g = await requireSessionFromRequest(req);
   if ("error" in g) return g.error;
 
   const { session } = g;
   if (!session.clientId) {
     return NextResponse.json({ error: "Missing client context" }, { status: 400 });
+  }
+
+  const { getGuestContext } = await import("@/lib/demo/context");
+  if (getGuestContext()) {
+    return NextResponse.json({
+      replies: DEFAULT_QUICK_REPLIES.map((r, i) => ({
+        id: `default-${i}`,
+        title: r.title,
+        body: r.body,
+        isDefault: true,
+      })),
+    });
   }
 
   const supabase = createAdminClient();

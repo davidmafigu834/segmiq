@@ -1,3 +1,4 @@
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { getServerSession } from "next-auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
@@ -15,6 +16,9 @@ export default async function CompanyTeamMemberProfilePage({
 }: {
   params: { memberId: string };
 }) {
+  const operational = await getOperationalSession();
+  if (operational?.demoGuest) redirect(`/client/team?member=${params.memberId}`);
+
   const session = await getServerSession(authOptions);
   if (!session?.userId || !session.clientId) redirect("/login");
   if (!["CLIENT_MANAGER", "SUPER_ADMIN"].includes(session.role)) redirect("/login");

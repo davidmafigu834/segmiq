@@ -112,7 +112,7 @@ function SalesDashboardInner({
             toolbar
             demoGuest={demoGuest}
           />
-          {demoGuest ? null : <SalesCopilotDailyWorkspace firstName={firstName} />}
+          <SalesCopilotDailyWorkspace firstName={firstName} />
           <AgentDailyWorkspace clientId={data.clientId!} data={data.realEstate!} />
         </>
       ) : (
@@ -129,7 +129,7 @@ function SalesDashboardInner({
             demoGuest={demoGuest}
           />
 
-          {demoGuest ? null : <SalesCopilotDailyWorkspace firstName={firstName} />}
+          <SalesCopilotDailyWorkspace firstName={firstName} />
 
           {!data.hasAnyLeads && !data.hasAnyDeals ? (
             <div className="dashboard-panel dashboard-panel--attention overflow-hidden border-0 p-5 shadow-none">

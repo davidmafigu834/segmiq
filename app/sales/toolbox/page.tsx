@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
@@ -33,14 +32,14 @@ function ToolboxFallback() {
 }
 
 export default async function SalesToolboxPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
 
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
   const shell = await loadSalesShellProps(session);
 
   let assignmentMode: "direct" | "pool" | "round_robin" = "direct";
-  if (session.clientId) {
+  if (session.clientId && !session.demoGuest) {
     const supabase = createAdminClient();
     const { data: client } = await supabase
       .from("clients")

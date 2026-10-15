@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { requirePermission } from "@/lib/auth/rbac/require";
 import { P } from "@/lib/auth/rbac/permissions";
 import { getCompanyTeamMemberOverview } from "@/lib/sales/get-company-team-member-overview";
@@ -9,6 +10,16 @@ export async function GET(
   req: Request,
   { params }: { params: { memberId: string } }
 ) {
+  const guestAuth = await getAuthFromRequest(req);
+  if (guestAuth?.demoGuest && guestAuth.clientId) {
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const { buildDemoTeamMember } = await import("@/lib/demo/adapters/manager-tour");
+    const demo = await loadDemoDatasetForClient(guestAuth.clientId);
+    const overview = demo ? buildDemoTeamMember(demo, params.memberId) : null;
+    if (!overview) return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+    return NextResponse.json(overview);
+  }
+
   const guard = await requirePermission(P.TEAM_MANAGE, req);
   if ("error" in guard) return guard.error;
   const { auth } = guard;

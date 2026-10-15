@@ -42,7 +42,7 @@ export async function GET(req: Request, { params }: { params: { token: string } 
     return NextResponse.json({ error: "Not found" }, { status: redeemed.status, headers });
   }
 
-  const response = NextResponse.redirect(new URL(redeemed.redirectTo, req.url), { headers });
+  const response = NextResponse.redirect(new URL("/demo/enter", req.url), { headers });
   response.cookies.set(DEMO_SESSION_COOKIE, redeemed.secret, demoSessionCookieOptions(Math.floor(DEMO_SESSION_TTL_MS / 1000)));
   return response;
 }

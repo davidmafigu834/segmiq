@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
@@ -43,8 +42,51 @@ export default async function SalesCalendarRoutePage({
 }: {
   searchParams?: { deal?: string; lead?: string };
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
+
+  if (session.demoGuest && session.clientId) {
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const demo = await loadDemoDatasetForClient(session.clientId);
+    if (demo) {
+      const { buildDemoCalendar } = await import("@/lib/demo/adapters/experience");
+      const calendar = buildDemoCalendar(demo, session.userId, session.role);
+      const navBadges = await fetchSalesNavBadges(session.userId, session.clientId);
+      const whatsappBadge = (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
+      const tasksBadge = navBadges.followUpsToday || navBadges.callNow || 0;
+      return (
+        <SalesLayout
+          breadcrumb="Sales / CALENDAR"
+          pageTitle="Calendar"
+          hideShellHeader
+          hideShellSidebar
+          contentFlush
+        >
+          <PipelinePageShell
+            userName={session.user?.name ?? "Sales"}
+            avatarUrl={null}
+            unreadNotifications={0}
+            notificationRole={session.role}
+            whatsappBadge={whatsappBadge}
+            tasksBadge={tasksBadge}
+            isSolo={false}
+            breadcrumb="Sales / Calendar"
+            title="Calendar"
+            description="Fictional follow-ups and deal next steps. Adding an event does not create a live reminder."
+            dense
+          >
+            <SalesCalendarPage
+              initialEvents={calendar.events}
+              scheduleableLeads={calendar.scheduleableLeads}
+              scheduleableDeals={calendar.scheduleableDeals}
+              presetDealId={searchParams?.deal}
+              presetLeadId={searchParams?.lead}
+            />
+          </PipelinePageShell>
+        </SalesLayout>
+      );
+    }
+  }
 
   const supabase = createAdminClient();
 

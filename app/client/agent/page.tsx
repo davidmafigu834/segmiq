@@ -1,3 +1,4 @@
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -13,6 +14,20 @@ export default async function ClientAgentPage({
 }: {
   searchParams: { clientId?: string };
 }) {
+  const operational = await getOperationalSession();
+  if (operational?.demoGuest && operational.clientId && operational.userId) {
+    const { DemoManagerPage } = await import("@/components/demo/DemoManagerPage");
+    return (
+      <DemoManagerPage
+        clientId={operational.clientId}
+        userId={operational.userId}
+        role={operational.role}
+        userName={operational.user?.name ?? "Manager"}
+        page="agent"
+      />
+    );
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");
 

@@ -1,3 +1,4 @@
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -5,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { CommandCenterPage } from "@/components/dashboard/company/command/CommandCenterPage";
+import { DemoCompanyFrame } from "@/components/demo/DemoCompanyFrame";
+import { SalesCommandWorkspace } from "@/components/sales/command/SalesCommandWorkspace";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +16,21 @@ export default async function ClientCommandPage({
 }: {
   searchParams: { clientId?: string };
 }) {
+  const operational = await getOperationalSession();
+  if (operational?.demoGuest && operational.userId) {
+    return (
+      <DemoCompanyFrame
+        userName={operational.user?.name ?? "Manager"}
+        breadcrumbPage="COMMAND"
+        pageTitle="Command Center"
+        title="Command Center"
+        description="Ask about the fictional book. Replies stay inside the demonstration and no message is sent."
+      >
+        <SalesCommandWorkspace />
+      </DemoCompanyFrame>
+    );
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");
 

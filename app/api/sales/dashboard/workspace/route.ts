@@ -18,6 +18,12 @@ export async function GET(req: Request) {
   const visitId = incoming && VISIT_ID.test(incoming) ? incoming : null;
 
   try {
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const demo = await loadDemoDatasetForClient(session.clientId);
+    if (demo) {
+      const { buildDemoDailyWorkspace } = await import("@/lib/demo/adapters/experience");
+      return NextResponse.json(buildDemoDailyWorkspace(demo, session.userId, session.role));
+    }
     const data = await loadDailyWorkspace({
       userId: session.userId,
       clientId: session.clientId,

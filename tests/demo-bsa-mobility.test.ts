@@ -5,7 +5,19 @@ import { demoId } from "../lib/demo/ids";
 import { buildBsaDataset } from "../lib/demo/industries/vehicle-hire/bsa/dataset";
 import { BSA_ACTORS } from "../lib/demo/industries/vehicle-hire/bsa/identity";
 import { buildRossiDataset } from "../lib/demo/industries/tyres/rossi/dataset";
-import { buildDemoCompanyDashboard, buildDemoSalesDashboard } from "../lib/demo/adapters/workspace-views";
+import {
+  buildDemoCalendar,
+  buildDemoCommandReply,
+  buildDemoCopilotConversation,
+  buildDemoDailyWorkspace,
+  buildDemoGoals,
+  buildDemoReports,
+  buildDemoSocialThreads,
+  buildDemoTasks,
+  buildDemoWonLost,
+} from "../lib/demo/adapters/experience";
+import { buildDemoCompanyCalendar, buildDemoCompanyTeam } from "../lib/demo/adapters/manager-tour";
+import { buildDemoCompanyDashboard, buildDemoInbox, buildDemoSalesDashboard } from "../lib/demo/adapters/workspace-views";
 import { applyDemoMutations, visibleDeals, visibleLeads } from "../lib/demo/mutations";
 import { findDemoPersona } from "../lib/demo/personas";
 import { materializeDemoDataset } from "../lib/demo/provider";
@@ -121,5 +133,56 @@ describe("BSA Mobility vehicle-hire demonstration", () => {
     assert.equal(JSON.stringify(tariro).includes("Farai Nyathi"), false);
     assert.equal(tariro.plan?.goal.hasGoal, false);
     assert.equal(company.metrics.avgResponseMinutes, null);
+  });
+
+  it("fills the salesperson tour with fictional conversations, tasks, and closed deals", () => {
+    const dataset = bsa();
+    const userId = dataset.actors.tariro!.id;
+    const inbox = buildDemoInbox(dataset, userId, "SALESPERSON");
+    const tasks = buildDemoTasks(dataset, userId, "SALESPERSON");
+    const outcomes = buildDemoWonLost(dataset, userId, "SALESPERSON");
+    const reports = buildDemoReports(dataset, userId, "SALESPERSON");
+    const goals = buildDemoGoals(dataset, userId, "SALESPERSON");
+    const calendar = buildDemoCalendar(dataset, userId, "SALESPERSON");
+    const social = buildDemoSocialThreads(dataset, userId, "SALESPERSON");
+    const reply = buildDemoCommandReply(dataset, userId, "SALESPERSON", "Which deals can I close?");
+    assert.ok(inbox.length > 0);
+    assert.ok(inbox.every((row) => row.lastMessage));
+    assert.ok(tasks.tasks.length > 0);
+    assert.ok(outcomes.deals.some((row) => row.status === "WON"));
+    assert.ok(outcomes.deals.some((row) => row.status === "LOST"));
+    assert.ok((reports.kpis.pipelineValue.value ?? 0) > 0);
+    assert.equal(goals.goal?.editable, false);
+    assert.ok((goals.progress.remaining ?? 0) > 0);
+    assert.ok(calendar.events.length > 0);
+    assert.ok(social.length > 0);
+    assert.match(reply.reply, /No message has been sent/);
+    assert.equal(reply.status, "COMPLETED");
+    const copilot = buildDemoCopilotConversation(dataset, inbox[0]!.id);
+    assert.equal(copilot.analysis.status, "ready");
+    assert.ok(copilot.items.some((item) => item.actionType === "answer_question"));
+    assert.match(copilot.analysis.summary ?? "", /Simulated/);
+    assert.equal(tasks.meta.copilotUnavailable, false);
+    assert.ok(tasks.tasks.some((task) => task.copilot?.primaryAction === "draft"));
+    const workspace = buildDemoDailyWorkspace(dataset, userId, "SALESPERSON");
+    assert.equal(workspace.copilotUnavailable, false);
+    assert.ok(workspace.actions.length > 0);
+    assert.ok(workspace.actions.every((task) => task.copilot));
+    assert.match(workspace.briefing, /follow-up|review/i);
+    assert.equal(workspace.viewAllHref, "/sales/tasks");
+  });
+
+  it("fills the manager tour from fictional records", () => {
+    const dataset = bsa();
+    const team = buildDemoCompanyTeam(dataset);
+    const calendar = buildDemoCompanyCalendar(dataset);
+    assert.equal(team.canManageTeam, false);
+    assert.ok(team.members.some((member) => member.name === "Tariro Dube" && member.roleColumn === "Salesperson"));
+    assert.ok(team.members.some((member) => member.roleGroup === "manager"));
+    assert.ok(team.members.some((member) => member.activeDeals > 0));
+    assert.ok(calendar.events.length > 0);
+    assert.ok(calendar.events.every((event) => event.canEdit === false));
+    assert.ok(dataset.products.length > 0);
+    assert.ok(dataset.quotations.length > 0);
   });
 });

@@ -17,6 +17,14 @@ export async function GET(req: Request) {
   const view = VIEWS.has(viewRaw) ? viewRaw : "mine";
 
   try {
+    if (session?.clientId) {
+      const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+      const demo = await loadDemoDatasetForClient(session.clientId);
+      if (demo) {
+        const { buildDemoTasks } = await import("@/lib/demo/adapters/experience");
+        return NextResponse.json(buildDemoTasks(demo, session.userId, session.role, view));
+      }
+    }
     const data = await fetchSalespersonTasks({
       userId: session!.userId,
       clientId: session!.clientId,

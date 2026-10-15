@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { CommercialRoute } from "@/components/dashboard/company/commercial/commercial-route";
@@ -34,6 +35,19 @@ export default async function ClientDocumentsPage({
 }: {
   searchParams: Record<string, string | string[] | undefined>;
 }) {
+  const operational = await getOperationalSession();
+  if (operational?.demoGuest && operational.clientId && operational.userId) {
+    const { DemoManagerPage } = await import("@/components/demo/DemoManagerPage");
+    return (
+      <DemoManagerPage
+        clientId={operational.clientId}
+        userId={operational.userId}
+        role={operational.role}
+        userName={operational.user?.name ?? "Manager"}
+        page="documents"
+      />
+    );
+  }
   return (
     <CommercialRoute searchParams={searchParams} breadcrumbPage="DOCUMENTS" pageTitle="Documents">
       {(chrome) => (

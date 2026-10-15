@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCompanyQuotationsPageData } from "@/lib/sales/get-company-quotations-page-data";
 import {
@@ -20,7 +19,7 @@ export default async function ClientQuotationsPage({
 }: {
   searchParams: { clientId?: string };
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId) redirect("/login");
 
   if (session.role === "SALESPERSON") redirect("/sales/quotes");
@@ -35,7 +34,7 @@ export default async function ClientQuotationsPage({
       : session.clientId;
   if (!clientId) redirect(session.role === "SUPER_ADMIN" ? "/dashboard" : "/login");
 
-  const supabase = createAdminClient();
+  const supabase = session.demoGuest ? null : createAdminClient();
   const [dataResult, unreadRes, userRes, clientRes, navBadges] = await Promise.all([
     getCompanyQuotationsPageData({
       clientId,
@@ -52,12 +51,18 @@ export default async function ClientQuotationsPage({
         return { ok: false as const };
       }),
     supabase
-      .from("notifications")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", session.userId)
-      .eq("read", false),
-    supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
-    supabase.from("clients").select("logo_url, name").eq("id", clientId).maybeSingle(),
+      ? supabase
+          .from("notifications")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", session.userId)
+          .eq("read", false)
+      : Promise.resolve({ count: 0 }),
+    supabase
+      ? supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      ? supabase.from("clients").select("logo_url, name").eq("id", clientId).maybeSingle()
+      : Promise.resolve({ data: { name: null, logo_url: null } }),
     fetchSalesNavBadges(session.userId, clientId),
   ]);
 

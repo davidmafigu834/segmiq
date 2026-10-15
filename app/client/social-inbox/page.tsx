@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -9,6 +10,20 @@ import { SocialInboxCompanyHost } from "@/components/social-inbox/SocialInboxWor
 export const dynamic = "force-dynamic";
 
 export default async function CompanySocialInboxPage() {
+  const operational = await getOperationalSession();
+  if (operational?.demoGuest && operational.clientId && operational.userId) {
+    const { DemoManagerPage } = await import("@/components/demo/DemoManagerPage");
+    return (
+      <DemoManagerPage
+        clientId={operational.clientId}
+        userId={operational.userId}
+        role={operational.role}
+        userName={operational.user?.name ?? "Manager"}
+        page="social"
+      />
+    );
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.userId || session.role !== "CLIENT_MANAGER") redirect("/login");
   if (!session.clientId) redirect("/login");

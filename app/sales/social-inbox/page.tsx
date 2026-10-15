@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
+import { DemoSocialPreview } from "@/components/demo/DemoSocialPreview";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import { SocialInboxSalesHost } from "@/components/social-inbox/SocialInboxWorkspace";
@@ -28,16 +28,20 @@ function Fallback() {
 }
 
 export default async function SalesSocialInboxPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
   if (!session.clientId) redirect("/login");
 
   const shell = await loadSalesShellProps(session);
-  const { isDemoWorkspaceId } = await import("@/lib/demo/mode");
-  const { DEMO_UNSUPPORTED } = await import("@/lib/demo/provider");
-  if (await isDemoWorkspaceId(session.clientId)) {
+  const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+  const demo = await loadDemoDatasetForClient(session.clientId);
+  if (demo) {
+    const { buildDemoSocialThreads } = await import("@/lib/demo/adapters/experience");
     return (
-      <p className="p-6 text-sm text-sales-text-secondary">{DEMO_UNSUPPORTED}</p>
+      <DemoSocialPreview
+        shell={shell}
+        threads={buildDemoSocialThreads(demo, session.userId, session.role)}
+      />
     );
   }
 

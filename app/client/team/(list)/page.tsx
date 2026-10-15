@@ -1,6 +1,7 @@
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { getOperationalSession } from "@/lib/auth/operational-session";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCompanyTeamPageData } from "@/lib/sales/get-company-team-page-data";
@@ -14,6 +15,29 @@ export default async function ClientTeamPage({
 }: {
   searchParams: { clientId?: string };
 }) {
+  const operational = await getOperationalSession();
+  if (operational?.demoGuest && operational.clientId && operational.userId) {
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const { buildDemoCompanyTeam } = await import("@/lib/demo/adapters/manager-tour");
+    const demo = await loadDemoDatasetForClient(operational.clientId);
+    if (!demo) redirect("/demo/unavailable");
+    return (
+      <ClientManagerLayout breadcrumbPage="TEAM" pageTitle="Team" hideShellHeader hideShellSidebar>
+        <Suspense fallback={<CompanyTeamPageSkeleton />}>
+          <CompanyTeamPage
+            data={buildDemoCompanyTeam(demo)}
+            unreadNotifications={0}
+            notificationRole={operational.role}
+            userName={operational.user?.name ?? "Manager"}
+            avatarUrl={null}
+            companyLogoUrl={null}
+            whatsappBadge={0}
+          />
+        </Suspense>
+      </ClientManagerLayout>
+    );
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");
 

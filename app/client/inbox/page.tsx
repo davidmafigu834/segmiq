@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { CompanyWhatsAppHub } from "@/components/inbox/CompanyWhatsAppHub";
@@ -9,9 +8,37 @@ import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 export const dynamic = "force-dynamic";
 
 export default async function ClientInboxPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId || session.role !== "CLIENT_MANAGER") redirect("/login");
   if (!session.clientId) redirect("/login");
+
+  if (session.demoGuest) {
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const demo = await loadDemoDatasetForClient(session.clientId);
+    const navBadges = await fetchSalesNavBadges(session.userId, session.clientId);
+    const whatsappBadge =
+      (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
+    const salespeople = Object.values(demo?.actors ?? {})
+      .filter((actor) => actor.role === "SALESPERSON")
+      .map((actor) => ({ id: actor.id, name: actor.name }));
+    return (
+      <ClientManagerLayout breadcrumbPage="INBOX" pageTitle="WhatsApp Sales Hub" hideShellHeader hideShellSidebar>
+        <CompanyWhatsAppHub
+          userName={session.user?.name ?? "Manager"}
+          userId={session.userId}
+          clientId={session.clientId}
+          alsoSells={Boolean(session.alsoSells)}
+          companyName={demo?.organisationName ?? "Demonstration"}
+          companyLogoUrl={null}
+          avatarUrl={null}
+          unreadNotifications={0}
+          notificationRole={session.role}
+          whatsappBadge={whatsappBadge}
+          salespeople={salespeople}
+        />
+      </ClientManagerLayout>
+    );
+  }
 
   const supabase = createAdminClient();
   const [{ data: salespeople }, { data: client }, unreadResult, userResult, navBadges] = await Promise.all([

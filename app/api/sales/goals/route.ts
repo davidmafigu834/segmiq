@@ -21,6 +21,14 @@ export async function GET(req: Request) {
   const period = parseGoalPeriodKey(url.searchParams.get("period"));
 
   try {
+    if (session?.clientId) {
+      const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+      const demo = await loadDemoDatasetForClient(session.clientId);
+      if (demo) {
+        const { buildDemoGoals } = await import("@/lib/demo/adapters/experience");
+        return NextResponse.json(buildDemoGoals(demo, session.userId, session.role));
+      }
+    }
     const data = await fetchSalesGoalsPayload({
       userId: session!.userId,
       clientId: session!.clientId,

@@ -1,3 +1,4 @@
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -30,6 +31,36 @@ export default async function CompanyCalendarRoute({
 }: {
   searchParams: { clientId?: string; date?: string; view?: string; event?: string; owner?: string };
 }) {
+  const operational = await getOperationalSession();
+  if (operational?.demoGuest && operational.clientId && operational.userId) {
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const { buildDemoCompanyCalendar } = await import("@/lib/demo/adapters/manager-tour");
+    const demo = await loadDemoDatasetForClient(operational.clientId);
+    if (!demo) redirect("/demo/unavailable");
+    const data = buildDemoCompanyCalendar(demo);
+    return (
+      <ClientManagerLayout breadcrumbPage="CALENDAR" pageTitle="Calendar" hideShellHeader hideShellSidebar>
+        <CompanyCalendarPage
+          data={data}
+          initialDateKey={new Intl.DateTimeFormat("en-CA", {
+            timeZone: demo.timezone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }).format(new Date())}
+          initialEventId={null}
+          initialOwnerId="all"
+          canCreateActivities={false}
+          unreadNotifications={0}
+          notificationRole={operational.role}
+          userName={operational.user?.name ?? "Manager"}
+          avatarUrl={null}
+          companyLogoUrl={null}
+        />
+      </ClientManagerLayout>
+    );
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");
   if (session.role !== "CLIENT_MANAGER" && session.role !== "SUPER_ADMIN") {

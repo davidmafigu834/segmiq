@@ -14,6 +14,14 @@ export async function GET(req: Request) {
   }
 
   try {
+    if (session?.clientId) {
+      const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+      const demo = await loadDemoDatasetForClient(session.clientId);
+      if (demo) {
+        const { buildDemoSalesDashboard } = await import("@/lib/demo/adapters/workspace-views");
+        return NextResponse.json(buildDemoSalesDashboard(demo, session.userId, session.role).plan);
+      }
+    }
     const data = await fetchDailySalesPlan({
       userId: session!.userId,
       clientId: session!.clientId,

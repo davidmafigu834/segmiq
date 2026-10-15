@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { canReadLead } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { eventsToChatMessages, isWhatsAppRowVisibleInChat, messageLogsToChatMessages, whatsappRowsToChatMessages } from "@/lib/inbox/messages";
@@ -28,7 +27,7 @@ function isSessionLogAlreadyRepresented(
 }
 
 export async function GET(req: Request, { params }: { params: { leadId: string } }) {
-  const session = await getServerSession(authOptions);
+  const session = await getAuthFromRequest(req);
   // Message bodies are conversation content: platform staff need the
   // CONVERSATIONS scope, not merely a LEADS grant.
   const access = await canReadLead(params.leadId, req, { scope: "CONVERSATIONS" });
@@ -52,6 +51,10 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
         nextBefore: messages[0]?.createdAt ?? null,
       });
     }
+  }
+
+  if (session?.demoGuest) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const supabase = createAdminClient();

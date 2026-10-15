@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireSession } from "@/lib/api-guards";
+import { requireSessionFromRequest } from "@/lib/api-guards";
 import { fetchInboxConversations } from "@/lib/inbox/fetch-conversations";
 import { requireClientDataAccess } from "@/lib/security/support-access";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const g = await requireSession();
+  const g = await requireSessionFromRequest(req);
   if ("error" in g) return g.error;
 
   const { session } = g;

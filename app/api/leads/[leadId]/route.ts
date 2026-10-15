@@ -26,6 +26,16 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
     return NextResponse.json({ error: "Not found" }, { status: access.status === 401 ? 401 : 404 });
   }
 
+  const auth = await getAuthFromRequest(req);
+  if (auth?.demoGuest) {
+    const { lookupDemoLead } = await import("@/lib/demo/acl");
+    const demoLead = await lookupDemoLead(auth.clientId, params.leadId);
+    if (demoLead.mode !== "demo" || !demoLead.row) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json({ lead: demoLead.row });
+  }
+
   const supabase = createAdminClient();
   const { data: lead } = await supabase
     .from("leads")

@@ -71,6 +71,16 @@ const postSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const auth = await resolveApiAuth(req);
+  if (auth?.demoGuest && auth.clientId) {
+    const body = (await req.json().catch(() => ({}))) as { message?: string };
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const demo = await loadDemoDatasetForClient(auth.clientId);
+    if (!demo) return NextResponse.json({ error: "Not available in this demonstration" }, { status: 404 });
+    const { buildDemoCommandReply } = await import("@/lib/demo/adapters/experience");
+    return NextResponse.json(buildDemoCommandReply(demo, auth.userId, auth.role, body.message ?? ""));
+  }
+
   const parsed = postSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   const access = await resolveSalesActor(req, parsed.data.pageContext?.companyId);
@@ -98,6 +108,19 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+  const auth = await resolveApiAuth(req);
+  if (auth?.demoGuest && auth.clientId) {
+    const url = new URL(req.url);
+    if (url.searchParams.get("flagsOnly") === "1") {
+      return NextResponse.json({ flags: { enabled: false, commandCenter: true, salesHubCommand: false } });
+    }
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const demo = await loadDemoDatasetForClient(auth.clientId);
+    if (!demo) return NextResponse.json({ error: "Not available in this demonstration" }, { status: 404 });
+    const { buildDemoCommandBootstrap } = await import("@/lib/demo/adapters/experience");
+    return NextResponse.json(buildDemoCommandBootstrap(demo, auth.userId, auth.role));
+  }
+
   const url = new URL(req.url);
   const access = await resolveSalesActor(req, url.searchParams.get("companyId"));
   if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { canModifyLead } from "@/lib/auth/permissions";
 import { canManageQuotationForLead } from "@/lib/quotations/quote-access";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -21,6 +22,14 @@ const bodySchema = z.object({
 const QUOTE_ACTIONS = new Set(["quotation_draft", "quotation_choice", "quotation_missing", "send_quotation"]);
 
 export async function POST(req: Request, { params }: { params: { itemId: string } }) {
+  const auth = await getAuthFromRequest(req);
+  if (auth?.demoGuest) {
+    return NextResponse.json({
+      simulated: true,
+      item: null,
+      notice: "Simulated Sales Copilot. Nothing was sent and no live workspace was changed.",
+    });
+  }
   const item = await getWorkItem(params.itemId).catch(() => null);
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

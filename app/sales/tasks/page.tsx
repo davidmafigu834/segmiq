@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { SoloLayout } from "@/components/layouts/SoloLayout";
@@ -27,7 +26,7 @@ function TasksFallback() {
 }
 
 export default async function SalesTasksPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
 
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;

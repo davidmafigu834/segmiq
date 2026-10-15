@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { TeamInbox } from "@/components/inbox/TeamInbox";
 import { WhatsAppSalesHubShell } from "@/components/inbox/WhatsAppSalesHubShell";
@@ -48,37 +47,36 @@ export async function SalesInboxPageView({
   /** @deprecated Hub is always full-page. Kept so existing callers compile. */
   fullPage?: boolean;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
   if (!session.clientId) redirect("/login");
 
-  const isSolo = session.clientMode === "solo";
+  const isSolo = !session.demoGuest && session.clientMode === "solo";
   const dashboardHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";
 
-  const [navBadges, userRes] = await Promise.all([
-    fetchSalesNavBadges(session.userId, session.clientId),
-    (async () => {
-      const { createAdminClient } = await import("@/lib/supabase/admin");
-      const supabase = createAdminClient();
-      const [profile, unread] = await Promise.all([
-        supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
-        supabase
-          .from("notifications")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", session.userId)
-          .eq("read", false),
-      ]);
-      return { profile, unreadCount: unread.count ?? 0 };
-    })(),
-  ]);
+  const navBadges = await fetchSalesNavBadges(session.userId, session.clientId);
+  let avatarUrl: string | null = null;
+  let unreadNotifications = 0;
+  if (!session.demoGuest) {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const supabase = createAdminClient();
+    const [profile, unread] = await Promise.all([
+      supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
+      supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.userId)
+        .eq("read", false),
+    ]);
+    avatarUrl = (profile.data?.avatar_url as string | null) ?? null;
+    unreadNotifications = unread.count ?? 0;
+  }
 
   const whatsappBadge =
     (navBadges.hotLeads || 0) +
     (navBadges.needsReply || 0) +
     (navBadges.followUpDue || 0);
   const tasksBadge = navBadges.followUpsToday || navBadges.callNow || 0;
-  const avatarUrl = (userRes.profile.data?.avatar_url as string | null) ?? null;
-  const unreadNotifications = userRes.unreadCount;
 
   return (
     <WhatsAppSalesHubShell

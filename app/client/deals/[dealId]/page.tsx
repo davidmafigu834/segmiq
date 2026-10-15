@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
@@ -30,7 +29,7 @@ export default async function CompanyDealWorkspacePage({
   params: { dealId: string };
   searchParams?: { close?: string; clientId?: string };
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId) redirect("/login");
 
   const role = session.role;
@@ -81,13 +80,19 @@ export default async function CompanyDealWorkspacePage({
             dealId: dealRow.id,
             originatingLeadId: dealRow.originating_lead_id,
           }),
-      supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", session.userId)
-        .eq("read", false),
-      supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
-      supabase.from("clients").select("name, logo_url, business_type").eq("id", dealRow.client_id).maybeSingle(),
+      demoDeal.mode === "demo"
+        ? Promise.resolve({ count: 0 })
+        : supabase
+            .from("notifications")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", session.userId)
+            .eq("read", false),
+      demoDeal.mode === "demo"
+        ? Promise.resolve({ data: null })
+        : supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
+      demoDeal.mode === "demo"
+        ? Promise.resolve({ data: { name: demoDeal.dataset?.organisationName ?? "Demonstration", logo_url: null, business_type: "trades" } })
+        : supabase.from("clients").select("name, logo_url, business_type").eq("id", dealRow.client_id).maybeSingle(),
       fetchSalesNavBadges(session.userId, dealRow.client_id),
     ]);
 

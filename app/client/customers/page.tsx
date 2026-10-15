@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCompanyCustomersPageData } from "@/lib/sales/get-company-customers-page-data";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
@@ -16,7 +15,7 @@ export default async function ClientCustomersPage({
 }: {
   searchParams: { clientId?: string };
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId) redirect("/login");
 
   const previewClientId = searchParams.clientId;
@@ -30,16 +29,22 @@ export default async function ClientCustomersPage({
 
   const clientId =
     session.role === "SUPER_ADMIN" ? previewClientId || session.clientId! : session.clientId!;
-  const supabase = createAdminClient();
+  const supabase = session.demoGuest ? null : createAdminClient();
   const [data, unreadRes, userRes, clientRes, navBadges] = await Promise.all([
     getCompanyCustomersPageData({ clientId }),
     supabase
-      .from("notifications")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", session.userId)
-      .eq("read", false),
-    supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
-    supabase.from("clients").select("logo_url").eq("id", clientId).maybeSingle(),
+      ? supabase
+          .from("notifications")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", session.userId)
+          .eq("read", false)
+      : Promise.resolve({ count: 0 }),
+    supabase
+      ? supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      ? supabase.from("clients").select("logo_url").eq("id", clientId).maybeSingle()
+      : Promise.resolve({ data: null }),
     fetchSalesNavBadges(session.userId, clientId),
   ]);
   const whatsappBadge =

@@ -14,6 +14,18 @@ export async function GET(req: Request) {
   if (guard.error) return guard.error;
   const { session } = guard;
 
+  if (session?.clientId) {
+    const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+    const demo = await loadDemoDatasetForClient(session.clientId);
+    if (demo) {
+      const { visibleLeads } = await import("@/lib/demo/mutations");
+      return NextResponse.json({
+        leads: visibleLeads(demo, session.userId, session.role),
+        pickLogContext: {},
+      });
+    }
+  }
+
   const supabase = createAdminClient();
   const first = await supabase
     .from("leads")

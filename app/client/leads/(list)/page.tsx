@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCompanyLeadsPageData } from "@/lib/sales/get-company-leads-page-data";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
@@ -17,7 +16,7 @@ export default async function ClientLeadsPage({
 }: {
   searchParams: { clientId?: string };
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId) redirect("/login");
 
   const role = session.role;
@@ -34,7 +33,7 @@ export default async function ClientLeadsPage({
   const clientId =
     role === "SUPER_ADMIN" ? previewClientId || session.clientId! : session.clientId!;
 
-  const supabase = createAdminClient();
+  const supabase = session.demoGuest ? null : createAdminClient();
   const [data, unreadRes, userRes, clientRes, navBadges] = await Promise.all([
     getCompanyLeadsPageData({
       clientId,
@@ -45,17 +44,19 @@ export default async function ClientLeadsPage({
         alsoSells: Boolean(session.alsoSells),
       },
     }),
-    session.userId
+    supabase && session.userId
       ? supabase
           .from("notifications")
           .select("*", { count: "exact", head: true })
           .eq("user_id", session.userId)
           .eq("read", false)
       : Promise.resolve({ count: 0 }),
-    session.userId
+    supabase && session.userId
       ? supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle()
       : Promise.resolve({ data: null }),
-    supabase.from("clients").select("logo_url").eq("id", clientId).maybeSingle(),
+    supabase
+      ? supabase.from("clients").select("logo_url").eq("id", clientId).maybeSingle()
+      : Promise.resolve({ data: null }),
     session.userId
       ? fetchSalesNavBadges(session.userId, clientId)
       : Promise.resolve({

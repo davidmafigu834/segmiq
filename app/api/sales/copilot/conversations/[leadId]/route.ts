@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { canReadLead } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { withoutMeetingDuplicateReminders } from "@/lib/sales-copilot/dedupe";
@@ -18,6 +19,16 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
   const access = await canReadLead(params.leadId, req);
   if (!access.ok) {
     return NextResponse.json({ error: "Not found" }, { status: access.status === 401 ? 401 : 404 });
+  }
+  const auth = await getAuthFromRequest(req);
+  if (auth?.demoGuest) {
+    const { lookupDemoLead } = await import("@/lib/demo/acl");
+    const demoLead = await lookupDemoLead(auth.clientId, params.leadId);
+    if (demoLead.mode !== "demo" || !demoLead.dataset || !demoLead.row) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    const { buildDemoCopilotConversation } = await import("@/lib/demo/adapters/experience");
+    return NextResponse.json(buildDemoCopilotConversation(demoLead.dataset, params.leadId));
   }
   try {
     const supabase = createAdminClient();

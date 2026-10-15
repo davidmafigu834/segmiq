@@ -31,6 +31,14 @@ export async function GET(req: Request) {
   const granularity = granRaw && GRANULARITIES.has(granRaw) ? granRaw : null;
 
   try {
+    if (session?.clientId) {
+      const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
+      const demo = await loadDemoDatasetForClient(session.clientId);
+      if (demo) {
+        const { buildDemoWonLost } = await import("@/lib/demo/adapters/experience");
+        return NextResponse.json(buildDemoWonLost(demo, session.userId, session.role, period));
+      }
+    }
     const data = await fetchSalespersonWonLost({
       userId: session!.userId,
       period,

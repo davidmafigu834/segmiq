@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { getOperationalSession } from "@/lib/auth/operational-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCompanyPipelinePageData } from "@/lib/sales/get-company-pipeline-page-data";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
@@ -21,7 +20,7 @@ export default async function ClientPipelinePage({
 }: {
   searchParams: { clientId?: string };
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getOperationalSession();
   if (!session?.userId) redirect("/login");
 
   const role = session.role;
@@ -37,6 +36,44 @@ export default async function ClientPipelinePage({
 
   const clientId =
     role === "SUPER_ADMIN" ? previewClientId || session.clientId! : session.clientId!;
+
+  if (session.demoGuest) {
+    const [data, navBadges] = await Promise.all([
+      getCompanyPipelinePageData({
+        clientId,
+        actor: {
+          userId: session.userId,
+          role: session.role,
+          clientId: session.clientId,
+          alsoSells: Boolean(session.alsoSells),
+        },
+      }),
+      fetchSalesNavBadges(session.userId, clientId),
+    ]);
+    const whatsappBadge =
+      (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
+    return (
+      <ClientManagerLayout
+        breadcrumbPage="PIPELINE"
+        pageTitle="Pipeline"
+        hideShellHeader
+        hideShellSidebar
+        navClientId={clientId}
+      >
+        <Suspense fallback={<CompanyPipelinePageSkeleton />}>
+          <CompanyPipelinePage
+            data={data}
+            unreadNotifications={0}
+            notificationRole={session.role}
+            userName={session.user?.name ?? "User"}
+            avatarUrl={null}
+            companyLogoUrl={null}
+            whatsappBadge={whatsappBadge}
+          />
+        </Suspense>
+      </ClientManagerLayout>
+    );
+  }
 
   const supabase = createAdminClient();
   const { data: clientMeta } = await supabase
