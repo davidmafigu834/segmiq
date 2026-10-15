@@ -127,7 +127,7 @@ async function loadFromConfig(
   const industry = scope.strictTemplate ? config.industry : config.industry ?? "tyres";
   const scenario = scope.strictTemplate ? config.scenario : config.scenario ?? "rossi";
   const template = findDemoTemplate(industry, scenario);
-  if (!template) return null;
+  if (!template || !industry || !scenario) return null;
   const actors = await resolveActors(config.clientId, template);
   const mutations = scope.sessionId
     ? await readSessionMutations(scope.sessionId)

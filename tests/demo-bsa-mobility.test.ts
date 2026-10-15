@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { ROSSI_ACTORS } from "../lib/demo/actors";
+import { ROSSI_ACTORS, type DemoActorSeed } from "../lib/demo/actors";
 import { demoId } from "../lib/demo/ids";
 import { buildBsaDataset } from "../lib/demo/industries/vehicle-hire/bsa/dataset";
 import { BSA_ACTORS } from "../lib/demo/industries/vehicle-hire/bsa/identity";
@@ -14,7 +14,7 @@ import type { DemoActor } from "../lib/demo/types";
 
 const clientId = "22222222-2222-4222-8222-222222222222";
 
-function actors(seeds: readonly { key: string; name: string; email: string; role: DemoActor["role"]; phone: string }[], prefix: string) {
+function actors(seeds: readonly DemoActorSeed[], prefix: string) {
   const map: Record<string, DemoActor> = {};
   for (const seed of seeds) {
     map[seed.key] = { ...seed, id: demoId(`${prefix}:actor:${seed.key}`) };
@@ -119,7 +119,7 @@ describe("BSA Mobility vehicle-hire demonstration", () => {
     assert.equal(sourceTotal, dataset.leads.length);
     const tariro = buildDemoSalesDashboard(dataset, dataset.actors.tariro!.id, "SALESPERSON");
     assert.equal(JSON.stringify(tariro).includes("Farai Nyathi"), false);
-    assert.equal(tariro.plan.goal.hasGoal, false);
+    assert.equal(tariro.plan?.goal.hasGoal, false);
     assert.equal(company.metrics.avgResponseMinutes, null);
   });
 });
