@@ -82,7 +82,7 @@ export function DealsBoard({
   initialStage?: DealActiveStage | null;
   repName?: string;
 }) {
-  const stageName = (stage: DealStage) => stageLabels?.[stage] ?? stageName(stage);
+  const stageName = (stage: DealStage) => stageLabels?.[stage] ?? DEAL_STAGE_LABEL[stage];
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
