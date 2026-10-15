@@ -19,6 +19,7 @@ export type ApiAuth = {
   mfaEnrolmentRequired?: boolean;
   /** Demonstration guest. Never a platform administrator. */
   demoGuest?: boolean;
+  personaKey?: string | null;
 };
 
 function getSecret(): Uint8Array | null {
@@ -119,6 +120,7 @@ export async function resolveApiAuth(req: Request): Promise<ApiAuth | null> {
       isImpersonating: false,
       sessionId: guest.sessionId,
       demoGuest: true,
+      personaKey: guest.personaKey,
       mfaRequired: false,
       mfaSatisfied: true,
       mfaEnrolmentRequired: false,

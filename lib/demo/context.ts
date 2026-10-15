@@ -7,19 +7,28 @@ type GuestStorage = {
   run<T>(value: DemoGuestContext, fn: () => T): T;
 };
 
+/** Browser bundles have no Node async_hooks, so guest context stays empty there. */
+const GUEST_STORAGE = Symbol.for("segmiq.demoGuestStorage");
+
 function createGuestStorage(): GuestStorage | null {
   if (typeof window !== "undefined") return null;
+  const root = globalThis as typeof globalThis & { [GUEST_STORAGE]?: GuestStorage };
+  if (root[GUEST_STORAGE]) return root[GUEST_STORAGE];
   try {
     // Server-only. A static import is pulled into client components that share this module.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { AsyncLocalStorage } = require(/* webpackIgnore: true */ "async_hooks") as {
       AsyncLocalStorage: new () => GuestStorage;
     };
-    return new AsyncLocalStorage();
+    const created = new AsyncLocalStorage();
+    root[GUEST_STORAGE] = created;
+    return created;
   } catch {
     return null;
   }
 }
+
+const storage = createGuestStorage();
 
 /**
  * Server-only guest context for the current request.
@@ -35,9 +44,6 @@ export type DemoGuestContext = {
   role: Extract<UserRole, "CLIENT_MANAGER" | "SALESPERSON">;
   name: string;
 };
-
-/** Browser bundles have no Node async_hooks, so guest context stays empty there. */
-const storage = createGuestStorage();
 
 function requireStorage(): GuestStorage {
   if (!storage) throw new Error("Demo guest context is only available on the server.");
