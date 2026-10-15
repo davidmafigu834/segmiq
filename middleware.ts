@@ -241,6 +241,10 @@ export async function middleware(req: NextRequest) {
   if (marketingPublic || isPublic) {
     const cloudEntryRedirect = await redirectIfAuthenticatedCloudEntry(req, path, false);
     if (cloudEntryRedirect) return cloudEntryRedirect;
+    if ((path === "/login" || path === "/cloud/login") && req.cookies.get("segmiq_demo_session")?.value) {
+      const { releaseDemoSession } = await import("@/lib/demo/guest-gate");
+      return releaseDemoSession(req);
+    }
     return NextResponse.next();
   }
 

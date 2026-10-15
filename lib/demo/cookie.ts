@@ -20,3 +20,12 @@ export function readCookieValue(cookieHeader: string | null | undefined, name: s
 export function readDemoSessionCookie(cookieHeader: string | null | undefined): string | null {
   return readCookieValue(cookieHeader, DEMO_SESSION_COOKIE);
 }
+
+/** Remove the guest cookie from a Cookie header without touching the CRM session. */
+export function cookieHeaderWithoutDemoSession(cookieHeader: string | null | undefined): string {
+  return (cookieHeader ?? "")
+    .split(";")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0 && !part.startsWith(`${DEMO_SESSION_COOKIE}=`))
+    .join("; ");
+}

@@ -9,6 +9,7 @@ import {
   type DemoGuestRole,
 } from "@/lib/demo/allowlist";
 import { DEMO_SESSION_COOKIE, isGuestAccessEnabled } from "@/lib/demo/deployment";
+import { cookieHeaderWithoutDemoSession } from "@/lib/demo/cookie";
 import { hashToken } from "@/lib/demo/token-hash";
 import { invitationAccess } from "@/lib/demo/invitation-access";
 import { findDemoPersona } from "@/lib/demo/personas";
@@ -32,6 +33,19 @@ function clearDemoCookie(response: NextResponse): NextResponse {
     maxAge: 0,
   });
   return response;
+}
+
+/**
+ * Sign-in and sign-out must not run inside a guest session.
+ * The route sees no demonstration cookie, and the browser is told to drop it.
+ */
+export function releaseDemoSession(req: NextRequest): NextResponse {
+  const headers = new Headers(req.headers);
+  const nextCookie = cookieHeaderWithoutDemoSession(headers.get("cookie"));
+  if (nextCookie) headers.set("cookie", nextCookie);
+  else headers.delete("cookie");
+  const response = NextResponse.next({ request: { headers } });
+  return clearDemoCookie(response);
 }
 
 async function loadGuest(secret: string): Promise<
@@ -95,6 +109,9 @@ function unavailable(req: NextRequest, clear: boolean): NextResponse {
 export async function enforceDemoGuestApi(req: NextRequest): Promise<NextResponse | null> {
   const secret = req.cookies.get(DEMO_SESSION_COOKIE)?.value;
   if (!secret) return null;
+  if (req.nextUrl.pathname.startsWith("/api/auth/")) {
+    return releaseDemoSession(req);
+  }
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   if (credentialsConflict(Boolean(token), true)) {
     return NextResponse.json({ error: "Conflicting sessions" }, { status: 409 });

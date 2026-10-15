@@ -8,7 +8,7 @@ import {
   isDemoGuestApiAllowed,
   isDemoGuestPageAllowed,
 } from "../lib/demo/allowlist";
-import { readDemoSessionCookie } from "../lib/demo/cookie";
+import { readDemoSessionCookie, cookieHeaderWithoutDemoSession } from "../lib/demo/cookie";
 import { demoCronSkip } from "../lib/demo/cron";
 import {
   DEMO_SESSION_COOKIE,
@@ -150,6 +150,10 @@ describe("guest access gate", () => {
     const header = `theme=light; ${DEMO_SESSION_COOKIE}=session-secret`;
     assert.equal(readDemoSessionCookie(header), "session-secret");
     assert.equal(readDemoSessionCookie("other=1"), null);
+    assert.equal(
+      cookieHeaderWithoutDemoSession(`theme=light; ${DEMO_SESSION_COOKIE}=session-secret; next-auth.session-token=crm`),
+      "theme=light; next-auth.session-token=crm"
+    );
   });
 
   it("rejects an invitation lifetime above 30 days", () => {
