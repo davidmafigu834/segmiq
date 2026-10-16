@@ -20,7 +20,7 @@ export default async function Page() {
   const shell = await loadSalesShellProps(session);
   return (
     <SalesLayout breadcrumb="Sales / BUYERS" pageTitle="Buyers and tenants" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Buyers" title="Buyers and tenants" description="Manage property searches, customer requirements and sales opportunities.">
+      <SalesAppShell {...shell} breadcrumb="Sales / Buyers" title="Buyers and tenants" description="Manage property searches, customer relationships and active buying journeys." showDefaultHeader={false}>
         <BuyerSalesWorkspace clientId={session.clientId} basePath="/sales/buyers" />
       </SalesAppShell>
     </SalesLayout>

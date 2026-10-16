@@ -17,7 +17,7 @@ export default async function Page({ params }: { params: { searchId: string } })
   redirectIfNotRealEstate(client.business_type);
   return (
     <ClientManagerLayout breadcrumbPage="BUYERS" pageTitle="Buyer search" hideShellHeader hideShellSidebar>
-      <BuyerSearchDetail clientId={session.clientId} searchId={params.searchId} offersHref="/client/offers" />
+      <BuyerSearchDetail clientId={session.clientId} searchId={params.searchId} offersHref="/client/offers" canVerifyDeposit />
     </ClientManagerLayout>
   );
 }

@@ -1,18 +1,56 @@
 "use client";
 
-import { useState } from "react";
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
+import { cn } from "@/lib/ui/cn";
+import {
+  ReEmptyState,
+  ReErrorState,
+  RePageHeader,
+  RePartialNotice,
+  ReSection,
+  ReSheet,
+  ReStatusBadge,
+} from "@/components/real-estate/ui";
+import { acqFieldClass, acqLabelClass } from "@/components/real-estate/acquisition/acquisition-ui";
+
+type SearchOption = {
+  id: string;
+  contact_name: string;
+  intent: string;
+  locations: string[] | null;
+  budget_max: number | null;
+  currency: string | null;
+  bedrooms: number | null;
+  property_type: string | null;
+};
+
+type ListingOption = {
+  id: string;
+  address?: string | null;
+  suburb?: string | null;
+  price?: number | null;
+  status?: string | null;
+  approval_status?: string | null;
+  transaction_type?: string | null;
+};
 
 type ListingMatch = {
   listingId: string;
   strength: string;
+  score?: number;
   reasons: string[];
-  listing: { suburb?: string | null; address?: string | null; price?: number | null; bedrooms?: number | null } | null;
+  listing: { suburb?: string | null; address?: string | null; price?: number | null; bedrooms?: number | null; bathrooms?: number | null; transaction_type?: string; photos?: unknown } | null;
 };
 
 type BuyerMatch = {
   searchId: string;
   strength: string;
+  score?: number;
   reasons: string[];
   managedBy: string;
   contactName: string | null;
@@ -20,132 +58,336 @@ type BuyerMatch = {
   canRequestIntroduction: boolean;
 };
 
-const fieldClass = "min-h-11 w-full rounded-md border border-sales-border bg-sales-surface px-3 text-sm";
+type Gap = {
+  location: string;
+  intent: string;
+  propertyType: string | null;
+  searchCount: number;
+  contactCount: number;
+  eligibleListingCount: number;
+  unmatchedSearchCount: number;
+};
+
+const shell =
+  "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-clip px-4 py-4 pb-[calc(var(--sales-mobile-nav-height,64px)+28px)] md:px-6 md:pb-6";
+
+function strengthLabel(strength: string): string {
+  if (strength === "strong") return "Strong match";
+  if (strength === "alternative") return "Alternative";
+  if (strength === "partial") return "Partial match";
+  return "Match";
+}
+
+function searchLine(row: SearchOption): string {
+  const place = (row.locations ?? []).filter(Boolean).join(", ") || "Location open";
+  const budget = row.budget_max != null ? `Up to ${row.currency ? `${row.currency} ` : ""}${row.budget_max}` : "Budget open";
+  return `${row.intent === "rental" ? "Renting" : "Buying"} · ${row.property_type || "Type open"} · ${place} · ${budget}`;
+}
+
+function listingLine(row: ListingOption): string {
+  return [row.address, row.suburb].filter(Boolean).join(", ") || "Property";
+}
 
 export function MatchingWorkspace({ clientId, buyersPath }: { clientId: string; buyersPath: string }) {
+  const listingsPath = buyersPath.replace("/buyers", "/listings");
+  const acquisitionsPath = buyersPath.replace("/buyers", "/acquisitions");
+  const [mode, setMode] = useState<"properties" | "buyers">("properties");
+  const [searches, setSearches] = useState<SearchOption[]>([]);
+  const [searchTotal, setSearchTotal] = useState<number | null>(null);
+  const [listingsOptions, setListingsOptions] = useState<ListingOption[]>([]);
   const [searchId, setSearchId] = useState("");
   const [listingId, setListingId] = useState("");
+  const [picker, setPicker] = useState<"search" | "listing" | null>(null);
+  const [query, setQuery] = useState("");
   const [listings, setListings] = useState<ListingMatch[] | null>(null);
   const [buyers, setBuyers] = useState<BuyerMatch[] | null>(null);
-  const [gaps, setGaps] = useState<Array<Record<string, unknown>> | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [detail, setDetail] = useState<ListingMatch | null>(null);
+  const [gaps, setGaps] = useState<Gap[] | null>(null);
   const [definition, setDefinition] = useState<string | null>(null);
+  const [demandIncomplete, setDemandIncomplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [requested, setRequested] = useState<Record<string, string>>({});
 
-  async function findProperties() {
+  useEffect(() => {
+    void fetch(`/api/clients/${clientId}/buyer-searches?status=active`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (!json) return;
+        setSearches(json.searches ?? []);
+        setSearchTotal(typeof json.total === "number" ? json.total : null);
+      })
+      .catch(() => setSearches([]));
+    void fetch(`/api/clients/${clientId}/listings?status=available&limit=80`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => setListingsOptions(json?.listings ?? []))
+      .catch(() => setListingsOptions([]));
+  }, [clientId]);
+
+  const selectedSearch = searches.find((row) => row.id === searchId) ?? null;
+  const selectedListing = listingsOptions.find((row) => row.id === listingId) ?? null;
+
+  async function findProperties(id = searchId) {
     setError(null);
-    const res = await fetch(`/api/clients/${clientId}/matching?searchId=${searchId}`);
-    const json = await res.json();
+    setNotice(null);
+    const res = await fetch(`/api/clients/${clientId}/matching?searchId=${id}`);
+    const json = await res.json().catch(() => ({}));
     if (!res.ok) {
       setError(json.error ?? "Could not match properties");
+      setListings(null);
       return;
     }
     setListings(json.matches ?? []);
     setBuyers(null);
+    setNotice(json.notice ?? null);
   }
 
-  async function findBuyers() {
+  async function findBuyers(id = listingId) {
     setError(null);
-    const res = await fetch(`/api/clients/${clientId}/matching?listingId=${listingId}`);
-    const json = await res.json();
+    setNotice(null);
+    const res = await fetch(`/api/clients/${clientId}/matching?listingId=${id}`);
+    const json = await res.json().catch(() => ({}));
     if (!res.ok) {
       setError(json.error ?? "Could not match buyers");
+      setBuyers(null);
       return;
     }
     setBuyers(json.matches ?? []);
     setListings(null);
+    setNotice(json.notice ?? null);
   }
 
   async function loadDemand() {
+    setError(null);
     const res = await fetch(`/api/clients/${clientId}/buyer-reports?report=demand`);
+    const json = await res.json().catch(() => ({}));
     if (res.status === 403) {
       setDefinition("Demand gaps are visible to managers.");
       setGaps([]);
       return;
     }
-    const json = await res.json();
     if (!res.ok) {
       setError(json.error ?? "Could not load demand");
       return;
     }
     setDefinition(json.definition ?? null);
     setGaps(json.gaps ?? []);
+    setDemandIncomplete(Boolean(json.incomplete));
   }
 
+  async function requestIntroduction(match: BuyerMatch) {
+    setBusyId(match.searchId);
+    setError(null);
+    const res = await fetch(`/api/clients/${clientId}/buyer-sales/actions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "introduction", listingId, searchId: match.searchId }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setBusyId(null);
+    if (!res.ok) {
+      setError(json.error ?? "Could not request an introduction");
+      return;
+    }
+    setRequested((current) => ({ ...current, [match.searchId]: "requested" }));
+  }
+
+  const filteredSearches = searches.filter((row) => {
+    const hay = `${row.contact_name} ${searchLine(row)}`.toLowerCase();
+    return hay.includes(query.trim().toLowerCase());
+  });
+  const filteredListings = listingsOptions.filter((row) => listingLine(row).toLowerCase().includes(query.trim().toLowerCase()));
+
   return (
-    <div className="space-y-4 px-4 py-4 md:px-6">
-      <div>
-        <h1 className="text-lg font-semibold">Property matching</h1>
-        <p className="text-sm text-sales-text-secondary">Match an approved listing to a search, or a search to live stock. Scores explain the fit. They are not probabilities.</p>
+    <div className={shell}>
+      <RePageHeader
+        title="Property matching"
+        description="Find suitable properties for active buyers and tenants."
+      />
+      <div className="inline-flex max-w-full rounded-[var(--re-radius-control,8px)] border border-sales-border p-0.5" role="tablist" aria-label="Matching direction">
+        {([
+          ["properties", "Find properties for a customer"],
+          ["buyers", "Find buyers for a property"],
+        ] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={mode === id}
+            onClick={() => setMode(id)}
+            className={cn("re-focus min-h-11 rounded-[6px] px-3 text-left text-[13px] font-semibold", mode === id ? "bg-sales-text-primary text-sales-surface" : "text-sales-text-secondary")}
+          >
+            {label}
+          </button>
+        ))}
       </div>
-      <div className="grid gap-3 md:grid-cols-2">
-        <form className="space-y-2 rounded-lg border border-sales-border p-3" onSubmit={(event) => { event.preventDefault(); void findProperties(); }}>
-          <h2 className="text-sm font-semibold">Find properties for a buyer</h2>
-          <input required className={fieldClass} placeholder="Search id" value={searchId} onChange={(event) => setSearchId(event.target.value)} />
-          <button className="min-h-11 rounded-md bg-sales-text-primary px-3 text-sm font-semibold text-white" type="submit">Find properties</button>
-        </form>
-        <form className="space-y-2 rounded-lg border border-sales-border p-3" onSubmit={(event) => { event.preventDefault(); void findBuyers(); }}>
-          <h2 className="text-sm font-semibold">Find buyers for a property</h2>
-          <input required className={fieldClass} placeholder="Listing id" value={listingId} onChange={(event) => setListingId(event.target.value)} />
-          <button className="min-h-11 rounded-md border border-sales-border px-3 text-sm" type="submit">Find buyers</button>
-        </form>
-      </div>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+      {mode === "properties" ? (
+        <ReSection id="search-pick" title="Customer search">
+          <button type="button" className={cn(acqFieldClass, "text-left")} onClick={() => { setQuery(""); setPicker("search"); }}>
+            {selectedSearch ? selectedSearch.contact_name : "Choose an active search"}
+          </button>
+          {selectedSearch ? <p className="mt-2 text-[13px] text-sales-text-secondary">{searchLine(selectedSearch)}</p> : null}
+          <button type="button" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "mt-3 min-h-11")} disabled={!searchId} onClick={() => void findProperties()}>Find properties</button>
+        </ReSection>
+      ) : (
+        <ReSection id="listing-pick" title="Property">
+          <button type="button" className={cn(acqFieldClass, "text-left")} onClick={() => { setQuery(""); setPicker("listing"); }}>
+            {selectedListing ? listingLine(selectedListing) : "Choose an available listing"}
+          </button>
+          {selectedListing?.price != null ? <p className="mt-2 text-[13px] text-sales-text-secondary">Asking {Number(selectedListing.price).toLocaleString()}</p> : null}
+          <button type="button" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "mt-3 min-h-11")} disabled={!listingId} onClick={() => void findBuyers()}>Find buyers</button>
+        </ReSection>
+      )}
+
+      {error ? <ReErrorState title="Matching didn't complete" description={error} /> : null}
+      {notice ? <p className="rounded-[8px] border border-sales-warning/30 bg-sales-warning-soft px-3 py-2 text-[13px] text-sales-warning-fg">{notice}</p> : null}
+
       {listings ? (
-        <ul className="space-y-2">
-          {listings.length === 0 ? <li className="text-sm text-sales-text-secondary">No eligible listing matched.</li> : null}
-          {listings.map((match) => (
-            <li key={match.listingId} className="rounded-md border border-sales-border px-3 py-2 text-sm">
-              <p className="font-semibold">{match.listing?.suburb || match.listing?.address || match.listingId}</p>
-              <p>{match.strength} · {match.reasons.join(". ")}</p>
-              <Link href={`${buyersPath}/${searchId}`}>Open search</Link>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {buyers ? (
-        <ul className="space-y-2">
-          {buyers.length === 0 ? <li className="text-sm text-sales-text-secondary">No active search matched this listing.</li> : null}
-          {buyers.map((match) => (
-            <li key={match.searchId} className="rounded-md border border-sales-border px-3 py-2 text-sm">
-              <p className="font-semibold">{match.contactName ?? `Potential matching buyer — managed by ${match.managedBy}`}</p>
-              <p className="text-sales-text-secondary">{match.strength} · {match.reasons.join(". ")}</p>
-              {match.phone ? <p>{match.phone}</p> : null}
-              {match.canRequestIntroduction ? (
-                <button
-                  type="button"
-                  className="mt-1 min-h-11 text-sm font-semibold"
-                  onClick={() => void fetch(`/api/clients/${clientId}/buyer-sales/actions`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "introduction", listingId, searchId: match.searchId }),
-                  })}
-                >
-                  Request buyer introduction
-                </button>
-              ) : (
-                <Link href={`${buyersPath}/${match.searchId}`}>Open search</Link>
-              )}
-            </li>
-          ))}
-        </ul>
+        <ReSection id="property-matches" title="Matching properties" count={listings.length}>
+          {listings.length === 0 ? (
+            <ReEmptyState title="No suitable properties found" description="Try reviewing the search requirements or checking available listings." action={<Link className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold" href={listingsPath}>Open listings</Link>} />
+          ) : (
+            <ul className="grid gap-3 md:grid-cols-2">
+              {listings.map((match) => {
+                const image = Array.isArray(match.listing?.photos) && typeof match.listing?.photos[0] === "string" ? match.listing.photos[0] : null;
+                const title = [match.listing?.address, match.listing?.suburb].filter(Boolean).join(", ") || "Property";
+                return (
+                  <li key={match.listingId} className="min-w-0 overflow-hidden rounded-[12px] border border-sales-border-subtle">
+                    {image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={image} alt="" className="aspect-[4/3] w-full object-cover" />
+                    ) : <div className="flex aspect-[4/3] items-center justify-center bg-sales-surface-subtle text-[12px] text-sales-text-muted">No photograph</div>}
+                    <div className="space-y-1 p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="min-w-0 text-[14px] font-semibold [overflow-wrap:anywhere]">{title}</p>
+                        <ReStatusBadge label={strengthLabel(match.strength)} />
+                      </div>
+                      <p className="text-[13px] text-sales-text-secondary">
+                        {match.listing?.price != null ? Number(match.listing.price).toLocaleString() : "Price not recorded"}
+                        {match.listing?.bedrooms != null ? ` · ${match.listing.bedrooms} bed` : ""}
+                      </p>
+                      {typeof match.score === "number" ? <p className="text-[12px] text-sales-text-muted">Match score {match.score}. Not a chance of closing.</p> : null}
+                      {match.reasons[0] ? <p className="text-[13px] text-sales-text-secondary">{match.reasons[0]}</p> : null}
+                      <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => setDetail(match)}>View match details</button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </ReSection>
       ) : null}
 
-      <section className="rounded-lg border border-sales-border p-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold">Recorded demand</h2>
-          <button type="button" className="min-h-9 text-xs font-semibold" onClick={() => void loadDemand()}>Load demand gaps</button>
-        </div>
-        {definition ? <p className="mt-2 text-xs text-sales-text-secondary">{definition}</p> : null}
-        <ul className="mt-2 space-y-2 text-sm">
+      {buyers ? (
+        <ReSection id="buyer-matches" title="Matching buyer searches" count={buyers.length} description="Contact details appear only when this account is allowed to see them.">
+          {buyers.length === 0 ? <ReEmptyState title="No matching buyer searches" description="No active search matched this listing." /> : (
+            <ul className="space-y-2">
+              {buyers.map((match) => (
+                <li key={match.searchId} className="rounded-[12px] border border-sales-border-subtle px-3 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="min-w-0 text-[14px] font-semibold [overflow-wrap:anywhere]">
+                      {match.contactName ?? "Matching buyer search"}
+                    </p>
+                    <ReStatusBadge label={strengthLabel(match.strength)} />
+                  </div>
+                  <p className="mt-1 text-[13px] text-sales-text-secondary">Managed by {match.managedBy}</p>
+                  {match.phone ? <p className="mt-1 text-[13px]">{match.phone}</p> : null}
+                  {match.reasons[0] ? <p className="mt-1 text-[13px] text-sales-text-secondary">{match.reasons.join(" ")}</p> : null}
+                  {typeof match.score === "number" ? <p className="mt-1 text-[12px] text-sales-text-muted">Match score {match.score}</p> : null}
+                  <div className="mt-2">
+                    {match.canRequestIntroduction ? (
+                      requested[match.searchId] ? (
+                        <p className="text-[13px] font-semibold">Introduction requested</p>
+                      ) : (
+                        <button type="button" className={cn(salesMenuTriggerClass({ variant: "secondary", size: "sm" }), "min-h-11")} disabled={busyId === match.searchId} onClick={() => void requestIntroduction(match)}>
+                          {busyId === match.searchId ? "Sending…" : "Request introduction"}
+                        </button>
+                      )
+                    ) : (
+                      <Link className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold" href={`${buyersPath}/${match.searchId}`}>Open search</Link>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </ReSection>
+      ) : null}
+
+      <ReSection
+        id="demand"
+        title="Buyer demand insights"
+        description="Understand what your customers are looking for and where your property inventory falls short."
+        action={<button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => void loadDemand()}>Load insights</button>}
+      >
+        {definition ? <p className="text-[13px] text-sales-text-secondary">{definition}</p> : <p className="text-[13px] text-sales-text-muted">Load this when you need the agency's own demand gaps.</p>}
+        {demandIncomplete ? <RePartialNotice>This demand view is incomplete. The scan stopped at the existing listing or search limit.</RePartialNotice> : null}
+        <ul className="mt-3 grid gap-2 md:grid-cols-2">
           {(gaps ?? []).map((gap) => (
-            <li key={`${gap.location}-${gap.intent}-${gap.propertyType ?? "any"}`} className="rounded-md bg-sales-surface-subtle px-3 py-2">
-              {String(gap.searchCount)} active {gap.intent === "rental" ? "tenant" : "buyer"} searches in {String(gap.location)}
-              {gap.propertyType ? ` for ${String(gap.propertyType)}` : ""}. {String(gap.eligibleListingCount)} eligible listings. {String(gap.unmatchedSearchCount)} searches have no match.
-              <Link className="ml-2 font-semibold" href={buyersPath.replace("/buyers", "/acquisitions")}>Plan acquisition</Link>
+            <li key={`${gap.location}-${gap.intent}-${gap.propertyType ?? "any"}`} className="rounded-[10px] border border-sales-border-subtle px-3 py-2.5">
+              <p className="text-[14px] font-semibold [overflow-wrap:anywhere]">{gap.location}</p>
+              <p className="mt-0.5 text-[12px] text-sales-text-secondary">{gap.intent === "rental" ? "Renting" : "Buying"}{gap.propertyType ? ` · ${gap.propertyType}` : ""}</p>
+              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[12px]">
+                <div><dt className="text-sales-text-muted">Searches</dt><dd className="font-semibold tabular-nums">{gap.searchCount}</dd></div>
+                <div><dt className="text-sales-text-muted">People</dt><dd className="font-semibold tabular-nums">{gap.contactCount}</dd></div>
+                <div><dt className="text-sales-text-muted">Eligible listings</dt><dd className="font-semibold tabular-nums">{gap.eligibleListingCount}</dd></div>
+                <div><dt className="text-sales-text-muted">No match</dt><dd className="font-semibold tabular-nums">{gap.unmatchedSearchCount}</dd></div>
+              </dl>
+              <Link className="re-focus mt-2 inline-flex min-h-11 items-center text-[13px] font-semibold" href={acquisitionsPath}>View property opportunities</Link>
             </li>
           ))}
         </ul>
-      </section>
+      </ReSection>
+
+      {picker ? (
+        <ReSheet title={picker === "search" ? "Choose a search" : "Choose a property"} placement="bottom" onClose={() => setPicker(null)}>
+          <label className={acqLabelClass} htmlFor="match-query">Search</label>
+          <input id="match-query" className={acqFieldClass} value={query} onChange={(event) => setQuery(event.target.value)} />
+          {picker === "search" && searchTotal != null && searchTotal > searches.length ? (
+            <p className="mt-2 text-[12px] text-sales-text-muted">Showing {searches.length} of {searchTotal} searches.</p>
+          ) : null}
+          <ul className="mt-3 space-y-1">
+            {(picker === "search" ? filteredSearches : filteredListings).map((row) => (
+              <li key={row.id}>
+                <button
+                  type="button"
+                  className="re-focus min-h-12 w-full rounded-[10px] px-2 py-2 text-left hover:bg-sales-surface-hover"
+                  onClick={() => {
+                    if (picker === "search") {
+                      setSearchId(row.id);
+                      setPicker(null);
+                      void findProperties(row.id);
+                    } else {
+                      setListingId(row.id);
+                      setPicker(null);
+                      void findBuyers(row.id);
+                    }
+                  }}
+                >
+                  <span className="block text-[14px] font-semibold [overflow-wrap:anywhere]">{picker === "search" ? (row as SearchOption).contact_name : listingLine(row as ListingOption)}</span>
+                  {picker === "search" ? <span className="mt-0.5 block text-[12px] text-sales-text-secondary">{searchLine(row as SearchOption)}</span> : null}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </ReSheet>
+      ) : null}
+
+      {detail ? (
+        <ReSheet title={[detail.listing?.address, detail.listing?.suburb].filter(Boolean).join(", ") || "Property"} description={detail.listing?.price != null ? Number(detail.listing.price).toLocaleString() : "Price not recorded"} onClose={() => setDetail(null)}>
+          <h3 className="text-[13px] font-semibold">Why it matches</h3>
+          <ul className="mt-1 space-y-1 text-[13px] text-sales-text-secondary">
+            {detail.reasons.length ? detail.reasons.map((reason) => <li key={reason}>{reason}</li>) : <li>The matcher did not return an explanation.</li>}
+          </ul>
+          {typeof detail.score === "number" ? <p className="mt-2 text-[12px] text-sales-text-muted">Match score {detail.score}. This is not a chance of closing.</p> : null}
+          <div className="mt-4 flex flex-col gap-2">
+            {searchId ? <Link href={`${buyersPath}/${searchId}`} className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold">Open search</Link> : null}
+            <Link href={listingsPath} className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold">Open listings</Link>
+          </div>
+        </ReSheet>
+      ) : null}
     </div>
   );
 }

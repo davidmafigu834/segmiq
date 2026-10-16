@@ -20,7 +20,7 @@ export default async function Page({ params }: { params: { searchId: string } })
   const shell = await loadSalesShellProps(session);
   return (
     <SalesLayout breadcrumb="Sales / BUYERS" pageTitle="Buyer search" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Buyers" title="Buyer search" description="Requirements, matches, viewings and offers for this search.">
+      <SalesAppShell {...shell} breadcrumb="Sales / Buyers" title="Buyer search" description="Requirements, matches, viewings and offers for this search." showDefaultHeader={false}>
         <BuyerSearchDetail clientId={session.clientId} searchId={params.searchId} offersHref="/sales/offers" />
       </SalesAppShell>
     </SalesLayout>

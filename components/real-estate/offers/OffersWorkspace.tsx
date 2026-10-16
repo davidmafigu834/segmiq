@@ -194,6 +194,7 @@ export function OffersWorkspace({
             );
           })}
         </div>
+        <p className="text-[12px] leading-snug text-sales-text-secondary">An accepted offer is not a completed sale. Open the linked transaction when the offer has one.</p>
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <SearchInput
             value={q}

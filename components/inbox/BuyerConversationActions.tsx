@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { InboxConversation } from "@/lib/inbox/types";
+import { acqFieldClass } from "@/components/real-estate/acquisition/acquisition-ui";
 
 type SearchRow = { id: string; intent: string; pipeline_stage: string | null; locations: string[] | null; budget_max: number | null };
 
@@ -69,11 +70,11 @@ export function BuyerConversationActions({
 
   return (
     <div className="space-y-2">
-      <p className="text-[12px] text-sales-text-secondary">
-        Choose the search this conversation is about. A customer can have more than one.
+      <p className="text-[12px] leading-snug text-sales-text-secondary">
+        Choose the search this conversation is about. A customer can have more than one. Creating a search records it here and does not send a message.
       </p>
       {searches.length ? (
-        <select className="min-h-11 w-full rounded-md border border-sales-border px-2 text-sm" value={selected} onChange={(event) => setSelected(event.target.value)}>
+        <select className={acqFieldClass} value={selected} onChange={(event) => setSelected(event.target.value)}>
           {searches.map((search) => (
             <option key={search.id} value={search.id}>
               {search.intent === "rental" ? "Rent" : "Buy"} · {(search.locations ?? []).join(", ") || "Location open"}
@@ -82,15 +83,15 @@ export function BuyerConversationActions({
         </select>
       ) : null}
       <div className="grid grid-cols-2 gap-2">
-        <select className="min-h-11 rounded-md border border-sales-border px-2 text-sm" value={intent} onChange={(event) => setIntent(event.target.value as "purchase" | "rental")}>
-          <option value="purchase">Buy</option>
-          <option value="rental">Rent</option>
+        <select className={acqFieldClass} value={intent} onChange={(event) => setIntent(event.target.value as "purchase" | "rental")}>
+          <option value="purchase">Buying</option>
+          <option value="rental">Renting</option>
         </select>
-        <input className="min-h-11 rounded-md border border-sales-border px-2 text-sm" placeholder="Budget" value={budget} onChange={(event) => setBudget(event.target.value)} />
+        <input className={acqFieldClass} inputMode="decimal" placeholder="Budget" value={budget} onChange={(event) => setBudget(event.target.value)} />
       </div>
-      <input className="min-h-11 w-full rounded-md border border-sales-border px-2 text-sm" placeholder="Preferred area" value={location} onChange={(event) => setLocation(event.target.value)} />
+      <input className={acqFieldClass} placeholder="Preferred area" value={location} onChange={(event) => setLocation(event.target.value)} />
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="min-h-11 rounded-md border border-sales-border px-3 text-[12px]" onClick={() => void createSearch()}>Create buyer search</button>
+        <button type="button" className="re-focus min-h-11 rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold" onClick={() => void createSearch()}>Create search</button>
         {selected ? <button type="button" className="min-h-11 px-3 text-[12px]" onClick={() => void linkSelected()}>Link this enquiry</button> : null}
         {selected ? <a className="inline-flex min-h-11 items-center text-[12px] font-semibold" href={`/sales/matching`}>Find properties</a> : null}
       </div>

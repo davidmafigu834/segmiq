@@ -20,7 +20,7 @@ export default async function Page() {
   const shell = await loadSalesShellProps(session);
   return (
     <SalesLayout breadcrumb="Sales / MATCHING" pageTitle="Property matching" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Matching" title="Property matching" description="Find properties for a search, or buyers for an approved listing.">
+      <SalesAppShell {...shell} breadcrumb="Sales / Matching" title="Property matching" description="Find suitable properties for active buyers and tenants." showDefaultHeader={false}>
         <MatchingWorkspace clientId={session.clientId} buyersPath="/sales/buyers" />
       </SalesAppShell>
     </SalesLayout>
