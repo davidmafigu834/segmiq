@@ -170,6 +170,17 @@ export async function executeBuyerRequirementsUpdate(
   if (error) return toolFailure(`Failed to update buyer requirements: ${error.message}`);
 
   const dealSide = await loadLeadDealSide(ctx);
+  const { mirrorBuyerRequirements } = await import("@/lib/real-estate/foundation-sync");
+  await mirrorBuyerRequirements({
+    clientId: ctx.clientId,
+    contactId: ctx.contactId,
+    dealSide,
+    ...(input.budget_min !== undefined ? { budgetMin: input.budget_min } : {}),
+    ...(input.budget_max !== undefined ? { budgetMax: input.budget_max } : {}),
+    ...(input.bedrooms_wanted !== undefined ? { bedrooms: input.bedrooms_wanted } : {}),
+    ...(input.area_preference !== undefined ? { area: input.area_preference } : {}),
+    ...(input.timeline !== undefined ? { timeline: input.timeline } : {}),
+  });
   const refreshed = await loadBuyerMatchContact({ clientId: ctx.clientId, contactId: ctx.contactId });
   const readiness = evaluateMatchReadiness(dealSide, {
     buyer_budget_min: refreshed?.buyer_budget_min ?? null,
@@ -241,7 +252,18 @@ export async function executeListingSendMatch(
   await supabase
     .from("contacts")
     .update({ interested_listing_ids: nextIds, updated_at: new Date().toISOString() })
-    .eq("id", contact.id);
+    .eq("id", contact.id)
+    .eq("client_id", ctx.clientId);
+  const dealSide = await loadLeadDealSide(ctx);
+  const { recordPropertyInterest } = await import("@/lib/real-estate/foundation-sync");
+  const { isDemandSide } = await import("@/lib/real-estate/requirements");
+  await recordPropertyInterest({
+    clientId: ctx.clientId,
+    contactId: ctx.contactId,
+    listingId: input.listing_id,
+    source: "listing_send",
+    explicitDemand: isDemandSide(dealSide),
+  });
 
   await logReActivity({
     leadId: ctx.leadId,

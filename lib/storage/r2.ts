@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { randomUUID } from "crypto";
 
 export function isR2Configured(): boolean {
   const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID;
@@ -149,6 +150,17 @@ export function generateDocumentVersionKey(
 export function isDocumentStorageKeyForClient(clientId: string, storageKey: string): boolean {
   const prefix = `clients/${clientId}/documents/`;
   return storageKey.startsWith(prefix) && !storageKey.includes("..");
+}
+
+/** Private real estate transaction documents. The random segment keeps keys unguessable. */
+export function generateTransactionDocumentKey(clientId: string, transactionId: string, filename: string): string {
+  const ext = filename.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+  const safeTxn = transactionId.replace(/[^a-zA-Z0-9-]/g, "");
+  return `clients/${clientId}/transactions/${safeTxn}/${randomUUID()}.${ext}`;
+}
+
+export function isTransactionDocumentKeyForClient(clientId: string, storageKey: string): boolean {
+  return storageKey.startsWith(`clients/${clientId}/transactions/`) && !storageKey.includes("..");
 }
 
 /** Private Weekly Team Performance Report PDFs. */

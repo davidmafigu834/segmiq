@@ -34,6 +34,20 @@ import {
 } from "@/lib/real-estate/listings";
 import type { ListingApprovalStatus, ListingRow, ListingStatus, ListingTransactionType } from "@/types";
 import { cn } from "@/lib/ui/cn";
+import {
+  PROPERTY_CATEGORIES,
+  PROPERTY_CATEGORY_LABEL,
+  asPropertyCategory,
+  type PropertyCategory,
+} from "@/lib/real-estate/buyer-match";
+import { REGISTER_MANDATE_LABEL, type RegisterRow } from "@/lib/real-estate/listing-register-rules";
+import {
+  ListingRegisterDetails,
+  mandateTone,
+  registerActivityLine,
+} from "@/components/real-estate/listings/ListingRegisterDetails";
+
+const LISTING_PAGE_LIMIT = 1000;
 
 type AgentOption = { id: string; name: string };
 type DevelopmentOption = { id: string; name: string };
@@ -57,6 +71,7 @@ type ListingForm = {
   lease_term_months: string;
   external_reference: string;
   photos: string;
+  property_category: "" | PropertyCategory;
 };
 
 const EMPTY: ListingForm = {
@@ -76,6 +91,7 @@ const EMPTY: ListingForm = {
   lease_term_months: "",
   external_reference: "",
   photos: "",
+  property_category: "",
 };
 
 const TYPE_LABEL = LISTING_TYPE_LABEL;
@@ -168,6 +184,9 @@ export function ListingsManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [form, setForm] = useState<ListingForm>(EMPTY);
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [register, setRegister] = useState<Record<string, RegisterRow>>({});
+  const [registerNote, setRegisterNote] = useState<string | null>(null);
 
   const hrefFor = listingHref ?? (canApprove ? (id: string) => `/client/listings/${id}` : undefined);
 
@@ -181,7 +200,7 @@ export function ListingsManager({
     setLoading(true);
     try {
       const [listRes, teamRes, devRes] = await Promise.all([
-        fetch(`/api/clients/${clientId}/listings`),
+        fetch(`/api/clients/${clientId}/listings?limit=${LISTING_PAGE_LIMIT}`),
         fetch(`/api/clients/${clientId}/users`),
         fetch(`/api/clients/${clientId}/developments`),
       ]);
@@ -197,11 +216,40 @@ export function ListingsManager({
       );
       const devJson = (await devRes.json()) as { developments?: DevelopmentOption[] };
       setDevelopments((devJson.developments ?? []).map((d) => ({ id: d.id, name: d.name })));
-      setListings(listJson.listings ?? []);
+      const rows = listJson.listings ?? [];
+      setListings(rows);
+      void loadRegister(rows);
     } finally {
       setLoading(false);
     }
-  }, [clientId]);
+  }, [clientId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function loadRegister(rows: ListingRow[]) {
+    const notes: string[] = [];
+    if (rows.length >= LISTING_PAGE_LIMIT) {
+      notes.push(`Showing the latest ${LISTING_PAGE_LIMIT} listings. Use search or filters to find older stock.`);
+    }
+    if (!rows.length) {
+      setRegister({});
+      setRegisterNote(notes[0] ?? null);
+      return;
+    }
+    const res = await fetch(`/api/clients/${clientId}/listings/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listingIds: rows.map((row) => row.id) }),
+    }).catch(() => null);
+    const json = res
+      ? ((await res.json().catch(() => ({}))) as { rows?: RegisterRow[]; incomplete?: boolean; error?: string })
+      : { error: "Register details could not be loaded." };
+    if (!res?.ok) {
+      notes.push(json.error ?? "Register details could not be loaded.");
+    } else if (json.incomplete) {
+      notes.push("Some register counts are incomplete because a listing has a very large history.");
+    }
+    setRegister(Object.fromEntries((json.rows ?? []).map((row) => [row.listingId, row])));
+    setRegisterNote(notes.length ? notes.join(" ") : null);
+  }
 
   useEffect(() => {
     void load();
@@ -251,6 +299,7 @@ export function ListingsManager({
 
   function openCreate() {
     setEditingId(null);
+    setEditingCategory(null);
     setForm(EMPTY);
     setShowForm(true);
   }
@@ -274,12 +323,19 @@ export function ListingsManager({
       lease_term_months: listing.lease_term_months != null ? String(listing.lease_term_months) : "",
       external_reference: listing.external_reference ?? "",
       photos: Array.isArray(listing.photos) ? listing.photos.join("\n") : "",
+      property_category: asPropertyCategory(listing.property_category) ?? "",
     });
+    setEditingCategory(listing.property_category ?? null);
     setShowForm(true);
   }
 
   function buildPayload() {
+    // Only send the category when set or when clearing an existing value, so saves keep working
+    // before the final corrections migration adds the column.
+    const category =
+      form.property_category || editingCategory ? { property_category: form.property_category || null } : {};
     return {
+      ...category,
       transaction_type: form.transaction_type,
       status: form.status,
       price: numOrNull(form.price),
@@ -477,14 +533,15 @@ export function ListingsManager({
       ) : (
         <>
           <div className="hidden min-w-0 flex-1 overflow-x-auto md:block">
-            <DataTableEl className="min-w-[860px]">
+            <DataTableEl className="min-w-[1040px]">
               <DataTableHead>
                 <tr>
                   <DataTableTh>Property</DataTableTh>
                   <DataTableTh>Type</DataTableTh>
                   <DataTableTh>Status</DataTableTh>
                   <DataTableTh>Price</DataTableTh>
-                  <DataTableTh>Agent</DataTableTh>
+                  <DataTableTh>Agents</DataTableTh>
+                  <DataTableTh>Activity</DataTableTh>
                   <DataTableTh className="text-right"> </DataTableTh>
                 </tr>
               </DataTableHead>
@@ -511,6 +568,11 @@ export function ListingsManager({
                     </DataTableTd>
                     <DataTableTd className="text-[12px] text-sales-text-secondary">
                       {TYPE_LABEL[listing.transaction_type]}
+                      {asPropertyCategory(listing.property_category) ? (
+                        <span className="block text-[11px] text-sales-text-muted">
+                          {PROPERTY_CATEGORY_LABEL[asPropertyCategory(listing.property_category)!]}
+                        </span>
+                      ) : null}
                     </DataTableTd>
                     <DataTableTd>
                       <div className="flex flex-wrap gap-1">
@@ -525,13 +587,39 @@ export function ListingsManager({
                             {LISTING_APPROVAL_LABEL[listing.approval_status]}
                           </Badge>
                         ) : null}
+                        {register[listing.id] && register[listing.id].mandate !== "approved" ? (
+                          <Badge tone={mandateTone(register[listing.id].mandate)} appearance="soft">
+                            {REGISTER_MANDATE_LABEL[register[listing.id].mandate]}
+                          </Badge>
+                        ) : null}
+                        {register[listing.id]?.hasActiveTransaction ? (
+                          <Badge tone="info" appearance="soft">
+                            In transaction
+                          </Badge>
+                        ) : null}
                       </div>
                     </DataTableTd>
                     <DataTableTd className="text-[13px] font-semibold tabular-nums text-sales-text-primary">
                       {money(listing.price)}
                     </DataTableTd>
                     <DataTableTd className="text-[12px] text-sales-text-secondary">
-                      {agentName(listing.agent_id) ?? "—"}
+                      <span className="block truncate">
+                        {register[listing.id]?.listingAgentName ?? agentName(listing.agent_id) ?? "—"}
+                      </span>
+                      {register[listing.id]?.sourcingAgentName &&
+                      register[listing.id]?.sourcingAgentId !== listing.agent_id ? (
+                        <span className="block truncate text-[11px] text-sales-text-muted">
+                          Sourced by {register[listing.id].sourcingAgentName}
+                        </span>
+                      ) : null}
+                    </DataTableTd>
+                    <DataTableTd className="text-[12px] tabular-nums text-sales-text-secondary">
+                      <span className="block whitespace-nowrap">{registerActivityLine(register[listing.id])}</span>
+                      {register[listing.id]?.issues.length ? (
+                        <span className="block text-[11px] text-sales-warning-fg">
+                          {register[listing.id].issues.length} issue{register[listing.id].issues.length === 1 ? "" : "s"}
+                        </span>
+                      ) : null}
                     </DataTableTd>
                     <DataTableTd className="text-right">
                       {readOnly ? null : (
@@ -597,10 +685,28 @@ export function ListingsManager({
                     {money(listing.price)}
                     {specLine(listing) ? ` · ${specLine(listing)}` : ""}
                   </p>
+                  {register[listing.id] ? (
+                    <p className="mt-0.5 truncate text-[11px] tabular-nums text-sales-text-secondary">
+                      {registerActivityLine(register[listing.id])}
+                      {register[listing.id].issues.length ? (
+                        <span className="text-sales-warning-fg">
+                          {" · "}
+                          {register[listing.id].issues.length} issue{register[listing.id].issues.length === 1 ? "" : "s"}
+                        </span>
+                      ) : null}
+                    </p>
+                  ) : null}
                 </div>
-                <Badge tone={statusTone(listing.status)} appearance="soft" className="shrink-0">
-                  {STATUS_LABEL[listing.status]}
-                </Badge>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <Badge tone={statusTone(listing.status)} appearance="soft">
+                    {STATUS_LABEL[listing.status]}
+                  </Badge>
+                  {register[listing.id] && register[listing.id].mandate !== "approved" ? (
+                    <Badge tone={mandateTone(register[listing.id].mandate)} appearance="soft">
+                      {REGISTER_MANDATE_LABEL[register[listing.id].mandate]}
+                    </Badge>
+                  ) : null}
+                </div>
               </button>
             ))}
           </div>
@@ -670,6 +776,15 @@ export function ListingsManager({
           {preview.description ? (
             <p className="mt-3 whitespace-pre-wrap text-[13px] text-sales-text-secondary">{preview.description}</p>
           ) : null}
+          <ListingRegisterDetails
+            key={preview.id}
+            clientId={clientId}
+            listingId={preview.id}
+            listingLive={preview.status === "available" && (preview.approval_status ?? "approved") === "approved"}
+            row={register[preview.id]}
+            basePath={canApprove ? "/client" : "/sales"}
+            onToast={setToast}
+          />
         </div>
         <div className="flex gap-2 border-t border-sales-border-subtle px-4 py-3 sm:px-5">
           {hrefFor ? (
@@ -716,6 +831,12 @@ export function ListingsManager({
           />
         ))}
       </div>
+
+      {registerNote ? (
+        <p className="rounded-[10px] border border-sales-border-subtle bg-sales-surface-subtle px-4 py-2 text-[12px] text-sales-text-secondary">
+          {registerNote}
+        </p>
+      ) : null}
 
       {previewId && !overlayPanel ? (
         <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,30%)]">
@@ -765,6 +886,21 @@ export function ListingsManager({
                 <option value="rental">Rental</option>
                 <option value="new_development">New development</option>
                 <option value="property_management">Property management</option>
+              </Select>
+            </Field>
+            <Field label="Property type">
+              <Select
+                value={form.property_category}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, property_category: e.target.value as ListingForm["property_category"] }))
+                }
+              >
+                <option value="">Not set</option>
+                {PROPERTY_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {PROPERTY_CATEGORY_LABEL[category]}
+                  </option>
+                ))}
               </Select>
             </Field>
             <Field label="Status">

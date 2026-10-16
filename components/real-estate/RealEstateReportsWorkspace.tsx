@@ -134,7 +134,7 @@ export function RealEstateReportsWorkspace({ clientId }: { clientId: string }) {
             id: "txn_completed",
             label: "Transactions completed",
             value: String(report.transactions?.completed ?? 0),
-            supporting: "All time",
+            supporting: "Completed in this period",
             icon: "won",
           }}
         />
@@ -150,9 +150,21 @@ export function RealEstateReportsWorkspace({ clientId }: { clientId: string }) {
         <CompanyKpiCard
           item={{
             id: "commission",
-            label: "Commission (period)",
+            label: "Gross commission",
             value: money(report.sales?.commissionTotal ?? 0),
-            supporting: `${money(report.transactions?.commissionTotal ?? 0)} all open+closed`,
+            supporting: report.commission
+              ? [
+                  `${money(report.commission.verifiedReceivedCents / 100)} verified received`,
+                  report.commission.legacyUnverifiedCents > 0
+                    ? `${money(report.commission.legacyUnverifiedCents / 100)} unverified legacy`
+                    : null,
+                  report.commission.transactionsWithoutCommission > 0
+                    ? `${report.commission.transactionsWithoutCommission} sale(s) without commission`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
+              : report.definitions?.commission ?? "Completed in this period. Not cash received.",
             icon: "followups",
           }}
         />
@@ -162,14 +174,17 @@ export function RealEstateReportsWorkspace({ clientId }: { clientId: string }) {
         <section className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
           <div className="border-b border-sales-border-subtle px-5 py-3">
             <h2 className="text-[14px] font-semibold text-sales-text-primary">Conversions</h2>
-            <p className="text-[12px] text-sales-text-muted">Enquiry cohort from the last 30 days</p>
+            <p className="text-[12px] text-sales-text-muted">
+              {report.definitions?.enquiries ?? "Leads created in the selected period."}{" "}
+              {report.truncated ? "Some rows were capped — totals may be incomplete." : ""}
+            </p>
           </div>
           <dl className="grid grid-cols-2 gap-px bg-sales-border-subtle">
             {[
               ["Qualified", rate(report.conversions.enquiryToQualified), `${report.enquiries.qualified} qualified`],
-              ["To a viewing", rate(report.conversions.enquiryToViewing), `${report.viewings.completed} completed`],
-              ["Viewing → offer", rate(report.conversions.viewingToOffer), "Accepted path"],
-              ["Enquiry → won", rate(report.conversions.enquiryToWon), "Concluded"],
+              ["To a viewing", rate(report.conversions.enquiryToViewing), "One viewing counted once"],
+              ["Viewing → offer", rate(report.conversions.viewingToOffer), "Offers submitted / viewings completed"],
+              ["Enquiry → completion", rate(report.conversions.enquiryToWon), "Completed transactions, not cash"],
             ].map(([label, value, hint]) => (
               <div key={label} className="bg-sales-surface px-5 py-4">
                 <dt className="text-[11px] text-sales-text-muted">{label}</dt>

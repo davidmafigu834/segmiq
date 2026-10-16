@@ -83,7 +83,7 @@ export async function PATCH(
   const supabase = createAdminClient();
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, client_id, status, form_data, linked_listing_id, contact_id")
+    .select("id, client_id, status, form_data, linked_listing_id, contact_id, deal_side")
     .eq("id", params.leadId)
     .eq("client_id", params.clientId)
     .maybeSingle();
@@ -159,13 +159,38 @@ export async function PATCH(
     await supabase
       .from("contacts")
       .update({ interested_listing_ids: nextIds, updated_at: new Date().toISOString() })
-      .eq("id", lead.contact_id as string);
+      .eq("id", lead.contact_id as string)
+      .eq("client_id", params.clientId);
+    const { recordPropertyInterest } = await import("@/lib/real-estate/foundation-sync");
+    const { isDemandSide } = await import("@/lib/real-estate/requirements");
+    const side = parsed.data.deal_side !== undefined ? parsed.data.deal_side : (lead.deal_side as string | null);
+    await recordPropertyInterest({
+      clientId: params.clientId,
+      contactId: lead.contact_id as string,
+      listingId: parsed.data.interested_listing_id,
+      agentId: session.userId,
+      source: "interested_listing_ids",
+      explicitDemand: isDemandSide(side),
+    });
     activityKind = "property_matched";
     activitySummary = "Marked a property as interested";
   }
 
-  const { error } = await supabase.from("leads").update(updates).eq("id", params.leadId);
+  const { error } = await supabase
+    .from("leads")
+    .update(updates)
+    .eq("id", params.leadId)
+    .eq("client_id", params.clientId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (parsed.data.deal_side !== undefined) {
+    const { syncClassification } = await import("@/lib/real-estate/foundation-sync");
+    await syncClassification({
+      clientId: params.clientId,
+      contactId: (lead.contact_id as string | null) ?? null,
+      dealSide: parsed.data.deal_side,
+    });
+  }
 
   if (activityKind && activitySummary) {
     await logReActivity({

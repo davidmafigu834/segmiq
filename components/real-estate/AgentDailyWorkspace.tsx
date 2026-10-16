@@ -9,6 +9,7 @@ import { KpiCard, CardShell } from "@/components/dashboard/sales/KpiCard";
 import type { AgentReDashboard } from "@/lib/sales/get-agent-real-estate-dashboard";
 import { OfferDetailPanel } from "@/components/real-estate/offers/OfferDetailPanel";
 import { ComplianceCasePanel } from "@/components/real-estate/compliance/ComplianceCasePanel";
+import { BuyerSearchPriorities } from "@/components/real-estate/BuyerSearchPriorities";
 import { rePipelineStageLabel } from "@/lib/real-estate/pipeline";
 import type { PriorityReasonId } from "@/lib/real-estate/priority";
 import { cn } from "@/lib/ui/cn";
@@ -106,6 +107,7 @@ export function AgentDailyWorkspace({
 
   return (
     <div className="space-y-3">
+      <BuyerSearchPriorities clientId={clientId} />
       <div className="dashboard-group relative z-[1] grid grid-cols-2 gap-3 min-[900px]:grid-cols-4">
         <KpiCard
           item={{

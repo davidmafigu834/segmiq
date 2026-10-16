@@ -13,7 +13,6 @@ import {
   isOfferActiveStatus,
   isValidOfferCurrency,
   listingAllowsOffer,
-  listingStatusAfterAccept,
   nextActionForOffer,
   pickLeadOfferSnapshot,
   rankOfferAttention,
@@ -26,6 +25,14 @@ import {
   type ReOfferEventType,
   type ReOfferStatus,
 } from "@/lib/real-estate/offers";
+import { decideOfferAcceptance } from "@/lib/real-estate/listing-availability";
+import { callAtomic } from "@/lib/real-estate/atomic-rpc";
+import {
+  applyListingStatus,
+  listReservingOfferIds,
+  markOfferReservation,
+  syncListingAfterReservationChange,
+} from "@/lib/real-estate/listing-availability-service";
 
 export type OfferListTab =
   | "active"
@@ -209,6 +216,7 @@ export async function createRealEstateOffer(opts: {
   listingId: string;
   contactId: string;
   leadId?: string | null;
+  buyerSearchId?: string | null;
   amount: number;
   currency?: string;
   conditions?: string | null;
@@ -304,6 +312,18 @@ export async function createRealEstateOffer(opts: {
     return { ok: false, error: error?.message ?? "Could not create offer.", status: 500 };
   }
 
+  if (opts.buyerSearchId) {
+    const linked = await supabase
+      .from("real_estate_offers")
+      .update({ buyer_search_id: opts.buyerSearchId })
+      .eq("id", offer.id as string)
+      .eq("client_id", opts.clientId);
+    if (linked.error && !/buyer_search_id|schema cache/i.test(linked.error.message)) {
+      return { ok: false, error: linked.error.message, status: 500 };
+    }
+    if (!linked.error) offer.buyer_search_id = opts.buyerSearchId;
+  }
+
   await appendEvent({
     offerId: offer.id as string,
     clientId: opts.clientId,
@@ -368,6 +388,16 @@ export async function mutateRealEstateOffer(opts: {
     .maybeSingle();
   if (!row) return { ok: false, error: "Offer not found.", status: 404 };
 
+  const { data: listingForAccess } = await supabase
+    .from("listings")
+    .select("id, status, approval_status, agent_id")
+    .eq("id", row.listing_id as string)
+    .eq("client_id", opts.clientId)
+    .maybeSingle();
+
+  const listingAgentId =
+    (row.listing_agent_id as string | null) ?? (listingForAccess?.agent_id as string | null) ?? null;
+
   if (
     !canWriteOffer({
       role: opts.actor.role,
@@ -375,9 +405,34 @@ export async function mutateRealEstateOffer(opts: {
       userClientId: opts.actor.clientId,
       offerClientId: opts.clientId,
       buyerAgentId: (row.buyer_agent_id as string | null) ?? null,
+      listingAgentId,
     })
   ) {
     return { ok: false, error: "Forbidden.", status: 403 };
+  }
+
+  if (opts.action === "accept" && row.status === "accepted" && row.reserves_listing === true) {
+    return { ok: true, offer: row, notifyAvailable: false, siblingActiveCount: 0 };
+  }
+
+  if (opts.action === "accept") {
+    let otherReserving = 0;
+    try {
+      otherReserving = (
+        await listReservingOfferIds(opts.clientId, row.listing_id as string, opts.offerId)
+      ).length;
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : "Could not check listing reservations.",
+        status: 500,
+      };
+    }
+    const acceptDecision = decideOfferAcceptance({
+      listingStatus: (listingForAccess?.status as string | null) ?? null,
+      otherReservingOfferCount: otherReserving,
+    });
+    if (!acceptDecision.ok) return acceptDecision;
   }
 
   if (opts.expectedUpdatedAt && String(row.updated_at) !== opts.expectedUpdatedAt) {
@@ -398,29 +453,76 @@ export async function mutateRealEstateOffer(opts: {
   if (!result.ok) return result;
 
   const next = result.next;
-  const { data: updatedRows, error } = await supabase
-    .from("real_estate_offers")
-    .update({
-      status: next.status,
-      original_offer_amount: next.original_offer_amount,
-      current_offer_amount: next.current_offer_amount,
-      conditions: next.conditions,
-      expiry_date: next.expiry_date,
-      internal_notes: next.internal_notes,
-      submitted_at: next.submitted_at,
-      accepted_at: next.accepted_at,
-      rejected_at: next.rejected_at,
-      withdrawn_at: next.withdrawn_at,
-      rejected_reason: next.rejected_reason,
-      withdrawn_reason: next.withdrawn_reason,
-    })
-    .eq("id", opts.offerId)
-    .eq("client_id", opts.clientId)
-    .eq("updated_at", row.updated_at as string)
-    .select("*");
+  const offerPatch: Record<string, unknown> = {
+    status: next.status,
+    original_offer_amount: next.original_offer_amount,
+    current_offer_amount: next.current_offer_amount,
+    conditions: next.conditions,
+    expiry_date: next.expiry_date,
+    internal_notes: next.internal_notes,
+    submitted_at: next.submitted_at,
+    accepted_at: next.accepted_at,
+    rejected_at: next.rejected_at,
+    withdrawn_at: next.withdrawn_at,
+    rejected_reason: next.rejected_reason,
+    withdrawn_reason: next.withdrawn_reason,
+  };
+  if (result.reservesListing !== undefined) offerPatch.reserves_listing = result.reservesListing;
 
-  if (error) return { ok: false, error: error.message, status: 500 };
-  const updated = updatedRows?.[0];
+  let atomicAccept = false;
+  let atomicOffer: Record<string, unknown> | null = null;
+  if (opts.action === "accept") {
+    const atomic = await callAtomic<{ offer: Record<string, unknown>; idempotent: boolean }>("re_accept_offer", {
+      p_client_id: opts.clientId,
+      p_offer_id: opts.offerId,
+      p_expected_updated_at: row.updated_at as string,
+      p_patch: offerPatch,
+      p_actor_id: opts.actor.id,
+      p_event_amount: result.event?.amount ?? null,
+      p_event_note: result.event?.note ?? null,
+    });
+    if (atomic.kind === "error") return { ok: false, error: atomic.error, status: atomic.status };
+    if (atomic.kind === "ok") {
+      if (atomic.data.idempotent) {
+        return { ok: true, offer: atomic.data.offer, notifyAvailable: false, siblingActiveCount: 0 };
+      }
+      atomicAccept = true;
+      atomicOffer = atomic.data.offer;
+    }
+  }
+
+  let updated: Record<string, unknown> | null = atomicOffer;
+  if (!atomicAccept) {
+    let { data: updatedRows, error } = await supabase
+      .from("real_estate_offers")
+      .update(offerPatch)
+      .eq("id", opts.offerId)
+      .eq("client_id", opts.clientId)
+      .eq("updated_at", row.updated_at as string)
+      .select("*");
+    if (error && result.reservesListing !== undefined && /reserves_listing|schema cache/i.test(error.message)) {
+      delete offerPatch.reserves_listing;
+      const retry = await supabase
+        .from("real_estate_offers")
+        .update(offerPatch)
+        .eq("id", opts.offerId)
+        .eq("client_id", opts.clientId)
+        .eq("updated_at", row.updated_at as string)
+        .select("*");
+      updatedRows = retry.data;
+      error = retry.error;
+    }
+    if (error && (error.code === "23505" || /idx_re_offers_one_reserving/i.test(error.message))) {
+      return {
+        ok: false,
+        error:
+          "Another accepted offer already reserves this listing. Complete, cancel, or mark that transaction fallen through before accepting a different offer.",
+        status: 409,
+      };
+    }
+    if (error) return { ok: false, error: error.message, status: 500 };
+    updated = (updatedRows?.[0] as Record<string, unknown> | undefined) ?? null;
+  }
   if (!updated) {
     return {
       ok: false,
@@ -430,14 +532,16 @@ export async function mutateRealEstateOffer(opts: {
   }
 
   if (result.event) {
-    await appendEvent({
-      offerId: opts.offerId,
-      clientId: opts.clientId,
-      eventType: result.event.event_type,
-      amount: result.event.amount,
-      note: result.event.note,
-      createdBy: opts.actor.id,
-    });
+    if (!atomicAccept) {
+      await appendEvent({
+        offerId: opts.offerId,
+        clientId: opts.clientId,
+        eventType: result.event.event_type,
+        amount: result.event.amount,
+        note: result.event.note,
+        createdBy: opts.actor.id,
+      });
+    }
 
     const currency = (updated.currency as string) || "USD";
     await logInquiryOfferActivity({
@@ -454,21 +558,34 @@ export async function mutateRealEstateOffer(opts: {
     await syncLeadOfferSnapshot(updated.lead_id as string, opts.clientId);
   }
 
-  if (result.listingToUnderOffer) {
-    const { data: listing } = await supabase
-      .from("listings")
-      .select("id, status, client_id")
-      .eq("id", updated.listing_id as string)
-      .eq("client_id", opts.clientId)
-      .maybeSingle();
-    const nextStatus = listingStatusAfterAccept(listing?.status as string | undefined);
-    if (listing && nextStatus) {
-      await supabase
-        .from("listings")
-        .update({ status: nextStatus })
-        .eq("id", listing.id as string)
-        .eq("client_id", opts.clientId);
+  if (result.listingToUnderOffer && listingForAccess && !atomicAccept) {
+    const decision = decideOfferAcceptance({
+      listingStatus: listingForAccess.status as string,
+      otherReservingOfferCount: 0,
+    });
+    if (decision.ok && decision.nextListingStatus) {
+      await applyListingStatus({
+        clientId: opts.clientId,
+        listingId: updated.listing_id as string,
+        expectedStatus: listingForAccess.status as string,
+        nextStatus: decision.nextListingStatus,
+        reason: "offer_accepted",
+        actorId: opts.actor.id,
+        offerId: opts.offerId,
+      });
     }
+  }
+
+  if (result.reservesListing === false) {
+    await markOfferReservation(opts.offerId, opts.clientId, false);
+    await syncListingAfterReservationChange({
+      clientId: opts.clientId,
+      listingId: updated.listing_id as string,
+      actorId: opts.actor.id,
+      reason: "offer_reservation_released",
+      offerId: opts.offerId,
+      exceptOfferId: opts.offerId,
+    });
   }
 
   const { count } = await supabase
@@ -485,6 +602,24 @@ export async function mutateRealEstateOffer(opts: {
         result.event.event_type
       )
   );
+
+  const searchId = (updated.buyer_search_id as string | null) ?? null;
+  if (
+    searchId &&
+    result.event &&
+    (result.event.event_type === "OFFER_REJECTED" || result.event.event_type === "OFFER_ACCEPTED")
+  ) {
+    const recorded = await supabase.from("real_estate_buyer_search_events").insert({
+      client_id: opts.clientId,
+      search_id: searchId,
+      event_type: result.event.event_type === "OFFER_REJECTED" ? "offer_rejected" : "offer_accepted",
+      note: "The buyer search stays open. This event is about one property only.",
+      actor_id: opts.actor.id,
+    });
+    if (recorded.error && !/schema cache|does not exist/i.test(recorded.error.message)) {
+      console.error("[buyer-search-offer]", recorded.error.message);
+    }
+  }
 
   return {
     ok: true,
@@ -526,7 +661,20 @@ export async function listRealEstateOffers(opts: {
   const scopeOwn = opts.scopeOwn || opts.actor.role === "SALESPERSON";
 
   let q = supabase.from("real_estate_offers").select("*").eq("client_id", opts.clientId);
-  if (scopeOwn) q = q.eq("buyer_agent_id", opts.actor.id);
+  if (scopeOwn) {
+    const { data: ownListings } = await supabase
+      .from("listings")
+      .select("id")
+      .eq("client_id", opts.clientId)
+      .eq("agent_id", opts.actor.id);
+    const ownIds = (ownListings ?? []).map((l) => l.id as string);
+    const filters = [
+      `buyer_agent_id.eq.${opts.actor.id}`,
+      `listing_agent_id.eq.${opts.actor.id}`,
+    ];
+    if (ownIds.length) filters.push(`listing_id.in.(${ownIds.join(",")})`);
+    q = q.or(filters.join(","));
+  }
   if (opts.listingId) q = q.eq("listing_id", opts.listingId);
   if (opts.contactId) q = q.eq("contact_id", opts.contactId);
   if (opts.leadId) q = q.eq("lead_id", opts.leadId);
@@ -711,7 +859,18 @@ export async function getRealEstateOfferDetail(opts: {
     .maybeSingle();
   if (!row) return { ok: false, error: "Offer not found.", status: 404 };
 
-  if (opts.actor.role === "SALESPERSON" && row.buyer_agent_id !== opts.actor.id) {
+  const { data: listingAccess } = await supabase
+    .from("listings")
+    .select("id, agent_id")
+    .eq("id", row.listing_id as string)
+    .eq("client_id", opts.clientId)
+    .maybeSingle();
+  if (
+    opts.actor.role === "SALESPERSON" &&
+    row.buyer_agent_id !== opts.actor.id &&
+    row.listing_agent_id !== opts.actor.id &&
+    listingAccess?.agent_id !== opts.actor.id
+  ) {
     return { ok: false, error: "Forbidden.", status: 403 };
   }
 

@@ -113,10 +113,14 @@ export async function executeViewingReminders(opts?: {
         scheduledAt: v.scheduled_at as string,
         agentName: agent?.name ?? null,
       });
-      await supabase
+      const sentAt = new Date().toISOString();
+      const marked = await supabase
         .from("viewings")
-        .update({ reminder_sent_at: new Date().toISOString() })
+        .update({ reminder_sent_at: sentAt, reminder_sent_for: v.scheduled_at })
         .eq("id", v.id as string);
+      if (marked.error) {
+        await supabase.from("viewings").update({ reminder_sent_at: sentAt }).eq("id", v.id as string);
+      }
       sent += 1;
     } catch (err) {
       console.error("[viewing-reminders] send failed", v.id, err);

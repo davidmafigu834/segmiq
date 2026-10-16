@@ -40,6 +40,7 @@ export type RealEstatePipelineData = {
   closed: RePipelineColumn[];
   workload: ReAgentWorkload[];
   attention: PriorityItem[];
+  unclassifiedCount: number;
 };
 
 export async function getRealEstatePipelineData(opts: {
@@ -246,5 +247,6 @@ export async function getRealEstatePipelineData(opts: {
     closed: (["won", "lost", "not_qualified"] as RePipelineStage[]).map(column),
     workload,
     attention,
+    unclassifiedCount: enriched.filter((e) => !e.dealSide).length,
   };
 }

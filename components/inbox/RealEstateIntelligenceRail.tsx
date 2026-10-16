@@ -14,6 +14,9 @@ import {
 import type { InboxConversation } from "@/lib/inbox/types";
 import type { ReIntelligencePanel } from "@/lib/agent/real-estate/intelligence";
 import type { AgentHandoffSummary } from "@/lib/agent/real-estate/handoff-summary";
+import { isDemandSide, isSupplySide, isUnclassifiedDealSide } from "@/lib/real-estate/requirements";
+import { AcquisitionConversationActions } from "./AcquisitionConversationActions";
+import { BuyerConversationActions } from "./BuyerConversationActions";
 import { AgentConversationCard } from "./AgentConversationCard";
 import { SalesCopilotPanel } from "./SalesCopilotWorkspace";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
@@ -29,6 +32,7 @@ type Props = {
   panelAnimated?: boolean;
   refreshKey?: number;
   onUpdated?: () => void;
+  clientId?: string;
 };
 
 function RailSection({ children }: { children: ReactNode }) {
@@ -79,10 +83,12 @@ export function RealEstateIntelligenceRail({
   panelAnimated = false,
   refreshKey = 0,
   onUpdated,
+  clientId,
 }: Props) {
   const [loading, setLoading] = useState(true);
   const [panel, setPanel] = useState<ReIntelligencePanel | null>(null);
   const [handoff, setHandoff] = useState<AgentHandoffSummary | null>(null);
+  const [unclassifiedChoice, setUnclassifiedChoice] = useState<"buyer" | "seller" | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -203,6 +209,43 @@ export function RealEstateIntelligenceRail({
                   <p className="mt-2 text-[11px] leading-relaxed text-sales-text-secondary">
                     {handoff.conversationSummary}
                   </p>
+                ) : null}
+              </RailSection>
+            ) : null}
+
+            {clientId && panel && isSupplySide(panel.dealSide) ? (
+              <RailSection>
+                {sectionTitle("Property acquisition")}
+                <AcquisitionConversationActions clientId={clientId} conversation={conversation} />
+              </RailSection>
+            ) : null}
+
+            {clientId && panel && isDemandSide(panel.dealSide) ? (
+              <RailSection>
+                {sectionTitle("Buyer or tenant search")}
+                <BuyerConversationActions clientId={clientId} conversation={conversation} />
+              </RailSection>
+            ) : null}
+
+            {clientId && panel && isUnclassifiedDealSide(panel.dealSide) ? (
+              <RailSection>
+                {sectionTitle("Classify this conversation")}
+                <p className="mb-2 text-[12px] text-sales-text-secondary">
+                  This enquiry is not a buyer and not a seller until you choose.
+                </p>
+                <div className="flex gap-2">
+                  <button type="button" className="min-h-11 rounded-md border border-sales-border px-3 text-[12px]" onClick={() => setUnclassifiedChoice("buyer")}>Buyer or tenant</button>
+                  <button type="button" className="min-h-11 rounded-md border border-sales-border px-3 text-[12px]" onClick={() => setUnclassifiedChoice("seller")}>Seller or landlord</button>
+                </div>
+                {unclassifiedChoice === "buyer" ? (
+                  <div className="mt-3">
+                    <BuyerConversationActions clientId={clientId} conversation={conversation} />
+                  </div>
+                ) : null}
+                {unclassifiedChoice === "seller" ? (
+                  <div className="mt-3">
+                    <AcquisitionConversationActions clientId={clientId} conversation={conversation} />
+                  </div>
                 ) : null}
               </RailSection>
             ) : null}

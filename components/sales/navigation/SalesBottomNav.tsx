@@ -14,6 +14,7 @@ import {
 } from "@/lib/sales/navigation/sales-nav-config";
 import { cn } from "@/lib/ui/cn";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { isRealEstate } from "@/lib/terminology";
 
 function NavIcon({
   icon,
@@ -69,7 +70,7 @@ export function SalesBottomNav({
   const pathname = usePathname();
   const { setMoreOpen, moreOpen } = useSalesMobileChrome();
   const { businessType, solarWorkflow } = useCompanyWorkspace();
-  const items = salesMobilePrimaryItems(resolveSalesNavItems(isSolo, businessType, { solarWorkflow }));
+  const items = salesMobilePrimaryItems(resolveSalesNavItems(isSolo, businessType, { solarWorkflow }), businessType);
   const badges: Partial<Record<SalesNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
     tasks: tasksBadge,
@@ -129,7 +130,7 @@ export function SalesBottomNav({
             "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium transition-colors",
             moreOpen ? "text-sales-text-primary" : "text-sales-text-secondary"
           )}
-          aria-label="More"
+          aria-label={isRealEstate(businessType) ? "Menu" : "More"}
           aria-expanded={moreOpen}
           data-course-target="sales-mobile-nav-more"
           onClick={() => {
@@ -152,7 +153,7 @@ export function SalesBottomNav({
               aria-hidden
             />
           </span>
-          <span className="leading-none">More</span>
+          <span className="leading-none">{isRealEstate(businessType) ? "Menu" : "More"}</span>
         </button>
       </div>
     </nav>

@@ -9,10 +9,14 @@ import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import { SalesNavItem, SalesNavSection } from "@/components/sales/navigation/SalesNavItem";
 import {
   displaySalesName,
+  REAL_ESTATE_SALES_SECTION_ORDER,
   resolveSalesNavItems,
+  SALES_NAV_SECTION_LABEL,
   salesNavItemsBySection,
   type SalesNavBadgeKey,
+  type SalesNavSectionId,
 } from "@/lib/sales/navigation/sales-nav-config";
+import { isRealEstate } from "@/lib/terminology";
 import { cn } from "@/lib/ui/cn";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 
@@ -45,8 +49,17 @@ export function SalesSidebar({
   const wordmarkSrc =
     crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
   const items = resolveSalesNavItems(isSolo, businessType, { solarWorkflow });
-  const salesItems = salesNavItemsBySection(items, "sales");
-  const toolsItems = salesNavItemsBySection(items, "tools");
+  const groups: Array<{ id: SalesNavSectionId; label: string; items: ReturnType<typeof salesNavItemsBySection> }> =
+    isRealEstate(businessType)
+      ? REAL_ESTATE_SALES_SECTION_ORDER.map((id) => ({
+          id,
+          label: SALES_NAV_SECTION_LABEL[id],
+          items: salesNavItemsBySection(items, id),
+        })).filter((group) => group.items.length > 0)
+      : [
+          { id: "sales", label: "Sales", items: salesNavItemsBySection(items, "sales") },
+          { id: "tools", label: "Tools", items: salesNavItemsBySection(items, "tools") },
+        ];
   const dashboardHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";
 
   const badges: Partial<Record<SalesNavBadgeKey, number>> = {
@@ -128,60 +141,52 @@ export function SalesSidebar({
           className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pb-3"
           aria-label="Sales navigation"
         >
-          <SalesNavSection label="Sales" collapsed={collapsedMode}>
-            {salesItems.map((item) => (
-              <SalesNavItem
-                key={item.id}
-                item={item}
-                active={item.match(pathname)}
-                badge={item.badgeKey ? badges[item.badgeKey] : undefined}
-                collapsed={collapsedMode}
-                onNavigate={onCloseMobile}
-              />
-            ))}
-          </SalesNavSection>
-
-          <div className={cn(collapsedMode ? "mt-3" : "mt-3.5")}>
-            <SalesNavSection label="Tools" collapsed={collapsedMode}>
-              {toolsItems.map((item) => (
-                <SalesNavItem
-                  key={item.id}
-                  item={item}
-                  active={item.match(pathname)}
-                  collapsed={collapsedMode}
-                  onNavigate={onCloseMobile}
-                />
-              ))}
-              {collapsedMode ? (
-                <Link
-                  href="/sales/training"
-                  title="Help & Support"
-                  aria-label="Help & Support"
-                  data-course-target="sales-nav-training"
-                  className="mx-auto flex h-10 w-10 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)]"
-                  onClick={onCloseMobile}
-                >
-                  <CircleHelp size={17} strokeWidth={1.75} aria-hidden />
-                </Link>
-              ) : (
-                <Link
-                  href="/sales/training"
-                  data-course-target="sales-nav-training"
-                  className="flex h-10 items-center gap-2.5 rounded-[8px] px-3 text-[13px] font-medium text-[var(--sales-sidebar-text)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
-                  onClick={onCloseMobile}
-                >
-                  <CircleHelp
-                    size={17}
-                    strokeWidth={1.75}
-                    className="shrink-0 text-current"
-                    aria-hidden
+          {groups.map((group, index) => (
+            <div key={group.id} className={index === 0 ? undefined : collapsedMode ? "mt-3" : "mt-3.5"}>
+              <SalesNavSection label={group.label} collapsed={collapsedMode}>
+                {group.items.map((item) => (
+                  <SalesNavItem
+                    key={item.id}
+                    item={item}
+                    active={item.match(pathname)}
+                    badge={item.badgeKey ? badges[item.badgeKey] : undefined}
+                    collapsed={collapsedMode}
+                    onNavigate={onCloseMobile}
                   />
-                  Help & Support
-                  <span className="sr-only"> — Training</span>
-                </Link>
-              )}
-            </SalesNavSection>
-          </div>
+                ))}
+                {index === groups.length - 1 ? (
+                  collapsedMode ? (
+                    <Link
+                      href="/sales/training"
+                      title="Help & Support"
+                      aria-label="Help & Support"
+                      data-course-target="sales-nav-training"
+                      className="mx-auto flex h-10 w-10 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)]"
+                      onClick={onCloseMobile}
+                    >
+                      <CircleHelp size={17} strokeWidth={1.75} aria-hidden />
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/sales/training"
+                      data-course-target="sales-nav-training"
+                      className="flex h-10 items-center gap-2.5 rounded-[8px] px-3 text-[13px] font-medium text-[var(--sales-sidebar-text)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+                      onClick={onCloseMobile}
+                    >
+                      <CircleHelp
+                        size={17}
+                        strokeWidth={1.75}
+                        className="shrink-0 text-current"
+                        aria-hidden
+                      />
+                      Help & Support
+                      <span className="sr-only"> — Training</span>
+                    </Link>
+                  )
+                ) : null}
+              </SalesNavSection>
+            </div>
+          ))}
         </nav>
 
         {drawer ? (

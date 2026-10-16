@@ -4,7 +4,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { contactMatchesListing, type BuyerMatchContact } from "@/lib/real-estate/helpers";
 import {
   canApproveListings,
   canSubmitListings,
@@ -13,7 +12,6 @@ import {
   listingCreateSchema,
 } from "@/lib/real-estate/listings";
 import { listingMatchesSearch } from "@/lib/real-estate/matching";
-import { notifyPropertyMatch } from "@/lib/real-estate/notifications";
 import { background } from "@/lib/background";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +32,7 @@ export async function GET(req: Request, { params }: { params: { clientId: string
   const maxPrice = url.searchParams.get("max_price");
   const bedrooms = url.searchParams.get("bedrooms");
   const limitRaw = Number(url.searchParams.get("limit") ?? "80");
-  const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 80;
+  const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 1000) : 80;
 
   const supabase = createAdminClient();
   let query = supabase
@@ -148,36 +146,26 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
       mandate_expiry_date: body.mandate_expiry_date || null,
       lease_term_months: body.lease_term_months ?? null,
       external_reference: body.external_reference?.trim() || null,
+      ...(body.property_category ? { property_category: body.property_category } : {}),
       created_at: now,
       updated_at: now,
     })
     .select("*")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (body.property_category && (error.code === "42703" || /property_category/.test(error.message))) {
+      return NextResponse.json({ error: "Property type needs the final corrections migration. Save without it for now." }, { status: 503 });
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
-  // Property matching when new available listing is created
+  // Matching on a new live listing creates internal agent notifications only. Customers are
+  // contacted by an agent through send-match, never automatically.
   if (data && isListingLive(data)) {
     background("listing-property-match", async () => {
-      const { data: contacts } = await supabase
-        .from("contacts")
-        .select(
-          "id, name, phone, email, buyer_budget_min, buyer_budget_max, buyer_bedrooms_wanted, buyer_area_preference"
-        )
-        .eq("client_id", params.clientId);
-
-      const matches = ((contacts ?? []) as BuyerMatchContact[]).filter((c) =>
-        contactMatchesListing(c, data)
-      );
-
-      for (const match of matches.slice(0, 25)) {
-        await notifyPropertyMatch({
-          clientId: params.clientId,
-          to: match.phone,
-          contactName: match.name,
-          listing: data,
-        });
-      }
+      const { discoverMatchesForListing } = await import("@/lib/real-estate/buyer-sales-service");
+      await discoverMatchesForListing({ clientId: params.clientId, listingId: data.id as string });
     });
   }
 

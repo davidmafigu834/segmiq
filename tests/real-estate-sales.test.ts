@@ -135,6 +135,9 @@ describe("buyer requirements and completeness", () => {
     assert.equal(isSupplySide("sell_side"), true);
     assert.equal(isSupplySide("landlord_side"), true);
     assert.equal(isDemandSide("sell_side"), false);
+    assert.equal(isDemandSide(null), false);
+    assert.equal(isDemandSide(undefined), false);
+    assert.equal(isSupplySide(null), false);
   });
 });
 

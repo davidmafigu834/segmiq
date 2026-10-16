@@ -14,6 +14,7 @@ import {
   type CompanyNavIconId,
 } from "@/lib/sales/navigation/company-nav-config";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { isRealEstate } from "@/lib/terminology";
 import { cn } from "@/lib/ui/cn";
 
 function NavIcon({
@@ -119,7 +120,7 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
               "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium transition-colors",
               moreOpen ? "text-sales-text-primary" : "text-sales-text-secondary"
             )}
-            aria-label="More"
+            aria-label={isRealEstate(businessType) ? "Menu" : "More"}
             aria-expanded={moreOpen}
             onClick={() => setMoreOpen(true)}
           >
@@ -138,7 +139,7 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
                 aria-hidden
               />
             </span>
-            <span className="leading-none">More</span>
+            <span className="leading-none">{isRealEstate(businessType) ? "Menu" : "More"}</span>
           </button>
         </div>
       </nav>

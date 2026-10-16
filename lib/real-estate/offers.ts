@@ -283,12 +283,17 @@ export function canWriteOffer(opts: {
   userClientId: string | null | undefined;
   offerClientId: string;
   buyerAgentId: string | null | undefined;
+  /** Offer row listing agent, or the listing's responsible agent. */
+  listingAgentId?: string | null;
 }): boolean {
   if (opts.role === "SUPER_ADMIN") return true;
   if (opts.userClientId !== opts.offerClientId) return false;
   if (opts.role === "CLIENT_MANAGER") return true;
   if (opts.role === "SALESPERSON") {
-    return Boolean(opts.buyerAgentId && opts.buyerAgentId === opts.userId);
+    return (
+      Boolean(opts.buyerAgentId && opts.buyerAgentId === opts.userId) ||
+      Boolean(opts.listingAgentId && opts.listingAgentId === opts.userId)
+    );
   }
   return false;
 }
@@ -369,6 +374,8 @@ export type OfferMutationOk = {
   event: { event_type: ReOfferEventType; amount: number | null; note: string | null } | null;
   listingToUnderOffer: boolean;
   syncLead: boolean;
+  /** When set, the offer should or should not keep the listing reserved. */
+  reservesListing?: boolean;
 };
 
 export type OfferMutationErr = { ok: false; error: string; status: number };
@@ -509,6 +516,7 @@ export function applyOfferMutation(
       event: { event_type: "OFFER_ACCEPTED", amount: finalAmount, note },
       listingToUnderOffer: true,
       syncLead: true,
+      reservesListing: true,
     };
   }
 
@@ -527,6 +535,7 @@ export function applyOfferMutation(
       event: { event_type: "OFFER_REJECTED", amount: offer.current_offer_amount, note },
       listingToUnderOffer: false,
       syncLead: true,
+      reservesListing: false,
     };
   }
 
@@ -545,6 +554,7 @@ export function applyOfferMutation(
       event: { event_type: "OFFER_WITHDRAWN", amount: offer.current_offer_amount, note },
       listingToUnderOffer: false,
       syncLead: true,
+      reservesListing: false,
     };
   }
 

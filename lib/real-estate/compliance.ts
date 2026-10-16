@@ -107,7 +107,6 @@ export const DEFAULT_INDIVIDUAL_DOC_TYPES = [
   "identification",
   "proof_of_address",
   "source_of_funds",
-  "ownership_documents",
 ] as const;
 
 /** Seller-side defaults for property sales (ownership + seller ID). */

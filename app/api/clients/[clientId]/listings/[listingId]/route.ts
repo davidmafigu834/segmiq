@@ -5,6 +5,9 @@ import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { contactMatchesListing, canManageListings, type BuyerMatchContact } from "@/lib/real-estate/helpers";
+import { loadExplicitDemandContactIds } from "@/lib/real-estate/foundation-sync";
+import { assertManualListingStatusChange } from "@/lib/real-estate/listing-availability";
+import { countActiveTransactions, listReservingOfferIds } from "@/lib/real-estate/listing-availability-service";
 import {
   canApproveListings,
   canSubmitListings,
@@ -41,8 +44,9 @@ export async function GET(
     )
     .eq("client_id", params.clientId);
 
+  const demandIds = await loadExplicitDemandContactIds(params.clientId);
   const matches = ((contacts ?? []) as (BuyerMatchContact & { interested_listing_ids?: unknown })[])
-    .filter((c) => contactMatchesListing(c, listing))
+    .filter((c) => demandIds.has(c.id) && contactMatchesListing(c, listing))
     .map((c) => ({
       id: c.id,
       name: c.name,
@@ -100,6 +104,25 @@ export async function PATCH(
   if (!manager && (body.approval_status === "approved" || body.approval_status === "rejected")) {
     return NextResponse.json({ error: "Only managers can approve listings" }, { status: 403 });
   }
+  if (body.status) {
+    const [reserving, activeTxns, completed] = await Promise.all([
+      listReservingOfferIds(params.clientId, params.listingId),
+      countActiveTransactions(params.clientId, params.listingId),
+      supabase
+        .from("real_estate_transactions")
+        .select("id", { count: "exact", head: true })
+        .eq("client_id", params.clientId)
+        .eq("listing_id", params.listingId)
+        .eq("status", "completed"),
+    ]);
+    const manual = assertManualListingStatusChange({
+      nextStatus: body.status,
+      reservingOfferCount: reserving.length,
+      activeTransactionCount: activeTxns,
+      completedTransactionCount: completed.count ?? 0,
+    });
+    if (!manual.ok) return NextResponse.json({ error: manual.error }, { status: 409 });
+  }
   if (body.status === "sold" || body.status === "let" || body.status === "rented") {
     const gate = await assertComplianceProgressAllowed({
       clientId: params.clientId,
@@ -142,6 +165,26 @@ export async function PATCH(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (body.approval_status === "approved" || body.approval_status === "rejected") {
+    const { markAcquisitionConvertedFromListing } = await import("@/lib/real-estate/acquisition-service");
+    await markAcquisitionConvertedFromListing({
+      clientId: params.clientId,
+      listingId: params.listingId,
+      actorId: session.userId,
+      approved: body.approval_status === "approved",
+    });
+  }
+  const { data: live } = await supabase
+    .from("listings")
+    .select("status, approval_status")
+    .eq("id", params.listingId)
+    .eq("client_id", params.clientId)
+    .maybeSingle();
+  if (live) {
+    // Live listings notify matching searches; anything else invalidates earlier match notifications.
+    const { discoverMatchesForListing } = await import("@/lib/real-estate/buyer-sales-service");
+    await discoverMatchesForListing({ clientId: params.clientId, listingId: params.listingId });
+  }
   return NextResponse.json({ listing: data });
 }
 

@@ -15,6 +15,15 @@ import {
   missingFollowUpMessage,
   validateActiveLeadFollowUp,
 } from "@/lib/real-estate/follow-up-discipline";
+import { chunk, readAllPages, type PageFetcher } from "@/lib/real-estate/paging";
+import {
+  canChangeViewing,
+  maskViewingContact,
+  viewingAccess,
+  viewingTransitionError,
+  type ViewingAccess,
+} from "@/lib/real-estate/viewing-access";
+import { viewingOverlapWarning } from "@/lib/real-estate/buyer-match";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +42,94 @@ const patchSchema = z.object({
   agent_id: z.string().uuid().nullable().optional(),
   /** Required when completing a viewing for an active RE inquiry without an existing follow-up. */
   follow_up_date: z.string().nullable().optional(),
+  confirmation_status: z.enum(["awaiting_confirmation", "confirmed"]).optional(),
+  cancel_reason: z.string().max(1000).nullable().optional(),
+  follow_up_at: z.string().nullable().optional(),
+  confirm_overlap: z.boolean().optional(),
 });
+
+const EXTENDED_VIEWING_COLUMNS = ["previous_scheduled_at", "reschedule_count", "cancel_reason", "follow_up_at"];
+
+type ViewingScope = {
+  manager: boolean;
+  listingAgent: Map<string, string | null>;
+  searchAgent: Map<string, string | null>;
+  collaboratorListings: Set<string>;
+};
+
+async function viewingScope(clientId: string, actorId: string, role: string, rows: Array<Record<string, unknown>>): Promise<ViewingScope> {
+  const manager = role === "SUPER_ADMIN" || role === "CLIENT_MANAGER";
+  const scope: ViewingScope = { manager, listingAgent: new Map(), searchAgent: new Map(), collaboratorListings: new Set() };
+  if (manager || rows.length === 0) return scope;
+  const supabase = createAdminClient();
+  const listingIds = [...new Set(rows.map((row) => row.listing_id as string).filter(Boolean))];
+  const searchIds = [...new Set(rows.map((row) => row.buyer_search_id as string | null).filter((id): id is string => Boolean(id)))];
+  for (const ids of chunk(listingIds, 200)) {
+    const { data } = await supabase.from("listings").select("id, agent_id").eq("client_id", clientId).in("id", ids);
+    for (const row of data ?? []) scope.listingAgent.set(row.id as string, (row.agent_id as string | null) ?? null);
+    const { data: participants } = await supabase
+      .from("real_estate_deal_participants")
+      .select("listing_id")
+      .eq("client_id", clientId)
+      .eq("user_id", actorId)
+      .eq("access_status", "active")
+      .is("ended_at", null)
+      .in("listing_id", ids);
+    for (const row of participants ?? []) if (row.listing_id) scope.collaboratorListings.add(row.listing_id as string);
+  }
+  for (const ids of chunk(searchIds, 200)) {
+    const { data } = await supabase.from("real_estate_buyer_searches").select("id, assigned_agent_id").eq("client_id", clientId).in("id", ids);
+    for (const row of data ?? []) scope.searchAgent.set(row.id as string, (row.assigned_agent_id as string | null) ?? null);
+  }
+  return scope;
+}
+
+function accessFor(scope: ViewingScope, actorId: string, role: string, row: Record<string, unknown>): ViewingAccess {
+  if (scope.manager) return "full";
+  return viewingAccess({
+    actorId,
+    role,
+    viewingAgentId: (row.agent_id as string | null) ?? null,
+    searchAgentId: row.buyer_search_id ? scope.searchAgent.get(row.buyer_search_id as string) ?? null : null,
+    listingAgentId: scope.listingAgent.get(row.listing_id as string) ?? null,
+    isListingCollaborator: scope.collaboratorListings.has(row.listing_id as string),
+  });
+}
+
+const MAX_FILTER_IDS = 250;
+
+/**
+ * Narrows the query to viewings an agent might see. Returns null when the id lists
+ * are too long for a URL; the per-row access check below still applies.
+ */
+async function agentCandidateFilter(clientId: string, actorId: string): Promise<string | null> {
+  const supabase = createAdminClient();
+  const [listings, searches, participants] = await Promise.all([
+    readAllPages((from, to) => supabase.from("listings").select("id").eq("client_id", clientId).eq("agent_id", actorId).order("id").range(from, to)),
+    readAllPages((from, to) =>
+      supabase.from("real_estate_buyer_searches").select("id").eq("client_id", clientId).eq("assigned_agent_id", actorId).order("id").range(from, to)
+    ),
+    readAllPages((from, to) =>
+      supabase
+        .from("real_estate_deal_participants")
+        .select("listing_id")
+        .eq("client_id", clientId)
+        .eq("user_id", actorId)
+        .eq("access_status", "active")
+        .is("ended_at", null)
+        .not("listing_id", "is", null)
+        .order("id")
+        .range(from, to)
+    ),
+  ]);
+  const listingIds = new Set([...listings.rows.map((row) => row.id as string), ...participants.rows.map((row) => row.listing_id as string)]);
+  const searchIds = searches.rows.map((row) => row.id as string);
+  if (listingIds.size + searchIds.length > MAX_FILTER_IDS) return null;
+  const parts = [`agent_id.eq.${actorId}`];
+  if (listingIds.size) parts.push(`listing_id.in.(${[...listingIds].join(",")})`);
+  if (searchIds.length) parts.push(`buyer_search_id.in.(${searchIds.join(",")})`);
+  return parts.join(",");
+}
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
   const session = await getServerSession(authOptions);
@@ -47,44 +143,35 @@ export async function GET(req: Request, { params }: { params: { clientId: string
   const listingId = url.searchParams.get("listing_id");
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
+  const manager = session.role === "SUPER_ADMIN" || session.role === "CLIENT_MANAGER";
 
   const supabase = createAdminClient();
+  const agentFilter = manager ? null : await agentCandidateFilter(params.clientId, session.userId);
 
-  // Scope viewings to this client's listings
-  const { data: clientListings } = await supabase
-    .from("listings")
-    .select("id")
-    .eq("client_id", params.clientId);
-  const listingIds = (clientListings ?? []).map((l) => l.id as string);
-  if (listingIds.length === 0) {
-    return NextResponse.json({ viewings: [] });
-  }
+  const fetchPage = (columns: string): PageFetcher => (fromRow, toRow) => {
+    let q = supabase.from("viewings").select(columns).eq("client_id", params.clientId);
+    if (agentFilter) q = q.or(agentFilter);
+    if (contactId) q = q.eq("contact_id", contactId);
+    if (listingId) q = q.eq("listing_id", listingId);
+    if (from) q = q.gte("scheduled_at", from);
+    if (to) q = q.lte("scheduled_at", to);
+    return q.order("scheduled_at", { ascending: true }).order("id").range(fromRow, toRow) as unknown as ReturnType<PageFetcher>;
+  };
 
-  let q = supabase
-    .from("viewings")
-    .select("*, listing:listings(id, address, suburb, status), contact:contacts(id, name, phone)")
-    .in("listing_id", listingIds)
-    .order("scheduled_at", { ascending: true });
+  let result = await readAllPages(
+    fetchPage("*, listing:listings(id, address, suburb, status), contact:contacts(id, name, phone)"),
+    { pageSize: 500, ceiling: 5000 }
+  );
+  if (result.error) result = await readAllPages(fetchPage("*"), { pageSize: 500, ceiling: 5000 });
+  if (result.error) return NextResponse.json({ error: result.error.message ?? "Could not load viewings." }, { status: 500 });
 
-  if (contactId) q = q.eq("contact_id", contactId);
-  if (listingId) q = q.eq("listing_id", listingId);
-  if (from) q = q.gte("scheduled_at", from);
-  if (to) q = q.lte("scheduled_at", to);
+  const scope = await viewingScope(params.clientId, session.userId, session.role, result.rows);
+  const viewings = result.rows
+    .map((row) => ({ row, access: accessFor(scope, session.userId, session.role, row) }))
+    .filter((item) => item.access !== "none")
+    .map(({ row, access }) => ({ ...maskViewingContact(row as { contact?: { id?: string; name?: string | null; phone?: string | null } | null }, access), access }));
 
-  const { data, error } = await q;
-  if (error) {
-    const fallback = await supabase
-      .from("viewings")
-      .select("*")
-      .in("listing_id", listingIds)
-      .order("scheduled_at", { ascending: true });
-    if (fallback.error) {
-      return NextResponse.json({ error: fallback.error.message }, { status: 500 });
-    }
-    return NextResponse.json({ viewings: fallback.data ?? [] });
-  }
-
-  return NextResponse.json({ viewings: data ?? [] });
+  return NextResponse.json({ viewings, incomplete: result.incomplete });
 }
 
 export async function POST(req: Request, { params }: { params: { clientId: string } }) {
@@ -119,6 +206,19 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   if (!listing) return NextResponse.json({ error: "Listing not found" }, { status: 404 });
 
   const agentId = body.agent_id ?? session.userId;
+  if (agentId !== session.userId) {
+    if (session.role !== "SUPER_ADMIN" && session.role !== "CLIENT_MANAGER") {
+      return NextResponse.json({ error: "Only a manager can book a viewing for another agent." }, { status: 403 });
+    }
+    const { data: agent } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", agentId)
+      .eq("client_id", params.clientId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!agent) return NextResponse.json({ error: "Choose an active agent in this organisation." }, { status: 400 });
+  }
 
   const created = await createScheduledViewing({
     clientId: params.clientId,
@@ -219,12 +319,84 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   }
 
   const body = parsed.data;
+  const current = viewingRow as Record<string, unknown>;
+  if (current.client_id && current.client_id !== params.clientId) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  const scope = await viewingScope(params.clientId, session.userId, session.role, [current]);
+  const access = accessFor(scope, session.userId, session.role, current);
+  if (access === "none") return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const rescheduling = body.scheduled_at !== undefined && body.scheduled_at !== current.scheduled_at;
+  const changes = [
+    body.status !== undefined ? "status" : null,
+    rescheduling ? "reschedule" : null,
+    body.feedback_text !== undefined || body.feedback_sentiment !== undefined ? "feedback" : null,
+    body.agent_id !== undefined && body.agent_id !== current.agent_id ? "reassign" : null,
+    body.confirmation_status !== undefined ? "confirm" : null,
+    body.follow_up_at !== undefined || body.follow_up_date !== undefined ? "follow_up" : null,
+  ].filter((change): change is "status" | "reschedule" | "feedback" | "reassign" | "confirm" | "follow_up" => Boolean(change));
+  for (const change of changes) {
+    if (!canChangeViewing(access, change, session.role)) {
+      return NextResponse.json(
+        { error: change === "reassign" ? "Only a manager can reassign a viewing." : "You can view this viewing but not change it." },
+        { status: 403 }
+      );
+    }
+  }
+
+  const currentStatus = String(current.status ?? "scheduled");
+  const nextStatus = body.status ?? (rescheduling ? "scheduled" : currentStatus);
+  const transitionError = viewingTransitionError(currentStatus, nextStatus);
+  if (transitionError) return NextResponse.json({ error: transitionError }, { status: 409 });
+
+  const effectiveAgentId = (body.agent_id !== undefined ? body.agent_id : (current.agent_id as string | null)) ?? null;
+  if (body.agent_id) {
+    const { data: agent } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", body.agent_id)
+      .eq("client_id", params.clientId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!agent) return NextResponse.json({ error: "Choose an active agent in this organisation." }, { status: 400 });
+  }
+  if ((rescheduling || body.agent_id) && effectiveAgentId && nextStatus === "scheduled") {
+    const when = body.scheduled_at ?? (current.scheduled_at as string);
+    const start = new Date(when).getTime();
+    if (Number.isFinite(start)) {
+      const { data: agentViewings } = await supabase
+        .from("viewings")
+        .select("id, agent_id, scheduled_at")
+        .eq("client_id", params.clientId)
+        .eq("agent_id", effectiveAgentId)
+        .eq("status", "scheduled")
+        .gte("scheduled_at", new Date(start - 3 * 3600_000).toISOString())
+        .lte("scheduled_at", new Date(start + 3 * 3600_000).toISOString());
+      const warning = viewingOverlapWarning(
+        (agentViewings ?? []).map((row) => ({ id: row.id as string, agentId: row.agent_id as string, scheduledAt: row.scheduled_at as string })),
+        { agentId: effectiveAgentId, scheduledAt: when, ignoreId: viewingId }
+      );
+      if (warning && !body.confirm_overlap) return NextResponse.json({ error: warning, warning }, { status: 409 });
+    }
+  }
+
   const update: Record<string, unknown> = {};
   if (body.status !== undefined) update.status = body.status;
   if (body.scheduled_at !== undefined) update.scheduled_at = body.scheduled_at;
   if (body.feedback_text !== undefined) update.feedback_text = body.feedback_text;
   if (body.feedback_sentiment !== undefined) update.feedback_sentiment = body.feedback_sentiment;
   if (body.agent_id !== undefined) update.agent_id = body.agent_id;
+  if (body.confirmation_status !== undefined) update.confirmation_status = body.confirmation_status;
+  if (body.cancel_reason !== undefined) update.cancel_reason = body.cancel_reason;
+  if (body.follow_up_at !== undefined) update.follow_up_at = body.follow_up_at;
+  if (rescheduling) {
+    update.status = "scheduled";
+    update.confirmation_status = "rescheduled";
+    update.reminder_sent_at = null;
+    update.previous_scheduled_at = current.scheduled_at ?? null;
+    update.reschedule_count = Number(current.reschedule_count ?? 0) + 1;
+  }
 
   const becameCompleted =
     body.status === "completed" && (viewingRow as { status?: string }).status !== "completed";
@@ -283,14 +455,21 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     }
   }
 
-  const { data: updated, error } = await supabase
+  let saved = await supabase
     .from("viewings")
     .update(update)
     .eq("id", viewingId)
+    .eq("client_id", params.clientId)
     .select("*")
     .maybeSingle();
+  if (saved.error && (saved.error.code === "42703" || /schema cache|does not exist/i.test(saved.error.message))) {
+    const base = Object.fromEntries(Object.entries(update).filter(([key]) => !EXTENDED_VIEWING_COLUMNS.includes(key)));
+    saved = await supabase.from("viewings").update(base).eq("id", viewingId).eq("client_id", params.clientId).select("*").maybeSingle();
+  }
+  const { data: updated, error } = saved;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   if (becameCompleted) {
     await logViewingActivity({

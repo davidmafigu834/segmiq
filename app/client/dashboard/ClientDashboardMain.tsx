@@ -33,6 +33,7 @@ import type { WhatsAppHubReport } from "@/lib/whatsapp-hub-report";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import { PageHeader } from "@/components/ui";
 import { RealEstateDashboardWidgets } from "@/components/real-estate/RealEstateDashboardWidgets";
+import { AgencyAttention } from "@/components/real-estate/agency/AgencyAttention";
 import ClientDashboardSkeleton from "./ClientDashboardSkeleton";
 
 // ============================================
@@ -268,6 +269,7 @@ export default function ClientDashboardMain({
 
       {data.businessType === "real_estate" && (data.clientId || session.clientId) ? (
         <RealEstateDashboardWidgets clientId={(data.clientId || session.clientId) as string} />
+        <AgencyAttention clientId={(data.clientId || session.clientId) as string} />
       ) : null}
 
       {/* Quick navigation */}

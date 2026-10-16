@@ -66,14 +66,14 @@ describe("company navigation — real_estate", () => {
     assert.equal(nav.find((item) => item.id === "developments")?.href, "/client/developments");
     assert.equal(nav.find((item) => item.id === "viewings")?.href, "/client/viewings");
     assert.equal(nav.find((item) => item.id === "agents")?.href, "/client/team");
+    assert.equal(nav.find((item) => item.id === "commissions")?.href, "/client/commissions");
+    assert.equal(nav.find((item) => item.id === "whatsapp")?.section, "main");
     assert.deepEqual(getCompanyNavSectionOrder("real_estate"), [
-      "overview",
-      "sales",
-      "marketing",
-      "properties",
-      "team",
-      "compliance",
-      "operations",
+      "main",
+      "acquisition",
+      "buyer_sales",
+      "agency",
+      "more_tools",
       "system",
     ]);
   });

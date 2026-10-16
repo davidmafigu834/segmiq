@@ -1,20 +1,27 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  CalendarCheck,
   CalendarDays,
   BarChart3,
   Building2,
+  ClipboardList,
   Columns3,
   FileText,
   FolderKanban,
+  KeyRound,
   Handshake,
+  Home,
   Inbox,
   Landmark,
   LayoutDashboard,
   ListTodo,
   MessageSquare,
+  Search,
   Target,
   Trophy,
+  UserRound,
   UsersRound,
+  Wallet,
   Wrench,
 } from "lucide-react";
 import { isRealEstate, type BusinessType } from "@/lib/terminology";
@@ -39,9 +46,27 @@ export type SalesNavIconId =
   | "toolbox"
   | "listings"
   | "offers"
-  | "transactions";
+  | "transactions"
+  | "opportunities"
+  | "owners"
+  | "inspections"
+  | "mandates"
+  | "buyers"
+  | "matching"
+  | "viewings"
+  | "commissions";
 
 export type SalesNavMobileSlot = "primary" | "more";
+
+export type SalesNavSectionId =
+  | "sales"
+  | "tools"
+  | "main"
+  | "acquisition"
+  | "buyer_sales"
+  | "agency"
+  | "more_tools"
+  | "system";
 
 export type SalesNavItemConfig = {
   id: string;
@@ -49,7 +74,7 @@ export type SalesNavItemConfig = {
   /** Canonical href; dashboard may be rewritten for solo mode */
   href: string;
   icon: SalesNavIconId;
-  section: "sales" | "tools";
+  section: SalesNavSectionId;
   badgeKey?: SalesNavBadgeKey;
   /** Bottom nav vs More sheet (mobile) */
   mobileSlot?: SalesNavMobileSlot;
@@ -80,6 +105,14 @@ export const SALES_NAV_LUCIDE: Record<Exclude<SalesNavIconId, "whatsapp">, Lucid
   goals: Target,
   toolbox: Wrench,
   listings: Building2,
+  opportunities: Home,
+  owners: UserRound,
+  inspections: ClipboardList,
+  mandates: KeyRound,
+  buyers: UsersRound,
+  matching: Search,
+  viewings: CalendarCheck,
+  commissions: Wallet,
   offers: Handshake,
   transactions: Landmark,
 };
@@ -247,8 +280,13 @@ export const SALES_NAVIGATION: SalesNavItemConfig[] = [
 
 export const SALES_MOBILE_PRIMARY_IDS = ["dashboard", "pipeline", "whatsapp", "tasks"] as const;
 
-export function salesMobilePrimaryItems(items: SalesNavItemConfig[]): SalesNavItemConfig[] {
-  const order = SALES_MOBILE_PRIMARY_IDS as readonly string[];
+export function salesMobilePrimaryItems(
+  items: SalesNavItemConfig[],
+  businessType?: BusinessType | string | null
+): SalesNavItemConfig[] {
+  const order = isRealEstate(businessType)
+    ? (["dashboard", "whatsapp", "listings", "tasks"] as const)
+    : SALES_MOBILE_PRIMARY_IDS;
   return order
     .map((id) => items.find((i) => i.id === id))
     .filter((i): i is SalesNavItemConfig => Boolean(i));
@@ -278,18 +316,87 @@ export function resolveSalesNavItems(
     return item;
   });
   if (!isRealEstate(businessType)) return withoutSolarDelivery(items, options?.solarWorkflow);
+  const buyerItems: SalesNavItemConfig[] = [
+    {
+      id: "buyers",
+      label: "Buyers & Tenants",
+      href: "/sales/buyers",
+      icon: "buyers",
+      section: "sales",
+      mobileSlot: "more",
+      mobileLabel: "Buyers",
+      match: (p) => exactOrChild(p, "/sales/buyers"),
+    },
+    {
+      id: "matching",
+      label: "Property Matching",
+      href: "/sales/matching",
+      icon: "matching",
+      section: "sales",
+      mobileSlot: "more",
+      match: (p) => exactOrChild(p, "/sales/matching"),
+    },
+    {
+      id: "viewings",
+      label: "Viewings",
+      href: "/sales/viewings",
+      icon: "viewings",
+      section: "sales",
+      mobileSlot: "more",
+      match: (p) => exactOrChild(p, "/sales/viewings"),
+    },
+  ];
+  const acquisitionItems: SalesNavItemConfig[] = [
+    {
+      id: "opportunities",
+      label: "Property Opportunities",
+      href: "/sales/acquisitions",
+      icon: "opportunities",
+      section: "sales",
+      mobileSlot: "more",
+      match: (p) => exactOrChild(p, "/sales/acquisitions"),
+    },
+    {
+      id: "owners",
+      label: "Property Owners",
+      href: "/sales/owners",
+      icon: "owners",
+      section: "sales",
+      mobileSlot: "more",
+      match: (p) => exactOrChild(p, "/sales/owners"),
+    },
+    {
+      id: "inspections",
+      label: "Inspections",
+      href: "/sales/inspections",
+      icon: "inspections",
+      section: "sales",
+      mobileSlot: "more",
+      match: (p) => exactOrChild(p, "/sales/inspections"),
+    },
+    {
+      id: "mandates",
+      label: "Mandates",
+      href: "/sales/mandates",
+      icon: "mandates",
+      section: "sales",
+      mobileSlot: "more",
+      match: (p) => exactOrChild(p, "/sales/mandates"),
+    },
+  ];
   const listingsItem: SalesNavItemConfig = {
     id: "listings",
-    label: "Listings",
+    label: "Property Listings",
     href: "/sales/listings",
     icon: "listings",
     section: "sales",
-    mobileSlot: "more",
+    mobileSlot: "primary",
+    mobileLabel: "Properties",
     match: (p) => exactOrChild(p, "/sales/listings"),
   };
   const offersItem: SalesNavItemConfig = {
     id: "offers",
-    label: "Offers",
+      label: "Offers & Deals",
     href: "/sales/offers",
     icon: "offers",
     section: "sales",
@@ -298,26 +405,103 @@ export function resolveSalesNavItems(
   };
   const transactionsItem: SalesNavItemConfig = {
     id: "transactions",
-    label: "Transactions",
+      label: "My Transactions",
     href: "/sales/transactions",
     icon: "transactions",
     section: "sales",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/sales/transactions"),
   };
+  const commissionsItem: SalesNavItemConfig = {
+    id: "commissions",
+    label: "My Commissions",
+    href: "/sales/commissions",
+    icon: "commissions",
+    section: "sales",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/sales/commissions"),
+  };
   return items.flatMap((item) => {
     if (item.id === "quotes") return [];
     if (item.id === "projects" || item.id === "myWork") return [];
     if (item.id === "leads") {
-      return [{ ...item, label: "Inquiries" }, listingsItem, offersItem, transactionsItem];
+      return [
+        { ...item, label: "Inquiries" },
+        ...buyerItems,
+        ...acquisitionItems,
+        listingsItem,
+        offersItem,
+        transactionsItem,
+        commissionsItem,
+      ];
     }
     return [item];
+  }).map((item) => {
+    const section = REAL_ESTATE_AGENT_SECTIONS[item.id] ?? item.section;
+    const label = REAL_ESTATE_AGENT_LABELS[item.id];
+    return {
+      ...item,
+      section,
+      ...(label ? { label: label.label, mobileLabel: label.mobileLabel } : {}),
+    };
   });
 }
 
+const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
+  dashboard: "main",
+  whatsapp: "main",
+  tasks: "main",
+  opportunities: "acquisition",
+  owners: "acquisition",
+  inspections: "acquisition",
+  mandates: "acquisition",
+  buyers: "buyer_sales",
+  matching: "buyer_sales",
+  viewings: "buyer_sales",
+  offers: "buyer_sales",
+  listings: "agency",
+  transactions: "agency",
+  commissions: "agency",
+  pipeline: "more_tools",
+  socialInbox: "more_tools",
+  leads: "more_tools",
+  calendar: "more_tools",
+  command: "more_tools",
+  reports: "more_tools",
+  wonLost: "more_tools",
+  goals: "more_tools",
+  toolbox: "system",
+};
+
+const REAL_ESTATE_AGENT_LABELS: Record<string, { label: string; mobileLabel: string }> = {
+  dashboard: { label: "Dashboard", mobileLabel: "Home" },
+  whatsapp: { label: "Sales Inbox", mobileLabel: "Inbox" },
+  tasks: { label: "My Activities", mobileLabel: "Activities" },
+};
+
+export const REAL_ESTATE_SALES_SECTION_ORDER: SalesNavSectionId[] = [
+  "main",
+  "acquisition",
+  "buyer_sales",
+  "agency",
+  "more_tools",
+  "system",
+];
+
+export const SALES_NAV_SECTION_LABEL: Record<SalesNavSectionId, string> = {
+  sales: "Sales",
+  tools: "Tools",
+  main: "Main",
+  acquisition: "Property acquisition",
+  buyer_sales: "Buyer & tenant sales",
+  agency: "Agency",
+  more_tools: "More tools",
+  system: "System",
+};
+
 export function salesNavItemsBySection(
   items: SalesNavItemConfig[],
-  section: "sales" | "tools"
+  section: SalesNavSectionId
 ): SalesNavItemConfig[] {
   return items.filter((i) => i.section === section);
 }

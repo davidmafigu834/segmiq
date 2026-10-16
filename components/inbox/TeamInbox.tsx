@@ -577,6 +577,7 @@ export function TeamInbox({
               ) : realEstateHub ? (
                 <RealEstateIntelligenceRail
                   conversation={active}
+                  clientId={clientId}
                   open={intelOpenEffective}
                   refreshKey={contextRevision}
                   onUpdated={() => {

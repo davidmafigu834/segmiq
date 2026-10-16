@@ -312,6 +312,8 @@ export interface ListingRow {
   mandate_expiry_date: string | null;
   lease_term_months: number | null;
   external_reference: string | null;
+  /** Null for legacy rows that were never classified. */
+  property_category?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -180,7 +180,10 @@ export function RealEstatePipelineBoard({
           id: "inquiries",
           label: embedded ? "My inquiries" : "Active inquiries",
           value: String(activeCount),
-          supporting: "Open pipeline",
+          supporting:
+            data.unclassifiedCount > 0
+              ? `${data.unclassifiedCount} unclassified — not matched as buyers`
+              : "Open pipeline",
           icon: "enquiries",
         }}
       />

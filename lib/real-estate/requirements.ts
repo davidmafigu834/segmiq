@@ -98,10 +98,15 @@ export function formatRequirementSummary(fields: RequirementFields): string | nu
   return parts.join(" · ");
 }
 
+/** True only for an explicit buyer or tenant. Null is unclassified, not demand. */
 export function isDemandSide(dealSide: string | null | undefined): boolean {
-  return dealSide === "buy_side" || dealSide === "tenant_side" || !dealSide;
+  return dealSide === "buy_side" || dealSide === "tenant_side";
 }
 
 export function isSupplySide(dealSide: string | null | undefined): boolean {
   return dealSide === "sell_side" || dealSide === "landlord_side";
+}
+
+export function isUnclassifiedDealSide(dealSide: string | null | undefined): boolean {
+  return !isDemandSide(dealSide) && !isSupplySide(dealSide);
 }

@@ -8,7 +8,7 @@ export function DealSideBadge({
   dealSide?: string | null;
   className?: string;
 }) {
-  const label = dealSideBadgeLabel(dealSide);
+  const label = dealSide ? dealSideBadgeLabel(dealSide) : "UNCLASSIFIED";
   if (!label) return null;
   return (
     <span

@@ -32,6 +32,7 @@ import {
   type ReTxnAction,
 } from "@/lib/real-estate/transactions";
 import { cn } from "@/lib/ui/cn";
+import { TransactionOperations, type OperationsTab } from "./TransactionOperations";
 
 type StatusTab = "active" | "in_progress" | "completed";
 
@@ -129,6 +130,11 @@ export function TransactionsWorkspace({
     },
     [onSelectionChange]
   );
+
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("open");
+    if (requested && /^[0-9a-f-]{36}$/i.test(requested)) select(requested);
+  }, [select]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -374,6 +380,18 @@ type DetailPayload = {
   contact: Record<string, unknown> | null;
 };
 
+type PanelTab = "overview" | OperationsTab | "history";
+
+const PANEL_TABS: Array<{ id: PanelTab; label: string }> = [
+  { id: "overview", label: "Overview" },
+  { id: "milestones", label: "Milestones" },
+  { id: "documents", label: "Documents" },
+  { id: "people", label: "Participants" },
+  { id: "activities", label: "Activities" },
+  { id: "commission", label: "Commission" },
+  { id: "history", label: "History" },
+];
+
 function TransactionDetailPanel({
   clientId,
   transactionId,
@@ -398,6 +416,7 @@ function TransactionDetailPanel({
   const [fallenReason, setFallenReason] = useState("");
   const [showFallen, setShowFallen] = useState(false);
   const [showDeposit, setShowDeposit] = useState(false);
+  const [panelTab, setPanelTab] = useState<PanelTab>("overview");
 
   async function load() {
     setLoading(true);
@@ -499,12 +518,36 @@ function TransactionDetailPanel({
         </IconButton>
       </div>
 
+      <nav
+        aria-label="Transaction sections"
+        className="flex shrink-0 gap-1 overflow-x-auto border-b border-sales-border-subtle px-3 py-1.5"
+      >
+        {PANEL_TABS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            aria-current={panelTab === item.id ? "page" : undefined}
+            onClick={() => setPanelTab(item.id)}
+            className={cn(
+              "min-h-9 shrink-0 rounded-sales-md px-2.5 text-[12px] font-medium transition-colors",
+              panelTab === item.id
+                ? "bg-sales-surface-selected text-sales-text-primary"
+                : "text-sales-text-muted hover:bg-sales-surface-hover"
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
         {loading ? (
           <p className="text-[13px] text-sales-text-muted">Loading…</p>
         ) : error ? (
           <p className="text-[13px] text-sales-danger-fg">{error}</p>
-        ) : (
+        ) : panelTab !== "overview" && panelTab !== "history" ? (
+          <TransactionOperations clientId={clientId} transactionId={transactionId} tab={panelTab} closed={closed} />
+        ) : panelTab === "overview" ? (
           <>
             {!closed ? (
               <div className="flex flex-wrap gap-2">
@@ -682,16 +725,18 @@ function TransactionDetailPanel({
                 })}
               </ul>
             </section>
-
+          </>
+        ) : (
+          <>
             <section>
               <h3 className="mb-2 text-[12px] font-semibold text-sales-text-muted">
-                Activity
+                History
               </h3>
               {(data?.events ?? []).length === 0 ? (
                 <p className="text-[12px] text-sales-text-muted">No events yet.</p>
               ) : (
                 <ul className="space-y-2">
-                  {(data?.events ?? []).slice(0, 12).map((e) => (
+                  {(data?.events ?? []).map((e) => (
                     <li key={e.id} className="text-[12px]">
                       <p className="font-medium text-sales-text-primary">
                         {e.eventType.replace(/_/g, " ")}

@@ -9,7 +9,6 @@ import {
   defaultMilestonesForType,
   isTransactionActive,
   isTransactionTerminal,
-  listingStatusAfterTransactionComplete,
   RE_MILESTONE_LABEL,
   reTransactionStatusLabel,
   type ReMilestoneKey,
@@ -20,6 +19,15 @@ import {
   type ReTxnEventType,
 } from "@/lib/real-estate/transactions";
 import { seedAfterSalesForTransaction } from "@/lib/real-estate/after-sales-service";
+import { canViewDealCommission } from "@/lib/real-estate/deal-access";
+import { callAtomic } from "@/lib/real-estate/atomic-rpc";
+import {
+  closeListingForCompletedTransaction,
+  completionDecisionFor,
+  countActiveTransactions,
+  markOfferReservation,
+  syncListingAfterReservationChange,
+} from "@/lib/real-estate/listing-availability-service";
 
 export { assertRealEstateClient };
 
@@ -95,6 +103,26 @@ async function appendTxnEvent(opts: {
   });
 }
 
+/** Explicit collaboration on a transaction. Missing Phase 4 tables mean no extra access. */
+export async function isActiveDealParticipant(
+  clientId: string,
+  transactionId: string,
+  userId: string
+): Promise<boolean> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("real_estate_deal_participants")
+    .select("id")
+    .eq("client_id", clientId)
+    .eq("transaction_id", transactionId)
+    .eq("user_id", userId)
+    .eq("access_status", "active")
+    .is("ended_at", null)
+    .limit(1);
+  if (error) return false;
+  return (data ?? []).length > 0;
+}
+
 async function seedMilestones(
   transactionId: string,
   clientId: string,
@@ -168,6 +196,15 @@ export async function startOrGetTransactionFromOffer(opts: {
         .maybeSingle()
     : { data: null };
 
+  const otherActive = await countActiveTransactions(opts.clientId, offer.listing_id as string);
+  if (otherActive > 0) {
+    return {
+      ok: false,
+      error: "This listing already has an active transaction. Resolve it before starting another.",
+      status: 409,
+    };
+  }
+
   const txnType = (listing?.transaction_type as ReTransactionType) || "sale";
   const agreed = Number(offer.current_offer_amount);
   const listingPct =
@@ -206,6 +243,13 @@ export async function startOrGetTransactionFromOffer(opts: {
     .select("*")
     .single();
 
+  if (error?.code === "23505" || (error && /idx_re_txn_one_active_per_listing/i.test(error.message))) {
+    return {
+      ok: false,
+      error: "This listing already has an active transaction. Resolve it before starting another.",
+      status: 409,
+    };
+  }
   if (error || !created) {
     return { ok: false, error: error?.message ?? "Failed to create transaction.", status: 500 };
   }
@@ -258,7 +302,29 @@ export async function listRealEstateTransactions(opts: {
     .limit(500);
 
   if (opts.scopeOwn || opts.actor.role === "SALESPERSON") {
-    query = query.eq("buyer_agent_id", opts.actor.id);
+    const { data: ownListings } = await supabase
+      .from("listings")
+      .select("id")
+      .eq("client_id", opts.clientId)
+      .eq("agent_id", opts.actor.id);
+    const ownIds = (ownListings ?? []).map((l) => l.id as string);
+    const { data: participantRows } = await supabase
+      .from("real_estate_deal_participants")
+      .select("transaction_id")
+      .eq("client_id", opts.clientId)
+      .eq("user_id", opts.actor.id)
+      .eq("access_status", "active")
+      .is("ended_at", null)
+      .not("transaction_id", "is", null)
+      .limit(250);
+    const participantTxnIds = [...new Set((participantRows ?? []).map((row) => row.transaction_id as string))];
+    const filters = [
+      `buyer_agent_id.eq.${opts.actor.id}`,
+      `listing_agent_id.eq.${opts.actor.id}`,
+    ];
+    if (ownIds.length) filters.push(`listing_id.in.(${ownIds.slice(0, 250).join(",")})`);
+    if (participantTxnIds.length) filters.push(`id.in.(${participantTxnIds.join(",")})`);
+    query = query.or(filters.join(","));
   } else if (opts.agentId) {
     query = query.eq("buyer_agent_id", opts.agentId);
   }
@@ -304,8 +370,15 @@ export async function listRealEstateTransactions(opts: {
     const status = r.status as ReTransactionStatus;
     const currency = (r.currency as string) || "USD";
     const agreed = Number(r.agreed_price);
-    const listingAmt = r.listing_agent_commission_amount != null ? Number(r.listing_agent_commission_amount) : null;
-    const sellingAmt = r.selling_agent_commission_amount != null ? Number(r.selling_agent_commission_amount) : null;
+    const showCommission = canViewDealCommission(opts.actor.role);
+    const listingAmt =
+      showCommission && r.listing_agent_commission_amount != null
+        ? Number(r.listing_agent_commission_amount)
+        : null;
+    const sellingAmt =
+      showCommission && r.selling_agent_commission_amount != null
+        ? Number(r.selling_agent_commission_amount)
+        : null;
     const total =
       listingAmt != null || sellingAmt != null
         ? (listingAmt ?? 0) + (sellingAmt ?? 0)
@@ -391,11 +464,20 @@ export async function getRealEstateTransactionDetail(opts: {
     .maybeSingle();
   if (!txn) return { ok: false, error: "Transaction not found.", status: 404 };
 
-  if (
-    opts.actor.role === "SALESPERSON" &&
-    txn.buyer_agent_id &&
-    txn.buyer_agent_id !== opts.actor.id
-  ) {
+  const { data: listingOwner } = await supabase
+    .from("listings")
+    .select("agent_id")
+    .eq("id", txn.listing_id as string)
+    .eq("client_id", opts.clientId)
+    .maybeSingle();
+  let participates =
+    txn.buyer_agent_id === opts.actor.id ||
+    txn.listing_agent_id === opts.actor.id ||
+    listingOwner?.agent_id === opts.actor.id;
+  if (!participates && opts.actor.role === "SALESPERSON") {
+    participates = await isActiveDealParticipant(opts.clientId, opts.transactionId, opts.actor.id);
+  }
+  if (opts.actor.role === "SALESPERSON" && !participates) {
     return { ok: false, error: "Forbidden.", status: 403 };
   }
 
@@ -416,17 +498,29 @@ export async function getRealEstateTransactionDetail(opts: {
         .from("listings")
         .select("id, address, suburb, price, status, transaction_type, external_reference")
         .eq("id", txn.listing_id as string)
+        .eq("client_id", opts.clientId)
         .maybeSingle(),
       supabase
         .from("contacts")
         .select("id, name, phone, email")
         .eq("id", txn.contact_id as string)
+        .eq("client_id", opts.clientId)
         .maybeSingle(),
     ]);
 
+  const visibleTxn = { ...txn };
+  if (!canViewDealCommission(opts.actor.role)) {
+    visibleTxn.listing_agent_commission_pct = null;
+    visibleTxn.selling_agent_commission_pct = null;
+    visibleTxn.listing_agent_commission_amount = null;
+    visibleTxn.selling_agent_commission_amount = null;
+    visibleTxn.commission_notes = null;
+    visibleTxn.commission_settled_at = null;
+  }
+
   return {
     ok: true,
-    transaction: txn,
+    transaction: visibleTxn,
     milestones: (milestones ?? []).map((m) => ({
       id: m.id as string,
       key: m.milestone_key as ReMilestoneKey,
@@ -463,13 +557,42 @@ export async function updateTransactionMilestone(opts: {
   const supabase = createAdminClient();
   const { data: txn } = await supabase
     .from("real_estate_transactions")
-    .select("id, status")
+    .select("id, status, listing_id, buyer_agent_id, listing_agent_id")
     .eq("id", opts.transactionId)
     .eq("client_id", opts.clientId)
     .maybeSingle();
   if (!txn) return { ok: false, error: "Transaction not found.", status: 404 };
   if (isTransactionTerminal(txn.status as ReTransactionStatus)) {
     return { ok: false, error: "Transaction is closed.", status: 400 };
+  }
+  const { data: milestone } = await supabase
+    .from("real_estate_transaction_milestones")
+    .select("*")
+    .eq("id", opts.milestoneId)
+    .eq("transaction_id", opts.transactionId)
+    .eq("client_id", opts.clientId)
+    .maybeSingle();
+  if (!milestone) return { ok: false, error: "Milestone not found.", status: 404 };
+
+  const manager = opts.actor.role === "CLIENT_MANAGER" || opts.actor.role === "SUPER_ADMIN";
+  if (!manager) {
+    if (opts.actor.role !== "SALESPERSON") return { ok: false, error: "Forbidden.", status: 403 };
+    if (milestone.milestone_key === "commission_settled") {
+      return { ok: false, error: "Only a manager or finance can settle commission.", status: 403 };
+    }
+    const { data: listingOwner } = await supabase
+      .from("listings")
+      .select("agent_id")
+      .eq("id", txn.listing_id as string)
+      .eq("client_id", opts.clientId)
+      .maybeSingle();
+    const participates =
+      txn.buyer_agent_id === opts.actor.id ||
+      txn.listing_agent_id === opts.actor.id ||
+      listingOwner?.agent_id === opts.actor.id ||
+      milestone.assigned_to_id === opts.actor.id ||
+      (await isActiveDealParticipant(opts.clientId, opts.transactionId, opts.actor.id));
+    if (!participates) return { ok: false, error: "Forbidden.", status: 403 };
   }
 
   const patch: Record<string, unknown> = {
@@ -549,6 +672,33 @@ export async function mutateRealEstateTransaction(opts: {
     .maybeSingle();
   if (!txn) return { ok: false, error: "Transaction not found.", status: 404 };
 
+  const { data: listingOwner } = await supabase
+    .from("listings")
+    .select("agent_id")
+    .eq("id", txn.listing_id as string)
+    .eq("client_id", opts.clientId)
+    .maybeSingle();
+  let participates =
+    txn.buyer_agent_id === opts.actor.id ||
+    txn.listing_agent_id === opts.actor.id ||
+    listingOwner?.agent_id === opts.actor.id;
+  if (!participates && opts.actor.role === "SALESPERSON") {
+    participates = await isActiveDealParticipant(opts.clientId, opts.transactionId, opts.actor.id);
+  }
+  if (opts.actor.role === "SALESPERSON" && !participates) {
+    return { ok: false, error: "Forbidden.", status: 403 };
+  }
+
+  if (opts.actor.role !== "SALESPERSON" && opts.actor.role !== "CLIENT_MANAGER" && opts.actor.role !== "SUPER_ADMIN") {
+    return { ok: false, error: "Forbidden.", status: 403 };
+  }
+  if (
+    (opts.action === "fallen_through" && txn.status === "fallen_through") ||
+    (opts.action === "cancel" && txn.status === "cancelled")
+  ) {
+    return { ok: true, transaction: txn };
+  }
+
   const status = txn.status as ReTransactionStatus;
   const patch: Record<string, unknown> = {};
   let eventType: ReTxnEventType = "NOTE_ADDED";
@@ -581,31 +731,55 @@ export async function mutateRealEstateTransaction(opts: {
       break;
     }
     case "complete": {
+      if (status === "completed") {
+        await closeListingForCompletedTransaction({
+          clientId: opts.clientId,
+          listingId: txn.listing_id as string,
+          transactionType: txn.transaction_type as ReTransactionType,
+          actorId: opts.actor.id,
+          transactionId: opts.transactionId,
+          offerId: (txn.offer_id as string | null) ?? null,
+        });
+        if (txn.offer_id) await markOfferReservation(txn.offer_id as string, opts.clientId, false);
+        return { ok: true, transaction: txn };
+      }
       if (!canTransitionTransaction(status, "completed")) {
         return { ok: false, error: "Cannot complete this transaction.", status: 400 };
       }
+      const { data: listingRow } = await supabase
+        .from("listings")
+        .select("status")
+        .eq("id", txn.listing_id as string)
+        .eq("client_id", opts.clientId)
+        .maybeSingle();
+      const { data: agreementMilestone } = await supabase
+        .from("real_estate_transaction_milestones")
+        .select("status")
+        .eq("transaction_id", opts.transactionId)
+        .eq("milestone_key", "agreement_signed")
+        .maybeSingle();
+      const agreementRecorded =
+        Boolean(txn.agreement_signed_at) ||
+        agreementMilestone?.status === "done" ||
+        agreementMilestone?.status === "skipped";
+      const otherActive = await countActiveTransactions(
+        opts.clientId,
+        txn.listing_id as string,
+        opts.transactionId
+      );
+      const completion = completionDecisionFor({
+        transactionType: txn.transaction_type as ReTransactionType,
+        listingStatus: (listingRow?.status as string | null) ?? null,
+        otherActiveTransactionCount: otherActive,
+        agreementRecorded,
+        alreadyCompleted: false,
+      });
+      if (!completion.ok) return completion;
       const now = new Date().toISOString();
       patch.status = "completed";
       patch.completed_at = now;
       eventType = "COMPLETION_RECORDED";
       note = "Transaction completed";
-
-      const listingTarget = listingStatusAfterTransactionComplete(
-        txn.transaction_type as ReTransactionType
-      );
-      await supabase
-        .from("listings")
-        .update({ status: listingTarget })
-        .eq("id", txn.listing_id as string)
-        .eq("client_id", opts.clientId);
-
-      if (txn.lead_id) {
-        await supabase
-          .from("leads")
-          .update({ status: "WON" })
-          .eq("id", txn.lead_id as string)
-          .eq("client_id", opts.clientId);
-      }
       break;
     }
     case "fallen_through": {
@@ -645,6 +819,9 @@ export async function mutateRealEstateTransaction(opts: {
       break;
     }
     case "update_commission": {
+      if (!canViewDealCommission(opts.actor.role)) {
+        return { ok: false, error: "Commission changes are limited to managers.", status: 403 };
+      }
       const agreed = Number(txn.agreed_price);
       const listingPct = opts.listingPct ?? (txn.listing_agent_commission_pct as number | null);
       const sellingPct = opts.sellingPct ?? (txn.selling_agent_commission_pct as number | null);
@@ -675,46 +852,131 @@ export async function mutateRealEstateTransaction(opts: {
       return { ok: false, error: "Unknown action.", status: 400 };
   }
 
-  const { data: updated, error } = await supabase
+  const finishing = opts.action === "complete" || opts.action === "fallen_through" || opts.action === "cancel";
+  if (finishing) {
+    const atomic = await callAtomic<{ transaction: Record<string, unknown>; idempotent: boolean }>(
+      "re_finish_transaction",
+      {
+        p_client_id: opts.clientId,
+        p_transaction_id: opts.transactionId,
+        p_action: opts.action,
+        p_reason: opts.action === "complete" ? null : opts.reason ?? null,
+        p_actor_id: opts.actor.id,
+      }
+    );
+    if (atomic.kind === "error") return { ok: false, error: atomic.error, status: atomic.status };
+    if (atomic.kind === "ok") {
+      const finished = atomic.data.transaction;
+      if (!atomic.data.idempotent) {
+        await afterTransactionChange(finished, true);
+      }
+      return { ok: true, transaction: finished };
+    }
+  }
+
+  let updateQuery = supabase
     .from("real_estate_transactions")
     .update(patch)
     .eq("id", opts.transactionId)
-    .eq("client_id", opts.clientId)
-    .select("*")
-    .single();
+    .eq("client_id", opts.clientId);
+  if (patch.status) updateQuery = updateQuery.eq("status", status);
+  const { data: updated, error } = await updateQuery.select("*").maybeSingle();
+  if (!updated && patch.status) {
+    const { data: current } = await supabase
+      .from("real_estate_transactions")
+      .select("*")
+      .eq("id", opts.transactionId)
+      .eq("client_id", opts.clientId)
+      .maybeSingle();
+    if (current && opts.action === "complete" && current.status === "completed") {
+      return { ok: true, transaction: current };
+    }
+    return {
+      ok: false,
+      error: "This transaction was updated by someone else. Refresh and try again.",
+      status: 409,
+    };
+  }
 
   if (error || !updated) {
     return { ok: false, error: error?.message ?? "Update failed.", status: 500 };
   }
 
-  await appendTxnEvent({
-    transactionId: opts.transactionId,
-    clientId: opts.clientId,
-    eventType,
-    note,
-    createdBy: opts.actor.id,
-  });
-
-  if (opts.action === "complete") {
-    await seedAfterSalesForTransaction({
-      clientId: opts.clientId,
-      transaction: updated,
-      actor: opts.actor,
-    });
-  }
-
-  if (txn.lead_id && (opts.action === "complete" || opts.action === "fallen_through")) {
-    await logReActivity({
-      leadId: txn.lead_id as string,
-      clientId: opts.clientId,
-      actor: { id: opts.actor.id, name: opts.actor.name, role: opts.actor.role },
-      summary: note ?? opts.action,
-      kind: "stage_changed",
-      extra: { transaction_id: opts.transactionId, action: opts.action },
-    });
-  }
-
+  await afterTransactionChange(updated, false);
   return { ok: true, transaction: updated };
+
+  // Status, listing, offer and commission writes already happened inside
+  // re_finish_transaction when `atomic` is true.
+  async function afterTransactionChange(updatedRow: Record<string, unknown>, atomic: boolean) {
+    if (!txn) return;
+    if (!atomic) {
+      await appendTxnEvent({
+        transactionId: opts.transactionId,
+        clientId: opts.clientId,
+        eventType,
+        note,
+        createdBy: opts.actor.id,
+      });
+    }
+
+    if (opts.action === "complete") {
+      if (!atomic) {
+        await closeListingForCompletedTransaction({
+          clientId: opts.clientId,
+          listingId: txn.listing_id as string,
+          transactionType: txn.transaction_type as ReTransactionType,
+          actorId: opts.actor.id,
+          transactionId: opts.transactionId,
+          offerId: (txn.offer_id as string | null) ?? null,
+        });
+        if (txn.offer_id) await markOfferReservation(txn.offer_id as string, opts.clientId, false);
+        const { invalidateListingMatchNotifications } = await import("@/lib/real-estate/buyer-sales-service");
+        await invalidateListingMatchNotifications(opts.clientId, txn.listing_id as string, "listing_closed");
+      }
+      if (txn.lead_id) {
+        await supabase
+          .from("leads")
+          .update({ status: "WON" })
+          .eq("id", txn.lead_id as string)
+          .eq("client_id", opts.clientId);
+      }
+    }
+
+    if (!atomic && (opts.action === "fallen_through" || opts.action === "cancel")) {
+      if (txn.offer_id) await markOfferReservation(txn.offer_id as string, opts.clientId, false);
+      await syncListingAfterReservationChange({
+        clientId: opts.clientId,
+        listingId: txn.listing_id as string,
+        actorId: opts.actor.id,
+        reason: opts.action === "fallen_through" ? "transaction_fallen_through" : "transaction_cancelled",
+        offerId: (txn.offer_id as string | null) ?? null,
+        transactionId: opts.transactionId,
+        exceptOfferId: (txn.offer_id as string | null) ?? null,
+        exceptTransactionId: opts.transactionId,
+      });
+      const { cancelCommissionForFailedTransaction } = await import("@/lib/real-estate/agency-service");
+      await cancelCommissionForFailedTransaction(opts.clientId, opts.transactionId, opts.actor.id);
+    }
+
+    if (opts.action === "complete") {
+      await seedAfterSalesForTransaction({
+        clientId: opts.clientId,
+        transaction: updatedRow,
+        actor: opts.actor,
+      });
+    }
+
+    if (txn.lead_id && (opts.action === "complete" || opts.action === "fallen_through")) {
+      await logReActivity({
+        leadId: txn.lead_id as string,
+        clientId: opts.clientId,
+        actor: { id: opts.actor.id, name: opts.actor.name, role: opts.actor.role },
+        summary: note ?? opts.action,
+        kind: "stage_changed",
+        extra: { transaction_id: opts.transactionId, action: opts.action },
+      });
+    }
+  }
 }
 
 export async function listAgentTransactionActions(opts: {

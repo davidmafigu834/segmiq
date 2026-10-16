@@ -7,6 +7,7 @@ import { formatBudgetRange } from "@/lib/real-estate/requirements";
 
 export type ReIntelligencePanel = {
   identity: string;
+  dealSide: string | null;
   dealSideLabel: string | null;
   sourceLabel: string | null;
   linkedProperty: {
@@ -86,6 +87,7 @@ export async function loadReIntelligencePanel(opts: {
 
   return {
     identity: opts.customerName?.trim() || "Customer",
+    dealSide: ctx.dealSide,
     dealSideLabel: ctx.dealSideLabel,
     sourceLabel: ctx.attribution?.sourceLabel ?? null,
     linkedProperty: ctx.originatingListing

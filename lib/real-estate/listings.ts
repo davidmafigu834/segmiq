@@ -44,6 +44,10 @@ export const listingWriteSchema = z.object({
   mandate_expiry_date: z.string().nullable().optional(),
   lease_term_months: z.number().int().nullable().optional(),
   external_reference: z.string().max(200).nullable().optional(),
+  property_category: z
+    .enum(["house", "apartment", "townhouse", "residential_stand", "commercial", "industrial", "agricultural", "other"])
+    .nullable()
+    .optional(),
 });
 
 export const listingCreateSchema = listingWriteSchema.extend({

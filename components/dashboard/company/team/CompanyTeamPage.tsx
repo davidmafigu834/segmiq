@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CompanyKpiCard } from "../CompanyKpiCard";
 import { CompanyWorkspaceShell } from "../CompanyWorkspaceShell";
@@ -258,6 +259,14 @@ export function CompanyTeamPage({
             : "Manage your sales team, monitor performance, and coach where attention is needed."
         }
       />
+
+      {data.businessType === "real_estate" ? (
+        <p className="text-sm">
+          <Link href="/client/agency/team" className="font-semibold underline">
+            Hand over an agent&apos;s current work
+          </Link>
+        </p>
+      ) : null}
 
       <div className="grid w-full grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-5">
         {data.kpis.map((item) => (

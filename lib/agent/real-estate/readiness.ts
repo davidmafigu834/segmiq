@@ -1,5 +1,7 @@
 import {
   isDemandSide,
+  isSupplySide,
+  isUnclassifiedDealSide,
   requirementCompleteness,
   type RequirementFields,
 } from "@/lib/real-estate/requirements";
@@ -17,7 +19,17 @@ export function evaluateMatchReadiness(
   dealSide: string | null | undefined,
   fields: RequirementFields
 ): MatchReadiness {
-  if (!isDemandSide(dealSide)) {
+  if (isUnclassifiedDealSide(dealSide)) {
+    return {
+      readyToMatch: false,
+      statusLabel: "NOT_APPLICABLE",
+      missing: [],
+      summary: "This enquiry is unclassified.",
+      guidance:
+        "Ask whether they want to buy, rent, sell, or let a property before matching listings. Do not send buyer matches until the enquiry is classified.",
+    };
+  }
+  if (!isDemandSide(dealSide) || isSupplySide(dealSide)) {
     return {
       readyToMatch: false,
       statusLabel: "NOT_APPLICABLE",
