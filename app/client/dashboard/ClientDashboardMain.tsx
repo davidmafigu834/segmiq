@@ -268,8 +268,10 @@ export default function ClientDashboardMain({
       />
 
       {data.businessType === "real_estate" && (data.clientId || session.clientId) ? (
-        <RealEstateDashboardWidgets clientId={(data.clientId || session.clientId) as string} />
-        <AgencyAttention clientId={(data.clientId || session.clientId) as string} />
+        <>
+          <RealEstateDashboardWidgets clientId={(data.clientId || session.clientId) as string} />
+          <AgencyAttention clientId={(data.clientId || session.clientId) as string} />
+        </>
       ) : null}
 
       {/* Quick navigation */}

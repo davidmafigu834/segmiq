@@ -136,7 +136,7 @@ export function MandateActions({
 
       {mode === "renew" ? (
         <form className="space-y-2 rounded-md border border-sales-border p-3" onSubmit={(event) => void renew(event)}>
-          <p className="text-xs text-sales-text-secondary">A renewal is a new mandate. It needs the signed document and a manager's approval. Nothing renews automatically.</p>
+          <p className="text-xs text-sales-text-secondary">A renewal is a new mandate. It needs the signed document and a manager&apos;s approval. Nothing renews automatically.</p>
           <div className="grid gap-2 sm:grid-cols-3">
             <label className="text-xs">Start<input name="startDate" type="date" required className={`${fieldClass} mt-1`} defaultValue={String(mandate.expiry_date ?? "")} /></label>
             <label className="text-xs">Expiry<input name="expiryDate" type="date" required className={`${fieldClass} mt-1`} /></label>

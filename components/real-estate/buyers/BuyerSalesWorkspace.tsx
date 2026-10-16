@@ -60,6 +60,7 @@ function money(row: SearchRow): string {
 
 export function BuyerSalesWorkspace({ clientId, basePath }: { clientId: string; basePath: string }) {
   const [rows, setRows] = useState<SearchRow[]>([]);
+  const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [team, setTeam] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
