@@ -445,7 +445,7 @@ export async function getRealEstateOperationsReport(
     if (result.error) throw new Error(`Operations report ${label} failed: ${result.error.message}`);
   }
 
-  let viewings = viewingsRes.data;
+  let viewings: Array<Omit<NonNullable<typeof viewingsRes.data>[number], "client_id">> | null = viewingsRes.data;
   let viewingsTruncated = (viewingsRes.count ?? 0) > (viewingsRes.data?.length ?? 0);
   if (viewingsRes.error && /client_id|schema cache/i.test(viewingsRes.error.message)) {
     const { data: listingIds, error: listingError } = await supabase

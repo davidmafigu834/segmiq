@@ -25,7 +25,7 @@ export function isMissingFunctionError(error: RpcError): boolean {
 
 export function parseAtomicError(error: RpcError): { status: number; error: string } {
   const message = error?.message ?? "The change could not be saved.";
-  const match = /RE(4\d\d):\s*(.+)$/s.exec(message);
+  const match = /RE(4\d\d):\s*([\s\S]+)$/.exec(message);
   if (match) return { status: Number(match[1]), error: match[2].trim() };
   if (error?.code === "23505") {
     return { status: 409, error: "Another change already holds this listing. Refresh and try again." };

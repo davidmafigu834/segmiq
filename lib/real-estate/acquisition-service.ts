@@ -636,6 +636,7 @@ export async function saveInspection(input: {
     if (error || !data) return { ok: false as const, error: error?.message ?? "Could not save inspection", status: 500 };
     saved = data;
   }
+  if (!saved) return { ok: false as const, error: "Could not save inspection", status: 500 };
   const status = String(saved.status ?? "");
   if (status === "scheduled" || status === "confirmed" || status === "rescheduled") {
     if (row.stage === "new_opportunity" || row.stage === "owner_contacted" || row.stage === "owner_interested") {

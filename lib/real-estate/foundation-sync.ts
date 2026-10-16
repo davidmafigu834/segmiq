@@ -80,10 +80,10 @@ export async function mirrorBuyerRequirements(input: {
   if (input.budgetMax !== undefined) patch.budget_max = input.budgetMax;
   if (input.bedrooms !== undefined) patch.bedrooms = input.bedrooms;
   if (input.area !== undefined) {
-    const area = input.area.trim();
+    const area = (input.area ?? "").trim();
     patch.locations = area ? [area] : [];
   }
-  if (input.timeline !== undefined) patch.timeframe = input.timeline.trim() || null;
+  if (input.timeline !== undefined) patch.timeframe = (input.timeline ?? "").trim() || null;
   const { data: existing, error: readError } = await supabase
     .from("real_estate_buyer_searches")
     .select("id")

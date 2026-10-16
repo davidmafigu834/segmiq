@@ -41,14 +41,15 @@ export async function assertActivitySubject(input: {
   const supabase = createAdminClient();
   const table = TABLE_BY_SUBJECT[input.subjectType];
   const columns = input.subjectType === "viewing" ? "id, client_id, listing_id" : "id, client_id";
-  const { data, error } = await supabase
+  const { data: found, error } = await supabase
     .from(table)
     .select(columns)
     .eq("id", input.subjectId)
     .maybeSingle();
   if (error) return { ok: false, error: error.message };
+  const data = found as { client_id?: string | null; listing_id?: string } | null;
   if (!data) return { ok: false, error: "Related record was not found." };
-  const owner = (data.client_id as string | null) ?? null;
+  const owner = data.client_id ?? null;
   if (owner && owner !== input.clientId) {
     return { ok: false, error: "Related record belongs to another organisation." };
   }
