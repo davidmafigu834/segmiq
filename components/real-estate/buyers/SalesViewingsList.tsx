@@ -278,7 +278,7 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
             <div><dt className="text-[12px] text-sales-text-muted">Confirmation</dt><dd>{selected.confirmation_status?.replaceAll("_", " ") || "Not recorded"}</dd></div>
             <div><dt className="text-[12px] text-sales-text-muted">Customer</dt><dd>{selected.contact?.name || "Not available"}</dd></div>
             {selected.access === "full" && selected.contact?.phone ? <div><dt className="text-[12px] text-sales-text-muted">Phone</dt><dd>{selected.contact.phone}</dd></div> : null}
-            {selected.access === "listing_only" ? <p className="text-[13px] text-sales-text-secondary">You can see this appointment because of the listing. The customer's contact details stay with the agent who owns the search.</p> : null}
+            {selected.access === "listing_only" ? <p className="text-[13px] text-sales-text-secondary">You can see this appointment because of the listing. The customer contact details stay with the agent who owns the search.</p> : null}
             {selected.instructions ? <div><dt className="text-[12px] text-sales-text-muted">Instructions</dt><dd className="[overflow-wrap:anywhere]">{selected.instructions}</dd></div> : null}
             {selected.outcome ? <div><dt className="text-[12px] text-sales-text-muted">Outcome</dt><dd>{OUTCOME_LABEL[selected.outcome] ?? selected.outcome}</dd></div> : null}
           </dl>

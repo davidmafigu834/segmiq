@@ -322,7 +322,7 @@ export function MatchingWorkspace({ clientId, buyersPath }: { clientId: string; 
         description="Understand what your customers are looking for and where your property inventory falls short."
         action={<button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => void loadDemand()}>Load insights</button>}
       >
-        {definition ? <p className="text-[13px] text-sales-text-secondary">{definition}</p> : <p className="text-[13px] text-sales-text-muted">Load this when you need the agency's own demand gaps.</p>}
+        {definition ? <p className="text-[13px] text-sales-text-secondary">{definition}</p> : <p className="text-[13px] text-sales-text-muted">Load this when you need the recorded demand gaps for this agency.</p>}
         {demandIncomplete ? <RePartialNotice>This demand view is incomplete. The scan stopped at the existing listing or search limit.</RePartialNotice> : null}
         <ul className="mt-3 grid gap-2 md:grid-cols-2">
           {(gaps ?? []).map((gap) => (
