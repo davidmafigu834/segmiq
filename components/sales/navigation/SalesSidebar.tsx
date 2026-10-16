@@ -19,6 +19,8 @@ import {
 import { isRealEstate } from "@/lib/terminology";
 import { cn } from "@/lib/ui/cn";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { Tooltip } from "@/components/sales/ui/Tooltip";
+import { ReSidebarSections, ReWorkspaceContext } from "@/components/real-estate/navigation/ReSidebarSections";
 
 export function SalesSidebar({
   userName,
@@ -49,8 +51,9 @@ export function SalesSidebar({
   const wordmarkSrc =
     crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
   const items = resolveSalesNavItems(isSolo, businessType, { solarWorkflow });
+  const realEstate = isRealEstate(businessType);
   const groups: Array<{ id: SalesNavSectionId; label: string; items: ReturnType<typeof salesNavItemsBySection> }> =
-    isRealEstate(businessType)
+    realEstate
       ? REAL_ESTATE_SALES_SECTION_ORDER.map((id) => ({
           id,
           label: SALES_NAV_SECTION_LABEL[id],
@@ -137,6 +140,54 @@ export function SalesSidebar({
           ) : null}
         </div>
 
+        {realEstate ? (
+          <>
+            {collapsedMode ? null : <ReWorkspaceContext primary="Agent workspace" secondary="Real Estate" />}
+            <ReSidebarSections
+              groups={groups}
+              isActive={(item) => item.match(pathname)}
+              collapsedMode={collapsedMode}
+              storageKey={drawer ? "segmiq-re-nav-groups-sales-drawer" : "segmiq-re-nav-groups-sales"}
+              ariaLabel="Sales navigation"
+              renderItem={(item) => (
+                <SalesNavItem
+                  key={item.id}
+                  item={item}
+                  active={item.match(pathname)}
+                  badge={item.badgeKey ? badges[item.badgeKey] : undefined}
+                  collapsed={collapsedMode}
+                  onNavigate={onCloseMobile}
+                />
+              )}
+            />
+            <div className={cn("shrink-0 border-t border-[var(--sales-sidebar-border)] py-2", collapsedMode ? "px-2" : "px-3")}>
+              {collapsedMode ? (
+                <Tooltip label="Help & Support" side="right">
+                  <Link
+                    href="/sales/training"
+                    aria-label="Help & Support"
+                    data-course-target="sales-nav-training"
+                    className="mx-auto flex h-10 w-10 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+                    onClick={onCloseMobile}
+                  >
+                    <CircleHelp size={17} strokeWidth={1.75} aria-hidden />
+                  </Link>
+                </Tooltip>
+              ) : (
+                <Link
+                  href="/sales/training"
+                  data-course-target="sales-nav-training"
+                  className="flex h-10 items-center gap-2.5 rounded-[8px] px-3 text-[13px] font-medium text-[var(--sales-sidebar-text)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+                  onClick={onCloseMobile}
+                >
+                  <CircleHelp size={17} strokeWidth={1.75} className="shrink-0 text-current" aria-hidden />
+                  Help & Support
+                  <span className="sr-only"> — Training</span>
+                </Link>
+              )}
+            </div>
+          </>
+        ) : (
         <nav
           className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pb-3"
           aria-label="Sales navigation"
@@ -188,6 +239,7 @@ export function SalesSidebar({
             </div>
           ))}
         </nav>
+        )}
 
         {drawer ? (
           <Link

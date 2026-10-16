@@ -21,6 +21,8 @@ import {
 } from "@/lib/sales/navigation/company-nav-config";
 import { displaySalesName } from "@/lib/sales/navigation/sales-nav-config";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { ReSidebarSections, ReWorkspaceContext } from "@/components/real-estate/navigation/ReSidebarSections";
+import { isRealEstate } from "@/lib/terminology";
 import { cn } from "@/lib/ui/cn";
 
 function NavIcon({
@@ -120,6 +122,7 @@ function CompanyNavItem({
  * (wordmark header, sectioned nav, help link, profile only in mobile drawer).
  */
 export function CompanySidebar({
+  companyName,
   userName,
   userRoleLabel = "Company Manager",
   avatarUrl,
@@ -129,7 +132,7 @@ export function CompanySidebar({
   collapsed = false,
   onToggleCollapsed,
 }: {
-  /** @deprecated kept for call-site compatibility; identity lives in page content */
+  /** Shown as workspace context in the Real Estate sidebar only. */
   companyName?: string;
   companyLogoUrl?: string | null;
   userName: string;
@@ -148,6 +151,7 @@ export function CompanySidebar({
     crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
   const navigation = getCompanyNavigation(businessType, { solarWorkflow });
   const sectionOrder = getCompanyNavSectionOrder(businessType);
+  const realEstate = isRealEstate(businessType);
 
   const badges: Partial<Record<CompanyNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
@@ -223,6 +227,57 @@ export function CompanySidebar({
           ) : null}
         </div>
 
+        {realEstate ? (
+          <>
+            {collapsedMode ? null : (
+              <ReWorkspaceContext primary={companyName?.trim() || "Your agency"} secondary="Real Estate · Manager" />
+            )}
+            <ReSidebarSections
+              groups={sectionOrder.map((sectionId) => ({
+                id: sectionId,
+                label: COMPANY_NAV_SECTION_LABEL[sectionId],
+                items: companyNavBySection(navigation, sectionId),
+              }))}
+              isActive={(item) => item.match(pathname)}
+              collapsedMode={collapsedMode}
+              storageKey={drawer ? "segmiq-re-nav-groups-company-drawer" : "segmiq-re-nav-groups-company"}
+              ariaLabel="Company navigation"
+              renderItem={(item) => (
+                <CompanyNavItem
+                  key={item.id}
+                  item={item}
+                  active={item.match(pathname)}
+                  badge={item.badgeKey ? badges[item.badgeKey] : undefined}
+                  collapsed={collapsedMode}
+                  onNavigate={onCloseMobile}
+                />
+              )}
+            />
+            <div className={cn("shrink-0 border-t border-[var(--sales-sidebar-border)] py-2", collapsedMode ? "px-2" : "px-3")}>
+              {collapsedMode ? (
+                <Tooltip label="Help & Support" side="right">
+                  <Link
+                    href="/client/settings/profile"
+                    aria-label="Help & Support"
+                    className="mx-auto flex h-10 w-10 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+                    onClick={onCloseMobile}
+                  >
+                    <CircleHelp size={17} strokeWidth={1.75} aria-hidden />
+                  </Link>
+                </Tooltip>
+              ) : (
+                <Link
+                  href="/client/settings/profile"
+                  className="flex h-10 items-center gap-2.5 rounded-[8px] px-3 text-[13px] font-medium text-[var(--sales-sidebar-text)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+                  onClick={onCloseMobile}
+                >
+                  <CircleHelp size={17} strokeWidth={1.75} className="shrink-0 text-current" aria-hidden />
+                  Help & Support
+                </Link>
+              )}
+            </div>
+          </>
+        ) : (
         <nav
           className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pb-3"
           aria-label="Company navigation"
@@ -276,6 +331,7 @@ export function CompanySidebar({
             );
           })}
         </nav>
+        )}
 
         {drawer ? (
           <Link

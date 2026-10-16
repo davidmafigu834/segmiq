@@ -110,6 +110,14 @@ export function BuyerSalesWorkspace({ clientId, basePath }: { clientId: string; 
     void load();
   }, [clientId, intent, stage, followUp, location]);
 
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("new") !== "1") return;
+    setOpen(true);
+    url.searchParams.delete("new");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
+
   const people = useMemo(() => {
     const groups = new Map<string, SearchRow[]>();
     for (const row of rows) {

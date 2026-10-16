@@ -1,5 +1,14 @@
 [
   {
+    "date": "2026-10-16",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "Segmiq CRM",
+    "design_system": "design.md",
+    "enrichment": "none",
+    "brief": "Real Estate UI Phase 1: agent Today's work + manager Agency overview, grouped RE sidebar, RE mobile menu/header/bottom nav, shared RE primitives (sections, stat cards, work rows, sheets, action menus, states)"
+  },
+  {
     "date": "2026-09-21",
     "macrostructure": "Workbench",
     "theme": "Segmiq CRM",

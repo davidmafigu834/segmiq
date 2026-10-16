@@ -155,7 +155,14 @@ function visitStorageKey(userHint: string): string {
   return `${VISIT_KEY}:${userHint}`;
 }
 
-export function SalesCopilotDailyWorkspace({ firstName }: { firstName: string }) {
+export function SalesCopilotDailyWorkspace({
+  firstName,
+  embedded = false,
+}: {
+  firstName: string;
+  /** The page owns the h1 (Real Estate dashboard); render a section heading instead. */
+  embedded?: boolean;
+}) {
   const router = useRouter();
   const { toast } = useSalesToast();
   const headingId = useId();
@@ -331,10 +338,18 @@ export function SalesCopilotDailyWorkspace({ firstName }: { firstName: string })
 
   return (
     <section className="sales-copilot-daily" aria-labelledby={headingId}>
-      <p className="sales-copilot-greeting">{loading ? "Loading your sales today" : greeting}</p>
-      <h1 id={headingId} className="sales-copilot-title">
-        Your sales today
-      </h1>
+      {embedded ? (
+        <h2 id={headingId} className="text-[15px] font-semibold leading-tight tracking-[-0.01em] text-sales-text-primary">
+          Sales Copilot
+        </h2>
+      ) : (
+        <>
+          <p className="sales-copilot-greeting">{loading ? "Loading your sales today" : greeting}</p>
+          <h1 id={headingId} className="sales-copilot-title">
+            Your sales today
+          </h1>
+        </>
+      )}
 
       {loading ? (
         <div className="sales-copilot-skeleton" aria-hidden>

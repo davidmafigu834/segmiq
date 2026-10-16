@@ -60,8 +60,9 @@ function SalesDashboardInner({
   const legacy = data.legacy;
   const { openLogSheet, logSheetProps } = useSalesLogSheet();
   const { sheet } = logSheetProps(legacy.allActiveLeads);
-  const { openAddHubSheet } = useAddHubSheet();
   const isRealEstate = Boolean(data.realEstate && data.clientId);
+  const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
+  const { hubSheet } = addHubSheetProps(legacy.assignmentMode ?? "direct", { realEstate: isRealEstate });
   const roleLabel = isRealEstate ? "Agent" : "Sales Executive";
 
   const performance = {
@@ -110,10 +111,16 @@ function SalesDashboardInner({
             userRoleLabel={roleLabel}
             realEstate
             toolbar
+            showQuickActions={false}
             demoGuest={demoGuest}
           />
-          <SalesCopilotDailyWorkspace firstName={firstName} />
-          <AgentDailyWorkspace clientId={data.clientId!} data={data.realEstate!} />
+          <AgentDailyWorkspace
+            clientId={data.clientId!}
+            data={data.realEstate!}
+            onAddInquiry={demoGuest ? undefined : openAddHubSheet}
+            onLogCall={demoGuest ? undefined : () => openLogSheet("")}
+            copilot={<SalesCopilotDailyWorkspace firstName={firstName} embedded />}
+          />
         </>
       ) : (
         <>
@@ -188,6 +195,7 @@ function SalesDashboardInner({
       )}
 
       {sheet}
+      {hubSheet}
     </SalesAppShell>
   );
 }

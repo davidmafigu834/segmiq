@@ -15,7 +15,9 @@ import { SiWhatsapp } from "react-icons/si";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { useSalesMobileChrome } from "@/components/sales/navigation/SalesMobileChromeContext";
 import {
+  REAL_ESTATE_SALES_SECTION_ORDER,
   resolveSalesNavItems,
+  SALES_NAV_SECTION_LABEL,
   salesMobileMoreItems,
   salesNavItemsBySection,
   SALES_NAV_LUCIDE,
@@ -24,6 +26,12 @@ import {
 } from "@/lib/sales/navigation/sales-nav-config";
 import { cn } from "@/lib/ui/cn";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { isRealEstate } from "@/lib/terminology";
+import {
+  ReMobileMenuSheet,
+  type ReMenuGroup,
+  type ReMenuItem,
+} from "@/components/real-estate/navigation/ReMobileMenuSheet";
 
 function RowIcon({ icon }: { icon: SalesNavIconId }) {
   if (icon === "whatsapp") {
@@ -82,6 +90,53 @@ export function SalesMoreSheet({
   if (!moreOpen) return null;
 
   const items = resolveSalesNavItems(isSolo, businessType, { solarWorkflow });
+
+  if (isRealEstate(businessType)) {
+    const close = () => setMoreOpen(false);
+    const toMenuItem = (item: SalesNavItemConfig): ReMenuItem => ({
+      id: item.id,
+      label: item.label,
+      href: item.href,
+      icon: <RowIcon icon={item.icon} />,
+      active: item.match(pathname),
+      courseTarget: `sales-mobile-more-${item.id}`,
+    });
+    const groups: ReMenuGroup[] = REAL_ESTATE_SALES_SECTION_ORDER.filter((id) => id !== "main").map((id) => ({
+      id,
+      label: SALES_NAV_SECTION_LABEL[id],
+      items: salesNavItemsBySection(items, id).map(toMenuItem),
+    }));
+    const system = groups.find((g) => g.id === "system");
+    const accountItems: ReMenuItem[] = [
+      {
+        id: "training",
+        label: "Help & Support",
+        href: "/sales/training",
+        icon: <CircleHelp size={18} strokeWidth={1.75} aria-hidden />,
+        active: pathname.startsWith("/sales/training"),
+        courseTarget: "sales-mobile-more-training",
+      },
+      {
+        id: "profile",
+        label: "My profile",
+        href: "/sales/profile",
+        icon: <UserRound size={18} strokeWidth={1.75} aria-hidden />,
+        active: pathname.startsWith("/sales/profile"),
+      },
+    ];
+    if (system) system.items.push(...accountItems);
+    else groups.push({ id: "system", label: SALES_NAV_SECTION_LABEL.system, items: accountItems });
+
+    return (
+      <ReMobileMenuSheet
+        groups={groups}
+        onClose={close}
+        onQuickActions={onQuickActions}
+        description="Property, buyer and agency work."
+      />
+    );
+  }
+
   const more = salesMobileMoreItems(items);
   const salesMore = salesNavItemsBySection(more, "sales");
   const toolsMore = salesNavItemsBySection(more, "tools");

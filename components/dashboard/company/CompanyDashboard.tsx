@@ -18,6 +18,7 @@ import {
   ReAgentOvernightBanner,
   ReAgentTeamVisibilityTable,
 } from "./agent/ReAgentOvernightBanner";
+import { AgencyOverview } from "@/components/real-estate/agency/AgencyOverview";
 import type { CompanySalesDashboardData } from "./types";
 import type { UserRole } from "@/types";
 
@@ -51,6 +52,17 @@ export function CompanyDashboard({
       whatsappBadge={whatsappBadge}
       businessType={data.businessType}
     >
+      {data.businessType === "real_estate" ? (
+        <AgencyOverview
+          data={data}
+          unreadNotifications={unreadNotifications}
+          notificationRole={notificationRole}
+          userName={userName}
+          avatarUrl={avatarUrl}
+          fictional={fictional}
+        />
+      ) : (
+      <>
       <CompanyDashboardHeader
         unreadNotifications={unreadNotifications}
         notificationRole={notificationRole}
@@ -157,6 +169,8 @@ export function CompanyDashboard({
         />
         <CompanyRecentActivityCard items={data.recentActivity} />
       </div>
+      </>
+      )}
     </CompanyWorkspaceShell>
   );
 }

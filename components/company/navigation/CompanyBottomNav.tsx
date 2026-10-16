@@ -3,16 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Ellipsis, X } from "lucide-react";
+import { CircleHelp, Ellipsis, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import {
   COMPANY_NAV_LUCIDE,
+  COMPANY_NAV_SECTION_LABEL,
   companyMobileMoreItems,
   companyMobilePrimaryItems,
+  companyNavBySection,
   getCompanyNavigation,
+  getCompanyNavSectionOrder,
   type CompanyNavBadgeKey,
   type CompanyNavIconId,
 } from "@/lib/sales/navigation/company-nav-config";
+import { ReMobileMenuSheet } from "@/components/real-estate/navigation/ReMobileMenuSheet";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { isRealEstate } from "@/lib/terminology";
 import { cn } from "@/lib/ui/cn";
@@ -59,6 +63,12 @@ function NavIcon({
   );
 }
 
+function MenuIcon({ icon }: { icon: CompanyNavIconId }) {
+  if (icon === "whatsapp") return <SiWhatsapp size={18} color="currentColor" aria-hidden />;
+  const Icon = COMPANY_NAV_LUCIDE[icon];
+  return <Icon size={18} strokeWidth={1.75} aria-hidden />;
+}
+
 export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number }) {
   const pathname = usePathname();
   const { businessType, solarWorkflow } = useCompanyWorkspace();
@@ -66,6 +76,7 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
   const [moreOpen, setMoreOpen] = useState(false);
   const items = companyMobilePrimaryItems(navigation);
   const moreItems = companyMobileMoreItems(navigation);
+  const realEstate = isRealEstate(businessType);
   const badges: Partial<Record<CompanyNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
   };
@@ -82,14 +93,15 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
             const active = item.match(pathname);
             const badge = item.badgeKey ? badges[item.badgeKey] : undefined;
             const showBadge = badge != null && badge > 0;
-            const isWa = item.id === "whatsapp";
+            const isWa = item.id === "whatsapp" && !realEstate;
             return (
               <Link
                 key={item.id}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium transition-colors",
+                  "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 font-medium transition-colors",
+                  realEstate ? "gap-1 text-[11px]" : "text-[10px]",
                   active ? "text-sales-text-primary" : "text-sales-text-secondary"
                 )}
               >
@@ -117,10 +129,12 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
           <button
             type="button"
             className={cn(
-              "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium transition-colors",
+              "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 font-medium transition-colors",
+              realEstate ? "gap-1 text-[11px]" : "text-[10px]",
               moreOpen ? "text-sales-text-primary" : "text-sales-text-secondary"
             )}
-            aria-label={isRealEstate(businessType) ? "Menu" : "More"}
+            aria-label={realEstate ? "Menu" : "More"}
+            aria-haspopup="dialog"
             aria-expanded={moreOpen}
             onClick={() => setMoreOpen(true)}
           >
@@ -139,12 +153,51 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
                 aria-hidden
               />
             </span>
-            <span className="leading-none">{isRealEstate(businessType) ? "Menu" : "More"}</span>
+            <span className="leading-none">{realEstate ? "Menu" : "More"}</span>
           </button>
         </div>
       </nav>
 
-      {moreOpen ? (
+      {moreOpen && realEstate ? (
+        <ReMobileMenuSheet
+          onClose={() => setMoreOpen(false)}
+          description="Property, buyer and agency work."
+          groups={[
+            ...getCompanyNavSectionOrder(businessType)
+              .filter((id) => id !== "main")
+              .map((id) => ({
+                id,
+                label: COMPANY_NAV_SECTION_LABEL[id],
+                items: companyNavBySection(navigation, id).map((item) => ({
+                  id: item.id,
+                  label: item.label,
+                  href: item.href,
+                  icon: <MenuIcon icon={item.icon} />,
+                  active: item.match(pathname),
+                })),
+              }))
+              .map((group) =>
+                group.id === "system"
+                  ? {
+                      ...group,
+                      items: [
+                        ...group.items,
+                        {
+                          id: "help",
+                          label: "Help & Support",
+                          href: "/client/settings/profile",
+                          icon: <CircleHelp size={18} strokeWidth={1.75} aria-hidden />,
+                          active: false,
+                        },
+                      ],
+                    }
+                  : group
+              ),
+          ]}
+        />
+      ) : null}
+
+      {moreOpen && !realEstate ? (
         <>
           <button
             type="button"

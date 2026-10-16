@@ -75,6 +75,14 @@ export function AcquisitionWorkspace({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId, stage, intent]);
 
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("new") !== "1") return;
+    setOpen(true);
+    url.searchParams.delete("new");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
+
   const grouped = useMemo(() => {
     return ACQUISITION_STAGES.map((key) => ({
       key,

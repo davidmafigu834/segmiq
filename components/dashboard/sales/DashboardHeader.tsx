@@ -23,6 +23,7 @@ export function DashboardHeader({
   userRoleLabel = "Sales Executive",
   realEstate = false,
   toolbar = false,
+  showQuickActions = true,
   demoGuest = false,
 }: {
   firstName: string;
@@ -36,6 +37,8 @@ export function DashboardHeader({
   userRoleLabel?: string;
   realEstate?: boolean;
   toolbar?: boolean;
+  /** The Real Estate dashboard places its own create actions beside the page title. */
+  showQuickActions?: boolean;
   demoGuest?: boolean;
 }) {
   const greeting = `Good ${greetingPart()}, ${firstName}`;
@@ -58,7 +61,9 @@ export function DashboardHeader({
               {demoGuest ? null : <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />}
               <SalesThemeToggle />
             </div>
-            {demoGuest ? null : <SalesQuickActions onAddLead={onAddLead} onLogCall={onOpenLog} realEstate={realEstate} />}
+            {demoGuest || !showQuickActions ? null : (
+              <SalesQuickActions onAddLead={onAddLead} onLogCall={onOpenLog} realEstate={realEstate} />
+            )}
             <SalesProfileMenu
               userName={userName}
               userRoleLabel={userRoleLabel}

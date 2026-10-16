@@ -71,6 +71,7 @@ export function SalesBottomNav({
   const { setMoreOpen, moreOpen } = useSalesMobileChrome();
   const { businessType, solarWorkflow } = useCompanyWorkspace();
   const items = salesMobilePrimaryItems(resolveSalesNavItems(isSolo, businessType, { solarWorkflow }), businessType);
+  const realEstate = isRealEstate(businessType);
   const badges: Partial<Record<SalesNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
     tasks: tasksBadge,
@@ -87,7 +88,7 @@ export function SalesBottomNav({
           const active = item.match(pathname);
           const badge = item.badgeKey ? badges[item.badgeKey] : undefined;
           const showBadge = badge != null && badge > 0;
-          const isWa = item.id === "whatsapp";
+          const isWa = item.id === "whatsapp" && !realEstate;
           return (
             <Link
               key={item.id}
@@ -95,7 +96,8 @@ export function SalesBottomNav({
               aria-current={active ? "page" : undefined}
               data-course-target={`sales-mobile-nav-${item.id}`}
               className={cn(
-                "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium transition-colors",
+                "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 font-medium transition-colors",
+                realEstate ? "gap-1 text-[11px]" : "text-[10px]",
                 active ? "text-sales-text-primary" : "text-sales-text-secondary"
               )}
             >
@@ -127,10 +129,12 @@ export function SalesBottomNav({
         <button
           type="button"
           className={cn(
-            "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium transition-colors",
+            "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 font-medium transition-colors",
+            realEstate ? "gap-1 text-[11px]" : "text-[10px]",
             moreOpen ? "text-sales-text-primary" : "text-sales-text-secondary"
           )}
-          aria-label={isRealEstate(businessType) ? "Menu" : "More"}
+          aria-label={realEstate ? "Menu" : "More"}
+          aria-haspopup="dialog"
           aria-expanded={moreOpen}
           data-course-target="sales-mobile-nav-more"
           onClick={() => {
@@ -153,7 +157,7 @@ export function SalesBottomNav({
               aria-hidden
             />
           </span>
-          <span className="leading-none">{isRealEstate(businessType) ? "Menu" : "More"}</span>
+          <span className="leading-none">{realEstate ? "Menu" : "More"}</span>
         </button>
       </div>
     </nav>

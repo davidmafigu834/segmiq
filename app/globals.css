@@ -5982,3 +5982,70 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   color: #111b21 !important;
 }
 
+
+/* ── Real Estate workspace · Phase 1 UI tokens ─────────────────────────── */
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
+/* Scoped to sales/company shells and portalled overlays; values alias existing --sales-* tokens. */
+.sales-dashboard-premium,
+.sales-modal-premium,
+.sales-menu-surface {
+  --re-card-pad: 16px;
+  --re-section-gap: 16px;
+  --re-radius-card: var(--sales-radius-lg);
+  --re-radius-control: var(--sales-radius-sm);
+  --re-drawer-width: 500px;
+  --re-focus-ring: 0 0 0 2px var(--sales-surface), 0 0 0 4px var(--sales-text-primary);
+}
+
+@media (min-width: 640px) {
+  .sales-dashboard-premium,
+  .sales-modal-premium {
+    --re-card-pad: 20px;
+    --re-section-gap: 20px;
+  }
+}
+
+@media (min-width: 1100px) {
+  .sales-dashboard-premium {
+    --re-section-gap: 24px;
+  }
+}
+
+.re-focus:focus-visible {
+  outline: none;
+  box-shadow: var(--re-focus-ring);
+}
+
+@keyframes re-sheet-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@keyframes re-drawer-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@keyframes re-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.re-sheet-up,
+.re-sheet-full {
+  animation: re-sheet-up 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (min-width: 768px) {
+  .re-sheet-up,
+  .re-sheet-full {
+    animation-name: re-drawer-in;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .re-sheet-up,
+  .re-sheet-full {
+    animation: re-fade-in 120ms linear both;
+  }
+}

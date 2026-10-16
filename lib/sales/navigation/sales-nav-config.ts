@@ -494,7 +494,7 @@ export const SALES_NAV_SECTION_LABEL: Record<SalesNavSectionId, string> = {
   main: "Main",
   acquisition: "Property acquisition",
   buyer_sales: "Buyer & tenant sales",
-  agency: "Agency",
+  agency: "Agency operations",
   more_tools: "More tools",
   system: "System",
 };
