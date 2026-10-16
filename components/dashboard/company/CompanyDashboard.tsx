@@ -14,10 +14,6 @@ import { CompanyPipelineSnapshotCard } from "./CompanyPipelineSnapshotCard";
 import { CompanyDealsAtRiskCard } from "./CompanyDealsAtRiskCard";
 import { CompanyRevenueTrendCard } from "./CompanyRevenueTrendCard";
 import { CompanyRecentActivityCard } from "./CompanyRecentActivityCard";
-import {
-  ReAgentOvernightBanner,
-  ReAgentTeamVisibilityTable,
-} from "./agent/ReAgentOvernightBanner";
 import { AgencyOverview } from "@/components/real-estate/agency/AgencyOverview";
 import type { CompanySalesDashboardData } from "./types";
 import type { UserRole } from "@/types";
@@ -72,10 +68,6 @@ export function CompanyDashboard({
         fictional={fictional}
       />
 
-      {data.businessType === "real_estate" && data.reAgentOvernight ? (
-        <ReAgentOvernightBanner summary={data.reAgentOvernight} />
-      ) : null}
-
       <div className="layout:hidden">
         <CompanyFocusAreasCard signals={data.focusAreas} viewAllHref={data.focusAreasViewAllHref} />
       </div>
@@ -86,7 +78,7 @@ export function CompanyDashboard({
         ))}
       </div>
 
-      {data.businessType !== "real_estate" && data.workProjects ? (
+      {data.workProjects ? (
         <section className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] px-4 py-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <h2 className="text-[14px] font-semibold text-[var(--text-primary)]">Projects</h2>
@@ -149,10 +141,6 @@ export function CompanyDashboard({
       </div>
 
       <CompanyPipelineSnapshotCard stages={data.pipelineSnapshot} />
-
-      {data.businessType === "real_estate" && data.reAgentTeam?.length ? (
-        <ReAgentTeamVisibilityTable rows={data.reAgentTeam} />
-      ) : null}
 
       <div className="grid w-full grid-cols-1 items-start gap-2.5 lg:grid-cols-2 xl:grid-cols-3 layout:gap-3">
         <CompanyDealsAtRiskCard
