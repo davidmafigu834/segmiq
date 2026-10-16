@@ -20,7 +20,7 @@ export default async function Page({ params }: { params: { opportunityId: string
   const shell = await loadSalesShellProps(session);
   return (
     <SalesLayout breadcrumb="Sales / OPPORTUNITY" pageTitle="Opportunity" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Opportunity" title="Opportunity" description="Inspection, mandate and listing preparation.">
+      <SalesAppShell {...shell} breadcrumb="Sales / Opportunity" title="Opportunity" description="Inspection, mandate and listing preparation." showDefaultHeader={false}>
         <AcquisitionDetail
           clientId={session.clientId}
           opportunityId={params.opportunityId}

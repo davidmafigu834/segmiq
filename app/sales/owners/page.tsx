@@ -20,7 +20,7 @@ export default async function Page() {
   const shell = await loadSalesShellProps(session);
   return (
     <SalesLayout breadcrumb="Sales / OWNERS" pageTitle="Property Owners" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Owners" title="Property Owners" description="Owners linked to your opportunities.">
+      <SalesAppShell {...shell} breadcrumb="Sales / Owners" title="Property Owners" description="Manage owner relationships and the properties they bring to your agency." showDefaultHeader={false}>
         <OwnerList clientId={session.clientId} basePath="/sales/owners" />
       </SalesAppShell>
     </SalesLayout>
