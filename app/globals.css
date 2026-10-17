@@ -1473,8 +1473,8 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
 
   .sales-dashboard-premium .wa-bubble-out,
   .wa-hub-premium .wa-bubble-out {
-    background: var(--sales-brand-soft) !important;
-    border-color: var(--sales-brand-border) !important;
+    background: var(--sales-surface) !important;
+    border-color: var(--sales-border) !important;
     color: var(--sales-text-primary) !important;
   }
 
@@ -1926,17 +1926,11 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   .salesperson-wa-workspace.wa-hub-premium .wa-chat-wallpaper,
-  .sales-dashboard-premium .salesperson-wa-workspace .wa-chat-wallpaper {
-    background-color: #e5f2e6 !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' fill='none'%3E%3Ccircle cx='22' cy='28' r='1.6' fill='%23167a45' fill-opacity='.22'/%3E%3Ccircle cx='108' cy='46' r='7' stroke='%23167a45' stroke-opacity='.16'/%3E%3Cpath d='M156 24h12M162 18v12' stroke='%23167a45' stroke-opacity='.2' stroke-width='1.25'/%3E%3Cpath d='M48 96h16M40 112l16 10' stroke='%230b3b2e' stroke-opacity='.12' stroke-width='1.2'/%3E%3Ccircle cx='142' cy='118' r='2' fill='%23167a45' fill-opacity='.16'/%3E%3Cpath d='M78 162l9 9M87 162l-9 9' stroke='%23167a45' stroke-opacity='.16' stroke-width='1.2'/%3E%3Ccircle cx='176' cy='168' r='1.5' fill='%23167a45' fill-opacity='.2'/%3E%3Cpath d='M18 170h18' stroke='%23167a45' stroke-opacity='.16' stroke-width='1.2'/%3E%3C/svg%3E") !important;
-    background-size: 200px 200px !important;
-  }
-
+  .sales-dashboard-premium .salesperson-wa-workspace .wa-chat-wallpaper,
   html:not([data-crm-theme="light"]) .salesperson-wa-workspace.wa-hub-premium .wa-chat-wallpaper,
   html:not([data-crm-theme="light"]) .sales-dashboard-premium .salesperson-wa-workspace .wa-chat-wallpaper {
-    background-color: #071422 !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' fill='none'%3E%3Ccircle cx='22' cy='28' r='1.6' fill='%233ddc84' fill-opacity='.28'/%3E%3Ccircle cx='108' cy='46' r='7' stroke='%233ddc84' stroke-opacity='.18'/%3E%3Cpath d='M156 24h12M162 18v12' stroke='%233ddc84' stroke-opacity='.22' stroke-width='1.25'/%3E%3Cpath d='M48 96h16M40 112l16 10' stroke='%23ffffff' stroke-opacity='.1' stroke-width='1.2'/%3E%3Ccircle cx='142' cy='118' r='2' fill='%233ddc84' fill-opacity='.2'/%3E%3Cpath d='M78 162l9 9M87 162l-9 9' stroke='%233ddc84' stroke-opacity='.18' stroke-width='1.2'/%3E%3Ccircle cx='176' cy='168' r='1.5' fill='%233ddc84' fill-opacity='.24'/%3E%3Cpath d='M18 170h18' stroke='%23ffffff' stroke-opacity='.1' stroke-width='1.2'/%3E%3C/svg%3E") !important;
-    background-size: 200px 200px !important;
+    background-color: var(--sales-bg) !important;
+    background-image: none !important;
   }
 
   .salesperson-wa-workspace .wa-pipeline-stepper {
@@ -5609,23 +5603,12 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   }
 
   .salesperson-wa-workspace {
-    --sales-bg: #0b1014;
-    --sales-surface: #171f24;
-    --sales-surface-subtle: #242b30;
-    --sales-surface-hover: #242b30;
-    --sales-text-primary: #f5f7f8;
-    --sales-text-secondary: #99a6ad;
-    --sales-text-muted: #99a6ad;
-    --sales-border: #263137;
-    --sales-border-subtle: #263137;
-    --sales-brand: #d4ff4f;
-    --sales-brand-text: #101828;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
     overscroll-behavior: contain;
-    background: #0b1014 !important;
-    color: #f5f7f8;
+    background: var(--sales-bg) !important;
+    color: var(--sales-text-primary);
   }
 
   .sales-dashboard-premium:has(.salesperson-wa-workspace) .sales-mobile-top-bar {
@@ -5633,15 +5616,15 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   }
 
   .salesperson-wa-workspace .wa-conv-row-active {
-    background: transparent !important;
-    box-shadow: none !important;
+    background: var(--sales-surface-hover) !important;
+    box-shadow: inset 3px 0 0 var(--sales-text-primary) !important;
   }
 
   .salesperson-wa-workspace .wa-search {
     min-height: 44px;
     border-color: transparent;
     border-radius: 999px;
-    background: #242b30;
+    background: var(--sales-surface-subtle);
     padding: 0 0.875rem;
     box-shadow: none;
   }
@@ -5649,12 +5632,12 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   .salesperson-wa-workspace .wa-conv-row {
     min-height: 72px;
     padding: 12px 16px;
-    border-bottom-color: #263137;
+    border-bottom-color: var(--sales-border);
   }
 
   .salesperson-wa-workspace .wa-panel-header {
-    background: #171f24 !important;
-    border-bottom: 1px solid #263137 !important;
+    background: var(--sales-surface) !important;
+    border-bottom: 1px solid var(--sales-border) !important;
   }
 
   .salesperson-wa-workspace .wa-icon-btn,
@@ -5662,14 +5645,14 @@ html[data-marketing-theme="dark"] .auth-shell > main {
     border: 0 !important;
     border-radius: 999px !important;
     background: transparent !important;
-    color: #c5d0d6 !important;
+    color: var(--sales-text-secondary) !important;
   }
 
   .salesperson-wa-workspace .wa-icon-btn:hover,
   .salesperson-wa-workspace .wa-icon-btn-muted:hover {
     border: 0 !important;
-    background: #242b30 !important;
-    color: #f5f7f8 !important;
+    background: var(--sales-surface-hover) !important;
+    color: var(--sales-text-primary) !important;
   }
 
   .salesperson-wa-workspace .wa-msg {
@@ -5684,21 +5667,22 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   .salesperson-wa-workspace .wa-bubble-out {
     border: 0 !important;
     padding: 7px 10px 6px !important;
-    font-size: 17px;
-    line-height: 1.42;
-    color: #f5f7f8 !important;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--sales-text-primary) !important;
+    box-shadow: none;
     max-width: min(82%, 460px) !important;
   }
 
   .salesperson-wa-workspace .wa-bubble-in {
-    border-radius: 18px 18px 18px 5px !important;
-    background: #202C33 !important;
+    border-radius: 16px 16px 16px 4px !important;
+    background: var(--sales-surface-hover) !important;
   }
 
   .salesperson-wa-workspace .wa-bubble-out {
-    border-radius: 18px 18px 5px 18px !important;
-    background: #213A2C !important;
+    border-radius: 16px 16px 4px 16px !important;
+    background: var(--sales-surface) !important;
+    border: 1px solid var(--sales-border) !important;
   }
 
   .salesperson-wa-workspace .wa-msg-grouped .wa-bubble-in {
@@ -5715,21 +5699,21 @@ html[data-marketing-theme="dark"] .auth-shell > main {
 
   .salesperson-wa-workspace .wa-bubble-text {
     display: inline;
-    font-size: 17px !important;
+    font-size: 15px !important;
     font-weight: 430;
-    line-height: 1.42 !important;
+    line-height: 1.45 !important;
     letter-spacing: -0.011em;
-    color: #f5f7f8;
+    color: var(--sales-text-primary);
   }
 
   .salesperson-wa-workspace .wa-bubble-meta {
     float: right;
     margin: 6px 0 -2px 12px;
-    color: #8b9aa3;
+    color: var(--sales-text-muted);
   }
 
   .salesperson-wa-workspace .wa-bubble-meta span {
-    color: #8b9aa3 !important;
+    color: var(--sales-text-muted) !important;
     font-size: 12px !important;
     font-weight: 500;
     letter-spacing: 0.01em;
@@ -5742,7 +5726,7 @@ html[data-marketing-theme="dark"] .auth-shell > main {
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.01em;
-    color: #8b9aa3;
+    color: var(--sales-text-muted);
   }
 
   .salesperson-wa-workspace .wa-day-rule {
@@ -5759,22 +5743,22 @@ html[data-marketing-theme="dark"] .auth-shell > main {
 
   .salesperson-wa-workspace .wa-day-rule span {
     border-radius: 999px;
-    background: #171f24;
+    background: var(--sales-surface-subtle);
     padding: 4px 10px;
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.01em;
-    color: #99a6ad;
+    color: var(--sales-text-muted);
   }
 
   .salesperson-wa-workspace .wa-composer {
-    background: #0B141A !important;
-    border-top: 0 !important;
+    background: var(--sales-surface) !important;
+    border-top: 1px solid var(--sales-border) !important;
   }
 
   .salesperson-wa-workspace .wa-copilot-card {
-    background: #19262E !important;
-    border-color: rgba(255, 255, 255, 0.08) !important;
+    background: var(--sales-surface) !important;
+    border-color: var(--sales-border) !important;
     box-shadow: none !important;
   }
 
@@ -5782,7 +5766,7 @@ html[data-marketing-theme="dark"] .auth-shell > main {
     min-height: 44px;
     border: 0 !important;
     border-radius: 22px !important;
-    background: #242b30 !important;
+    background: var(--sales-surface-subtle) !important;
     box-shadow: none !important;
     padding: 10px 16px !important;
     font-size: 16px !important;
@@ -5790,12 +5774,12 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   }
 
   .salesperson-wa-workspace .wa-composer-input::placeholder {
-    color: #7d8b93;
+    color: var(--sales-text-muted);
   }
 
   .salesperson-wa-workspace .wa-composer-input:focus {
     border: 0 !important;
-    background: #2a3238 !important;
+    background: var(--sales-surface) !important;
     box-shadow: none !important;
   }
 
@@ -5803,18 +5787,18 @@ html[data-marketing-theme="dark"] .auth-shell > main {
     border: 0 !important;
     border-radius: 999px !important;
     background: transparent !important;
-    color: #c5d0d6 !important;
+    color: var(--sales-text-secondary) !important;
   }
 
   .salesperson-wa-workspace .wa-send-btn {
     border-radius: 999px !important;
-    background: #d4ff4f !important;
-    color: #101828 !important;
+    background: var(--sales-brand) !important;
+    color: var(--sales-brand-text) !important;
   }
 
   .salesperson-wa-workspace .wa-send-btn:disabled {
-    background: #242b30 !important;
-    color: #667077 !important;
+    background: var(--sales-surface-subtle) !important;
+    color: var(--sales-text-muted) !important;
     opacity: 1;
   }
 
@@ -5822,8 +5806,8 @@ html[data-marketing-theme="dark"] .auth-shell > main {
     margin: 0 10px 2px;
     border: 0 !important;
     border-radius: 12px;
-    background: #2a1d1d !important;
-    color: #f0b4ae !important;
+    background: var(--sales-danger-soft, var(--sales-surface-subtle)) !important;
+    color: var(--sales-danger, var(--sales-text-primary)) !important;
     padding: 7px 10px;
   }
 
@@ -5836,7 +5820,7 @@ html[data-marketing-theme="dark"] .auth-shell > main {
     height: 36px;
     border: 0;
     border-radius: 999px;
-    background: #242b30;
+    background: var(--sales-surface-subtle);
     padding: 0 12px 0 10px;
   }
 
@@ -5844,16 +5828,16 @@ html[data-marketing-theme="dark"] .auth-shell > main {
     max-width: 9.5rem;
     font-size: 13px;
     font-weight: 600;
-    color: #f5f7f8;
+    color: var(--sales-text-primary);
   }
 
   .salesperson-wa-workspace .wa-composer-tool-icon {
-    color: #d4ff4f;
+    color: var(--sales-text-secondary);
   }
 
   .salesperson-wa-workspace .wa-composer-tool-active,
   .salesperson-wa-workspace .wa-composer-tool-accent {
-    background: #d4ff4f;
+    background: var(--sales-brand);
     border-color: transparent;
   }
 
@@ -5861,15 +5845,14 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   .salesperson-wa-workspace .wa-composer-tool-accent .wa-composer-tool-icon,
   .salesperson-wa-workspace .wa-composer-tool-active .wa-composer-tool-label,
   .salesperson-wa-workspace .wa-composer-tool-accent .wa-composer-tool-label {
-    color: #101828;
+    color: var(--sales-brand-text);
   }
 
   .salesperson-wa-workspace .wa-chat-wallpaper,
   html[data-crm] .salesperson-wa-workspace.wa-hub-premium .wa-chat-wallpaper,
   .sales-dashboard-premium .salesperson-wa-workspace .wa-chat-wallpaper {
-    background-color: #0B141A !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none'%3E%3Ccircle cx='18' cy='22' r='1.1' fill='%23f5f7f8' fill-opacity='.05'/%3E%3Ccircle cx='88' cy='46' r='1' fill='%23f5f7f8' fill-opacity='.04'/%3E%3Ccircle cx='132' cy='28' r='1.2' fill='%23d4ff4f' fill-opacity='.07'/%3E%3Ccircle cx='46' cy='96' r='1' fill='%23f5f7f8' fill-opacity='.045'/%3E%3Ccircle cx='120' cy='118' r='1.1' fill='%23f5f7f8' fill-opacity='.04'/%3E%3Ccircle cx='24' cy='142' r='1' fill='%23d4ff4f' fill-opacity='.05'/%3E%3C/svg%3E") !important;
-    background-size: 160px 160px !important;
+    background-color: var(--sales-bg) !important;
+    background-image: none !important;
   }
 
   .salesperson-wa-workspace .wa-sales-actions-sheet .wa-composer-tool {
@@ -5891,28 +5874,22 @@ html[data-marketing-theme="dark"] .auth-shell > main {
 
   .salesperson-wa-workspace[data-intel-sheet="open"] > .wa-context-pane {
     position: fixed !important;
-    inset: auto 0 0 0 !important;
+    inset: 0 !important;
     z-index: 45;
     display: flex !important;
-    height: auto !important;
-    max-height: 85% !important;
+    height: 100% !important;
+    max-height: none !important;
     width: 100% !important;
     max-width: none !important;
     flex: none !important;
-    border-radius: 16px 16px 0 0;
-    box-shadow: 0 -12px 40px rgba(16, 24, 40, 0.18);
+    border-radius: 0;
+    box-shadow: none;
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--sales-surface) !important;
   }
 
   .salesperson-wa-workspace[data-intel-sheet="open"] > .wa-context-pane::before {
-    content: "";
-    display: block;
-    width: 40px;
-    height: 4px;
-    margin: 8px auto 0;
-    flex-shrink: 0;
-    border-radius: 999px;
-    background: var(--sales-border, #e4e7ec);
+    content: none;
   }
 
   .salesperson-wa-workspace[data-intel-sheet="open"] > .wa-context-pane > header {
@@ -5937,7 +5914,7 @@ html[data-marketing-theme="dark"] .auth-shell > main {
     flex: none !important;
     margin: 0 !important;
     overflow: hidden !important;
-    background: #0b1014 !important;
+    background: var(--sales-bg) !important;
   }
 
   .salesperson-wa-workspace[data-mobile-pane="thread"] .wa-panel-header {
@@ -5956,31 +5933,6 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   }
 }
 
-.wa-copilot-sheet.sales-modal-surface,
-.wa-copilot-sheet .bg-sales-surface {
-  background: #111b21 !important;
-  color: #e9edef !important;
-  border-color: #2a3942 !important;
-}
-
-.wa-copilot-sheet .text-sales-text-primary {
-  color: #e9edef !important;
-}
-
-.wa-copilot-sheet .text-sales-text-secondary,
-.wa-copilot-sheet .text-sales-text-muted {
-  color: #aebac1 !important;
-}
-
-.wa-copilot-sheet .border-sales-border,
-.wa-copilot-sheet .border-sales-border-subtle {
-  border-color: #2a3942 !important;
-}
-
-.wa-copilot-sheet .bg-sales-brand {
-  background: #d4ff4f !important;
-  color: #111b21 !important;
-}
 
 
 /* ── Real Estate workspace · Phase 1 UI tokens ─────────────────────────── */

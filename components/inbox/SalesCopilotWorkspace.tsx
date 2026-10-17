@@ -565,7 +565,7 @@ function SalesCopilotPanelItem({
             }}
             className="inline-flex min-h-11 items-center text-[13px] font-semibold text-sales-text-primary disabled:opacity-50"
           >
-            {item.executionStatus === "failed" ? "Retry" : item.primaryLabel}
+            {item.executionStatus === "failed" ? "Retry" : item.actionType === "answer_question" ? "Use draft" : item.primaryLabel}
           </button>
         )}
         {item.actionType === "contact_later" || item.actionType === "customer_checkin" ? (

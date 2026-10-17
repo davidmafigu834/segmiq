@@ -103,6 +103,7 @@ type Props = {
   salespersonHub?: boolean;
   /** null while the company preset is still loading. */
   solarWorkflow?: boolean | null;
+  realEstateHub?: boolean;
   /** Bumped after a successful send so the solar cue refetches. */
   snapshotRefreshKey?: number;
   alsoSells?: boolean;
@@ -163,6 +164,7 @@ export function ChatThread({
   dailyPlanQueue = [],
   salespersonHub = false,
   solarWorkflow = false,
+  realEstateHub = false,
   snapshotRefreshKey = 0,
   alsoSells = false,
 }: Props) {
@@ -170,6 +172,9 @@ export function ChatThread({
   const [loading, setLoading] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
   const [input, setInput] = useState("");
+  const [pendingDraft, setPendingDraft] = useState<string | null>(null);
+  const inputRef = useRef("");
+  inputRef.current = input;
   const copilot = useSalesCopilot(conversation?.id ?? null);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -214,12 +219,22 @@ export function ChatThread({
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
   const composerRef = useRef<HTMLInputElement>(null);
+  function queueDraft(text: string) {
+    const current = inputRef.current.trim();
+    if (current && current !== text.trim()) {
+      setPendingDraft(text);
+      return;
+    }
+    setPendingDraft(null);
+    setInput(text);
+    composerRef.current?.focus();
+  }
+
   useEffect(() => {
     const onDraft = (event: Event) => {
       const text = (event as CustomEvent<string>).detail;
       if (typeof text !== "string" || !text.trim()) return;
-      setInput(text);
-      composerRef.current?.focus();
+      queueDraft(text);
     };
     window.addEventListener(SALES_COPILOT_DRAFT_EVENT, onDraft);
     return () => window.removeEventListener(SALES_COPILOT_DRAFT_EVENT, onDraft);
@@ -228,8 +243,7 @@ export function ChatThread({
     if (!conversation?.id) return;
     const text = takeCopilotDraft(conversation.id);
     if (!text?.trim()) return;
-    setInput(text);
-    composerRef.current?.focus();
+    queueDraft(text);
   }, [conversation?.id]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachmentRef = useRef<ComposerAttachment | null>(null);
@@ -951,7 +965,16 @@ export function ChatThread({
                 {canReassign ? <ChevronDown size={12} className="text-sales-text-muted" /> : null}
               </button>
             ) : null}
-            {isWhatsApp ? (
+            {isWhatsApp && realEstateHub ? (
+              <button
+                type="button"
+                onClick={onToggleIntel}
+                aria-label="Open sales tools"
+                className="inline-flex h-11 shrink-0 items-center rounded-full px-2.5 text-[13px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover min-[1100px]:hidden"
+              >
+                Sales tools
+              </button>
+            ) : isWhatsApp ? (
               <button
                 type="button"
                 onClick={() => {
@@ -987,7 +1010,18 @@ export function ChatThread({
               <MoreHorizontal size={16} />
             </button>
             {menuOpen ? (
-              <div className={`absolute right-0 top-11 z-20 min-w-[200px] ${isWhatsApp ? "wa-dropdown" : "rounded-lg border border-[var(--border)] bg-[var(--surface-card)] py-1 shadow-lg"}`}>
+              <button
+                type="button"
+                className="fixed inset-0 z-10 bg-black/40 min-[1100px]:hidden"
+                aria-label="Close conversation actions"
+                onClick={() => setMenuOpen(false)}
+              />
+            ) : null}
+            {menuOpen ? (
+              <div className={`absolute right-0 top-11 z-20 min-w-[220px] max-[1099px]:fixed max-[1099px]:inset-x-3 max-[1099px]:bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-[1099px]:top-auto max-[1099px]:z-20 max-[1099px]:max-h-[70vh] max-[1099px]:overflow-y-auto max-[1099px]:rounded-[16px] max-[1099px]:pb-2 ${isWhatsApp ? "wa-dropdown" : "rounded-lg border border-[var(--border)] bg-[var(--surface-card)] py-1 shadow-lg"}`}>
+                <p className="hidden px-3 pb-1 pt-3 text-[13px] font-semibold text-sales-text-primary max-[1099px]:block">
+                  {name}
+                </p>
                 {canSend || canReassign ? (
                   <button
                     type="button"
@@ -1265,6 +1299,29 @@ export function ChatThread({
       {canSend || companyMode ? (
         <div className={`sticky bottom-0 z-20 flex min-h-0 shrink-0 flex-col bg-sales-surface ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)]"}`}>
           <div className="min-h-0 max-[1099px]:max-h-[46%] max-[1099px]:overflow-y-auto max-[1099px]:overscroll-contain">
+          {pendingDraft ? (
+            <div className="flex flex-wrap items-center gap-2 border-b border-sales-border px-4 py-2">
+              <p className="min-w-0 flex-1 text-[13px] text-sales-text-primary">Replace the unsent message with this draft?</p>
+              <button
+                type="button"
+                className="min-h-11 px-2 text-[13px] font-semibold text-sales-text-primary"
+                onClick={() => {
+                  setInput(pendingDraft);
+                  setPendingDraft(null);
+                  composerRef.current?.focus();
+                }}
+              >
+                Use draft
+              </button>
+              <button
+                type="button"
+                className="min-h-11 px-2 text-[13px] font-semibold text-sales-text-secondary"
+                onClick={() => setPendingDraft(null)}
+              >
+                Keep mine
+              </button>
+            </div>
+          ) : null}
           {sendError ? (
             <div role="alert" className="border-b border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-2 text-center text-xs text-[var(--danger-fg)]">
               {sendError}

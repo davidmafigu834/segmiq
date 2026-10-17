@@ -518,6 +518,7 @@ export function TeamInbox({
                 dailyPlanQueue={dailyPlanQueue}
                 salespersonHub={whatsappMode && !companyMode}
                 solarWorkflow={whatsappMode && !companyMode ? solarWorkflow : false}
+                realEstateHub={realEstateHub}
                 snapshotRefreshKey={contextRevision}
                 alsoSells={alsoSells}
               />
@@ -532,7 +533,28 @@ export function TeamInbox({
                 desktopClassName={whatsappMode ? "min-[1280px]:flex" : undefined}
               />
             ) : null}
-            {companyMode ? (
+            {companyMode && realEstateHub && active && active.conversationType !== "SUPPORT" && (!resizable || !intelCollapsed) ? (
+              <RealEstateIntelligenceRail
+                conversation={active}
+                clientId={clientId}
+                open={intelOpenEffective}
+                refreshKey={contextRevision}
+                onUpdated={() => {
+                  setContextRevision((value) => value + 1);
+                  void loadConversations({ silent: true });
+                }}
+                onCollapse={() => {
+                  if (paneNav) setIntelSheetOpen(false);
+                  else if (resizable) toggleIntelCollapsed();
+                  else setIntelOpen(false);
+                }}
+                onMobileBack={paneNav ? () => setIntelSheetOpen(false) : undefined}
+                mobileFullScreen={paneNav}
+                mobileTopClass={mobileIntelTop}
+                panelWidth={resizable ? intelWidth : undefined}
+                panelAnimated={resizable}
+              />
+            ) : companyMode ? (
               active && (!resizable || !intelCollapsed) ? (
                 <CompanyConversationInsightRail
                   conversation={active}
