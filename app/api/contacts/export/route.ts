@@ -12,6 +12,8 @@ import {
   requireClientDataAccess,
 } from "@/lib/security/support-access";
 import { isSuperAdminRole } from "@/lib/auth/roles";
+import { canViewBuyerInDirectory } from "@/lib/real-estate/buyer-contact-access";
+import { loadBuyerContactAccessFacts } from "@/lib/real-estate/buyer-contact-access-service";
 
 export const dynamic = "force-dynamic";
 
@@ -82,7 +84,25 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Could not export contacts" }, { status: 500 });
   }
 
-  const ids = (contacts ?? []).map((c) => c.id as string);
+  let exportRows = contacts ?? [];
+  if (session.role === "SALESPERSON" && exportRows.length) {
+    const facts = await loadBuyerContactAccessFacts(
+      requestedClientId,
+      exportRows.map((row) => row.id as string)
+    );
+    if (!facts.ok) return NextResponse.json({ error: "Could not export contacts" }, { status: 503 });
+    const actor = { id: session.userId, role: session.role, clientId: session.clientId };
+    exportRows = exportRows.filter((row) =>
+      canViewBuyerInDirectory({
+        actor,
+        recordClientId: requestedClientId,
+        contactId: row.id as string,
+        searches: facts.searches,
+      })
+    );
+  }
+
+  const ids = exportRows.map((c) => c.id as string);
   const ownerByContact = new Map<string, string | null>();
   if (ids.length) {
     const { data: leadRows } = await supabase
@@ -101,7 +121,7 @@ export async function GET(req: Request) {
   const header = ["name", "phone", "email", "source", "lifecycle", "owner", "created_at"];
   const lines = [header.join(",")];
 
-  for (const c of contacts ?? []) {
+  for (const c of exportRows) {
     const lifecycleKey: ContactLifecycle = isContactLifecycle(String(c.lifecycle))
       ? (c.lifecycle as ContactLifecycle)
       : "cold";

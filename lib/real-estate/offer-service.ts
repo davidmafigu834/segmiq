@@ -26,6 +26,8 @@ import {
   type ReOfferStatus,
 } from "@/lib/real-estate/offers";
 import { decideOfferAcceptance } from "@/lib/real-estate/listing-availability";
+import { canCreateOfferForPrivateBuyer } from "@/lib/real-estate/buyer-contact-access";
+import { loadBuyerContactAccessFacts } from "@/lib/real-estate/buyer-contact-access-service";
 import { callAtomic } from "@/lib/real-estate/atomic-rpc";
 import {
   applyListingStatus,
@@ -279,6 +281,20 @@ export async function createRealEstateOffer(opts: {
     })
   ) {
     return { ok: false, error: "Forbidden.", status: 403 };
+  }
+
+  const buyerAccess = await loadBuyerContactAccessFacts(opts.clientId, [opts.contactId]);
+  if (!buyerAccess.ok) return { ok: false, error: buyerAccess.error, status: 503 };
+  if (
+    !canCreateOfferForPrivateBuyer({
+      actor: { id: opts.actor.id, role: opts.actor.role, clientId: opts.actor.clientId },
+      recordClientId: opts.clientId,
+      contactId: opts.contactId,
+      leadAssignedToId: assignedToId,
+      searches: buyerAccess.searches,
+    })
+  ) {
+    return { ok: false, error: "You cannot create an offer for this buyer.", status: 403 };
   }
 
   const buyerAgentId =

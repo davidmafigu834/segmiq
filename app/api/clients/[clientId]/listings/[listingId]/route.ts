@@ -6,6 +6,8 @@ import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { contactMatchesListing, canManageListings, type BuyerMatchContact } from "@/lib/real-estate/helpers";
 import { loadExplicitDemandContactIds } from "@/lib/real-estate/foundation-sync";
+import { canViewBuyerOnListing } from "@/lib/real-estate/buyer-contact-access";
+import { loadBuyerContactAccessFacts } from "@/lib/real-estate/buyer-contact-access-service";
 import { assertManualListingStatusChange } from "@/lib/real-estate/listing-availability";
 import { countActiveTransactions, listReservingOfferIds } from "@/lib/real-estate/listing-availability-service";
 import {
@@ -57,6 +59,31 @@ export async function GET(
       buyer_bedrooms_wanted: c.buyer_bedrooms_wanted,
       buyer_area_preference: c.buyer_area_preference,
     }));
+
+  if (g.session.role === "SALESPERSON") {
+    const facts = await loadBuyerContactAccessFacts(
+      params.clientId,
+      matches.map((match) => match.id)
+    );
+    if (!facts.ok) return NextResponse.json({ error: "Could not load matches." }, { status: 500 });
+    const listingFact = {
+      id: String(listing.id),
+      clientId: params.clientId,
+      status: (listing.status as string | null) ?? null,
+      approvalStatus: (listing.approval_status as string | null) ?? null,
+    };
+    const visible = matches.filter((match) =>
+      canViewBuyerOnListing({
+        actor: { id: g.session.userId, role: g.session.role, clientId: g.session.clientId },
+        recordClientId: params.clientId,
+        contactId: match.id,
+        searches: facts.searches,
+        listing: listingFact,
+        introductions: facts.introductions,
+      })
+    );
+    return NextResponse.json({ listing, matches: visible });
+  }
 
   return NextResponse.json({ listing, matches });
 }

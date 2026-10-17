@@ -7,6 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { appendInterestedListingIds, listingLabel } from "@/lib/real-estate/helpers";
 import { notifyPropertyMatch } from "@/lib/real-estate/notifications";
 import { logReActivity } from "@/lib/lead-events";
+import { canSendPropertyMatch } from "@/lib/real-estate/buyer-contact-access";
+import { loadBuyerContactAccessFacts } from "@/lib/real-estate/buyer-contact-access-service";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +53,7 @@ export async function POST(
   if (!contact) return NextResponse.json({ error: "Contact not found" }, { status: 404 });
 
   if (session.role === "SALESPERSON") {
-    const [{ data: ownSearch }, { data: ownLead }, { data: introductions }] = await Promise.all([
+    const [{ data: ownSearch }, { data: ownLead }, facts] = await Promise.all([
       supabase
         .from("real_estate_buyer_searches")
         .select("id")
@@ -66,21 +68,27 @@ export async function POST(
         .eq("contact_id", contact.id)
         .eq("assigned_to_id", session.userId)
         .limit(1),
-      supabase
-        .from("real_estate_buyer_introductions")
-        .select("search_id, real_estate_buyer_searches!inner(contact_id)")
-        .eq("client_id", params.clientId)
-        .eq("listing_id", params.listingId)
-        .eq("requesting_agent_id", session.userId)
-        .eq("status", "accepted")
-        .eq("real_estate_buyer_searches.contact_id", contact.id)
-        .limit(1),
+      loadBuyerContactAccessFacts(params.clientId, [contact.id as string]),
     ]);
-    if (!ownSearch?.length && !ownLead?.length && !introductions?.length) {
-      return NextResponse.json(
-        { error: "This buyer is managed by another agent. Request an introduction first." },
-        { status: 403 }
-      );
+    if (!facts.ok) {
+      return NextResponse.json({ error: "Could not check buyer access." }, { status: 503 });
+    }
+    const allowed = canSendPropertyMatch({
+      actor: { id: session.userId, role: session.role, clientId: session.clientId },
+      recordClientId: params.clientId,
+      contactId: contact.id as string,
+      searches: facts.searches,
+      introductions: facts.introductions,
+      listing: {
+        id: params.listingId,
+        clientId: params.clientId,
+        status: (listing.status as string | null) ?? null,
+        approvalStatus: (listing.approval_status as string | null) ?? null,
+      },
+      ownsContactRelationship: Boolean(ownSearch?.length || ownLead?.length),
+    });
+    if (!allowed) {
+      return NextResponse.json({ error: "You cannot send this property to that buyer." }, { status: 403 });
     }
   }
 

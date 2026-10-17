@@ -3,6 +3,8 @@ import { requireSessionFromRequest } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
+import { canViewBuyerInDirectory } from "@/lib/real-estate/buyer-contact-access";
+import { loadBuyerContactAccessFacts } from "@/lib/real-estate/buyer-contact-access-service";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +54,18 @@ export async function GET(req: Request) {
 
   if (!contact) {
     return NextResponse.json({ match: null });
+  }
+
+  if (session.role === "SALESPERSON") {
+    const facts = await loadBuyerContactAccessFacts(requestedClientId, [contact.id as string]);
+    if (!facts.ok) return NextResponse.json({ error: "Could not look up that contact." }, { status: 503 });
+    const visible = canViewBuyerInDirectory({
+      actor: { id: session.userId, role: session.role, clientId: session.clientId },
+      recordClientId: requestedClientId,
+      contactId: contact.id as string,
+      searches: facts.searches,
+    });
+    if (!visible) return NextResponse.json({ match: null });
   }
 
   const { data: latestLead } = await supabase

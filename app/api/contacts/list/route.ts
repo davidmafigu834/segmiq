@@ -6,6 +6,8 @@ import { contactIdsForHubFilter, parseLifecycleFilter } from "@/lib/customer-hub
 import { enrichContactsWithLeads } from "@/lib/customer-hub/enrich-contacts-with-leads";
 import { sanitizePostgrestSearchTerm } from "@/lib/security/postgrest-filter";
 import { requireClientDataAccess } from "@/lib/security/support-access";
+import { canViewBuyerInDirectory } from "@/lib/real-estate/buyer-contact-access";
+import { loadBuyerContactAccessFacts } from "@/lib/real-estate/buyer-contact-access-service";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 50;
@@ -78,10 +80,31 @@ export async function GET(req: Request) {
   if (error) return NextResponse.json({ error: "Could not load contacts" }, { status: 500 });
 
   const rows = contacts ?? [];
+  let visibleRows = rows;
+  let hiddenOnPage = 0;
+  if (session.role === "SALESPERSON" && rows.length) {
+    const facts = await loadBuyerContactAccessFacts(
+      requestedClientId,
+      rows.map((row) => row.id as string)
+    );
+    if (!facts.ok) return NextResponse.json({ error: "Could not load contacts" }, { status: 503 });
+    const actor = { id: session.userId, role: session.role, clientId: session.clientId };
+    visibleRows = rows.filter((row) =>
+      canViewBuyerInDirectory({
+        actor,
+        recordClientId: requestedClientId,
+        contactId: row.id as string,
+        searches: facts.searches,
+      })
+    );
+    hiddenOnPage = rows.length - visibleRows.length;
+  }
 
-  const contactsOut = await enrichContactsWithLeads(supabase, rows);
+  const contactsOut = await enrichContactsWithLeads(supabase, visibleRows);
 
-  const total = count ?? 0;
+  const rawTotal = count ?? 0;
+  const total = Math.max(0, rawTotal - hiddenOnPage);
+  const hasMore = qSafe ? false : to < rawTotal - 1;
 
-  return NextResponse.json({ contacts: contactsOut, total, page, limit, hasMore: to < total - 1 });
+  return NextResponse.json({ contacts: contactsOut, total, page, limit, hasMore });
 }
