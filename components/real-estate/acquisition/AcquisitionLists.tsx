@@ -8,6 +8,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClipboardCheck, Phone, ScrollText, UserRound } from "lucide-react";
 import { MandateActions, type MandateRow } from "./MandateActions";
+import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
+import { cn } from "@/lib/ui/cn";
 import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
 import {
   ReActionMenu,
@@ -107,13 +109,12 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
       {error ? <ReErrorState title="Owners didn't load" description={error} onRetry={() => void load()} /> : null}
       {loading ? <ReSkeletonRows rows={5} label="Loading owners" /> : null}
       {!loading && !error && visible.length === 0 ? (
-        <ReSection id="owners-empty" title="No property owners yet">
-          <ReEmptyState
-            title="No property owners yet"
-            description="Owner relationships appear when you record a property opportunity against a contact."
-            action={<Link href={`${acquisitionsPath}?new=1`} className="text-[13px] font-semibold underline-offset-2 hover:underline">New opportunity</Link>}
-          />
-        </ReSection>
+        <ReEmptyState
+          framed
+          title="No property owners yet"
+          description="Owner relationships appear when you record a property opportunity."
+          action={<Link href={`${acquisitionsPath}?new=1`} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>New opportunity</Link>}
+        />
       ) : null}
       {!loading && !error && visible.length > 0 ? (
         <ReSection id="owners" title="Owners" count={visible.length} flush>
@@ -234,8 +235,8 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
   return (
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
-        title="Property inspections"
-        description="Schedule and record property assessments. These are not buyer viewings."
+        title="Inspections"
+        description="Recorded from a property opportunity."
       />
       <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Inspection filter">
         {INSPECTION_FILTERS.map((item) => (
@@ -245,7 +246,7 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
             role="tab"
             aria-selected={filter === item.id}
             onClick={() => setFilter(item.id)}
-            className={`re-focus inline-flex min-h-11 shrink-0 items-center rounded-full border px-3 text-[13px] font-semibold ${filter === item.id ? "border-sales-text-primary bg-sales-text-primary text-sales-surface" : "border-sales-border text-sales-text-secondary"}`}
+            className={`re-focus inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold ${filter === item.id ? "border-sales-text-primary bg-sales-text-primary text-sales-surface" : "border-sales-border text-sales-text-secondary"}`}
           >
             {item.label}
           </button>
@@ -255,13 +256,12 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
       {error ? <ReErrorState title="Inspections didn't load" description={error} onRetry={() => void load()} /> : null}
       {loading ? <ReSkeletonRows rows={4} label="Loading inspections" /> : null}
       {!loading && !error && visible.length === 0 ? (
-        <ReSection id="inspections-empty" title="No inspections found">
-          <ReEmptyState
-            title={filter === "all" ? "No inspections found" : "Nothing in this view"}
-            description="Inspections are recorded from a property opportunity, not from this list."
-            action={<Link href={opportunityBase} className="text-[13px] font-semibold underline-offset-2 hover:underline">Open opportunities</Link>}
-          />
-        </ReSection>
+        <ReEmptyState
+          framed
+          title={filter === "all" ? "No inspections yet" : "No inspections in this view"}
+          description={filter === "all" ? "Inspections are scheduled from property opportunities." : "Nothing in this filter. Try another status, or open a property opportunity."}
+          action={<Link href={opportunityBase} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open property opportunities</Link>}
+        />
       ) : null}
       {!loading && !error && visible.length > 0 ? (
         <ReSection id="inspections" title="Inspections" count={visible.length} flush>
@@ -370,7 +370,7 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
         title="Property mandates"
-        description={canReview ? "Review marketing authority before a property can be prepared as a listing." : "Mandates you can access. A manager approves, rejects, renews and revokes them."}
+        description="Marketing authority recorded against a property opportunity."
       />
       <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Mandate filter">
         {MANDATE_FILTERS.map((item) => (
@@ -380,7 +380,7 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
             role="tab"
             aria-selected={filter === item.id}
             onClick={() => setFilter(item.id)}
-            className={`re-focus inline-flex min-h-11 shrink-0 items-center rounded-full border px-3 text-[13px] font-semibold ${filter === item.id ? "border-sales-text-primary bg-sales-text-primary text-sales-surface" : "border-sales-border text-sales-text-secondary"}`}
+            className={`re-focus inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold ${filter === item.id ? "border-sales-text-primary bg-sales-text-primary text-sales-surface" : "border-sales-border text-sales-text-secondary"}`}
           >
             {item.label}
           </button>
@@ -390,12 +390,12 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
       {error ? <ReErrorState title="Mandates didn't load" description={error} onRetry={() => void load()} /> : null}
       {loading ? <ReSkeletonRows rows={4} label="Loading mandates" /> : null}
       {!loading && !error && visible.length === 0 ? (
-        <ReSection id="mandates-empty" title="No mandates found">
-          <ReEmptyState
-            title="No mandates found"
-            description={filter === "all" ? "Mandates are recorded from a property opportunity." : "Nothing in this view. The list is filtered from the mandates that loaded."}
-          />
-        </ReSection>
+        <ReEmptyState
+          framed
+          title={filter === "attention" ? "No mandates awaiting review" : "No mandates in this view"}
+          description={filter === "attention" ? "Mandates are recorded from a property opportunity." : "Nothing matches this status in the mandates that loaded."}
+          action={<Link href={opportunityBase} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open property opportunities</Link>}
+        />
       ) : null}
       {!loading && !error && visible.length > 0 ? (
         <ReSection id="mandates" title="Mandates" count={visible.length} flush>

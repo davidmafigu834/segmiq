@@ -9,7 +9,7 @@ import { DemoWorkspaceChip } from "@/components/demo/DemoWorkspaceChip";
 import { useCompanySidebarCollapsed } from "@/lib/sales/navigation/use-company-sidebar-collapsed";
 import { PresenceHeartbeat } from "@/components/sales/PresenceHeartbeat";
 import { CompanyWorkspaceProvider, useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
-import { normalizeBusinessType, type BusinessType } from "@/lib/terminology";
+import { isRealEstate, normalizeBusinessType, type BusinessType } from "@/lib/terminology";
 import type { UserRole } from "@/types";
 
 export function CompanyWorkspaceShell({
@@ -55,6 +55,7 @@ export function CompanyWorkspaceShell({
       className="sales-dashboard-premium dashboard-shell flex h-full max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-sales-bg text-sales-text-primary"
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideMobileChrome ? "true" : "false"}
+      data-re-workspace={isRealEstate(businessType) ? "true" : undefined}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
     >
       <PresenceHeartbeat />

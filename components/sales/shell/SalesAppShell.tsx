@@ -36,6 +36,7 @@ import { PresenceHeartbeat } from "@/components/sales/PresenceHeartbeat";
 import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
 import { cn } from "@/lib/ui/cn";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import type { UserRole } from "@/types";
 
 export function SalesPageHeader({
@@ -218,6 +219,8 @@ function SalesAppShellInner({
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps(assignmentMode);
   const { quickActionsOpen, setQuickActionsOpen, hideBottomNav } = useSalesMobileChrome();
+  const workspace = useCompanyWorkspace();
+  const realEstateWorkspace = realEstate || workspace.isRealEstate;
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -265,6 +268,7 @@ function SalesAppShellInner({
       data-content-flush={contentFlush ? "true" : "false"}
       data-mobile-full-bleed={mobileFullBleed ? "true" : "false"}
       data-sales-portal="true"
+      data-re-workspace={realEstateWorkspace ? "true" : undefined}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
     >
       <a

@@ -24,6 +24,7 @@ import {
   ReErrorState,
   ReFilterSheet,
   ReMetricGrid,
+  ReMetricOverview,
   RePageHeader,
   RePartialNotice,
   ReSection,
@@ -229,7 +230,7 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
         description="Manage property searches, customer relationships and active buying journeys."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-[var(--re-radius-control,8px)] border border-sales-border p-0.5" role="group" aria-label="Directory view">
+            <div className="inline-flex h-11 items-center rounded-[var(--re-radius-control,8px)] border border-sales-border p-0.5" role="group" aria-label="Directory view">
               {(["people", "pipeline"] as const).map((item) => (
                 <button
                   key={item}
@@ -237,7 +238,7 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
                   aria-pressed={view === item}
                   onClick={() => setView(item)}
                   className={cn(
-                    "re-focus min-h-11 rounded-[6px] px-3 text-[13px] font-semibold sm:min-h-9",
+                    "re-focus inline-flex h-10 items-center whitespace-nowrap rounded-[6px] px-3 text-[13px] font-semibold",
                     view === item ? "bg-sales-text-primary text-sales-surface" : "text-sales-text-secondary"
                   )}
                 >
@@ -253,21 +254,25 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
         }
       />
 
+      <div className="order-last md:order-none">
+      <ReMetricOverview label="Buyer and tenant overview">
       <ReMetricGrid label="Buyer and tenant summary">
-        <ReStatCard label="Active buyers" value={metrics?.activeBuyers ?? null} supporting="People, not searches" state={metricsState} />
-        <ReStatCard label="Active tenants" value={metrics?.activeTenants ?? null} supporting="People, not searches" state={metricsState} />
-        <ReStatCard label="Viewings scheduled" value={metrics?.viewingsScheduled ?? null} state={metricsState} href={basePath.replace("/buyers", "/viewings")} />
+        <ReStatCard label="Active buyers" value={metrics?.activeBuyers ?? null} supporting="People, not searches" state={metricsState} info="Counts people with an active purchase search, not the number of searches." />
+        <ReStatCard label="Active tenants" value={metrics?.activeTenants ?? null} supporting="People, not searches" state={metricsState} info="Counts people with an active rental search, not the number of searches." />
+        <ReStatCard label="Viewings scheduled" value={metrics?.viewingsScheduled ?? null} supporting="Booked visits, including searches that are no longer active" state={metricsState} href={basePath.replace("/buyers", "/viewings")} />
         <ReStatCard label="Follow-ups due" value={metrics?.followUpDue ?? null} state={metricsState} attention={Boolean(metrics && metrics.followUpDue > 0)} />
       </ReMetricGrid>
+      </ReMetricOverview>
+      </div>
 
       {team ? (
-        <p className="text-[13px] text-sales-text-secondary">
+        <p className="hidden text-[13px] text-sales-text-secondary md:block">
           Team view: {String(team.buyers ?? "—")} buyers and {String(team.tenants ?? "—")} tenants, counted as people. {String(team.activeSearches)} active searches, {String(team.pausedSearches)} paused, {String(team.searchesWithoutNextAction)} with no next action.
           {team.incomplete ? " This team count is incomplete." : ""} An accepted offer is not a completed sale.
         </p>
       ) : null}
 
-      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="flex min-w-0 items-center gap-2">
         <label className="min-w-0 flex-1">
           <span className="sr-only">Search customers</span>
           <input
@@ -298,7 +303,7 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
         </div>
         <button
           type="button"
-          className="re-focus inline-flex min-h-11 items-center justify-center rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[13px] font-semibold md:hidden"
+          className="re-focus inline-flex h-11 shrink-0 items-center justify-center rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[13px] font-semibold md:hidden"
           onClick={() => {
             setDraft({ intent, stage, followUp, location });
             setFiltersOpen(true);
@@ -312,17 +317,16 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
       {loading ? <ReSkeletonRows rows={4} label="Loading buyers and tenants" /> : null}
 
       {!loading && !error && rows.length === 0 ? (
-        <ReSection id="buyers-empty" title="No buyers or tenants yet">
-          <ReEmptyState
-            title="No buyers or tenants yet"
-            description="Start by recording a customer and their property requirements. A name and whether they want to buy or rent is enough."
-            action={
-              <button type="button" onClick={() => setOpen(true)} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>
-                Add buyer / tenant
-              </button>
-            }
-          />
-        </ReSection>
+        <ReEmptyState
+          framed
+          title="No buyers or tenants yet"
+          description="Record a customer and whether they want to buy or rent. A name is enough to start."
+          action={
+            <button type="button" onClick={() => setOpen(true)} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>
+              Add buyer / tenant
+            </button>
+          }
+        />
       ) : null}
 
       {!loading && !error && rows.length > 0 && view === "people" ? (

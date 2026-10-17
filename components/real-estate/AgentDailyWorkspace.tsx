@@ -38,6 +38,7 @@ import {
   ReGroupLabel,
   ReList,
   ReMetricGrid,
+  ReMetricOverview,
   RePageHeader,
   RePartialNotice,
   ReQuickActions,
@@ -461,6 +462,7 @@ export function AgentDailyWorkspace({
   return (
     <div className="space-y-[var(--re-section-gap,16px)]">
       <RePageHeader
+        mobileTitle
         context={todayLabel()}
         title={
           <>
@@ -483,6 +485,7 @@ export function AgentDailyWorkspace({
           id="re-agent-attention"
           title="Needs your attention"
           description="Important customers, properties and deals that need your next action."
+          hideMobileDescription
           count={attentionCount}
           className="layout:col-span-8"
           flush
@@ -562,6 +565,7 @@ export function AgentDailyWorkspace({
 
         <div className="layout:order-first layout:col-span-12">
           <h2 className="sr-only">My sales snapshot</h2>
+          <ReMetricOverview label="My sales snapshot">
           <ReMetricGrid label="My sales snapshot">
             <ReStatCard label="New inquiries" value={data.summary.newInquiries} supporting="Received today" href="/sales/leads" />
             <ReStatCard
@@ -581,6 +585,7 @@ export function AgentDailyWorkspace({
               info="Offers where you are the buyer's agent or the listing agent."
             />
           </ReMetricGrid>
+          </ReMetricOverview>
         </div>
 
         <ReSection

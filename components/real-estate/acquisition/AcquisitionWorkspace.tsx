@@ -17,6 +17,7 @@ import {
   ReErrorState,
   ReFilterSheet,
   ReMetricGrid,
+  ReMetricOverview,
   RePageHeader,
   RePartialNotice,
   ReRowAction,
@@ -205,7 +206,7 @@ export function AcquisitionWorkspace({
         description="Track potential properties from first contact to approved listing."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-[var(--re-radius-control,8px)] border border-sales-border p-0.5" role="group" aria-label="Opportunity view">
+            <div className="inline-flex h-11 items-center rounded-[var(--re-radius-control,8px)] border border-sales-border p-0.5" role="group" aria-label="Opportunity view">
               {(["list", "pipeline"] as const).map((item) => (
                 <button
                   key={item}
@@ -213,11 +214,11 @@ export function AcquisitionWorkspace({
                   aria-pressed={view === item}
                   onClick={() => setView(item)}
                   className={cn(
-                    "re-focus min-h-11 rounded-[6px] px-3 text-[13px] font-semibold capitalize sm:min-h-9",
+                    "re-focus inline-flex h-10 items-center rounded-[6px] px-3 text-[13px] font-semibold capitalize",
                     view === item ? "bg-sales-text-primary text-sales-surface" : "text-sales-text-secondary hover:bg-sales-surface-hover"
                   )}
                 >
-                  {item}
+                  {item === "list" ? "List" : "Pipeline"}
                 </button>
               ))}
             </div>
@@ -234,15 +235,19 @@ export function AcquisitionWorkspace({
       />
 
       {overviewIncomplete ? <RePartialNotice>Some opportunities could not be counted. Totals may be short.</RePartialNotice> : null}
+      <div className="order-last md:order-none">
+      <ReMetricOverview label="Opportunity overview">
       <ReMetricGrid label="Acquisition summary">
         <ReStatCard label="Active opportunities" value={summary ? summary.active : null} supporting="Open or being nurtured" state={summary ? "ready" : loading ? "loading" : "error"} />
-        <ReStatCard label="In progress" value={summary ? summary.inProgress : null} supporting="Status is active" state={summary ? "ready" : loading ? "loading" : "error"} />
         <ReStatCard label="Overdue follow-ups" value={summary ? summary.overdue : null} supporting="Next step is past due" state={summary ? "ready" : loading ? "loading" : "error"} attention={Boolean(summary && summary.overdue > 0)} />
+        <ReStatCard label="In progress" value={summary ? summary.inProgress : null} supporting="Status is active" state={summary ? "ready" : loading ? "loading" : "error"} />
         <ReStatCard label="Converted" value={summary ? summary.converted : null} supporting="Moved to a listing" state={summary ? "ready" : loading ? "loading" : "error"} />
         <ReStatCard label="Lost" value={summary ? summary.lost : null} supporting="Closed without a listing" state={summary ? "ready" : loading ? "loading" : "error"} />
       </ReMetricGrid>
+      </ReMetricOverview>
+      </div>
 
-      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="flex min-w-0 items-center gap-2 sm:flex-row">
         <label className="min-w-0 flex-1">
           <span className="sr-only">Search owner or location</span>
           <input
@@ -269,7 +274,7 @@ export function AcquisitionWorkspace({
         </div>
         <button
           type="button"
-          className="re-focus inline-flex min-h-11 items-center justify-center rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[13px] font-semibold text-sales-text-primary md:hidden"
+          className="re-focus inline-flex h-11 shrink-0 items-center justify-center rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[13px] font-semibold text-sales-text-primary md:hidden"
           onClick={() => {
             setDraftStage(stage);
             setDraftIntent(intent);
@@ -283,17 +288,16 @@ export function AcquisitionWorkspace({
       {error ? <ReErrorState title="Opportunities didn't load" description={error} onRetry={() => void load()} /> : null}
       {loading ? <ReSkeletonRows rows={5} label="Loading opportunities" /> : null}
       {!loading && !error && rows.length === 0 ? (
-        <ReSection id="acq-empty" title="No property opportunities yet">
-          <ReEmptyState
-            title="No property opportunities yet"
-            description="Start by recording a property owner who may want to sell or rent. Price and documents can wait."
-            action={
-              <button type="button" onClick={() => setOpen(true)} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>
-                New opportunity
-              </button>
-            }
-          />
-        </ReSection>
+        <ReEmptyState
+          framed
+          title="No property opportunities yet"
+          description="Start by recording a property owner who may want to sell or rent. Price and documents can wait."
+          action={
+            <button type="button" onClick={() => setOpen(true)} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>
+              New opportunity
+            </button>
+          }
+        />
       ) : null}
 
       {!loading && !error && rows.length > 0 && view === "list" ? (

@@ -14,7 +14,6 @@ import {
   ReErrorState,
   RePageHeader,
   RePartialNotice,
-  ReSection,
   ReSheet,
   ReSkeletonRows,
   ReStatusBadge,
@@ -196,7 +195,7 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
         description="Manage appointments, property visits and customer feedback."
         actions={<Link href={buyersPath} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Schedule from a search</Link>}
       />
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4" role="tablist" aria-label="Viewing list">
+      <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Viewing list">
         {([
           ["upcoming", "Upcoming"],
           ["today", "Today"],
@@ -210,7 +209,7 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
             role="tab"
             aria-selected={filter === id}
             onClick={() => setFilter(id)}
-            className={cn("re-focus inline-flex min-h-11 shrink-0 items-center rounded-full border px-3 text-[13px] font-semibold", filter === id ? "border-sales-text-primary bg-sales-text-primary text-sales-surface" : "border-sales-border")}
+            className={cn("re-focus inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold", filter === id ? "border-sales-text-primary bg-sales-text-primary text-sales-surface" : "border-sales-border text-sales-text-secondary")}
           >
             {label}
           </button>
@@ -220,9 +219,22 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
       {error ? <ReErrorState title="Viewings" description={error} onRetry={() => void load()} /> : null}
       {loading ? <ReSkeletonRows rows={4} label="Loading viewings" /> : null}
       {!loading && !error && visible.length === 0 ? (
-        <ReSection id="viewings-empty" title="No viewings scheduled">
-          <ReEmptyState title="No viewings scheduled" description="New appointments are booked from a buyer or tenant search, so the customer and property stay linked." action={<Link href={buyersPath} className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold">Open buyers and tenants</Link>} />
-        </ReSection>
+        <ReEmptyState
+          framed
+          title={
+            filter === "today"
+              ? "No viewings today"
+              : filter === "completed"
+                ? "No completed viewings"
+                : filter === "cancelled"
+                  ? "No cancelled viewings"
+                  : filter === "all"
+                    ? "No viewings yet"
+                    : "No upcoming viewings"
+          }
+          description="Schedule a property visit from a buyer or tenant search."
+          action={<Link href={buyersPath} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open buyer searches</Link>}
+        />
       ) : null}
       {!loading && visible.length > 0 ? (
         <ul className="space-y-2">

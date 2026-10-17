@@ -6,6 +6,15 @@
     "theme": "Segmiq CRM",
     "design_system": "design.md",
     "enrichment": "none",
+    "brief": "Mobile UI rescue: one page title, no operational wave, solid bottom nav, compact metrics and empty states on the Real Estate workbench"
+  },
+  {
+    "date": "2026-10-17",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "Segmiq CRM",
+    "design_system": "design.md",
+    "enrichment": "none",
     "brief": "Manager Real Estate workspaces for opportunities, owners, inspections, mandates, buyers, matching, commissions and handover now use the company shell already used by listings"
   },
   {

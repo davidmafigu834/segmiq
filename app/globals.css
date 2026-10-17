@@ -4553,14 +4553,20 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-menu-surface {
 }
 
 .sales-dashboard-premium .sales-mobile-bottom-nav {
-  background: color-mix(in srgb, var(--sales-sidebar-bg) 95%, transparent);
-  box-shadow: 0 -8px 28px rgba(16, 24, 40, 0.06);
+  background: var(--sales-surface);
+  box-shadow: none;
 }
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-bottom-nav {
-  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.25);
+  background: var(--sales-surface);
+  box-shadow: none;
 }
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-top-bar {
-  background: color-mix(in srgb, var(--sales-sidebar-bg) 95%, transparent);
+  background: var(--sales-surface);
+}
+@media (max-width: 1099.98px) {
+  .sales-dashboard-premium[data-re-workspace="true"] .segmiq-dot-wave {
+    display: none;
+  }
 }
 
 /* Autofill readability in sales forms */

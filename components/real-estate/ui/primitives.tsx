@@ -34,6 +34,7 @@ export function RePageHeader({
   description,
   actions,
   className,
+  mobileTitle = false,
 }: {
   /** Short context line above the title, e.g. the date or the agency name. */
   context?: ReactNode;
@@ -41,23 +42,41 @@ export function RePageHeader({
   description?: ReactNode;
   actions?: ReactNode;
   className?: string;
+  /**
+   * Home screens whose mobile header is the wordmark still need a title here.
+   * Other pages already show the title in the mobile app header, so this heading stays desktop-only.
+   */
+  mobileTitle?: boolean;
 }) {
   return (
     <header
       className={cn(
         "flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6",
+        !mobileTitle && !actions && "hidden layout:flex",
         className
       )}
     >
-      <div className="min-w-0">
+      <div className={cn("min-w-0", !mobileTitle && "hidden layout:block")}>
         {context ? (
           <p className="text-[12px] font-medium text-sales-text-muted sm:text-[13px]">{context}</p>
         ) : null}
-        <h1 className="mt-0.5 min-w-0 font-display text-[22px] font-semibold leading-7 tracking-[-0.02em] text-sales-text-primary [overflow-wrap:anywhere] layout:text-[26px] layout:leading-[1.15]">
+        <h1
+          className={cn(
+            "min-w-0 font-display font-semibold tracking-[-0.02em] text-sales-text-primary [overflow-wrap:anywhere]",
+            mobileTitle
+              ? "text-[17px] leading-6 layout:mt-0.5 layout:text-[26px] layout:leading-[1.15]"
+              : "mt-0.5 text-[22px] leading-7 layout:text-[26px] layout:leading-[1.15]"
+          )}
+        >
           {title}
         </h1>
         {description ? (
-          <p className="mt-1 line-clamp-2 max-w-[60ch] text-[13px] leading-snug text-sales-text-secondary sm:line-clamp-none sm:text-[14px]">
+          <p
+            className={cn(
+              "mt-1 max-w-[60ch] text-[13px] leading-snug text-sales-text-secondary sm:text-[14px]",
+              mobileTitle ? "line-clamp-2 sm:line-clamp-none" : "hidden layout:block"
+            )}
+          >
             {description}
           </p>
         ) : null}
@@ -77,6 +96,7 @@ export function ReSection({
   className,
   bodyClassName,
   flush = false,
+  hideMobileDescription = false,
 }: {
   id?: string;
   title: string;
@@ -89,6 +109,8 @@ export function ReSection({
   bodyClassName?: string;
   /** Rows run edge to edge (lists, tables). */
   flush?: boolean;
+  /** Keep a longer explanation on desktop and drop it on a phone. */
+  hideMobileDescription?: boolean;
 }) {
   const headingId = id ? `${id}-title` : undefined;
   return (
@@ -112,7 +134,7 @@ export function ReSection({
             ) : null}
           </h2>
           {description ? (
-            <p className="mt-1 text-[12px] leading-snug text-sales-text-secondary sm:text-[13px]">{description}</p>
+            <p className={cn("mt-1 text-[12px] leading-snug text-sales-text-secondary sm:text-[13px]", hideMobileDescription && "hidden layout:block")}>{description}</p>
           ) : null}
         </div>
         {action ? <div className="flex shrink-0 items-center">{action}</div> : null}
@@ -187,18 +209,20 @@ export function ReStatCard({
       {state === "loading" ? (
         <span className="mt-2 block h-7 w-12 animate-pulse rounded-[6px] bg-sales-surface-hover motion-reduce:animate-none" aria-hidden />
       ) : (
-        <span className="mt-1.5 block truncate font-display text-[24px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-sales-text-primary">
+        <span className="mt-1 block truncate font-display text-[22px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-sales-text-primary sm:text-[24px]">
           {state === "error" || value == null ? "—" : value}
         </span>
       )}
-      <span className="mt-2 block min-h-4 truncate text-[12px] leading-4 text-sales-text-muted">
-        {state === "loading" ? <span className="sr-only">Loading</span> : state === "error" ? "Couldn't load" : supporting}
-      </span>
+      {state === "error" ? (
+        <span className="mt-1 block truncate text-[12px] leading-4 text-sales-text-muted">Couldn&apos;t load</span>
+      ) : supporting && state === "ready" ? (
+        <span className="mt-1 hidden truncate text-[12px] leading-4 text-sales-text-muted md:block">{supporting}</span>
+      ) : null}
     </>
   );
 
   const shell = cn(
-    "relative flex min-w-0 flex-col rounded-[var(--re-radius-card,12px)] border px-3.5 py-3 sm:px-4 sm:py-3.5",
+    "relative flex min-w-0 flex-col rounded-[var(--re-radius-card,12px)] border px-3 py-2.5 sm:px-4 sm:py-3.5",
     attention && state === "ready"
       ? "border-sales-warning/30 bg-sales-warning-soft"
       : "border-[var(--sales-card-border,var(--sales-border-subtle))] bg-sales-surface"
@@ -249,6 +273,31 @@ export function ReMetricGrid({
       )}
     >
       {children}
+    </div>
+  );
+}
+
+/** Phone disclosure for secondary counts. Desktop shows the metrics directly. */
+export function ReMetricOverview({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="min-w-0">
+      <button
+        type="button"
+        className="re-focus flex min-h-11 w-full items-center justify-between rounded-[var(--re-radius-control,8px)] border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold text-sales-text-primary md:hidden"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {label}
+        <span className="text-[12px] font-medium text-sales-text-muted">{open ? "Hide" : "Show"}</span>
+      </button>
+      <div className={cn("mt-2 md:mt-0", !open && "hidden md:block")}>{children}</div>
     </div>
   );
 }
@@ -367,24 +416,26 @@ export function ReWorkItem({
   menu?: ReactNode;
 }) {
   return (
-    <li className="flex min-w-0 items-start gap-3 px-[var(--re-card-pad,16px)] py-3">
-      {icon ? <ReRowIcon tone={iconTone}>{icon}</ReRowIcon> : null}
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="min-w-0 max-w-full truncate text-[14px] font-semibold text-sales-text-primary">{title}</p>
-          {status}
-        </div>
-        {reason ? (
-          <p className="mt-0.5 text-[13px] leading-snug text-sales-text-secondary [overflow-wrap:anywhere]">{reason}</p>
-        ) : null}
-        {meta ? (
-          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-sales-text-muted">
-            {meta}
+    <li className="flex min-w-0 flex-col gap-2 px-[var(--re-card-pad,16px)] py-3 sm:flex-row sm:items-start sm:gap-3">
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        {icon ? <ReRowIcon tone={iconTone}>{icon}</ReRowIcon> : null}
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="min-w-0 max-w-full text-[15px] font-semibold leading-snug text-sales-text-primary [overflow-wrap:anywhere] sm:truncate sm:text-[14px]">{title}</p>
+            {status}
           </div>
-        ) : null}
+          {reason ? (
+            <p className="mt-0.5 text-[13px] leading-snug text-sales-text-secondary [overflow-wrap:anywhere]">{reason}</p>
+          ) : null}
+          {meta ? (
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-sales-text-muted">
+              {meta}
+            </div>
+          ) : null}
+        </div>
       </div>
       {action || menu ? (
-        <div className="flex shrink-0 items-center gap-1 self-center">
+        <div className="flex shrink-0 items-center gap-1 pl-12 sm:self-center sm:pl-0">
           {action}
           {menu}
         </div>
@@ -458,17 +509,26 @@ export function ReEmptyState({
   description,
   action,
   compact = false,
+  framed = false,
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
   compact?: boolean;
+  /** Standalone empty result. Do not also put the same title on a surrounding section. */
+  framed?: boolean;
 }) {
   return (
-    <div className={cn("px-[var(--re-card-pad,16px)] text-left", compact ? "py-3" : "py-6")}>
-      <p className="text-[14px] font-medium text-sales-text-primary">{title}</p>
+    <div
+      className={cn(
+        "px-4 text-left",
+        compact ? "py-3" : "py-4",
+        framed && "rounded-[var(--re-radius-card,12px)] border border-sales-border-subtle bg-sales-surface"
+      )}
+    >
+      <p className="text-[15px] font-semibold text-sales-text-primary">{title}</p>
       {description ? (
-        <p className="mt-1 max-w-[52ch] text-[13px] leading-snug text-sales-text-secondary">{description}</p>
+        <p className="mt-1 max-w-[42ch] text-[13px] leading-snug text-sales-text-secondary">{description}</p>
       ) : null}
       {action ? <div className="mt-3">{action}</div> : null}
     </div>

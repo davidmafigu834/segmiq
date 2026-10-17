@@ -109,6 +109,7 @@ export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { cl
   const [demandIncomplete, setDemandIncomplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [matching, setMatching] = useState(false);
   const [requested, setRequested] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -132,8 +133,10 @@ export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { cl
   async function findProperties(id = searchId) {
     setError(null);
     setNotice(null);
+    setMatching(true);
     const res = await fetch(`/api/clients/${clientId}/matching?searchId=${id}`);
     const json = await res.json().catch(() => ({}));
+    setMatching(false);
     if (!res.ok) {
       setError(json.error ?? "Could not match properties");
       setListings(null);
@@ -206,10 +209,10 @@ export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { cl
         title="Property matching"
         description="Find suitable properties for active buyers and tenants."
       />
-      <div className="inline-flex max-w-full rounded-[var(--re-radius-control,8px)] border border-sales-border p-0.5" role="tablist" aria-label="Matching direction">
+      <div className="grid h-11 w-full grid-cols-2 rounded-[var(--re-radius-control,8px)] border border-sales-border p-0.5 sm:inline-flex sm:w-auto" role="tablist" aria-label="Matching direction">
         {([
-          ["properties", "Find properties for a customer"],
-          ["buyers", "Find buyers for a property"],
+          ["properties", "Properties for a buyer"],
+          ["buyers", "Buyers for a property"],
         ] as const).map(([id, label]) => (
           <button
             key={id}
@@ -217,7 +220,7 @@ export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { cl
             role="tab"
             aria-selected={mode === id}
             onClick={() => setMode(id)}
-            className={cn("re-focus min-h-11 rounded-[6px] px-3 text-left text-[13px] font-semibold", mode === id ? "bg-sales-text-primary text-sales-surface" : "text-sales-text-secondary")}
+            className={cn("re-focus inline-flex h-full items-center justify-center whitespace-nowrap rounded-[6px] px-3 text-[13px] font-semibold", mode === id ? "bg-sales-text-primary text-sales-surface" : "text-sales-text-secondary")}
           >
             {label}
           </button>
@@ -225,12 +228,12 @@ export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { cl
       </div>
 
       {mode === "properties" ? (
-        <ReSection id="search-pick" title="Customer search">
+        <ReSection id="search-pick" title="Select buyer search" description="Find properties that fit this search." hideMobileDescription>
           <button type="button" className={cn(acqFieldClass, "text-left")} onClick={() => { setQuery(""); setPicker("search"); }}>
             {selectedSearch ? selectedSearch.contact_name : "Choose an active search"}
           </button>
           {selectedSearch ? <p className="mt-2 text-[13px] text-sales-text-secondary">{searchLine(selectedSearch)}</p> : null}
-          <button type="button" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "mt-3 min-h-11")} disabled={!searchId} onClick={() => void findProperties()}>Find properties</button>
+          <button type="button" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "mt-3 min-h-11")} disabled={!searchId || matching} onClick={() => void findProperties()}>{matching ? "Finding…" : "Find properties"}</button>
         </ReSection>
       ) : (
         <ReSection id="listing-pick" title="Property">
@@ -248,7 +251,7 @@ export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { cl
       {listings ? (
         <ReSection id="property-matches" title="Matching properties" count={listings.length}>
           {listings.length === 0 ? (
-            <ReEmptyState title="No suitable properties found" description="Try reviewing the search requirements or checking available listings." action={<Link className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold" href={listingsPath}>Open listings</Link>} />
+            <ReEmptyState title="No suitable properties found" description="Review the search requirements, or look through available listings." action={<Link className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")} href={listingsPath}>Open listings</Link>} />
           ) : (
             <ul className="grid gap-3 md:grid-cols-2">
               {listings.map((match) => {
@@ -320,12 +323,13 @@ export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { cl
       <ReSection
         id="demand"
         title="Buyer demand insights"
-        description="Understand what your customers are looking for and where your property inventory falls short."
-        action={<button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => void loadDemand()}>Load insights</button>}
+        description="Recorded gaps between what customers want and the stock you can offer."
+        hideMobileDescription
+        action={<button type="button" className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")} onClick={() => void loadDemand()}>{definition || gaps ? "Refresh" : "View insights"}</button>}
       >
-        {definition ? <p className="text-[13px] text-sales-text-secondary">{definition}</p> : <p className="text-[13px] text-sales-text-muted">Load this when you need the recorded demand gaps for this agency.</p>}
+        {definition ? <p className="text-[13px] text-sales-text-secondary">{definition}</p> : <p className="text-[13px] text-sales-text-muted">Open this when you need the recorded demand gaps.</p>}
         {demandIncomplete ? <RePartialNotice>This demand view is incomplete. The scan stopped at the existing listing or search limit.</RePartialNotice> : null}
-        <ul className="mt-3 grid gap-2 md:grid-cols-2">
+        <ul className={cn("mt-3 grid gap-2 md:grid-cols-2", !gaps && "hidden")}>
           {(gaps ?? []).map((gap) => (
             <li key={`${gap.location}-${gap.intent}-${gap.propertyType ?? "any"}`} className="rounded-[10px] border border-sales-border-subtle px-3 py-2.5">
               <p className="text-[14px] font-semibold [overflow-wrap:anywhere]">{gap.location}</p>

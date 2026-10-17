@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Building2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
+import { ReMetricOverview } from "@/components/real-estate/ui";
 import { useMediaQuery } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
@@ -450,10 +451,10 @@ export function ListingsManager({
   ];
 
   const table = (
-    <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none">
+    <section className="flex min-h-0 min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none md:min-h-[660px]">
       <div className="flex flex-col gap-3 border-b border-sales-border-subtle px-3 py-3 sm:px-4">
         <div
-          className="scrollbar-hide flex min-w-0 gap-4 overflow-x-auto overscroll-x-contain"
+          className="flex min-w-0 gap-4 overflow-x-auto overscroll-x-contain [mask-image:linear-gradient(to_right,#000_calc(100%-24px),transparent)] md:[mask-image:none]"
           role="tablist"
           aria-label="Listing status"
         >
@@ -487,7 +488,7 @@ export function ListingsManager({
             value={query}
             onChange={setQuery}
             placeholder="Search address, suburb…"
-            className="min-w-0 w-full sm:w-[240px]"
+            className="min-w-0 flex-1 sm:w-[240px] sm:flex-none"
           />
           <MenuSelect
             value={typeFilter}
@@ -811,14 +812,14 @@ export function ListingsManager({
   ) : null;
 
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <div className="flex flex-col gap-4 sm:gap-5">
       {toast ? (
         <p className="rounded-[10px] border border-sales-border bg-sales-surface px-4 py-2 text-[13px] text-sales-text-primary">
           {toast}
         </p>
       ) : null}
 
-      <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <div className="hidden w-full grid-cols-2 gap-3 md:grid md:grid-cols-3 xl:grid-cols-5">
         {kpis.map((item) => (
           <CompanyKpiCard
             key={item.id}
@@ -831,6 +832,26 @@ export function ListingsManager({
             }}
           />
         ))}
+      </div>
+      <div className="order-last md:hidden">
+        <ReMetricOverview label="Listing overview">
+          <div className="grid grid-cols-2 gap-2">
+            {kpis.map((item, index) => (
+              <div
+                key={item.id}
+                className={cn(
+                  "rounded-[12px] border border-sales-border-subtle bg-sales-surface px-3 py-2.5",
+                  index === kpis.length - 1 && "col-span-2 flex items-center justify-between"
+                )}
+              >
+                <p className="truncate text-[12px] font-medium text-sales-text-secondary">{item.label}</p>
+                <p className={cn("font-display text-[22px] font-semibold leading-none tabular-nums text-sales-text-primary", index === kpis.length - 1 ? "" : "mt-1")}>
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        </ReMetricOverview>
       </div>
 
       {registerNote ? (

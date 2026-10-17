@@ -10,12 +10,15 @@ Implemented in `components/real-estate/ui/primitives.tsx` (`RePageHeader`, `ReSe
 
 | Role | Size | Where |
 |---|---|---|
-| Page title, phone | 22px, weight 600 | `RePageHeader` below the `layout` breakpoint (1100px) |
+| Page title, phone | The mobile app header, about 16px | `ReMobileHeaderTitle`. Do not repeat it in the page. |
+| Page title, home | 17px on a phone, 26px from `layout:` | `RePageHeader` with `mobileTitle` on My Day, where the header is the wordmark |
 | Page title, desktop | 26px, weight 600 | `RePageHeader` at `layout:` |
 | Section title | 15px, weight 600 | `ReSection` |
+| Record title, phone | 15px | List and attention rows |
 | Body | 13–14px | Descriptions and table cells |
 | Metadata | 12–13px | Muted secondary lines |
-| Metric value | Existing `ReStatCard` size | Do not invent a second metric style |
+| Metric value, phone | 22px | `ReStatCard` below `sm` |
+| Metric value, desktop | 24px | `ReStatCard` from `sm` |
 
 Long titles use `overflow-wrap: anywhere` and `min-w-0`. Page descriptions clamp to two lines below `sm`.
 
@@ -35,7 +38,7 @@ Page gutters come from the sales shell, not a second padding system.
 
 `ReSection` is the standard bordered surface: sales surface background, subtle border, radius from `--re-radius-card`. Do not nest a card inside another card when a divider is enough.
 
-`ReStatCard` and `ReMetricGrid` are the compact metric row. One tone system. No rainbow KPI sets.
+`ReStatCard` and `ReMetricGrid` are the metric row. On a phone the supporting line is hidden, and `ReMetricOverview` keeps the full set behind one Show control. Desktop shows the grid directly. One tone system. No rainbow KPI sets.
 
 ## Colour and status
 
@@ -60,11 +63,15 @@ Acquisition and buyer forms use `acqFieldClass` and `acqLabelClass` from `compon
 
 ## Page headers
 
-`RePageHeader` in `components/real-estate/ui/primitives.tsx` is the page title for these workspaces. It carries the one primary action from the page brief: New opportunity, New buyer or tenant, and the list or pipeline switch.
+`RePageHeader` carries the page actions. On a phone its heading is hidden, because `ReMobileHeaderTitle` already names the screen. Pass `mobileTitle` only when the mobile header is the wordmark, as on My Day.
 
-Agent routes (`/sales/...`) turn the sales shell header off (`showDefaultHeader={false}`) so that title is not repeated.
+The same rule applies to `CompanyDashboardHeader` when the company mobile header already names that route. The company dashboard home keeps its greeting.
 
-Manager routes (`/client/acquisitions`, owners, inspections, mandates, buyers, matching, commissions, and staff handover) use `CompanyReShell`. That is the same company sidebar, mobile top bar, and bottom nav as listings, offers, and transactions. The shell title block stays hidden so `RePageHeader` remains the only page title.
+Agent routes (`/sales/...`) turn the sales shell header off (`showDefaultHeader={false}`).
+
+Manager routes use `CompanyReShell` or `CompanyWorkspaceShell` with `businessType="real_estate"`.
+
+On a phone, Real Estate operational shells set `data-re-workspace="true"` and hide the dotted wave. Marketing pages are unchanged. The bottom navigation uses a solid `var(--sales-surface)` so lists do not show through it.
 
 ## Tables
 
@@ -127,6 +134,8 @@ Real Estate uses the sales shell:
 ## Empty, loading, and error
 
 `ReEmptyState`, `ReErrorState`, `ReSkeletonRows`, and `RePartialNotice` in `components/real-estate/ui/primitives.tsx`.
+
+`ReEmptyState` is one title, one short explanation, and one button when there is a next step. Pass `framed` when it is not already inside a section. Do not give the surrounding section the same title.
 
 A failed request uses `ReErrorState` with retry. It must not render zeros. `RePartialNotice` stays visible when an API reports incomplete or truncated data.
 

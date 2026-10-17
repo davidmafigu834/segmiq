@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, UserPlus, Users } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
@@ -12,6 +12,7 @@ import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import { greetingPart } from "@/lib/sales/sales-dashboard-view";
 import { cn } from "@/lib/ui/cn";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { getCompanyNavigation } from "@/lib/sales/navigation/company-nav-config";
 import type { UserRole } from "@/types";
 
 function BreadcrumbTrail({ value }: { value: string }) {
@@ -74,7 +75,13 @@ export function CompanyDashboardHeader({
   hideTitleBlock?: boolean;
   fictional?: boolean;
 }) {
-  const { terminology } = useCompanyWorkspace();
+  const { terminology, isRealEstate, businessType, solarWorkflow } = useCompanyWorkspace();
+  const pathname = usePathname() ?? "";
+  const mobileHeaderNamesPage =
+    isRealEstate &&
+    getCompanyNavigation(businessType, { solarWorkflow }).some(
+      (item) => item.href !== "/client/dashboard" && item.match(pathname)
+    );
   const router = useRouter();
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps("direct");
@@ -134,9 +141,9 @@ export function CompanyDashboardHeader({
         </div>
 
         {hideTitleBlock ? null : (
-        <div className="min-w-0 layout:mt-3.5 layout:border-t layout:border-sales-border-subtle layout:pb-1 layout:pt-5">
+        <div className={cn("min-w-0 layout:mt-3.5 layout:border-t layout:border-sales-border-subtle layout:pb-1 layout:pt-5", mobileHeaderNamesPage && !titleActions && "hidden layout:block")}>
           <div className="flex min-w-0 flex-col gap-3 layout:flex-row layout:items-start layout:justify-between">
-            <div className="min-w-0">
+            <div className={cn("min-w-0", mobileHeaderNamesPage && "hidden layout:block")}>
               <h1 className="dashboard-greeting text-[22px] leading-tight text-sales-text-primary sm:text-[24px] layout:text-[26px]">
                 {greeting}
               </h1>
