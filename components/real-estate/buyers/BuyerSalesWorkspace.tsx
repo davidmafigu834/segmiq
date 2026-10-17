@@ -16,7 +16,8 @@ import {
   type PropertyCategory,
   type SearchStage,
 } from "@/lib/real-estate/buyer-match";
-import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
+import { DIAL_CODES } from "@/lib/settings/company-settings-config";
+import { Button, salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import {
   ReActionMenu,
@@ -33,7 +34,7 @@ import {
   ReStatCard,
   ReStatusBadge,
 } from "@/components/real-estate/ui";
-import { acqFieldClass, acqLabelClass, formatWhen, isOverdue } from "@/components/real-estate/acquisition/acquisition-ui";
+import { acqFieldClass, acqLabelClass, asIsoTimestamp, composeOwnerPhone, formatWhen, isOverdue } from "@/components/real-estate/acquisition/acquisition-ui";
 
 type SearchRow = {
   id: string;
@@ -102,6 +103,9 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
   const [metricsState, setMetricsState] = useState<"loading" | "ready" | "error">("loading");
   const [team, setTeam] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [dialCode, setDialCode] = useState("263");
+  const [phoneNational, setPhoneNational] = useState("");
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [intent, setIntent] = useState("");
@@ -117,7 +121,6 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
   const [duplicates, setDuplicates] = useState<Duplicate[] | null>(null);
   const [form, setForm] = useState({
     name: "",
-    phone: "",
     intent: "purchase",
     propertyType: "",
     categories: [] as PropertyCategory[],
@@ -166,6 +169,15 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
   }, [clientId, intent, stage, followUp, location]);
 
   useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) void load();
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId, intent, stage, followUp, location, q]);
+
+  useEffect(() => {
     const url = new URL(window.location.href);
     if (url.searchParams.get("new") !== "1") return;
     setOpen(true);
@@ -187,8 +199,9 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
   const activeSearchCount = rows.filter((row) => row.status === "active" || !row.status).length;
 
   function payload(contactId?: string) {
+    const phone = composeOwnerPhone(dialCode, phoneNational);
     return {
-      ...(contactId ? { contactId } : { name: form.name, phone: form.phone || null }),
+      ...(contactId ? { contactId } : { name: form.name, phone }),
       intent: form.intent,
       propertyType: form.propertyType || null,
       ...(form.categories.length ? { propertyCategories: form.categories } : {}),
@@ -196,30 +209,84 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
       budgetMax: form.budgetMax ? Number(form.budgetMax) : null,
       bedrooms: form.bedrooms ? Number(form.bedrooms) : null,
       ...(form.nextNote.trim() ? { nextActionNote: form.nextNote.trim() } : {}),
-      ...(form.nextAt ? { nextActionAt: new Date(form.nextAt).toISOString() } : {}),
+      ...(asIsoTimestamp(form.nextAt) ? { nextActionAt: asIsoTimestamp(form.nextAt) } : {}),
     };
   }
 
+  function closeCreate() {
+    if (busy) return;
+    setOpen(false);
+    setDuplicates(null);
+    setFormError(null);
+    setPhoneNational("");
+    setDialCode("263");
+  }
+
   async function createSearch(confirmNewContact = false, contactId?: string) {
+    const phone = composeOwnerPhone(dialCode, phoneNational);
+    if (!contactId && phoneNational.trim() && !phone) {
+      setFormError("Enter the phone number with its country code.");
+      return;
+    }
     setBusy(true);
-    setError(null);
-    const res = await fetch(`/api/clients/${clientId}/buyer-searches`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(contactId ? payload(contactId) : { ...payload(), confirmNewContact }),
-    });
-    const json = await res.json();
-    setBusy(false);
-    if (res.status === 409 && json.duplicates?.length && !contactId) {
-      setDuplicates(json.duplicates);
-      setError(json.error ?? "A similar contact already exists.");
-      return;
+    setFormError(null);
+    let navigating = false;
+    try {
+      const res = await fetch(`/api/clients/${clientId}/buyer-searches`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contactId ? payload(contactId) : { ...payload(), confirmNewContact }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.status === 409 && json.duplicates?.length && !contactId) {
+        setDuplicates(json.duplicates);
+        setFormError(json.error ?? "A similar contact already exists.");
+        return;
+      }
+      if (!res.ok) {
+        setFormError(json.error ?? "Could not create the search");
+        return;
+      }
+      const created = json.search as { id?: string; contact_id?: string; pipeline_stage?: string | null; status?: string; currency?: string | null; updated_at?: string } | undefined;
+      if (!created?.id) {
+        setFormError("The search was saved, but it did not come back to the list. Refresh and check again.");
+        await load();
+        return;
+      }
+      const row: SearchRow = {
+        id: created.id,
+        contact_id: String(created.contact_id ?? contactId ?? created.id),
+        contact_name: form.name.trim() || "Customer",
+        phone,
+        intent: form.intent,
+        property_type: form.propertyType || null,
+        property_categories: form.categories,
+        budget_min: null,
+        budget_max: form.budgetMax ? Number(form.budgetMax) : null,
+        currency: created.currency ?? null,
+        locations: form.location ? [form.location] : [],
+        bedrooms: form.bedrooms ? Number(form.bedrooms) : null,
+        pipeline_stage: created.pipeline_stage ?? "actively_searching",
+        status: created.status ?? "active",
+        next_action_at: asIsoTimestamp(form.nextAt),
+        agent_name: null,
+        updated_at: created.updated_at ?? new Date().toISOString(),
+      };
+      setRows((current) => (current.some((item) => item.id === row.id) ? current : [row, ...current]));
+      setError(null);
+      setIntent("");
+      setStage("");
+      setFollowUp("");
+      setLocation("");
+      setQ("");
+      setOpen(false);
+      navigating = true;
+      router.push(`${basePath}/${created.id}`);
+    } catch {
+      setFormError("Could not save the search. Check the connection and try again.");
+    } finally {
+      if (!navigating) setBusy(false);
     }
-    if (!res.ok) {
-      setError(json.error ?? "Could not create the search");
-      return;
-    }
-    window.location.href = `${basePath}/${json.search.id}`;
   }
 
   return (
@@ -478,21 +545,51 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
         <ReSheet
           title="Add buyer or tenant"
           description="A name and whether they want to buy or rent is enough. Requirements can wait."
-          onClose={() => { if (!busy) { setOpen(false); setDuplicates(null); } }}
+          onClose={closeCreate}
           footer={
-            <div className="flex justify-end gap-2">
-              <button type="button" className="re-focus min-h-11 px-3 text-[14px] font-semibold text-sales-text-secondary" onClick={() => setOpen(false)} disabled={busy}>Cancel</button>
-              <button type="submit" form="new-search" disabled={busy} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>
-                {busy ? "Saving…" : "Create search"}
-              </button>
+            <div className="flex flex-col gap-2">
+              {formError && !duplicates?.length ? <p className="text-[13px] text-sales-danger-fg" role="alert">{formError}</p> : null}
+              <div className="flex justify-end gap-2">
+                <button type="button" className="re-focus min-h-11 px-3 text-[14px] font-semibold text-sales-text-secondary" onClick={closeCreate} disabled={busy}>Cancel</button>
+                <Button type="submit" form="new-search" variant="primary" size="md" loading={busy}>
+                  {busy ? "Saving…" : "Create search"}
+                </Button>
+              </div>
             </div>
           }
         >
           <form id="new-search" className="grid gap-3" onSubmit={(event) => { event.preventDefault(); void createSearch(); }}>
             <label className={acqLabelClass} htmlFor="buyer-name">Customer name</label>
             <input id="buyer-name" required className={acqFieldClass} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-            <label className={acqLabelClass} htmlFor="buyer-phone">Phone <span className="font-normal text-sales-text-muted">optional</span></label>
-            <input id="buyer-phone" className={acqFieldClass} inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
+            <div className="grid gap-3">
+              <label>
+                <span className={acqLabelClass} id="buyer-phone-code-label">Country code</span>
+                <select
+                  id="buyer-phone-code"
+                  aria-labelledby="buyer-phone-code-label"
+                  className={acqFieldClass}
+                  value={dialCode}
+                  onChange={(event) => setDialCode(event.target.value)}
+                >
+                  {DIAL_CODES.map((code) => (
+                    <option key={code.value} value={code.value}>{code.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className={acqLabelClass} id="buyer-phone-label">Phone <span className="font-normal text-sales-text-muted">optional</span></span>
+                <input
+                  id="buyer-phone"
+                  aria-labelledby="buyer-phone-label"
+                  className={acqFieldClass}
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  placeholder="77 123 4567"
+                  value={phoneNational}
+                  onChange={(event) => setPhoneNational(event.target.value)}
+                />
+              </label>
+            </div>
             <fieldset>
               <legend className={acqLabelClass}>Search intent</legend>
               <div className="grid grid-cols-2 gap-2">
@@ -544,7 +641,7 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
             {duplicates?.length ? (
               <div className="rounded-[var(--re-radius-control,8px)] border border-sales-border p-3" role="alert">
                 <p className="text-[13px] font-semibold">A similar contact already exists</p>
-                <p className="mt-1 text-[13px] text-sales-text-secondary">{error}</p>
+                <p className="mt-1 text-[13px] text-sales-text-secondary">{formError}</p>
                 <ul className="mt-2 space-y-2">
                   {duplicates.map((row) => (
                     <li key={row.id}>
@@ -558,7 +655,7 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
                   Create a new contact anyway
                 </button>
               </div>
-            ) : error && open ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
+            ) : null}
           </form>
         </ReSheet>
       ) : null}

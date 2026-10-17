@@ -35,6 +35,14 @@ function denied(): Fail {
   return { ok: false, error: "Forbidden", status: 403 };
 }
 
+function asTimestamptz(value: string | null | undefined): string | null {
+  const raw = value?.trim();
+  if (!raw) return null;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
 async function event(input: {
   clientId: string;
   opportunityId: string;
@@ -203,7 +211,7 @@ export async function createAcquisitionOpportunity(input: {
       address: input.address?.trim() || null,
       location_notes: input.locationNotes?.trim() || null,
       notes: input.notes?.trim() || null,
-      next_action_at: input.nextActionAt ?? null,
+      next_action_at: asTimestamptz(input.nextActionAt),
       idempotency_key: input.idempotencyKey ?? null,
     })
     .select("*")

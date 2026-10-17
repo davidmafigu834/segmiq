@@ -8,7 +8,7 @@ import Link from "next/link";
 import { ArrowLeft, Phone, UserRound } from "lucide-react";
 import { PRICE_TYPES, conversionDecision } from "@/lib/real-estate/acquisition-plan";
 import { PROPERTY_CATEGORIES, PROPERTY_CATEGORY_LABEL } from "@/lib/real-estate/buyer-match";
-import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
+import { Button, salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import {
@@ -612,9 +612,7 @@ function InspectionForm({
             <Field label="Observations" name="notes"><textarea id="notes" name="notes" className={acqFieldClass} rows={4} /></Field>
           </div>
         </div>
-        <button type="submit" disabled={busy} className="mt-3 min-h-11 rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[14px] font-semibold">
-          {busy ? "Saving…" : "Save inspection"}
-        </button>
+        <Button type="submit" variant="secondary" size="md" className="mt-3" loading={busy}>{busy ? "Saving…" : "Save inspection"}</Button>
         {bundle.inspections.length ? (
           <ul className="mt-3 divide-y divide-sales-border-subtle text-[13px]">
             {bundle.inspections.map((item) => (

@@ -8,7 +8,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Building2, Plus } from "lucide-react";
 import { ACQUISITION_SOURCES, ACQUISITION_STAGES, SOURCE_LABEL, STAGE_LABEL } from "@/lib/real-estate/acquisition-plan";
-import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
+import { DIAL_CODES } from "@/lib/settings/company-settings-config";
+import { Button, salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import {
@@ -28,7 +29,7 @@ import {
   ReStatusBadge,
   ReWorkItem,
 } from "@/components/real-estate/ui";
-import { acqFieldClass, acqLabelClass, formatWhen, intentLabel, isOverdue, placeLabel, stageLabel } from "./acquisition-ui";
+import { acqFieldClass, acqLabelClass, asIsoTimestamp, composeOwnerPhone, formatWhen, intentLabel, isOverdue, placeLabel, stageLabel } from "./acquisition-ui";
 
 type Opportunity = {
   id: string;
@@ -80,6 +81,9 @@ export function AcquisitionWorkspace({
   const [draftStage, setDraftStage] = useState("");
   const [draftIntent, setDraftIntent] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [dialCode, setDialCode] = useState("263");
+  const [phoneNational, setPhoneNational] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
@@ -117,6 +121,15 @@ export function AcquisitionWorkspace({
   }, [clientId, stage, intent]);
 
   useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) void load();
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId, stage, intent, q]);
+
+  useEffect(() => {
     const url = new URL(window.location.href);
     if (url.searchParams.get("new") !== "1") return;
     setOpen(true);
@@ -149,34 +162,66 @@ export function AcquisitionWorkspace({
     void load();
   }
 
+  function closeCreate() {
+    if (saving) return;
+    setOpen(false);
+    setFormError(null);
+    setPhoneNational("");
+    setDialCode("263");
+  }
+
   async function create(form: FormData) {
-    setSaving(true);
-    setError(null);
-    const res = await fetch(`/api/clients/${clientId}/acquisitions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
-      body: JSON.stringify({
-        ownerName: form.get("ownerName") || null,
-        ownerPhone: form.get("ownerPhone") || null,
-        suburb: form.get("suburb") || null,
-        city: form.get("city") || null,
-        intent: form.get("intent") || "unknown",
-        source: form.get("source") || "other",
-        notes: form.get("notes") || null,
-        nextActionAt: form.get("nextActionAt") || null,
-        confirmNewContact: form.get("confirmNewContact") === "on",
-      }),
-    });
-    const json = await res.json();
-    setSaving(false);
-    if (!res.ok) {
-      const duplicates = Array.isArray(json.duplicates)
-        ? json.duplicates.map((row: { name?: string | null; phone?: string | null }) => row.name || row.phone).filter(Boolean).join(", ")
-        : "";
-      setError(duplicates ? `${json.error} Matches: ${duplicates}` : json.error ?? "Could not save");
+    const ownerPhone = composeOwnerPhone(dialCode, phoneNational);
+    if (phoneNational.trim() && !ownerPhone) {
+      setFormError("Enter the phone number with its country code.");
       return;
     }
-    window.location.href = `${basePath}/${json.opportunity.id}`;
+    setSaving(true);
+    setFormError(null);
+    let navigating = false;
+    try {
+      const res = await fetch(`/api/clients/${clientId}/acquisitions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
+        body: JSON.stringify({
+          ownerName: form.get("ownerName") || null,
+          ownerPhone,
+          suburb: form.get("suburb") || null,
+          city: form.get("city") || null,
+          intent: form.get("intent") || "unknown",
+          source: form.get("source") || "other",
+          notes: form.get("notes") || null,
+          nextActionAt: asIsoTimestamp(form.get("nextActionAt")),
+          confirmNewContact: form.get("confirmNewContact") === "on",
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const duplicates = Array.isArray(json.duplicates)
+          ? json.duplicates.map((row: { name?: string | null; phone?: string | null }) => row.name || row.phone).filter(Boolean).join(", ")
+          : "";
+        setFormError(duplicates ? `${json.error ?? "Could not save"} Matches: ${duplicates}` : json.error ?? "Could not save");
+        return;
+      }
+      const created = json.opportunity as Opportunity | undefined;
+      if (!created?.id) {
+        setFormError("The opportunity was saved, but it did not come back to the list. Refresh and check again.");
+        await load({ stage: "", intent: "", q: "" });
+        return;
+      }
+      setRows((current) => (current.some((row) => row.id === created.id) ? current : [created, ...current]));
+      setError(null);
+      setStage("");
+      setIntent("");
+      setQ("");
+      setOpen(false);
+      navigating = true;
+      router.push(`${basePath}/${created.id}`);
+    } catch {
+      setFormError("Could not save the opportunity. Check the connection and try again.");
+    } finally {
+      if (!navigating) setSaving(false);
+    }
   }
 
   function rowMenu(row: Opportunity) {
@@ -485,15 +530,18 @@ export function AcquisitionWorkspace({
         <ReSheet
           title="New opportunity"
           description="A name or phone and a location are enough. Price and photos can wait."
-          onClose={() => { if (!saving) setOpen(false); }}
+          onClose={closeCreate}
           footer={
-            <div className="flex items-center justify-end gap-2">
-              <button type="button" className="re-focus min-h-11 rounded-[var(--re-radius-control,8px)] px-3 text-[14px] font-semibold text-sales-text-secondary" onClick={() => setOpen(false)} disabled={saving}>
-                Cancel
-              </button>
-              <button type="submit" form="new-opportunity" disabled={saving} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>
-                {saving ? "Saving…" : "Create opportunity"}
-              </button>
+            <div className="flex flex-col gap-2">
+              {formError ? <p className="text-[13px] text-sales-danger-fg" role="alert">{formError}</p> : null}
+              <div className="flex items-center justify-end gap-2">
+                <button type="button" className="re-focus min-h-11 rounded-[var(--re-radius-control,8px)] px-3 text-[14px] font-semibold text-sales-text-secondary" onClick={closeCreate} disabled={saving}>
+                  Cancel
+                </button>
+                <Button type="submit" form="new-opportunity" variant="primary" size="md" loading={saving}>
+                  {saving ? "Saving…" : "Create opportunity"}
+                </Button>
+              </div>
             </div>
           }
         >
@@ -509,8 +557,35 @@ export function AcquisitionWorkspace({
               <legend className="text-[13px] font-semibold text-sales-text-primary">Property owner</legend>
               <label className={acqLabelClass} htmlFor="ownerName">Name <span className="font-normal text-sales-text-muted">optional if you add a phone</span></label>
               <input id="ownerName" name="ownerName" className={acqFieldClass} autoComplete="name" />
-              <label className={acqLabelClass} htmlFor="ownerPhone">Phone</label>
-              <input id="ownerPhone" name="ownerPhone" className={acqFieldClass} inputMode="tel" autoComplete="tel" />
+              <div className="grid gap-3">
+                <label>
+                  <span className={acqLabelClass} id="ownerPhoneCode-label">Country code</span>
+                  <select
+                    id="ownerPhoneCode"
+                    aria-labelledby="ownerPhoneCode-label"
+                    className={acqFieldClass}
+                    value={dialCode}
+                    onChange={(event) => setDialCode(event.target.value)}
+                  >
+                    {DIAL_CODES.map((code) => (
+                      <option key={code.value} value={code.value}>{code.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span className={acqLabelClass} id="ownerPhone-label">Phone</span>
+                  <input
+                    id="ownerPhone"
+                    aria-labelledby="ownerPhone-label"
+                    className={acqFieldClass}
+                    inputMode="tel"
+                    autoComplete="tel-national"
+                    placeholder="77 123 4567"
+                    value={phoneNational}
+                    onChange={(event) => setPhoneNational(event.target.value)}
+                  />
+                </label>
+              </div>
               <label className="flex min-h-11 items-center gap-2 text-[13px] text-sales-text-secondary">
                 <input name="confirmNewContact" type="checkbox" className="size-4" />
                 Create a new contact even if a similar one exists
@@ -540,7 +615,6 @@ export function AcquisitionWorkspace({
               <label className={acqLabelClass} htmlFor="notes">Notes</label>
               <textarea id="notes" name="notes" className={acqFieldClass} rows={3} />
             </fieldset>
-            {error && open ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
           </form>
         </ReSheet>
       ) : null}

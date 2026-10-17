@@ -19,7 +19,7 @@ import {
   type RejectionReason,
   type SearchStage,
 } from "@/lib/real-estate/buyer-match";
-import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
+import { Button, salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import {
   ReActionMenu,
@@ -32,7 +32,7 @@ import {
   ReSkeletonRows,
   ReStatusBadge,
 } from "@/components/real-estate/ui";
-import { acqFieldClass, acqLabelClass, formatWhen } from "@/components/real-estate/acquisition/acquisition-ui";
+import { acqFieldClass, acqLabelClass, asIsoTimestamp, formatWhen } from "@/components/real-estate/acquisition/acquisition-ui";
 
 type Bundle = {
   search: Record<string, unknown>;
@@ -365,7 +365,7 @@ export function BuyerSearchDetail({
         }
       />
 
-      {error ? <ReErrorState title="Something didn't save" description={error} /> : null}
+      {error && !panel ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
       {phone ? (
         <div className="flex flex-wrap gap-2 layout:hidden">
           <a className="re-focus inline-flex min-h-11 items-center rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[13px] font-semibold" href={`tel:${phone}`}>Call</a>
@@ -620,14 +620,14 @@ export function BuyerSearchDetail({
               className="mt-3 grid gap-2"
               onSubmit={(event) => {
                 event.preventDefault();
-                void patchSearch({ nextActionNote: note, nextActionAt: when ? new Date(when).toISOString() : null });
+                void patchSearch({ nextActionNote: note, nextActionAt: asIsoTimestamp(when) });
               }}
             >
               <label className={acqLabelClass} htmlFor="follow-note">What should happen next</label>
               <input id="follow-note" className={acqFieldClass} value={note} onChange={(event) => setNote(event.target.value)} />
               <label className={acqLabelClass} htmlFor="follow-when">When</label>
               <input id="follow-when" className={acqFieldClass} type="datetime-local" value={when} onChange={(event) => setWhen(event.target.value)} />
-              <button className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")} type="submit" disabled={busy}>Add follow-up</button>
+              <Button variant="secondary" size="md" type="submit" loading={busy}>{busy ? "Saving…" : "Add follow-up"}</Button>
             </form>
           </ReSection>
 
@@ -682,7 +682,8 @@ export function BuyerSearchDetail({
             </select>
             <label className={acqLabelClass} htmlFor="closure-reason">Reason</label>
             <input id="closure-reason" className={acqFieldClass} value={closureReason} onChange={(event) => setClosureReason(event.target.value)} />
-            <button className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")} type="submit" disabled={busy}>Save stage</button>
+            {error ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
+            <Button variant="secondary" size="md" type="submit" loading={busy}>{busy ? "Saving…" : "Save stage"}</Button>
           </form>
         </ReSheet>
       ) : null}
@@ -691,7 +692,7 @@ export function BuyerSearchDetail({
         <ReSheet
           title="Edit requirements"
           onClose={() => setPanel(null)}
-          footer={<div className="flex justify-end"><button form="edit-requirements" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")} type="submit" disabled={busy}>{busy ? "Saving…" : "Save requirements"}</button></div>}
+          footer={<div className="flex flex-col gap-2"><div className="flex justify-end">{error ? <p className="mr-auto self-center text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}<Button form="edit-requirements" variant="primary" size="md" type="submit" loading={busy}>{busy ? "Saving…" : "Save requirements"}</Button></div></div>}
         >
           <form
             id="edit-requirements"
@@ -753,9 +754,12 @@ export function BuyerSearchDetail({
 
       {panel?.kind === "recommend" && activeMatch ? (
         <ReSheet title="Recommend this property" description="This records a recommendation on the search. It does not send a WhatsApp message." onClose={() => setPanel(null)} footer={
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col items-end gap-2">
+            {error ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
+            <div className="flex justify-end gap-2">
             <button type="button" className="re-focus min-h-11 px-3 text-[14px] font-semibold" onClick={() => setPanel(null)}>Cancel</button>
-            <button type="button" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")} disabled={busy} onClick={() => void act({ action: "interest", searchId, listingId: activeMatch.listingId, state: "recommended" })}>{busy ? "Saving…" : "Record recommendation"}</button>
+            <Button type="button" variant="primary" size="md" loading={busy} onClick={() => void act({ action: "interest", searchId, listingId: activeMatch.listingId, state: "recommended" })}>{busy ? "Saving…" : "Record recommendation"}</Button>
+            </div>
           </div>
         }>
           <p className="text-[15px] font-semibold">{place(activeMatch.listing)}</p>
@@ -813,7 +817,11 @@ export function BuyerSearchDetail({
             onSubmit={(event) => {
               event.preventDefault();
               const data = new FormData(event.currentTarget);
-              const scheduledAt = new Date(String(data.get("when") || "")).toISOString();
+              const scheduledAt = asIsoTimestamp(data.get("when"));
+              if (!scheduledAt) {
+                setError("Pick a valid date and time.");
+                return;
+              }
               if (panel.kind === "reschedule") {
                 void act({ action: "reschedule_viewing", viewingId: panel.viewingId, scheduledAt, confirmOverlap: false });
                 return;
@@ -855,7 +863,8 @@ export function BuyerSearchDetail({
                 </div>
               </div>
             ) : null}
-            <button className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")} type="submit" disabled={busy}>{busy ? "Saving…" : panel.kind === "reschedule" ? "Save new time" : "Schedule viewing"}</button>
+            {error ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
+            <Button variant="primary" size="md" type="submit" loading={busy}>{busy ? "Saving…" : panel.kind === "reschedule" ? "Save new time" : "Schedule viewing"}</Button>
           </form>
         </ReSheet>
       ) : null}
@@ -897,7 +906,8 @@ export function BuyerSearchDetail({
             </select>
             <label className={acqLabelClass} htmlFor="app-notes">Notes</label>
             <input id="app-notes" name="notes" className={acqFieldClass} />
-            <button className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")} type="submit" disabled={busy}>{busy ? "Saving…" : "Submit application"}</button>
+            {error ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
+            <Button variant="primary" size="md" type="submit" loading={busy}>{busy ? "Saving…" : "Submit application"}</Button>
           </form>
         </ReSheet>
       ) : null}

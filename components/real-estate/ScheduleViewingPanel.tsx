@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarPlus, Check } from "lucide-react";
+import { CalendarPlus, Check, Loader2 } from "lucide-react";
 import {
   CALLBACK_SCHEDULE_LABELS,
   CALLBACK_SCHEDULE_OPTIONS,
@@ -232,10 +232,11 @@ export function ScheduleViewingPanel({
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className="btn-primary"
+          className="btn-primary inline-flex items-center gap-2"
           disabled={saving || !listingId || !scheduledAt}
           onClick={() => void schedule()}
         >
+          {saving ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
           {saving ? "Saving…" : "Confirm viewing"}
         </button>
         {embedded && onCancel ? (

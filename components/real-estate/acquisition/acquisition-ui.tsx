@@ -17,6 +17,28 @@ export const acqFieldClass =
 
 export const acqLabelClass = "mb-1 block text-[12px] font-medium text-sales-text-secondary";
 
+/** National number plus a dial code, stored as E.164. A leading 0 is dropped. */
+export function composeOwnerPhone(dial: string, raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("+")) {
+    const digits = trimmed.replace(/\D/g, "");
+    return digits ? `+${digits}` : null;
+  }
+  const code = dial.replace(/\D/g, "");
+  const national = trimmed.replace(/\D/g, "").replace(/^0+/, "");
+  if (!code || !national) return null;
+  return `+${code}${national}`;
+}
+
+export function asIsoTimestamp(value: string | FormDataEntryValue | null | undefined): string | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
 export function intentLabel(intent: string | null | undefined): string {
   if (intent === "sale") return "For sale";
   if (intent === "rent") return "To rent";

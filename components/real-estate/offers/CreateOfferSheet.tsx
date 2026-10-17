@@ -145,10 +145,10 @@ export function CreateOfferSheet({
           <Button variant="secondary" onClick={onClose} disabled={saving != null}>
             Cancel
           </Button>
-          <Button variant="secondary" onClick={() => void save(false)} disabled={saving != null}>
+          <Button variant="secondary" onClick={() => void save(false)} loading={saving === "draft"} disabled={saving != null}>
             {saving === "draft" ? "Saving…" : "Save draft"}
           </Button>
-          <Button variant="primary" onClick={() => void save(true)} disabled={saving != null}>
+          <Button variant="primary" onClick={() => void save(true)} loading={saving === "submit"} disabled={saving != null}>
             {saving === "submit" ? "Submitting…" : "Submit offer"}
           </Button>
         </div>

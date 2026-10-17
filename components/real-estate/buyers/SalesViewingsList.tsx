@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import Link from "next/link";
 import { VIEWING_OUTCOMES } from "@/lib/real-estate/buyer-match";
-import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
+import { Button, salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import {
   ReActionMenu,
@@ -19,7 +19,7 @@ import {
   ReSkeletonRows,
   ReStatusBadge,
 } from "@/components/real-estate/ui";
-import { acqFieldClass, acqLabelClass } from "@/components/real-estate/acquisition/acquisition-ui";
+import { acqFieldClass, acqLabelClass, asIsoTimestamp } from "@/components/real-estate/acquisition/acquisition-ui";
 
 type Viewing = {
   id: string;
@@ -56,6 +56,7 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
   const [rows, setRows] = useState<Viewing[]>([]);
   const [incomplete, setIncomplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"upcoming" | "today" | "completed" | "cancelled" | "all">("upcoming");
   const [selected, setSelected] = useState<Viewing | null>(null);
@@ -101,7 +102,7 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
 
   async function confirm(row: Viewing) {
     setBusy(true);
-    setError(null);
+    setFormError(null);
     const res = await fetch(`/api/clients/${clientId}/viewings?id=${row.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -110,7 +111,7 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
     const json = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
-      setError(json.error ?? "Could not confirm this viewing");
+      setFormError(json.error ?? "Could not confirm this viewing");
       return;
     }
     setSelected(null);
@@ -119,11 +120,11 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
 
   async function cancel(row: Viewing) {
     if (!cancelReason.trim()) {
-      setError("Add a reason before cancelling this viewing.");
+      setFormError("Add a reason before cancelling this viewing.");
       return;
     }
     setBusy(true);
-    setError(null);
+    setFormError(null);
     const res = await fetch(`/api/clients/${clientId}/viewings?id=${row.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -132,7 +133,7 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
     const json = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
-      setError(json.error ?? "Could not cancel this viewing");
+      setFormError(json.error ?? "Could not cancel this viewing");
       return;
     }
     setSelected(null);
@@ -143,7 +144,7 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
   async function saveOutcome() {
     if (!outcomeFor || !outcome) return;
     setBusy(true);
-    setError(null);
+    setFormError(null);
     const res = await fetch(`/api/clients/${clientId}/buyer-sales/actions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
@@ -152,7 +153,7 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
     const json = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
-      setError(json.error ?? "Could not save the outcome");
+      setFormError(json.error ?? "Could not save the outcome");
       return;
     }
     setOutcomeFor(null);
@@ -162,13 +163,18 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
 
   async function saveTime(confirmOverlap: boolean) {
     if (!reschedule || !when) return;
+    const nextTime = asIsoTimestamp(when);
+    if (!nextTime) {
+      setFormError("Pick a valid date and time.");
+      return;
+    }
     setBusy(true);
-    setError(null);
+    setFormError(null);
     const res = await fetch(`/api/clients/${clientId}/viewings?id=${reschedule.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        scheduled_at: new Date(when).toISOString(),
+        scheduled_at: nextTime,
         confirm_overlap: confirmOverlap,
       }),
     });
@@ -179,7 +185,7 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
         setOverlap(String(json.warning));
         return;
       }
-      setError(json.error ?? "Could not reschedule");
+      setFormError(json.error ?? "Could not reschedule");
       return;
     }
     setOverlap(null);
@@ -216,7 +222,8 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
         ))}
       </div>
       {incomplete ? <RePartialNotice>This list did not include every viewing. Filters apply only to what loaded.</RePartialNotice> : null}
-      {error ? <ReErrorState title="Viewings" description={error} onRetry={() => void load()} /> : null}
+      {error ? <ReErrorState title="Viewings didn't load" description={error} onRetry={() => void load()} /> : null}
+      {formError && !reschedule && !cancelFor && !outcomeFor ? <p className="text-[13px] text-sales-danger-fg" role="alert">{formError}</p> : null}
       {loading ? <ReSkeletonRows rows={4} label="Loading viewings" /> : null}
       {!loading && !error && visible.length === 0 ? (
         <ReEmptyState
@@ -307,7 +314,8 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
               <button type="button" className="re-focus mt-2 min-h-11 text-[13px] font-semibold" disabled={busy} onClick={() => void saveTime(true)}>Continue anyway</button>
             </div>
           ) : null}
-          <button type="button" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "mt-3 min-h-11")} disabled={busy || !when} onClick={() => void saveTime(false)}>{busy ? "Saving…" : "Save new time"}</button>
+          {formError ? <p className="mt-3 text-[13px] text-sales-danger-fg" role="alert">{formError}</p> : null}
+          <Button type="button" variant="primary" size="md" className="mt-3" loading={busy} disabled={busy || !when} onClick={() => void saveTime(false)}>{busy ? "Saving…" : "Save new time"}</Button>
         </ReSheet>
       ) : null}
 
@@ -315,7 +323,8 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
         <ReSheet title="Cancel viewing" description="This does not book a replacement." onClose={() => setCancelFor(null)}>
           <label className={acqLabelClass} htmlFor="cancel-reason">Reason</label>
           <input id="cancel-reason" className={acqFieldClass} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} />
-          <button type="button" className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "mt-3 min-h-11")} disabled={busy || !cancelReason.trim()} onClick={() => void cancel(cancelFor)}>{busy ? "Saving…" : "Cancel viewing"}</button>
+          {formError ? <p className="mt-3 text-[13px] text-sales-danger-fg" role="alert">{formError}</p> : null}
+          <Button type="button" variant="secondary" size="md" className="mt-3" loading={busy} disabled={busy || !cancelReason.trim()} onClick={() => void cancel(cancelFor)}>{busy ? "Saving…" : "Cancel viewing"}</Button>
         </ReSheet>
       ) : null}
 
@@ -331,7 +340,8 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
               </li>
             ))}
           </ul>
-          <button type="button" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "mt-3 min-h-11")} disabled={busy || !outcome} onClick={() => void saveOutcome()}>{busy ? "Saving…" : "Save outcome"}</button>
+          {formError ? <p className="mt-3 text-[13px] text-sales-danger-fg" role="alert">{formError}</p> : null}
+          <Button type="button" variant="primary" size="md" className="mt-3" loading={busy} disabled={busy || !outcome} onClick={() => void saveOutcome()}>{busy ? "Saving…" : "Save outcome"}</Button>
         </ReSheet>
       ) : null}
     </div>

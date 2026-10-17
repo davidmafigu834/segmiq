@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button, ConfirmDialog } from "@/components/sales/ui";
 import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 
@@ -244,7 +244,8 @@ export function DevelopmentsManager({
             />
           </label>
           <div className="flex gap-2">
-            <button type="button" className="btn-primary" disabled={saving} onClick={() => void save()}>
+            <button type="button" className="btn-primary inline-flex items-center gap-2" disabled={saving} onClick={() => void save()}>
+              {saving ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
               {saving ? "Saving…" : "Save"}
             </button>
             <button

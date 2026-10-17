@@ -889,7 +889,7 @@ export function ListingsManager({
                 <Button type="button" variant="secondary" size="md" onClick={() => setShowForm(false)}>
                   Cancel
                 </Button>
-                <Button type="button" variant="primary" size="md" disabled={saving} onClick={() => void save()}>
+                <Button type="button" variant="primary" size="md" loading={saving} disabled={saving} onClick={() => void save()}>
                   {saving ? "Saving…" : "Save listing"}
                 </Button>
               </div>

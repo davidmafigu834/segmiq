@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import type { InboxConversation } from "@/lib/inbox/types";
 import { acqFieldClass } from "@/components/real-estate/acquisition/acquisition-ui";
 
@@ -62,7 +63,12 @@ export function BuyerConversationActions({
       setError(json.error ?? "Could not create the search");
       return;
     }
-    setCreated(json.search.id as string);
+    const id = json.search?.id;
+    if (typeof id !== "string" || !id) {
+      setError("The search was saved, but it did not come back. Open buyers and tenants to check.");
+      return;
+    }
+    setCreated(id);
   }
 
   async function linkSelected() {
@@ -127,7 +133,8 @@ export function BuyerConversationActions({
       <input className={acqFieldClass} inputMode="decimal" placeholder={rental ? "Monthly budget" : "Budget"} value={budget} onChange={(event) => setBudget(event.target.value)} />
       <input className={acqFieldClass} placeholder="Preferred area" value={location} onChange={(event) => setLocation(event.target.value)} />
       <div className="flex flex-col gap-1">
-        <button type="button" disabled={busy != null} className="re-focus min-h-11 rounded-[8px] bg-sales-text-primary px-3 text-[13px] font-semibold text-sales-surface disabled:opacity-50" onClick={() => void createSearch()}>
+        <button type="button" disabled={busy != null} className="re-focus inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-sales-text-primary px-3 text-[13px] font-semibold text-sales-surface disabled:opacity-50" onClick={() => void createSearch()}>
+          {busy === "create" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
           {busy === "create" ? "Saving…" : rental ? "Create rental search" : "Create buyer search"}
         </button>
         {selected ? (
