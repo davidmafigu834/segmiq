@@ -281,16 +281,24 @@ export function ReMetricGrid({
 export function ReMetricOverview({
   label,
   children,
+  quiet = false,
 }: {
   label: string;
   children: ReactNode;
+  /** A text row instead of a boxed disclosure. Desktop still shows the metrics. */
+  quiet?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="min-w-0">
       <button
         type="button"
-        className="re-focus flex min-h-11 w-full items-center justify-between rounded-[var(--re-radius-control,8px)] border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold text-sales-text-primary md:hidden"
+        className={cn(
+          "re-focus flex min-h-11 w-full items-center justify-between text-sales-text-primary md:hidden",
+          quiet
+            ? "border-b border-sales-border-subtle text-[14px] font-semibold"
+            : "rounded-[var(--re-radius-control,8px)] border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold"
+        )}
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
@@ -490,14 +498,17 @@ export function ReList({ children, label }: { children: ReactNode; label?: strin
   );
 }
 
-export function ReGroupLabel({ children, count }: { children: ReactNode; count?: number }) {
+export function ReGroupLabel({ children, count, className }: { children: ReactNode; count?: number; className?: string }) {
   return (
     <li
       role="presentation"
-      className="flex items-center gap-2 bg-sales-surface-subtle px-[var(--re-card-pad,16px)] py-1.5 text-[12px] font-medium text-sales-text-secondary"
+      className={cn(
+        "flex items-baseline gap-1.5 px-[var(--re-card-pad,16px)] pb-0.5 pt-3 text-[12px] font-medium text-sales-text-muted first:pt-2",
+        className
+      )}
     >
       <span>{children}</span>
-      {count != null ? <span className="tabular-nums text-sales-text-muted">{count}</span> : null}
+      {count != null ? <span className="tabular-nums">{count}</span> : null}
     </li>
   );
 }

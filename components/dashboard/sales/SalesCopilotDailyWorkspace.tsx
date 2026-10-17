@@ -60,6 +60,7 @@ function taskKindIcon(task: SalesTaskItem) {
 function WorkspaceCard({
   task,
   featured,
+  assistant = false,
   timeZone,
   generatedAt,
   busy,
@@ -68,6 +69,8 @@ function WorkspaceCard({
 }: {
   task: SalesTaskItem;
   featured: boolean;
+  /** Lead with why the step matters, instead of another overdue row. */
+  assistant?: boolean;
   timeZone: string;
   generatedAt: string;
   busy: boolean;
@@ -95,10 +98,13 @@ function WorkspaceCard({
   ]
     .filter(Boolean)
     .join(" ");
+  const why = explanation && explanation !== task.title ? explanation : null;
   return (
     <article className={featured ? "sales-copilot-card sales-copilot-card--featured" : "sales-copilot-card"}>
       <div className="sales-copilot-card-body">
+        {assistant && featured ? <p className="sales-copilot-kicker">Suggested next</p> : null}
         <h2 className="sales-copilot-customer-line">{task.relatedName || "Customer"}</h2>
+        {assistant && why ? <p className="sales-copilot-explanation">{why}</p> : null}
         <p className="sales-copilot-action-title">{task.title}</p>
         <p className={dateClass}>
           {showException ? taskKindIcon(task) : null}
@@ -106,7 +112,7 @@ function WorkspaceCard({
           {status.tone === "review" || status.tone === "failed" ? <span>{status.label}</span> : null}
         </p>
       </div>
-      {explanation ? <p className="sales-copilot-explanation">{explanation}</p> : null}
+      {!assistant && explanation ? <p className="sales-copilot-explanation">{explanation}</p> : null}
       {executionError ? <p className="sales-copilot-error">{executionError}</p> : null}
       <div className="sales-copilot-actions">
         <button
@@ -337,11 +343,14 @@ export function SalesCopilotDailyWorkspace({
   const greeting = data ? `Good ${data.greetingPart}, ${name}` : name;
 
   return (
-    <section className="sales-copilot-daily" aria-labelledby={headingId}>
+    <section className={embedded ? "sales-copilot-daily sales-copilot-daily--embedded" : "sales-copilot-daily"} aria-labelledby={headingId}>
       {embedded ? (
-        <h2 id={headingId} className="text-[15px] font-semibold leading-tight tracking-[-0.01em] text-sales-text-primary">
-          Sales Copilot
-        </h2>
+        <div>
+          <h2 id={headingId} className="text-[15px] font-semibold leading-tight tracking-[-0.01em] text-sales-text-primary">
+            Sales Copilot
+          </h2>
+          <p className="sales-copilot-purpose">Suggested next steps from your open work.</p>
+        </div>
       ) : (
         <>
           <p className="sales-copilot-greeting">{loading ? "Loading your sales today" : greeting}</p>
@@ -380,6 +389,7 @@ export function SalesCopilotDailyWorkspace({
               <WorkspaceCard
                 task={data.actions[0]!}
                 featured
+                assistant={embedded}
                 timeZone={data.timezone}
                 generatedAt={data.generatedAt}
                 busy={busyId === data.actions[0]!.id}
@@ -388,11 +398,12 @@ export function SalesCopilotDailyWorkspace({
               />
               {data.actions.length > 1 ? (
                 <div className="sales-copilot-secondary">
-                  {data.actions.slice(1, 3).map((task) => (
+                  {data.actions.slice(1, embedded ? 2 : 3).map((task) => (
                     <WorkspaceCard
                       key={task.id}
                       task={task}
                       featured={false}
+                      assistant={embedded}
                       timeZone={data.timezone}
                       generatedAt={data.generatedAt}
                       busy={busyId === task.id}
@@ -413,6 +424,11 @@ export function SalesCopilotDailyWorkspace({
             </span>
           </Link>
 
+          {embedded && !data.updates.unavailable && data.updates.items.length === 0 ? (
+            <p className="sales-copilot-note">
+              Recent updates · {data.updates.heading === "While you were away" ? "Nothing new since your last visit." : "Nothing new in the last 24 hours."}
+            </p>
+          ) : (
           <section className="sales-copilot-updates" aria-label={data.updates.heading}>
             <div className="sales-copilot-updates-heading">
               <h2 className="sales-copilot-updates-title">{data.updates.heading}</h2>
@@ -434,6 +450,7 @@ export function SalesCopilotDailyWorkspace({
               </ul>
             )}
           </section>
+          )}
         </>
       ) : null}
 

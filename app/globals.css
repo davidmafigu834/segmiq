@@ -4567,6 +4567,32 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
   .sales-dashboard-premium[data-re-workspace="true"] .segmiq-dot-wave {
     display: none;
   }
+
+  /* Phone workspaces are a flat full-width surface. The desktop canvas keeps its centered wash. */
+  html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"].dashboard-shell,
+  html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas,
+  html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas > .sales-mobile-scroll,
+  html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .sales-mobile-scroll {
+    background-image: none;
+    background-color: #050F22;
+  }
+
+  .sales-dashboard-premium[data-re-workspace="true"] .sales-page-content,
+  .sales-dashboard-premium[data-re-workspace="true"] .sales-page-content--dense {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .sales-dashboard-premium[data-re-workspace="true"] .sales-page-stack {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+
+  .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas > .sales-mobile-scroll.overflow-y-auto {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
 
 /* Autofill readability in sales forms */

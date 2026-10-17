@@ -992,24 +992,70 @@ html[data-crm]:not([data-crm-theme="light"])
   scroll-margin-top: 0;
 }
 
-/* Sales Copilot daily workspace. Workbench on the locked light sales tokens. */
+/* Sales Copilot daily workspace. Workbench on the locked light sales tokens.
+   The Real Estate dashboard embeds the same section and keeps the shell tokens. */
 .sales-copilot-daily {
-  --sales-text-primary: var(--sales-neutral-900);
-  --sales-text-secondary: var(--sales-neutral-500);
-  --sales-text-muted: var(--sales-neutral-400);
   min-width: 0;
   max-width: 100%;
   overflow-x: clip;
   border: 0;
+}
+
+.sales-copilot-daily:not(.sales-copilot-daily--embedded) {
+  --sales-text-primary: var(--sales-neutral-900);
+  --sales-text-secondary: var(--sales-neutral-500);
+  --sales-text-muted: var(--sales-neutral-400);
   background: var(--sales-bg);
   color: var(--sales-neutral-900);
   padding: 12px;
 }
 
 @media (min-width: 390px) {
-  .sales-copilot-daily {
+  .sales-copilot-daily:not(.sales-copilot-daily--embedded) {
     padding: 16px;
   }
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] .sales-copilot-daily--embedded {
+  background: transparent;
+  padding: 0;
+  color: var(--sales-text-primary);
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] .sales-copilot-daily--embedded .sales-copilot-purpose,
+.sales-dashboard-premium[data-re-workspace="true"] .sales-copilot-daily--embedded .sales-copilot-kicker {
+  margin: 2px 0 0;
+  color: var(--sales-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] .sales-copilot-daily--embedded .sales-copilot-board,
+.sales-dashboard-premium[data-re-workspace="true"] .sales-copilot-daily--embedded .sales-copilot-secondary {
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] .sales-copilot-daily--embedded .sales-copilot-card {
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] .sales-copilot-daily--embedded .sales-copilot-customer-line,
+.sales-dashboard-premium[data-re-workspace="true"] .sales-copilot-daily--embedded .sales-copilot-card:not(.sales-copilot-card--featured) .sales-copilot-customer-line {
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] .sales-copilot-daily--embedded .sales-copilot-explanation {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] .sales-copilot-daily--embedded .sales-copilot-updates {
+  margin-top: 12px;
 }
 
 .sales-copilot-greeting {

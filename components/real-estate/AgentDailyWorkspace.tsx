@@ -1,17 +1,15 @@
 "use client";
 
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
-/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
+/* Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V4 */
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
-  CalendarClock,
   CalendarPlus,
   FileCheck2,
   Handshake,
-  Home,
   Landmark,
   MessageSquareText,
   PhoneCall,
@@ -30,6 +28,7 @@ import type { OfferAttentionReason } from "@/lib/real-estate/offers";
 import { rePipelineStageLabel } from "@/lib/real-estate/pipeline";
 import { reTransactionStatusLabel } from "@/lib/real-estate/transactions";
 import type { PriorityItem } from "@/lib/real-estate/priority";
+import { cn } from "@/lib/ui/cn";
 import {
   ReActionMenu,
   ReEmptyState,
@@ -55,6 +54,7 @@ import {
 } from "@/components/real-estate/ui";
 
 const ATTENTION_PREVIEW = 8;
+const MOBILE_ATTENTION_PREVIEW = 3;
 
 type BuyerPriority = { id: string; title: string; detail: string; action: string };
 
@@ -142,6 +142,41 @@ function followUpTime(dueAt: string): string | null {
 
 function todayLabel(): string {
   return new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+}
+
+function ActiveWorkTile({ title, detail, href }: { title: string; detail: string; href: string }) {
+  return (
+    <article className="flex min-w-0 items-center justify-between gap-3 rounded-[var(--re-radius-card,12px)] border border-[var(--sales-card-border,var(--sales-border-subtle))] bg-sales-surface px-3 py-3">
+      <div className="min-w-0">
+        <h3 className="truncate text-[14px] font-semibold leading-tight text-sales-text-primary">{title}</h3>
+        <p className="mt-0.5 truncate text-[13px] leading-snug text-sales-text-secondary">{detail}</p>
+      </div>
+      <ReViewAll href={href} />
+    </article>
+  );
+}
+
+function AttentionCard({ entry, group, className }: { entry: AttentionEntry; group: AttentionGroup; className?: string }) {
+  return (
+    <li className={cn("flex min-w-0 flex-col gap-2 px-3 py-3 sm:flex-row sm:items-start sm:gap-3 sm:px-[var(--re-card-pad,16px)]", className)}>
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="min-w-0 text-[15px] font-semibold leading-snug text-sales-text-primary [overflow-wrap:anywhere]">{entry.title}</p>
+          <ReStatusBadge label={entry.statusLabel} urgency={GROUP_URGENCY[group]} />
+        </div>
+        {entry.meta ? (
+          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] leading-snug text-sales-text-muted">{entry.meta}</div>
+        ) : null}
+        <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary [overflow-wrap:anywhere]">{entry.reason}</p>
+      </div>
+      <div className="flex min-w-0 flex-wrap items-center gap-1 sm:shrink-0 sm:pt-0.5">
+        <ReRowAction label={entry.action.label} srContext={entry.title} onClick={entry.action.onClick} href={entry.action.href} />
+        {entry.menu.length > 0 ? (
+          <ReActionMenu label={`More actions for ${entry.title}`} sheetTitle={entry.title} actions={entry.menu} />
+        ) : null}
+      </div>
+    </li>
+  );
 }
 
 export function AgentDailyWorkspace({
@@ -336,66 +371,43 @@ export function AgentDailyWorkspace({
   const shownAttention = showAllAttention ? attention : attention.slice(0, ATTENTION_PREVIEW);
 
   const schedule = useMemo(() => {
-    type Row = { key: string; when: string; sort: string; overdue: boolean; node: ReactNode };
+    type Row = {
+      key: string;
+      when: string;
+      sort: string;
+      title: string;
+      detail: string;
+      action: { label: string; onClick?: () => void; href?: string };
+      menuLeadId?: string;
+    };
     const rows: Row[] = [];
     for (const v of data.viewingsToday) {
       rows.push({
         key: `v-${v.id}`,
         when: timeLabel(v.scheduledAt),
         sort: v.scheduledAt,
-        overdue: false,
-        node: (
-          <ReWorkItem
-            icon={<Home />}
-            title={v.contactName ?? "Client"}
-            reason={`Viewing · ${v.listingLabel}`}
-            action={
-              v.leadId ? (
-                <ReRowAction label="Open" srContext={v.contactName ?? "viewing"} onClick={() => setOpenLeadId(v.leadId)} />
-              ) : (
-                <ReRowAction label="Viewings" href="/sales/viewings" />
-              )
-            }
-          />
-        ),
+        title: v.contactName ?? "Client",
+        detail: `Viewing · ${v.listingLabel}`,
+        action: v.leadId
+          ? { label: "Open", onClick: () => setOpenLeadId(v.leadId) }
+          : { label: "Viewings", href: "/sales/viewings" },
       });
     }
     for (const f of data.followUps) {
+      if (f.overdue) continue;
       const time = followUpTime(f.dueAt);
       rows.push({
         key: `f-${f.leadId}`,
-        when: f.overdue ? "Overdue" : time ?? "Today",
-        sort: f.overdue ? "0" : time ? f.dueAt : "~",
-        overdue: f.overdue,
-        node: (
-          <ReWorkItem
-            icon={<CalendarClock />}
-            iconTone={f.overdue ? "danger" : "neutral"}
-            title={f.name}
-            reason={f.note ? `Follow-up · ${f.note}` : "Follow-up"}
-            action={<ReRowAction label="Open" srContext={f.name} onClick={() => setOpenLeadId(f.leadId)} />}
-            menu={
-              <ReActionMenu
-                label={`More actions for ${f.name}`}
-                sheetTitle={f.name}
-                actions={[
-                  {
-                    id: "done",
-                    label: completingId === f.leadId ? "Saving…" : "Mark follow-up done",
-                    icon: <FileCheck2 />,
-                    disabled: completingId != null,
-                    onSelect: () => void completeFollowUp(f.leadId),
-                  },
-                ]}
-              />
-            }
-          />
-        ),
+        when: time ?? "Today",
+        sort: time ? f.dueAt : "~",
+        title: f.name,
+        detail: f.note ? `Follow-up · ${f.note}` : "Follow-up",
+        action: { label: "Open", onClick: () => setOpenLeadId(f.leadId) },
+        menuLeadId: f.leadId,
       });
     }
-    return rows.sort((a, b) => (a.overdue !== b.overdue ? (a.overdue ? -1 : 1) : a.sort.localeCompare(b.sort)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, completingId]);
+    return rows.sort((a, b) => a.sort.localeCompare(b.sort));
+  }, [data]);
 
   const overdueFollowUps = data.followUps.filter((f) => f.overdue).length;
   const metrics = buyerMetrics.status === "ready" ? buyerMetrics.data.metrics : null;
@@ -458,18 +470,41 @@ export function AgentDailyWorkspace({
   };
 
   const attentionCount = attention.length;
+  const daySummary =
+    attentionCount > 0
+      ? `${attentionCount} ${attentionCount === 1 ? "item needs" : "items need"} your next action`
+      : buyerReports.status === "loading"
+        ? "Checking what needs your next action"
+        : "Nothing needs your next action right now";
+
+  let mobileSeen = 0;
+  const attentionBlocks = GROUP_ORDER.flatMap((group) => {
+    const items = shownAttention.filter((entry) => entry.group === group);
+    if (items.length === 0) return [];
+    const cards = items.map((entry) => {
+      const extra = !showAllAttention && mobileSeen >= MOBILE_ATTENTION_PREVIEW;
+      mobileSeen += 1;
+      return { entry, extra };
+    });
+    return [{ group, total: attention.filter((entry) => entry.group === group).length, cards, labelExtra: cards.every((card) => card.extra) }];
+  });
 
   return (
-    <div className="space-y-[var(--re-section-gap,16px)]">
+    <div className="space-y-3 layout:space-y-[var(--re-section-gap,16px)]">
+      <header className="layout:hidden">
+        <p className="text-[12px] font-medium leading-4 text-sales-text-muted">{todayLabel()}</p>
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <h1 className="min-w-0 font-display text-[24px] font-semibold leading-none tracking-[-0.02em] text-sales-text-primary">My Day</h1>
+          <div className="shrink-0">
+            <ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />
+          </div>
+        </div>
+        <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary">{daySummary}</p>
+      </header>
       <RePageHeader
-        mobileTitle
+        className="hidden layout:flex"
         context={todayLabel()}
-        title={
-          <>
-            <span className="sm:hidden">My day</span>
-            <span className="hidden sm:inline">Today&apos;s work</span>
-          </>
-        }
+        title="Today's work"
         description={
           attentionCount > 0
             ? `${attentionCount} ${attentionCount === 1 ? "item needs" : "items need"} your next action.`
@@ -480,14 +515,14 @@ export function AgentDailyWorkspace({
         actions={<ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />}
       />
 
-      <div className="grid grid-cols-1 items-start gap-[var(--re-section-gap,16px)] layout:grid-cols-12">
+      <div className="grid grid-cols-1 items-start gap-3 layout:grid-cols-12 layout:gap-[var(--re-section-gap,16px)]">
         <ReSection
           id="re-agent-attention"
           title="Needs your attention"
           description="Important customers, properties and deals that need your next action."
           hideMobileDescription
           count={attentionCount}
-          className="layout:col-span-8"
+          className="order-1 layout:order-none layout:col-span-8"
           flush
           action={<ReViewAll href="/sales/pipeline" label="Pipeline" />}
         >
@@ -511,43 +546,17 @@ export function AgentDailyWorkspace({
           ) : (
             <>
               <ReList label="Items that need your attention">
-                {GROUP_ORDER.map((group) => {
-                  const items = shownAttention.filter((e) => e.group === group);
-                  if (items.length === 0) return null;
-                  const total = attention.filter((e) => e.group === group).length;
-                  return [
-                    <ReGroupLabel key={`label-${group}`} count={total}>
-                      {GROUP_LABEL[group]}
+                {attentionBlocks.map((block) => [
+                    <ReGroupLabel key={`label-${block.group}`} count={block.total} className={block.labelExtra ? "max-[1099px]:hidden" : undefined}>
+                      {GROUP_LABEL[block.group]}
                     </ReGroupLabel>,
-                    ...items.map((entry) => (
-                      <ReWorkItem
-                        key={entry.key}
-                        icon={entry.icon}
-                        iconTone={group === "overdue" ? "danger" : group === "today" ? "warning" : "neutral"}
-                        title={entry.title}
-                        reason={entry.reason}
-                        meta={entry.meta}
-                        status={<ReStatusBadge label={entry.statusLabel} urgency={GROUP_URGENCY[group]} />}
-                        action={
-                          <ReRowAction
-                            label={entry.action.label}
-                            srContext={entry.title}
-                            onClick={entry.action.onClick}
-                            href={entry.action.href}
-                          />
-                        }
-                        menu={
-                          entry.menu.length > 0 ? (
-                            <ReActionMenu label={`More actions for ${entry.title}`} sheetTitle={entry.title} actions={entry.menu} />
-                          ) : null
-                        }
-                      />
+                    ...block.cards.map(({ entry, extra }) => (
+                      <AttentionCard key={entry.key} entry={entry} group={block.group} className={extra ? "max-[1099px]:hidden" : undefined} />
                     )),
-                  ];
-                })}
+                  ])}
               </ReList>
-              {attention.length > ATTENTION_PREVIEW ? (
-                <div className="border-t border-sales-border-subtle px-[var(--re-card-pad,16px)] py-2">
+              {attention.length > MOBILE_ATTENTION_PREVIEW ? (
+                <div className={cn("border-t border-sales-border-subtle px-[var(--re-card-pad,16px)] py-2", attention.length <= ATTENTION_PREVIEW && "layout:hidden")}>
                   <button
                     type="button"
                     aria-expanded={showAllAttention}
@@ -563,9 +572,9 @@ export function AgentDailyWorkspace({
           )}
         </ReSection>
 
-        <div className="layout:order-first layout:col-span-12">
+        <div className="order-5 layout:order-first layout:col-span-12">
           <h2 className="sr-only">My sales snapshot</h2>
-          <ReMetricOverview label="My sales snapshot">
+          <ReMetricOverview label="My sales snapshot" quiet>
           <ReMetricGrid label="My sales snapshot">
             <ReStatCard label="New inquiries" value={data.summary.newInquiries} supporting="Received today" href="/sales/leads" />
             <ReStatCard
@@ -592,39 +601,93 @@ export function AgentDailyWorkspace({
           id="re-agent-schedule"
           title="Today's schedule"
           count={schedule.length}
-          className="layout:col-span-4"
+          className="order-3 layout:order-none layout:col-span-4"
           flush
           action={<ReViewAll href="/sales/calendar" label="Calendar" />}
         >
           {schedule.length === 0 ? (
             <ReEmptyState
               title="Nothing scheduled today"
-              description="Viewings and follow-ups due today appear here in time order."
+              description="Viewings and follow-ups due today appear here in time order. Overdue follow-ups stay in Needs your attention."
               compact
             />
           ) : (
             <ul aria-label="Today's schedule" className="divide-y divide-sales-border-subtle">
               {schedule.map((row) => (
-                <li key={row.key} className="grid grid-cols-[56px_minmax(0,1fr)] items-start">
-                  <span
-                    className={
-                      row.overdue
-                        ? "pl-[var(--re-card-pad,16px)] pt-[22px] text-[12px] font-semibold text-sales-danger-fg"
-                        : "pl-[var(--re-card-pad,16px)] pt-[22px] text-[12px] font-semibold tabular-nums text-sales-text-secondary"
-                    }
-                  >
-                    {row.when}
-                  </span>
-                  <ul className="min-w-0">{row.node}</ul>
+                <li key={row.key} className="flex min-w-0 items-center gap-3 px-3 py-2.5 sm:px-[var(--re-card-pad,16px)]">
+                  <span className="w-12 shrink-0 text-[12px] font-semibold tabular-nums text-sales-text-secondary">{row.when}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-semibold leading-snug text-sales-text-primary">{row.title}</p>
+                    <p className="truncate text-[12px] leading-snug text-sales-text-muted">{row.detail}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <ReRowAction label={row.action.label} srContext={row.title} onClick={row.action.onClick} href={row.action.href} />
+                    {row.menuLeadId ? (
+                      <ReActionMenu
+                        label={`More actions for ${row.title}`}
+                        sheetTitle={row.title}
+                        actions={[
+                          {
+                            id: "done",
+                            label: completingId === row.menuLeadId ? "Saving…" : "Mark follow-up done",
+                            icon: <FileCheck2 />,
+                            disabled: completingId != null,
+                            onSelect: () => void completeFollowUp(row.menuLeadId!),
+                          },
+                        ]}
+                      />
+                    ) : null}
+                  </div>
                 </li>
               ))}
             </ul>
           )}
         </ReSection>
 
-        <div className="layout:col-span-12">
-          <h2 className="mb-3 text-[15px] font-semibold tracking-[-0.01em] text-sales-text-primary">My active work</h2>
-          <div className="grid grid-cols-1 items-start gap-[var(--re-section-gap,16px)] md:grid-cols-2 xl:grid-cols-3">
+        <div className="order-2 min-w-0 layout:order-none layout:col-span-12">
+          <h2 className="mb-2 text-[15px] font-semibold tracking-[-0.01em] text-sales-text-primary layout:mb-3">My active work</h2>
+          <div className="grid grid-cols-1 gap-2 layout:hidden">
+            <ActiveWorkTile
+              title="Buyers and tenants"
+              detail={
+                buyerMetrics.status === "loading"
+                  ? "Loading"
+                  : buyerMetrics.status === "error"
+                    ? "Could not load"
+                    : metrics
+                      ? `${metrics.activeBuyers} active buyers · ${metrics.activeTenants} active tenants`
+                      : "—"
+              }
+              href="/sales/buyers"
+            />
+            <ActiveWorkTile
+              title="Property opportunities"
+              detail={
+                acquisitions.status === "loading"
+                  ? "Loading"
+                  : acquisitions.status === "error"
+                    ? "Could not load"
+                    : acquisitions.status === "ready"
+                      ? `${acquisitions.data.summary.active} active${acquisitions.data.summary.overdue > 0 ? ` · ${acquisitions.data.summary.overdue} overdue` : ""}`
+                      : "—"
+              }
+              href="/sales/acquisitions"
+            />
+            <ActiveWorkTile
+              title="Transactions in progress"
+              detail={
+                transactions.status === "loading"
+                  ? "Loading"
+                  : transactions.status === "error"
+                    ? "Could not load"
+                    : txnTotal != null
+                      ? `${txnTotal} in progress`
+                      : "—"
+              }
+              href="/sales/transactions"
+            />
+          </div>
+          <div className="hidden items-start gap-[var(--re-section-gap,16px)] layout:grid layout:grid-cols-2 xl:grid-cols-3">
             <ReSection
               id="re-agent-buyers"
               title="Buyers & tenants"
@@ -737,7 +800,7 @@ export function AgentDailyWorkspace({
           </div>
         </div>
 
-        {copilot ? <div className="min-w-0 layout:col-span-12">{copilot}</div> : null}
+        {copilot ? <div className="order-4 min-w-0 layout:order-none layout:col-span-12">{copilot}</div> : null}
       </div>
 
       {openLeadId ? (
