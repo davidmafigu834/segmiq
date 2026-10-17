@@ -17,9 +17,7 @@ export default async function Page() {
   redirectIfNotRealEstate(client.business_type);
   return (
     <ClientManagerLayout breadcrumbPage="TEAM" pageTitle="Team management" hideShellHeader hideShellSidebar>
-      <div className="space-y-4 px-4 py-4 md:px-6">
-        <h1 className="text-lg font-semibold">Team management</h1>
-        <p className="text-sm text-sales-text-secondary">Review current work and hand it over without rewriting history. Account deactivation stays in the team directory.</p>
+      <div className="px-4 py-4 pb-[calc(var(--sales-mobile-nav-height,64px)+28px)] md:px-6 md:pb-6">
         <HandoverWorkspace clientId={session.clientId} />
       </div>
     </ClientManagerLayout>

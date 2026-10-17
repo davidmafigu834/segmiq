@@ -41,7 +41,7 @@ export default async function SalesTransactionsPage() {
         {...shell}
         breadcrumb="Sales / Transactions"
         title="Transactions"
-        description="Agreements, deposits, conveyancing, and completion after an accepted offer."
+        description="Manage the property transactions you are working on."
       >
         <TransactionsWorkspace clientId={session.clientId} variant="agent" />
       </SalesAppShell>

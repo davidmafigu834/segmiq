@@ -156,7 +156,15 @@ export function TransactionOperations({
   }
 
   if (!data) {
-    return error ? <p className="text-[12px] text-sales-danger-fg">{error}</p> : <p className="text-[13px] text-sales-text-muted">Loading…</p>;
+    return error ? (
+      <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p>
+    ) : (
+      <div className="space-y-2" role="status" aria-label="Loading transaction work">
+        <div className="h-10 animate-pulse rounded-[8px] bg-sales-surface-hover motion-reduce:animate-none" />
+        <div className="h-16 animate-pulse rounded-[8px] bg-sales-surface-hover motion-reduce:animate-none" />
+        <div className="h-16 animate-pulse rounded-[8px] bg-sales-surface-hover motion-reduce:animate-none" />
+      </div>
+    );
   }
 
   const name = (id: string | null | undefined) => (id ? data.names[id] ?? data.team.find((p) => p.id === id)?.name ?? "Team member" : "Unassigned");

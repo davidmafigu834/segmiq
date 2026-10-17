@@ -1,7 +1,22 @@
 "use client";
 
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
+import { cn } from "@/lib/ui/cn";
+import {
+  ReEmptyState,
+  ReErrorState,
+  RePageHeader,
+  RePartialNotice,
+  ReSection,
+  ReSheet,
+  ReStatusBadge,
+} from "@/components/real-estate/ui";
+import { acqFieldClass, acqLabelClass } from "@/components/real-estate/acquisition/acquisition-ui";
 
 type Assignment = { recordType: string; recordId: string; label: string };
 type SourceTotal = { type: string; label: string; count: number; incomplete: boolean; unavailable: boolean };
@@ -27,8 +42,6 @@ type HandoverRow = {
   skipped_items?: number | null;
 };
 
-const fieldClass = "min-h-11 w-full rounded-md border border-sales-border bg-sales-surface px-3 text-sm";
-
 function keyOf(row: Assignment): string {
   return `${row.recordType}:${row.recordId}`;
 }
@@ -44,6 +57,7 @@ export function HandoverWorkspace({ clientId }: { clientId: string }) {
   const [drift, setDrift] = useState<{ currentTotal: number; selectedNoLongerAssigned: number | null } | null>(null);
   const [history, setHistory] = useState<HandoverRow[]>([]);
   const [result, setResult] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -149,69 +163,71 @@ export function HandoverWorkspace({ clientId }: { clientId: string }) {
     setSelected(next);
   }
 
+  const fromName = staff.find((member) => member.id === fromUserId)?.name ?? "Selected person";
+  const toName = staff.find((member) => member.id === replacementId)?.name ?? "Selected replacement";
+
   return (
-    <div className="space-y-3">
-      <h2 className="text-sm font-semibold">Staff handover</h2>
-      <p className="text-xs text-sales-text-secondary">
-        Current assignments move to the people you choose. Original sourcing credit, offer history and commission rows stay. WhatsApp sessions are not transferred. No account is deleted.
-      </p>
-      <div className="grid gap-2 md:grid-cols-2">
-        <label className="text-xs font-medium">
-          Departing person
-          <select className={`${fieldClass} mt-1`} value={fromUserId} onChange={(event) => { setFromUserId(event.target.value); setPreview(null); }}>
-            <option value="">Choose a person</option>
-            {staff.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
-          </select>
-        </label>
-        <label className="text-xs font-medium">
-          Default replacement
-          <select className={`${fieldClass} mt-1`} value={replacementId} onChange={(event) => setReplacementId(event.target.value)}>
-            <option value="">Choose a replacement</option>
-            {others.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
-          </select>
-        </label>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className="min-h-11 rounded-md border border-sales-border px-3 text-sm" disabled={!fromUserId || busy} onClick={() => void loadPreview()}>
-          Review assignments
-        </button>
-        <Link className="inline-flex min-h-11 items-center text-sm" href="/client/team">Open team directory</Link>
-      </div>
-      {error ? <p className="text-sm text-red-600" role="alert">{error}</p> : null}
-      {result ? <p className="text-sm" role="status">{result}</p> : null}
+    <div className="flex min-h-0 flex-col gap-4">
+      <RePageHeader
+        title="Staff handover"
+        description="Transfer active responsibilities while preserving the original history. WhatsApp sessions, sourcing credit and commission beneficiaries stay where they are."
+      />
+      <ReSection id="handover-people" title="1. Choose the people">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <label className={acqLabelClass} htmlFor="handover-from">Person handing work over</label>
+            <select id="handover-from" className={acqFieldClass} value={fromUserId} onChange={(event) => { setFromUserId(event.target.value); setPreview(null); }}>
+              <option value="">Choose a person</option>
+              {staff.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={acqLabelClass} htmlFor="handover-to">Default replacement</label>
+            <select id="handover-to" className={acqFieldClass} value={replacementId} onChange={(event) => setReplacementId(event.target.value)}>
+              <option value="">Choose a replacement</option>
+              {others.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button type="button" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")} disabled={!fromUserId || busy} onClick={() => void loadPreview()}>
+            {busy ? "Reviewing…" : "Review assignments"}
+          </button>
+          <Link className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold" href="/client/team">Open team directory</Link>
+        </div>
+      </ReSection>
+      {error ? <ReErrorState title="Handover" description={error} /> : null}
+      {result ? <p className="text-[13px] text-sales-text-secondary" role="status">{result}</p> : null}
 
       {preview ? (
-        <section className="space-y-2 rounded-lg border border-sales-border p-3">
-          <p className="text-sm font-semibold">
-            {preview.total} current assignments for {preview.fromUser.name} · {selected.size} selected
-          </p>
+        <ReSection id="handover-preview" title="2. Review active work" description={`${preview.total} current assignments for ${preview.fromUser.name}. ${selected.size} selected.`}>
           {preview.incomplete ? (
-            <p className="text-xs text-amber-800">Some lists were too large to load completely. Run the handover, then review again for the remainder.</p>
+            <RePartialNotice>Some lists were too large to load completely. This is not every assignment. Review again after the handover for anything left behind.</RePartialNotice>
           ) : null}
           {preview.unavailable.length ? (
-            <p className="text-xs text-amber-800">Not available until the latest database update is applied: {preview.unavailable.map((type) => type.replaceAll("_", " ")).join(", ")}.</p>
+            <RePartialNotice>Not available until the latest database update is applied: {preview.unavailable.map((type) => type.replaceAll("_", " ")).join(", ")}.</RePartialNotice>
           ) : null}
           <ul className="space-y-2">
             {preview.totals.filter((row) => row.count > 0).map((row) => {
               const items = grouped.get(row.type) ?? [];
               const chosen = items.filter((item) => selected.has(keyOf(item))).length;
               return (
-                <li key={row.type} className="rounded border border-sales-border/70 p-2 text-xs">
+                <li key={row.type} className="rounded-[10px] border border-sales-border-subtle p-3 text-[13px]">
                   <div className="flex flex-wrap items-center gap-2">
-                    <label className="flex min-h-9 items-center gap-2 font-semibold">
+                    <label className="flex min-h-11 items-center gap-2 font-semibold">
                       <input type="checkbox" checked={chosen === items.length && items.length > 0} onChange={(event) => toggleType(row.type, event.target.checked)} />
                       {row.label} ({chosen} of {row.count})
                     </label>
                     <select
                       aria-label={`Replacement for ${row.label}`}
-                      className="min-h-9 rounded-md border border-sales-border bg-sales-surface px-2"
+                      className={cn(acqFieldClass, "w-auto min-w-[180px]")}
                       value={byType[row.type] ?? ""}
                       onChange={(event) => setByType({ ...byType, [row.type]: event.target.value })}
                     >
                       <option value="">Default replacement</option>
                       {others.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
                     </select>
-                    <button type="button" className="min-h-9 text-xs underline" onClick={() => setExpanded(expanded === row.type ? null : row.type)}>
+                    <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => setExpanded(expanded === row.type ? null : row.type)}>
                       {expanded === row.type ? "Hide records" : "Show records"}
                     </button>
                   </div>
@@ -219,7 +235,7 @@ export function HandoverWorkspace({ clientId }: { clientId: string }) {
                     <ul className="mt-1 max-h-64 overflow-y-auto">
                       {items.map((item) => (
                         <li key={keyOf(item)}>
-                          <label className="flex min-h-9 items-center gap-2">
+                          <label className="flex min-h-11 items-center gap-2">
                             <input
                               type="checkbox"
                               checked={selected.has(keyOf(item))}
@@ -239,51 +255,82 @@ export function HandoverWorkspace({ clientId }: { clientId: string }) {
                 </li>
               );
             })}
-            {preview.total === 0 ? <li className="text-sm">No current assignments for this person.</li> : null}
+            {preview.total === 0 ? <li><ReEmptyState compact title="No current assignments" description="This person has no active work the handover can move." /></li> : null}
           </ul>
-          <p className="text-xs text-sales-text-muted">Not changed: {preview.unchanged.join(" · ")}.</p>
+          <p className="mt-3 text-[12px] text-sales-text-muted">Left unchanged: {preview.unchanged.join(" · ") || "Nothing listed"}.</p>
           {drift ? (
-            <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              <p>
+            <div className="mt-3 rounded-[10px] border border-sales-warning/40 bg-sales-warning-soft px-3 py-2 text-[13px] text-sales-warning-fg" role="alert">
+              <p className="font-semibold">Handover preview is out of date</p>
+              <p className="mt-1">
                 Assignments changed after the preview. {drift.currentTotal} are assigned now
-                {drift.selectedNoLongerAssigned ? `; ${drift.selectedNoLongerAssigned} you selected are no longer assigned and will be skipped` : ""}.
+                {drift.selectedNoLongerAssigned ? `. ${drift.selectedNoLongerAssigned} you selected are no longer assigned and will be skipped` : ""}.
               </p>
-              <div className="mt-1 flex gap-2">
-                <button type="button" className="min-h-9 font-semibold underline" onClick={() => void loadPreview()}>Review again</button>
-                <button type="button" className="min-h-9 font-semibold underline" disabled={busy} onClick={() => void run(true)}>Continue with my selection</button>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => void loadPreview()}>Refresh preview</button>
+                <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" disabled={busy} onClick={() => void run(true)}>Continue with my selection</button>
               </div>
             </div>
           ) : null}
           <button
             type="button"
-            className="min-h-11 rounded-md bg-sales-text-primary px-3 text-sm font-semibold text-white disabled:opacity-50"
+            className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "mt-3 min-h-11")}
             disabled={busy || !replacementId || selected.size === 0}
-            onClick={() => void run(false)}
+            onClick={() => setConfirming(true)}
           >
-            Hand over {selected.size} records
+            Confirm handover
           </button>
-        </section>
+        </ReSection>
       ) : null}
 
       {history.length ? (
-        <section className="space-y-1">
-          <h3 className="text-xs font-semibold">Recent handovers</h3>
-          <ul className="space-y-1 text-xs">
-            {history.map((row) => (
-              <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-sales-border/70 px-2 py-1.5">
-                <span>
-                  {new Date(row.created_at).toLocaleDateString()} · {row.status.replaceAll("_", " ")}
-                  {row.total_items != null
-                    ? ` · ${row.applied_items ?? 0} moved, ${row.skipped_items ?? 0} skipped, ${row.failed_items ?? 0} failed of ${row.total_items}`
-                    : row.summary ? ` · ${row.summary}` : ""}
-                </span>
-                {row.status === "partial" || row.status === "in_progress" ? (
-                  <button type="button" className="min-h-9 font-semibold underline" disabled={busy} onClick={() => void retry(row.id)}>Retry failed items</button>
-                ) : null}
-              </li>
-            ))}
+        <ReSection id="handover-history" title="Recent handovers" count={history.length}>
+          <ul className="space-y-2">
+            {history.map((row) => {
+              const failed = row.failed_items ?? 0;
+              return (
+                <li key={row.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-[10px] border border-sales-border-subtle px-3 py-2.5">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <ReStatusBadge label={row.status.replaceAll("_", " ")} tone={failed > 0 || row.status === "partial" ? "warning" : row.status === "completed" || row.status === "applied" ? "success" : "neutral"} />
+                      <span className="text-[12px] text-sales-text-muted">{new Date(row.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p className="mt-1 text-[13px] text-sales-text-secondary [overflow-wrap:anywhere]">
+                      {row.total_items != null
+                        ? `${row.applied_items ?? 0} moved, ${row.skipped_items ?? 0} skipped, ${failed} failed of ${row.total_items}`
+                        : row.summary || "No item counts recorded"}
+                    </p>
+                  </div>
+                  {row.status === "partial" || row.status === "in_progress" ? (
+                    <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" disabled={busy} onClick={() => void retry(row.id)}>Retry failed items</button>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
-        </section>
+        </ReSection>
+      ) : null}
+
+      {confirming && preview ? (
+        <ReSheet
+          title="Confirm handover"
+          description="This moves the selected live assignments. It does not delete the person or rewrite history."
+          onClose={() => { if (!busy) setConfirming(false); }}
+          footer={
+            <div className="flex justify-end gap-2">
+              <button type="button" className="re-focus min-h-11 px-3 text-[14px] font-semibold" onClick={() => setConfirming(false)} disabled={busy}>Cancel</button>
+              <button type="button" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")} disabled={busy} onClick={() => { setConfirming(false); void run(false); }}>
+                {busy ? "Working…" : "Confirm handover"}
+              </button>
+            </div>
+          }
+        >
+          <dl className="space-y-2 text-[14px]">
+            <div><dt className="text-[12px] text-sales-text-muted">From</dt><dd className="font-semibold">{fromName}</dd></div>
+            <div><dt className="text-[12px] text-sales-text-muted">Default replacement</dt><dd className="font-semibold">{toName}</dd></div>
+            <div><dt className="text-[12px] text-sales-text-muted">Selected assignments</dt><dd className="font-semibold tabular-nums">{selected.size}</dd></div>
+          </dl>
+          {preview.incomplete ? <p className="mt-3 text-[13px] text-sales-warning-fg">The preview is incomplete. Records that did not load will stay with the current person.</p> : null}
+        </ReSheet>
       ) : null}
     </div>
   );

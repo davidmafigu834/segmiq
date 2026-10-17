@@ -21,7 +21,7 @@ export function CompanyTransactionsPage({
       chrome={chrome}
       breadcrumb="Company / Transactions"
       title="Transactions"
-      description="Agreements, deposits, conveyancing, and completion after an accepted offer."
+      description="Monitor deals, outstanding requirements and transaction progress."
       hideMobileChrome={stackedSplit && Boolean(selectedId)}
     >
       <TransactionsWorkspace

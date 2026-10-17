@@ -676,15 +676,16 @@ export function ListingsManager({
               >
                 <ListingThumb listing={listing} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-semibold text-sales-text-primary">
+                  <p className="text-[14px] font-semibold leading-snug text-sales-text-primary [overflow-wrap:anywhere]">
                     {listingLabel(listing)}
                   </p>
-                  <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">
+                  <p className="mt-0.5 text-[13px] text-sales-text-secondary [overflow-wrap:anywhere]">
                     {TYPE_LABEL[listing.transaction_type]}
                     {" · "}
                     {money(listing.price)}
                     {specLine(listing) ? ` · ${specLine(listing)}` : ""}
                   </p>
+                  <p className="mt-1 text-[12px] font-semibold text-sales-text-primary">View property</p>
                   {register[listing.id] ? (
                     <p className="mt-0.5 truncate text-[11px] tabular-nums text-sales-text-secondary">
                       {registerActivityLine(register[listing.id])}

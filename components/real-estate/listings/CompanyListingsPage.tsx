@@ -24,7 +24,7 @@ export function CompanyListingsPage({
       chrome={chrome}
       breadcrumb="Company / Listings"
       title="Listings"
-      description="Sale, rental, development and managed stock. Approve new listings before they become live inventory."
+      description="Manage your agency property inventory, availability and activity."
       hideMobileChrome={stackedSplit && Boolean(selectedId)}
       primaryAction={
         <Button

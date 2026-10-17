@@ -6,6 +6,15 @@
     "theme": "Segmiq CRM",
     "design_system": "design.md",
     "enrichment": "none",
+    "brief": "Real Estate UI Phase 4: agency operations for the property register, transactions, commissions, staff handover and reports on the Phase 1 workbench"
+  },
+  {
+    "date": "2026-10-17",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "Segmiq CRM",
+    "design_system": "design.md",
+    "enrichment": "none",
     "brief": "Real Estate UI Phase 3: buyer and tenant directory, search workspace, property matching, viewings and demand insights on the Phase 1 workbench"
   },
   {

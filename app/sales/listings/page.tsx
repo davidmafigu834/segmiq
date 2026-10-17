@@ -41,7 +41,7 @@ export default async function SalesListingsPage() {
         {...shell}
         breadcrumb="Sales / Listings"
         title="Listings"
-        description="Match live stock to inquiries, or submit a listing for manager approval."
+        description="Manage the property inventory you can work with, including availability and activity."
         searchPlaceholder="Search listings..."
       >
         <ListingsManager clientId={session.clientId} canApprove={false} />

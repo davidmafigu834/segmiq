@@ -1,7 +1,21 @@
 "use client";
 
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
+
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { allocateCommission, decimalToCents, grossCommissionCents, type AllocationLine } from "@/lib/real-estate/agency-operations";
+import {
+  ReEmptyState,
+  ReErrorState,
+  ReMetricGrid,
+  RePageHeader,
+  RePartialNotice,
+  ReSection,
+  ReSkeletonRows,
+  ReStatCard,
+  ReStatusBadge,
+} from "@/components/real-estate/ui";
 
 type Commission = {
   id: string;
@@ -57,9 +71,10 @@ type Payload = {
   totals: Totals;
 };
 
-function money(cents: number | null | undefined, currency = "USD"): string {
+function money(cents: number | null | undefined, currency?: string | null): string {
   const value = Number(cents ?? 0) / 100;
-  return `${currency} ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const amount = value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return currency ? `${currency} ${amount}` : amount;
 }
 
 function label(value: string): string {
@@ -116,52 +131,56 @@ export function CommissionsWorkspace({ clientId, mineOnly = false }: { clientId:
   }
 
   const finance = Boolean(data?.finance);
+  const ownView = mineOnly || data?.scope === "own_allocations";
   const totals = data?.totals;
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
+  const metricState = error && !data ? "error" : data ? "ready" : "loading";
 
   return (
-    <div className="space-y-4 px-4 py-4 md:px-6">
-      <div>
-        <h1 className="text-lg font-semibold">{mineOnly || data?.scope === "own_allocations" ? "My commissions" : "Agency commissions"}</h1>
-        <p className="text-sm text-sales-text-secondary">
-          A reported receipt is not verified cash. A buyer deposit is not commission. Screenshots are not proof of payment.
-        </p>
-      </div>
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-clip px-4 py-4 pb-[calc(var(--sales-mobile-nav-height,64px)+28px)] md:px-6 md:pb-6">
+      <RePageHeader
+        title={ownView ? "My commissions" : "Commissions"}
+        description={
+          ownView
+            ? "Track your approved allocations and payment progress. A reported receipt is not verified cash."
+            : "Track agency earnings, allocations, verification and payouts. A reported receipt is not verified cash."
+        }
+      />
 
-      {totals ? (
-        finance ? (
-          <dl className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            <Stat title="Projected" value={money(totals.projectedCents)} />
-            <Stat title="Earned" value={money(totals.earnedCents)} />
-            <Stat title="Invoiced" value={money(totals.invoicedCents)} />
-            <Stat title="Reported received" value={money(totals.reportedReceivedCents)} />
-            <Stat title="Verified received" value={money(totals.verifiedReceivedCents)} />
-            <Stat title="Allocations approved" value={money(totals.approvedCents)} />
-            <Stat title="Outstanding payable" value={money(totals.outstandingPayableCents)} />
-            <Stat title="Paid to staff" value={money(totals.paidCents)} />
-          </dl>
+      <ReMetricGrid label={ownView ? "Your commission summary" : "Agency commission summary"} columns={ownView ? 4 : 4}>
+        {ownView ? (
+          <>
+            <ReStatCard label="My allocations" value={totals ? money(totals.projectedCents) : null} supporting="As returned for your records" state={metricState} />
+            <ReStatCard label="Approved" value={totals ? money(totals.approvedCents) : null} state={metricState} />
+            <ReStatCard label="Outstanding" value={totals ? money(totals.outstandingPayableCents) : null} state={metricState} attention={Boolean(totals && totals.outstandingPayableCents > 0)} />
+            <ReStatCard label="Paid" value={totals ? money(totals.paidCents) : null} supporting="Verified payouts" state={metricState} />
+          </>
         ) : (
-          <dl className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            <Stat title="My allocations" value={money(totals.projectedCents)} />
-            <Stat title="Approved" value={money(totals.approvedCents)} />
-            <Stat title="Outstanding" value={money(totals.outstandingPayableCents)} />
-            <Stat title="Paid (verified)" value={money(totals.paidCents)} />
-          </dl>
-        )
+          <>
+            <ReStatCard label="Earned" value={totals ? money(totals.earnedCents) : null} supporting="Not the same as received" state={metricState} />
+            <ReStatCard label="Verified received" value={totals ? money(totals.verifiedReceivedCents) : null} supporting={totals ? `Reported ${money(totals.reportedReceivedCents)}` : undefined} state={metricState} />
+            <ReStatCard label="Approved outstanding" value={totals ? money(totals.outstandingPayableCents) : null} state={metricState} attention={Boolean(totals && totals.outstandingPayableCents > 0)} />
+            <ReStatCard label="Paid to agents" value={totals ? money(totals.paidCents) : null} state={metricState} />
+          </>
+        )}
+      </ReMetricGrid>
+      {totals && finance ? (
+        <p className="text-[12px] text-sales-text-secondary">
+          Also on the ledger: projected {money(totals.projectedCents)}, invoiced {money(totals.invoicedCents)}, allocations approved {money(totals.approvedCents)}.
+        </p>
       ) : null}
       {totals && finance && totals.legacyUnverifiedCents > 0 ? (
-        <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          {money(totals.legacyUnverifiedCents)} comes from older transaction records and has not been verified. It is not included above.
-        </p>
+        <RePartialNotice>
+          {money(totals.legacyUnverifiedCents)} comes from older transaction records and has not been verified. It is not included in the figures above.
+        </RePartialNotice>
       ) : null}
-      {totals ? <p className="text-xs text-sales-text-secondary">{totals.definition}</p> : null}
+      {totals?.definition ? <p className="text-[12px] text-sales-text-muted">{totals.definition}</p> : null}
       {data?.incomplete ? (
-        <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          Totals could not include every record. Narrow the period or contact support before relying on these figures.
-        </p>
+        <RePartialNotice>Totals could not include every record. Do not treat this page as the complete ledger.</RePartialNotice>
       ) : null}
-      {error ? <p className="text-sm text-red-600" role="alert">{error}</p> : null}
-      {notice ? <p className="text-sm text-sales-text-secondary" role="status">{notice}</p> : null}
+      {error ? <ReErrorState title="Commissions" description={error} onRetry={() => void load()} /> : null}
+      {notice ? <p className="text-[13px] text-sales-text-secondary" role="status">{notice}</p> : null}
+      {!data && !error ? <ReSkeletonRows rows={4} label="Loading commissions" /> : null}
 
       {data && data.disputes.length > 0 ? (
         <DisputeList
@@ -174,8 +193,17 @@ export function CommissionsWorkspace({ clientId, mineOnly = false }: { clientId:
         />
       ) : null}
 
-      <ul className="space-y-2">
-        {data && data.commissions.length === 0 ? <li className="text-sm text-sales-text-secondary">No commission records yet.</li> : null}
+      <ul className="space-y-3">
+        {data && data.commissions.length === 0 ? (
+          <li>
+            <ReSection id="commissions-empty" title={ownView ? "No commission records" : "No commission records"}>
+              <ReEmptyState
+                title={ownView ? "No commission records" : "No commission records"}
+                description={ownView ? "Your commission allocations will appear here when they are recorded." : "Record a commission from a transaction when the agency is ready to track it."}
+              />
+            </ReSection>
+          </li>
+        ) : null}
         {data?.commissions.map((row) => (
           <CommissionCard
             key={row.id}
@@ -198,15 +226,6 @@ export function CommissionsWorkspace({ clientId, mineOnly = false }: { clientId:
       ) : null}
 
       {finance ? <CommissionSetup clientId={clientId} onCreated={() => void load()} /> : null}
-    </div>
-  );
-}
-
-function Stat({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="rounded-md border border-sales-border px-3 py-2">
-      <dt className="text-[11px] text-sales-text-muted">{title}</dt>
-      <dd className="text-base font-semibold tabular-nums">{value}</dd>
     </div>
   );
 }
@@ -239,10 +258,14 @@ function CommissionCard({
     act({ action: "commission_status", commissionId: row.id, statusAction, amountCents: amountCents ?? undefined }, success);
 
   return (
-    <li className="rounded-md border border-sales-border px-3 py-2 text-sm">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="font-semibold">{row.transactionLabel}</p>
-        <p className="tabular-nums">{money(row.grossCents, row.currency)} · {label(row.status)}</p>
+    <li className="rounded-[12px] border border-sales-border-subtle bg-sales-surface px-3.5 py-3 text-[14px]">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold leading-snug [overflow-wrap:anywhere]">{row.transactionLabel}</p>
+          <p className="mt-1 font-display text-[22px] font-semibold tabular-nums leading-none">{money(row.grossCents, row.currency)}</p>
+          <p className="mt-1 text-[12px] text-sales-text-muted">Gross commission</p>
+        </div>
+        <ReStatusBadge label={label(row.status)} tone={row.status === "verified_received" || row.status === "paid" ? "success" : row.status === "reported_received" || row.status === "unverified_legacy" || row.status === "disputed" ? "warning" : row.status === "cancelled" ? "danger" : "neutral"} />
       </div>
       {legacy ? (
         <p className="text-xs text-amber-800">Copied from an older transaction record. Not verified. Review before relying on it.</p>
