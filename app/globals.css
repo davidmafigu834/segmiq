@@ -4579,8 +4579,8 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
 
   .sales-dashboard-premium[data-re-workspace="true"] .sales-page-content,
   .sales-dashboard-premium[data-re-workspace="true"] .sales-page-content--dense {
-    padding-left: 0;
-    padding-right: 0;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .sales-dashboard-premium[data-re-workspace="true"] .sales-page-stack {

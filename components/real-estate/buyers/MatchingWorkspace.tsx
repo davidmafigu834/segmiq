@@ -4,7 +4,7 @@
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
 
 import { useEffect, useState } from "react";
-import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
+import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import Link from "next/link";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
@@ -69,8 +69,7 @@ type Gap = {
   unmatchedSearchCount: number;
 };
 
-const shell =
-  "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-clip px-4 py-4 pb-[calc(var(--sales-mobile-nav-height,64px)+28px)] md:px-6 md:pb-6";
+const shell = reSalesShell;
 
 function strengthLabel(strength: string): string {
   if (strength === "strong") return "Strong match";

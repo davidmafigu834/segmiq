@@ -10,7 +10,7 @@ import { Building2, Plus } from "lucide-react";
 import { ACQUISITION_SOURCES, ACQUISITION_STAGES, SOURCE_LABEL, STAGE_LABEL } from "@/lib/real-estate/acquisition-plan";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
-import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
+import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import {
   ReActionMenu,
   ReEmptyState,
@@ -54,8 +54,7 @@ type Summary = {
   converted: number;
 };
 
-const shellClass =
-  "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-[var(--re-section-gap,16px)] overflow-y-auto overflow-x-clip px-4 py-4 pb-[calc(var(--sales-mobile-nav-height,64px)+28px)] md:pb-6";
+const shellClass = reSalesShell;
 
 export function AcquisitionWorkspace({
   clientId,
@@ -369,7 +368,7 @@ export function AcquisitionWorkspace({
       {!loading && !error && rows.length > 0 && view === "pipeline" ? (
         <>
           <div className="md:hidden">
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2" role="tablist" aria-label="Acquisition stage">
+            <div className="flex gap-2 overflow-x-auto pb-2" role="tablist" aria-label="Acquisition stage">
               {grouped.map((column) => (
                 <button
                   key={column.key}

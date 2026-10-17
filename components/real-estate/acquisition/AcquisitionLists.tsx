@@ -10,7 +10,7 @@ import { ClipboardCheck, Phone, ScrollText, UserRound } from "lucide-react";
 import { MandateActions, type MandateRow } from "./MandateActions";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
-import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
+import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import {
   ReActionMenu,
   ReEmptyState,
@@ -34,8 +34,7 @@ import {
   mandateTypeLabel,
 } from "./acquisition-ui";
 
-const shellClass =
-  "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-[var(--re-section-gap,16px)] overflow-y-auto overflow-x-clip px-4 py-4 pb-[calc(var(--sales-mobile-nav-height,64px)+28px)] md:pb-6";
+const shellClass = reSalesShell;
 
 type Owner = { contactId: string; name: string | null; properties: number; active: number };
 type OpportunityRow = {

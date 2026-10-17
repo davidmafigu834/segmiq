@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { allocateCommission, decimalToCents, grossCommissionCents, type AllocationLine } from "@/lib/real-estate/agency-operations";
-import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
+import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import {
   ReEmptyState,
   ReErrorState,
@@ -138,7 +138,7 @@ export function CommissionsWorkspace({ clientId, mineOnly = false, framed = fals
   const metricState = error && !data ? "error" : data ? "ready" : "loading";
 
   return (
-    <div className={framed ? reEmbeddedShell : "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-clip px-4 py-4 pb-[calc(var(--sales-mobile-nav-height,64px)+28px)] md:px-6 md:pb-6"}>
+    <div className={framed ? reEmbeddedShell : reSalesShell}>
       <RePageHeader
         title={ownView ? "My commissions" : "Commissions"}
         description={

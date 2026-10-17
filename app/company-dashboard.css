@@ -1805,3 +1805,26 @@ html .sales-pipeline-sheet.sales-dashboard-premium {
   background-color: var(--sales-surface);
   background-image: none;
 }
+
+/* Salesperson Real Estate phones: one 16px gutter, same width as the manager canvas. */
+@media (max-width: 1099.98px) {
+  .sales-dashboard-premium[data-sales-portal="true"][data-re-workspace="true"] .sales-page-content,
+  .sales-dashboard-premium[data-sales-portal="true"][data-re-workspace="true"] .sales-page-content--dense {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .sales-dashboard-premium[data-sales-portal="true"][data-re-workspace="true"] .sales-page-stack {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+
+  .sales-dashboard-premium[data-sales-portal="true"][data-re-workspace="true"] .sales-page-stack > * {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    align-self: stretch;
+  }
+}

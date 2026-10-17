@@ -266,7 +266,7 @@ function SalesAppShellInner({
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideBottomNav ? "true" : "false"}
       data-content-flush={contentFlush ? "true" : "false"}
-      data-mobile-full-bleed={mobileFullBleed ? "true" : "false"}
+      data-mobile-full-bleed={mobileFullBleed || realEstateWorkspace ? "true" : "false"}
       data-sales-portal="true"
       data-re-workspace={realEstateWorkspace ? "true" : undefined}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}

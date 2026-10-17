@@ -4,7 +4,7 @@
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
 
 import { useEffect, useMemo, useState } from "react";
-import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
+import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import { useRouter } from "next/navigation";
 import { Plus, Users } from "lucide-react";
 import {
@@ -66,8 +66,7 @@ type Metrics = {
 
 type Duplicate = { id: string; name?: string | null; phone?: string | null };
 
-const shell =
-  "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-[var(--re-section-gap,16px)] overflow-y-auto overflow-x-clip px-4 py-4 pb-[calc(var(--sales-mobile-nav-height,64px)+28px)] md:pb-6";
+const shell = reSalesShell;
 
 function categoryText(values: string[] | null | undefined): string {
   return asPropertyCategories(values ?? [])
@@ -586,7 +585,7 @@ function Pipeline({
   const current = columns.find((column) => column.item === stage) ?? columns[0]!;
   return (
     <>
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:hidden" role="tablist" aria-label="Search stage">
+      <div className="flex gap-2 overflow-x-auto pb-1 md:hidden" role="tablist" aria-label="Search stage">
         {columns.map((column) => (
           <button
             key={column.item}

@@ -10,7 +10,7 @@ import { PRICE_TYPES, conversionDecision } from "@/lib/real-estate/acquisition-p
 import { PROPERTY_CATEGORIES, PROPERTY_CATEGORY_LABEL } from "@/lib/real-estate/buyer-match";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
-import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
+import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import {
   ReActionMenu,
   ReDetailList,
@@ -50,8 +50,7 @@ type Bundle = {
   mandates: Array<Record<string, unknown>>;
 };
 
-const shellClass =
-  "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-[var(--re-section-gap,16px)] overflow-y-auto overflow-x-clip px-4 py-4 pb-[calc(var(--sales-mobile-nav-height,64px)+28px)] md:pb-6";
+const shellClass = reSalesShell;
 
 const INSPECTION_JUMPS = [
   ["inspect-place", "Property"],

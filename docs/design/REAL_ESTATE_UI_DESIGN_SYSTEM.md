@@ -71,7 +71,7 @@ Agent routes (`/sales/...`) turn the sales shell header off (`showDefaultHeader=
 
 Manager routes use `CompanyReShell` or `CompanyWorkspaceShell` with `businessType="real_estate"`.
 
-On a phone, Real Estate operational shells set `data-re-workspace="true"`, hide the dotted wave, and use a flat full-width canvas. The page stack is not a centered column, and horizontal padding is a single 16px gutter. Marketing pages and the desktop canvas are unchanged. The bottom navigation uses a solid `var(--sales-surface)` so lists do not show through it.
+On a phone, Real Estate operational shells set `data-re-workspace="true"`, hide the dotted wave, and use a flat full-width canvas. Salesperson pages use that same single 16px gutter. They do not add a second inset, and the page stack is not a centered column. Marketing pages and the desktop canvas are unchanged. The bottom navigation uses a solid `var(--sales-surface)` so lists do not show through it.
 
 ## Tables
 
