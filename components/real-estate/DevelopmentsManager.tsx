@@ -262,6 +262,7 @@ export function DevelopmentsManager({
         {rows.length === 0 ? (
           <p className="px-5 py-10 text-center text-[13px] text-sales-text-muted">No developments yet.</p>
         ) : (
+          <>
           <ul className="divide-y divide-sales-border-subtle md:hidden">
             {rows.map((d) => (
               <li key={d.id} className="px-4 py-3">
@@ -341,6 +342,7 @@ export function DevelopmentsManager({
               </tbody>
             </table>
           </div>
+          </>
         )}
       </section>
 
