@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { CommissionsWorkspace } from "@/components/real-estate/agency/CommissionsWorkspace";
+import { CompanyReShell } from "@/components/real-estate/company/CompanyReShell";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,17 @@ export default async function Page() {
   redirectIfNotRealEstate(client.business_type);
   return (
     <ClientManagerLayout breadcrumbPage="COMMISSIONS" pageTitle="Commissions" hideShellHeader hideShellSidebar>
-      <CommissionsWorkspace clientId={session.clientId} />
+      <CompanyReShell
+        userId={session.userId}
+        clientId={session.clientId}
+        userName={session.user?.name ?? "User"}
+        role={session.role}
+        breadcrumb="Company / Commissions"
+        title="Commissions"
+        description="Track agency earnings, allocations, verification and payouts."
+      >
+        <CommissionsWorkspace clientId={session.clientId} framed />
+      </CompanyReShell>
     </ClientManagerLayout>
   );
 }

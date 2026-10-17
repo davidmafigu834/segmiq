@@ -4,6 +4,7 @@
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
 
 import { useEffect, useState } from "react";
+import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
 import Link from "next/link";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
@@ -88,7 +89,7 @@ function listingLine(row: ListingOption): string {
   return [row.address, row.suburb].filter(Boolean).join(", ") || "Property";
 }
 
-export function MatchingWorkspace({ clientId, buyersPath }: { clientId: string; buyersPath: string }) {
+export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { clientId: string; buyersPath: string; framed?: boolean }) {
   const listingsPath = buyersPath.replace("/buyers", "/listings");
   const acquisitionsPath = buyersPath.replace("/buyers", "/acquisitions");
   const [mode, setMode] = useState<"properties" | "buyers">("properties");
@@ -200,7 +201,7 @@ export function MatchingWorkspace({ clientId, buyersPath }: { clientId: string; 
   const filteredListings = listingsOptions.filter((row) => listingLine(row).toLowerCase().includes(query.trim().toLowerCase()));
 
   return (
-    <div className={shell}>
+    <div className={framed ? reEmbeddedShell : shell}>
       <RePageHeader
         title="Property matching"
         description="Find suitable properties for active buyers and tenants."

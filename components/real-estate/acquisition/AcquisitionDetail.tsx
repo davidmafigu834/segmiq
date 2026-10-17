@@ -10,6 +10,7 @@ import { PRICE_TYPES, conversionDecision } from "@/lib/real-estate/acquisition-p
 import { PROPERTY_CATEGORIES, PROPERTY_CATEGORY_LABEL } from "@/lib/real-estate/buyer-match";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
+import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
 import {
   ReActionMenu,
   ReDetailList,
@@ -68,13 +69,16 @@ export function AcquisitionDetail({
   basePath,
   ownersPath,
   canReview,
+  framed = false,
 }: {
   clientId: string;
   opportunityId: string;
   basePath: string;
   ownersPath: string;
   canReview: boolean;
+  framed?: boolean;
 }) {
+  const rootClass = framed ? reEmbeddedShell : shellClass;
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -136,14 +140,14 @@ export function AcquisitionDetail({
 
   if (!bundle && !error) {
     return (
-      <div className={shellClass}>
+      <div className={rootClass}>
         <ReSkeletonRows rows={6} label="Loading opportunity" />
       </div>
     );
   }
   if (!bundle || !evidence) {
     return (
-      <div className={shellClass}>
+      <div className={rootClass}>
         <ReErrorState title="This opportunity didn't load" description={error ?? "Try again."} onRetry={() => void load()} />
       </div>
     );
@@ -193,7 +197,7 @@ export function AcquisitionDetail({
   ].filter((item): item is string => Boolean(item));
 
   return (
-    <div className={shellClass}>
+    <div className={rootClass}>
       <div>
         <Link href={basePath} className="re-focus inline-flex min-h-11 items-center gap-1.5 text-[13px] font-semibold text-sales-text-secondary">
           <ArrowLeft size={16} strokeWidth={1.8} aria-hidden />

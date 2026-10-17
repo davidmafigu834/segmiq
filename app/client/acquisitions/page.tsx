@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { AcquisitionWorkspace } from "@/components/real-estate/acquisition/AcquisitionWorkspace";
+import { CompanyReShell } from "@/components/real-estate/company/CompanyReShell";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 
 export default async function Page() {
@@ -16,9 +17,19 @@ export default async function Page() {
   redirectIfNotRealEstate(client.business_type);
   return (
     <ClientManagerLayout breadcrumbPage="OPPORTUNITIES" pageTitle="Property Opportunities" hideShellHeader hideShellSidebar>
-      <Suspense fallback={null}>
-        <AcquisitionWorkspace clientId={session.clientId} basePath="/client/acquisitions" />
-      </Suspense>
+      <CompanyReShell
+        userId={session.userId}
+        clientId={session.clientId}
+        userName={session.user?.name ?? "User"}
+        role={session.role}
+        breadcrumb="Company / Opportunities"
+        title="Property opportunities"
+        description="Track potential properties from first contact to approved listing."
+      >
+        <Suspense fallback={null}>
+          <AcquisitionWorkspace clientId={session.clientId} basePath="/client/acquisitions" framed />
+        </Suspense>
+      </CompanyReShell>
     </ClientManagerLayout>
   );
 }

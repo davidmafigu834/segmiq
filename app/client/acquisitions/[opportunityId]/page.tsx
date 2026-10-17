@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { AcquisitionDetail } from "@/components/real-estate/acquisition/AcquisitionDetail";
+import { CompanyReShell } from "@/components/real-estate/company/CompanyReShell";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 
 export default async function Page({ params }: { params: { opportunityId: string } }) {
@@ -15,13 +16,24 @@ export default async function Page({ params }: { params: { opportunityId: string
   redirectIfNotRealEstate(client.business_type);
   return (
     <ClientManagerLayout breadcrumbPage="OPPORTUNITY" pageTitle="Opportunity" hideShellHeader hideShellSidebar>
-      <AcquisitionDetail
+      <CompanyReShell
+        userId={session.userId}
         clientId={session.clientId}
-        opportunityId={params.opportunityId}
-        basePath="/client/acquisitions"
-        ownersPath="/client/owners"
-        canReview
-      />
+        userName={session.user?.name ?? "User"}
+        role={session.role}
+        breadcrumb="Company / Opportunity"
+        title="Opportunity"
+        description="Move one property from first contact through inspection, mandate and listing."
+      >
+        <AcquisitionDetail
+          clientId={session.clientId}
+          opportunityId={params.opportunityId}
+          basePath="/client/acquisitions"
+          ownersPath="/client/owners"
+          canReview
+          framed
+        />
+      </CompanyReShell>
     </ClientManagerLayout>
   );
 }

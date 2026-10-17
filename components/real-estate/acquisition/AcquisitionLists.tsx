@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClipboardCheck, Phone, ScrollText, UserRound } from "lucide-react";
 import { MandateActions, type MandateRow } from "./MandateActions";
+import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
 import {
   ReActionMenu,
   ReEmptyState,
@@ -48,7 +49,7 @@ type OpportunityRow = {
   updated_at?: string;
 };
 
-export function OwnerList({ clientId, basePath }: { clientId: string; basePath: string }) {
+export function OwnerList({ clientId, basePath, framed = false }: { clientId: string; basePath: string; framed?: boolean }) {
   const router = useRouter();
   const [owners, setOwners] = useState<Owner[]>([]);
   const [opportunities, setOpportunities] = useState<OpportunityRow[]>([]);
@@ -94,7 +95,7 @@ export function OwnerList({ clientId, basePath }: { clientId: string; basePath: 
   const acquisitionsPath = basePath.replace(/\/owners$/, "/acquisitions");
 
   return (
-    <div className={shellClass}>
+    <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
         title="Property owners"
         description="Manage owner relationships and the properties they bring to your agency."
@@ -195,7 +196,7 @@ const INSPECTION_FILTERS = [
   { id: "attention", label: "Needs attention" },
 ] as const;
 
-export function InspectionList({ clientId, opportunityBase }: { clientId: string; opportunityBase: string }) {
+export function InspectionList({ clientId, opportunityBase, framed = false }: { clientId: string; opportunityBase: string; framed?: boolean }) {
   const [rows, setRows] = useState<Array<Record<string, unknown>>>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -231,7 +232,7 @@ export function InspectionList({ clientId, opportunityBase }: { clientId: string
   });
 
   return (
-    <div className={shellClass}>
+    <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
         title="Property inspections"
         description="Schedule and record property assessments. These are not buyer viewings."
@@ -325,7 +326,7 @@ const MANDATE_FILTERS = [
   { id: "all", label: "All" },
 ] as const;
 
-export function MandateList({ clientId, opportunityBase }: { clientId: string; opportunityBase: string }) {
+export function MandateList({ clientId, opportunityBase, framed = false }: { clientId: string; opportunityBase: string; framed?: boolean }) {
   const [rows, setRows] = useState<MandateRow[]>([]);
   const [canReview, setCanReview] = useState(false);
   const [incomplete, setIncomplete] = useState(false);
@@ -366,7 +367,7 @@ export function MandateList({ clientId, opportunityBase }: { clientId: string; o
   const open = rows.find((row) => row.id === openId) ?? null;
 
   return (
-    <div className={shellClass}>
+    <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
         title="Property mandates"
         description={canReview ? "Review marketing authority before a property can be prepared as a listing." : "Mandates you can access. A manager approves, rejects, renews and revokes them."}

@@ -53,11 +53,11 @@ export function RePageHeader({
         {context ? (
           <p className="text-[12px] font-medium text-sales-text-muted sm:text-[13px]">{context}</p>
         ) : null}
-        <h1 className="mt-0.5 font-display text-[24px] font-semibold leading-[1.15] tracking-[-0.02em] text-sales-text-primary layout:text-[28px]">
+        <h1 className="mt-0.5 min-w-0 font-display text-[22px] font-semibold leading-7 tracking-[-0.02em] text-sales-text-primary [overflow-wrap:anywhere] layout:text-[26px] layout:leading-[1.15]">
           {title}
         </h1>
         {description ? (
-          <p className="mt-1 max-w-[60ch] text-[13px] leading-snug text-sales-text-secondary sm:text-[14px]">
+          <p className="mt-1 line-clamp-2 max-w-[60ch] text-[13px] leading-snug text-sales-text-secondary sm:line-clamp-none sm:text-[14px]">
             {description}
           </p>
         ) : null}

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { BuyerSearchDetail } from "@/components/real-estate/buyers/BuyerSearchDetail";
+import { CompanyReShell } from "@/components/real-estate/company/CompanyReShell";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,17 @@ export default async function Page({ params }: { params: { searchId: string } })
   redirectIfNotRealEstate(client.business_type);
   return (
     <ClientManagerLayout breadcrumbPage="BUYERS" pageTitle="Buyer search" hideShellHeader hideShellSidebar>
-      <BuyerSearchDetail clientId={session.clientId} searchId={params.searchId} offersHref="/client/offers" canVerifyDeposit />
+      <CompanyReShell
+        userId={session.userId}
+        clientId={session.clientId}
+        userName={session.user?.name ?? "User"}
+        role={session.role}
+        breadcrumb="Company / Buyer"
+        title="Buyer search"
+        description="Requirements, matches, viewings and the next step for this buyer or tenant."
+      >
+        <BuyerSearchDetail clientId={session.clientId} searchId={params.searchId} offersHref="/client/offers" canVerifyDeposit framed />
+      </CompanyReShell>
     </ClientManagerLayout>
   );
 }

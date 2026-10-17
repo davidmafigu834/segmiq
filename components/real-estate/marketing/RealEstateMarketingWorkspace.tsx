@@ -662,7 +662,21 @@ function pct(n: number, d: number): number | null {
 
 function PropertyTable({ rows }: { rows: PropertyRow[] }) {
   return (
-    <div className="overflow-x-auto">
+    <div>
+      <ul className="divide-y divide-sales-border-subtle md:hidden">
+        {rows.map((r) => (
+          <li key={r.listingId} className="px-4 py-3">
+            <Link href={`/client/listings/${r.listingId}`} className="text-[15px] font-semibold text-sales-text-primary">
+              {r.propertyLabel}
+            </Link>
+            <p className="mt-1 text-[13px] capitalize text-sales-text-secondary">{r.status.replace(/_/g, " ")}</p>
+            <p className="mt-1 text-[13px] leading-5 text-sales-text-secondary">
+              Inquiries {r.inquiries} · Qualified {r.qualified} · Viewings {r.viewings} · Offers {r.offers} · Accepted {r.accepted}
+            </p>
+          </li>
+        ))}
+      </ul>
+      <div className="hidden overflow-x-auto md:block">
       <table className="w-full min-w-[720px] text-left text-[13px]">
         <thead>
           <tr className="border-b border-sales-border-subtle text-[11px] font-semibold text-sales-text-muted">
@@ -697,6 +711,7 @@ function PropertyTable({ rows }: { rows: PropertyRow[] }) {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
@@ -704,8 +719,19 @@ function PropertyTable({ rows }: { rows: PropertyRow[] }) {
 function AgentTable({ rows }: { rows: AgentRow[] }) {
   if (rows.length === 0) return null;
   return (
-    <div className="overflow-x-auto">
-      <p className="px-4 pt-1 text-[13px] font-semibold">Marketing → agent</p>
+    <div>
+      <p className="px-4 pt-1 text-[13px] font-semibold">Marketing by agent</p>
+      <ul className="divide-y divide-sales-border-subtle md:hidden">
+        {rows.map((r) => (
+          <li key={r.agentId ?? "unassigned"} className="px-4 py-3">
+            <p className="text-[15px] font-semibold text-sales-text-primary">{r.name}</p>
+            <p className="mt-1 text-[13px] leading-5 text-sales-text-secondary">
+              Assigned {r.assigned} · Contacted {r.contacted} · Qualified {r.qualified} · Viewings {r.viewings} · Offers {r.offers} · Accepted {r.accepted}
+            </p>
+          </li>
+        ))}
+      </ul>
+      <div className="hidden overflow-x-auto md:block">
       <table className="mt-2 w-full min-w-[640px] text-left text-[13px]">
         <thead>
           <tr className="border-b border-sales-border-subtle text-[11px] font-semibold text-sales-text-muted">
@@ -732,6 +758,7 @@ function AgentTable({ rows }: { rows: AgentRow[] }) {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

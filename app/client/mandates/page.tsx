@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { MandateList } from "@/components/real-estate/acquisition/AcquisitionLists";
+import { CompanyReShell } from "@/components/real-estate/company/CompanyReShell";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 
 export default async function Page() {
@@ -15,7 +16,17 @@ export default async function Page() {
   redirectIfNotRealEstate(client.business_type);
   return (
     <ClientManagerLayout breadcrumbPage="MANDATES" pageTitle="Mandates" hideShellHeader hideShellSidebar>
-      <MandateList clientId={session.clientId} opportunityBase="/client/acquisitions" />
+      <CompanyReShell
+        userId={session.userId}
+        clientId={session.clientId}
+        userName={session.user?.name ?? "User"}
+        role={session.role}
+        breadcrumb="Company / Mandates"
+        title="Mandates"
+        description="See which opportunities have authority to market, and which still need it."
+      >
+        <MandateList clientId={session.clientId} opportunityBase="/client/acquisitions" framed />
+      </CompanyReShell>
     </ClientManagerLayout>
   );
 }

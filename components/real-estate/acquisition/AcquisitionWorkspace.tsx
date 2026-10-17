@@ -10,6 +10,7 @@ import { Building2, Plus } from "lucide-react";
 import { ACQUISITION_SOURCES, ACQUISITION_STAGES, SOURCE_LABEL, STAGE_LABEL } from "@/lib/real-estate/acquisition-plan";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
+import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
 import {
   ReActionMenu,
   ReEmptyState,
@@ -58,9 +59,11 @@ const shellClass =
 export function AcquisitionWorkspace({
   clientId,
   basePath,
+  framed = false,
 }: {
   clientId: string;
   basePath: string;
+  framed?: boolean;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<Opportunity[]>([]);
@@ -196,7 +199,7 @@ export function AcquisitionWorkspace({
   }
 
   return (
-    <div className={shellClass}>
+    <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
         title="Property opportunities"
         description="Track potential properties from first contact to approved listing."

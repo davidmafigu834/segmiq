@@ -262,7 +262,30 @@ export function DevelopmentsManager({
         {rows.length === 0 ? (
           <p className="px-5 py-10 text-center text-[13px] text-sales-text-muted">No developments yet.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <ul className="divide-y divide-sales-border-subtle md:hidden">
+            {rows.map((d) => (
+              <li key={d.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-semibold text-sales-text-primary">{d.name}</p>
+                    <p className="mt-0.5 text-[13px] text-sales-text-secondary">{d.location ?? "Location not set"}</p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] border border-sales-border text-sales-text-secondary" onClick={() => openEdit(d)} aria-label={`Edit ${d.name}`}>
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] border border-sales-border text-sales-text-secondary" onClick={() => setDeleteTargetId(d.id)} aria-label={`Delete ${d.name}`}>
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <p className="mt-2 text-[13px] leading-5 text-sales-text-secondary">
+                  Available {d.inventory.available} · Reserved {d.inventory.reserved} · Sold {d.inventory.sold} · Under offer {d.inventory.under_offer}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[720px] text-left text-[13px]">
               <thead className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] font-semibold text-sales-text-muted">
                 <tr>

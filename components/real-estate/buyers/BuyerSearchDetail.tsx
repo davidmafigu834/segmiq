@@ -4,6 +4,7 @@
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
 
 import { useEffect, useState } from "react";
+import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
 import Link from "next/link";
 import {
   PROPERTY_CATEGORIES,
@@ -182,12 +183,15 @@ export function BuyerSearchDetail({
   searchId,
   offersHref,
   canVerifyDeposit = false,
+  framed = false,
 }: {
   clientId: string;
   searchId: string;
   offersHref: string;
   canVerifyDeposit?: boolean;
+  framed?: boolean;
 }) {
+  const rootClass = framed ? reEmbeddedShell : shell;
   const buyersPath = offersHref.replace(/\/offers$/, "/buyers");
   const listingsPath = offersHref.replace(/\/offers$/, "/listings");
   const [bundle, setBundle] = useState<Bundle | null>(null);
@@ -309,10 +313,10 @@ export function BuyerSearchDetail({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId, searchId]);
 
-  if (loading && !bundle) return <div className={shell}><ReSkeletonRows rows={5} label="Loading this search" /></div>;
+  if (loading && !bundle) return <div className={rootClass}><ReSkeletonRows rows={5} label="Loading this search" /></div>;
   if (!bundle) {
     return (
-      <div className={shell}>
+      <div className={rootClass}>
         <ReErrorState title="This search didn't open" description={error ?? "Try again."} onRetry={() => void load()} />
       </div>
     );
@@ -340,7 +344,7 @@ export function BuyerSearchDetail({
   const activeMatch = panel && "listingId" in panel ? matches.find((row) => row.listingId === panel.listingId) ?? null : null;
 
   return (
-    <div className={shell}>
+    <div className={rootClass}>
       <RePageHeader
         context={<Link href={buyersPath} className="re-focus rounded text-sales-text-secondary hover:text-sales-text-primary">Buyers & tenants</Link>}
         title={`${bundle.contact?.name ?? "Customer"} — property search`}

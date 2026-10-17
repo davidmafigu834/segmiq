@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { BuyerSalesWorkspace } from "@/components/real-estate/buyers/BuyerSalesWorkspace";
+import { CompanyReShell } from "@/components/real-estate/company/CompanyReShell";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 
 export const dynamic = "force-dynamic";
@@ -18,9 +19,19 @@ export default async function Page() {
   redirectIfNotRealEstate(client.business_type);
   return (
     <ClientManagerLayout breadcrumbPage="BUYERS" pageTitle="Buyers and tenants" hideShellHeader hideShellSidebar>
-      <Suspense fallback={null}>
-        <BuyerSalesWorkspace clientId={session.clientId} basePath="/client/buyers" />
-      </Suspense>
+      <CompanyReShell
+        userId={session.userId}
+        clientId={session.clientId}
+        userName={session.user?.name ?? "User"}
+        role={session.role}
+        breadcrumb="Company / Buyers"
+        title="Buyers and tenants"
+        description="Find people looking to buy or rent, and continue the work already in progress."
+      >
+        <Suspense fallback={null}>
+          <BuyerSalesWorkspace clientId={session.clientId} basePath="/client/buyers" framed />
+        </Suspense>
+      </CompanyReShell>
     </ClientManagerLayout>
   );
 }

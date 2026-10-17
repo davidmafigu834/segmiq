@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { MatchingWorkspace } from "@/components/real-estate/buyers/MatchingWorkspace";
+import { CompanyReShell } from "@/components/real-estate/company/CompanyReShell";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,17 @@ export default async function Page() {
   redirectIfNotRealEstate(client.business_type);
   return (
     <ClientManagerLayout breadcrumbPage="MATCHING" pageTitle="Property matching" hideShellHeader hideShellSidebar>
-      <MatchingWorkspace clientId={session.clientId} buyersPath="/client/buyers" />
+      <CompanyReShell
+        userId={session.userId}
+        clientId={session.clientId}
+        userName={session.user?.name ?? "User"}
+        role={session.role}
+        breadcrumb="Company / Matching"
+        title="Property matching"
+        description="Connect a buyer or tenant with properties that fit the requirements already on file."
+      >
+        <MatchingWorkspace clientId={session.clientId} buyersPath="/client/buyers" framed />
+      </CompanyReShell>
     </ClientManagerLayout>
   );
 }

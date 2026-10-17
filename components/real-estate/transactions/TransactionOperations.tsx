@@ -372,13 +372,13 @@ function DocumentsTab({
                     value={reason}
                     onChange={(event) => setReasons({ ...reasons, [doc.id]: event.target.value })}
                   />
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     {doc.review_status !== "under_review" ? (
-                      <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => void act({ action: "review_document", documentLinkId: doc.id, decision: "under_review" }, "Marked under review.")}>Under review</Button>
+                      <Button type="button" size="sm" variant="ghost" className="min-h-11 w-full sm:w-auto" disabled={busy} onClick={() => void act({ action: "review_document", documentLinkId: doc.id, decision: "under_review" }, "Marked under review.")}>Under review</Button>
                     ) : null}
-                    <Button type="button" size="sm" variant="primary" disabled={busy} onClick={() => void act({ action: "review_document", documentLinkId: doc.id, decision: "verified", notes: reason || null }, "Document verified.")}>Verify</Button>
-                    <Button type="button" size="sm" variant="secondary" disabled={busy || !reason.trim()} onClick={() => void act({ action: "review_document", documentLinkId: doc.id, decision: "replacement_requested", reason }, "Replacement requested.")}>Request replacement</Button>
-                    <Button type="button" size="sm" variant="danger" disabled={busy || !reason.trim()} onClick={() => void act({ action: "review_document", documentLinkId: doc.id, decision: "rejected", reason }, "Document rejected.")}>Reject</Button>
+                    <Button type="button" size="sm" variant="primary" className="min-h-11 w-full sm:w-auto" disabled={busy} onClick={() => void act({ action: "review_document", documentLinkId: doc.id, decision: "verified", notes: reason || null }, "Document verified.")}>Verify document</Button>
+                    <Button type="button" size="sm" variant="secondary" className="min-h-11 w-full sm:w-auto" disabled={busy || !reason.trim()} onClick={() => void act({ action: "review_document", documentLinkId: doc.id, decision: "replacement_requested", reason }, "Replacement requested.")}>Request replacement</Button>
+                    <Button type="button" size="sm" variant="danger" className="min-h-11 w-full sm:w-auto" disabled={busy || !reason.trim()} onClick={() => void act({ action: "review_document", documentLinkId: doc.id, decision: "rejected", reason }, "Document rejected.")}>Reject document</Button>
                   </div>
                 </div>
               ) : null}

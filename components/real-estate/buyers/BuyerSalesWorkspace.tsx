@@ -4,6 +4,7 @@
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
 
 import { useEffect, useMemo, useState } from "react";
+import { reEmbeddedShell } from "@/components/real-estate/ui/workspace-shell";
 import { useRouter } from "next/navigation";
 import { Plus, Users } from "lucide-react";
 import {
@@ -93,7 +94,7 @@ function stageOf(row: SearchRow): string {
   return STAGE_LABEL[(row.pipeline_stage as SearchStage) || "actively_searching"] ?? row.status;
 }
 
-export function BuyerSalesWorkspace({ clientId, basePath }: { clientId: string; basePath: string }) {
+export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { clientId: string; basePath: string; framed?: boolean }) {
   const router = useRouter();
   const [rows, setRows] = useState<SearchRow[]>([]);
   const [listTotal, setListTotal] = useState<number | null>(null);
@@ -222,7 +223,7 @@ export function BuyerSalesWorkspace({ clientId, basePath }: { clientId: string; 
   }
 
   return (
-    <div className={shell}>
+    <div className={framed ? reEmbeddedShell : shell}>
       <RePageHeader
         title="Buyers & tenants"
         description="Manage property searches, customer relationships and active buying journeys."

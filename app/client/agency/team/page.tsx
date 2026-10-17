@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { HandoverWorkspace } from "@/components/real-estate/agency/HandoverWorkspace";
+import { CompanyReShell } from "@/components/real-estate/company/CompanyReShell";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 
 export const dynamic = "force-dynamic";
@@ -17,9 +18,17 @@ export default async function Page() {
   redirectIfNotRealEstate(client.business_type);
   return (
     <ClientManagerLayout breadcrumbPage="TEAM" pageTitle="Team management" hideShellHeader hideShellSidebar>
-      <div className="px-4 py-4 pb-[calc(var(--sales-mobile-nav-height,64px)+28px)] md:px-6 md:pb-6">
+      <CompanyReShell
+        userId={session.userId}
+        clientId={session.clientId}
+        userName={session.user?.name ?? "User"}
+        role={session.role}
+        breadcrumb="Company / Handover"
+        title="Staff handover"
+        description="Transfer active responsibilities while preserving the original history."
+      >
         <HandoverWorkspace clientId={session.clientId} />
-      </div>
+      </CompanyReShell>
     </ClientManagerLayout>
   );
 }
