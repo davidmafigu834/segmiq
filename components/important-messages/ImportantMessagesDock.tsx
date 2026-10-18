@@ -164,36 +164,54 @@ export function ImportantMessagesTrigger({
   const count = compactUnreadCount(unreadCount);
   if (floating && keyboardOpen) return null;
   const label = count ? `Important messages, ${unreadCount} unread` : "Important messages";
-  return (
+  const button = (
     <button
       type="button"
       className={cn(
-        "important-messages-trigger relative inline-flex h-11 w-11 items-center justify-center rounded-[10px] text-sales-text-primary focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",
-        floating && "fixed right-3 z-[35] layout:hidden bottom-[var(--sales-mobile-fab-bottom)]",
+        "important-messages-trigger relative inline-flex h-12 w-12 items-center justify-center focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",
+        floating && "layout:hidden",
         !floating && "mx-auto"
       )}
+      style={
+        floating
+          ? {
+              position: "fixed",
+              right: 16,
+              left: "auto",
+              bottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 12px)",
+              zIndex: 60,
+            }
+          : undefined
+      }
       aria-label={label}
       aria-expanded={open}
       aria-haspopup="dialog"
       onClick={() => setOpen(!open)}
     >
-      <svg viewBox="0 0 48 44" className={cn("h-11 w-11", collapsed && "h-10 w-10")} aria-hidden>
+      <svg viewBox="0 0 48 44" className={cn("h-12 w-12 drop-shadow-[0_6px_16px_rgba(0,0,0,0.35)]", collapsed && "h-10 w-10")} aria-hidden>
         <path
           d="M8 36.5 L24 7.5 L40 36.5 Z"
-          style={{ fill: count ? "var(--sales-text-primary)" : "var(--sales-text-secondary)" }}
-          stroke="var(--sales-brand)"
-          strokeWidth={count ? 1.6 : 1}
+          fill="#101828"
+          stroke="#d4ff4f"
+          strokeWidth={1.75}
           strokeLinejoin="round"
         />
       </svg>
-      <MessageSquare size={14} strokeWidth={1.8} className="absolute text-sales-brand" aria-hidden />
+      <MessageSquare size={15} strokeWidth={2} className="absolute text-[#d4ff4f]" aria-hidden />
+      {floating ? (
+        <span className="absolute bottom-[calc(100%+4px)] right-0 whitespace-nowrap rounded-full bg-[#101828] px-2 py-1 text-[11px] font-semibold leading-none text-[#f9fafc]">
+          Messages
+        </span>
+      ) : null}
       {count ? (
-        <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-sales-brand px-1 text-[10px] font-semibold leading-none text-sales-brand-text">
+        <span className="absolute -right-0.5 top-0 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#d4ff4f] px-1 text-[10px] font-semibold leading-none text-[#101828]">
           {count}
         </span>
       ) : null}
     </button>
   );
+  if (floating) return <OverlayPortal>{button}</OverlayPortal>;
+  return button;
 }
 
 const CATEGORIES = [
@@ -331,17 +349,20 @@ function ImportantMessagesPanel() {
 
   return (
     <OverlayPortal>
+      <div className="sales-modal-premium fixed inset-0 z-[80]">
+      <button type="button" className="sales-modal-backdrop absolute inset-0" aria-label="Close important messages" onClick={() => setOpen(false)} />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="fixed bottom-4 left-[calc(var(--sales-sidebar-current-width,228px)+12px)] z-[60] flex max-h-[min(70vh,560px)] w-[min(400px,calc(100vw-var(--sales-sidebar-current-width,228px)-24px))] flex-col overflow-hidden rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-sales-raised"
+        className="fixed bottom-4 left-[calc(var(--sales-sidebar-current-width,228px)+12px)] z-[81] flex max-h-[min(70vh,560px)] w-[min(400px,calc(100vw-var(--sales-sidebar-current-width,228px)-24px))] flex-col overflow-hidden rounded-[14px] border border-[var(--sales-border)] bg-[var(--sales-surface)] text-[var(--sales-text-primary)] shadow-sales-raised"
+        style={{ backgroundColor: "var(--sales-surface, #f9fafc)", opacity: 1 }}
       >
         <div className="flex items-center justify-between gap-2 px-3 py-3">
           <div>
-            <h2 id={titleId} className="text-[15px] font-semibold text-sales-text-primary">Important Messages</h2>
-            <p className="text-[12px] text-sales-text-muted">{unreadCount > 0 ? `${unreadCount} unread` : "No unread messages"}</p>
+            <h2 id={titleId} className="text-[15px] font-semibold text-[var(--sales-text-primary)]">Important Messages</h2>
+            <p className="text-[12px] text-[var(--sales-text-secondary)]">{unreadCount > 0 ? `${unreadCount} unread` : "No unread messages"}</p>
           </div>
           <div className="flex items-center gap-1">
             {unreadCount > 0 ? (
@@ -358,6 +379,7 @@ function ImportantMessagesPanel() {
         <div className="min-h-0 flex-1 overflow-y-auto">
           <MessageList category={category} onNavigate={() => setOpen(false)} />
         </div>
+      </div>
       </div>
     </OverlayPortal>
   );
