@@ -24,6 +24,7 @@ import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContex
 import { ReSidebarSections, ReWorkspaceContext } from "@/components/real-estate/navigation/ReSidebarSections";
 import { isRealEstate } from "@/lib/terminology";
 import { cn } from "@/lib/ui/cn";
+import { ImportantMessagesTrigger } from "@/components/important-messages/ImportantMessagesDock";
 
 function NavIcon({
   icon,
@@ -331,6 +332,12 @@ export function CompanySidebar({
             );
           })}
         </nav>
+        )}
+
+        {drawer ? null : (
+          <div className={cn("mt-auto shrink-0 border-t border-[var(--sales-sidebar-border)] py-2", collapsedMode ? "px-1" : "px-3")}>
+            <ImportantMessagesTrigger collapsed={collapsedMode} />
+          </div>
         )}
 
         {drawer ? (

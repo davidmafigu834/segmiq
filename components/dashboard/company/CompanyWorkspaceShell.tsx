@@ -8,6 +8,7 @@ import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { DemoWorkspaceChip } from "@/components/demo/DemoWorkspaceChip";
 import { useCompanySidebarCollapsed } from "@/lib/sales/navigation/use-company-sidebar-collapsed";
 import { PresenceHeartbeat } from "@/components/sales/PresenceHeartbeat";
+import { ImportantMessagesProvider, ImportantMessagesTrigger } from "@/components/important-messages/ImportantMessagesDock";
 import { CompanyWorkspaceProvider, useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { isRealEstate, normalizeBusinessType, type BusinessType } from "@/lib/terminology";
 import type { UserRole } from "@/types";
@@ -51,6 +52,7 @@ export function CompanyWorkspaceShell({
   });
 
   const shell = (
+    <ImportantMessagesProvider>
     <div
       className="sales-dashboard-premium dashboard-shell flex h-full max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-sales-bg text-sales-text-primary"
       data-sidebar-collapsed={collapsed ? "true" : "false"}
@@ -105,8 +107,10 @@ export function CompanyWorkspaceShell({
         </div>
       </div>
 
+      {!hideMobileChrome ? <ImportantMessagesTrigger floating /> : null}
       {!hideMobileChrome ? <CompanyBottomNav whatsappBadge={whatsappBadge} /> : null}
     </div>
+    </ImportantMessagesProvider>
   );
 
   if (businessType == null) return shell;

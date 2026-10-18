@@ -1022,6 +1022,17 @@ export function ChatThread({
                 <p className="hidden px-3 pb-1 pt-3 text-[13px] font-semibold text-sales-text-primary max-[1099px]:block">
                   {name}
                 </p>
+                <button
+                  type="button"
+                  className="flex min-h-11 w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-sales-text-primary hover:bg-sales-surface-hover min-[1100px]:hidden"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    window.dispatchEvent(new CustomEvent("segmiq:open-important-messages"));
+                  }}
+                >
+                  <MessageSquare size={14} />
+                  Important messages
+                </button>
                 {canSend || canReassign ? (
                   <button
                     type="button"
