@@ -25,11 +25,13 @@ type NotificationRow = {
     | "INVENTORY_ALERT"
     | "COMMERCIAL_IMPORT"
     | "SOCIAL_INBOX"
-    | "WEEKLY_TEAM_REPORT";
+    | "WEEKLY_TEAM_REPORT"
+    | "BUYER_INTRODUCTION";
   message: string;
   read: boolean;
   lead_id: string | null;
   client_id?: string | null;
+  introduction_id?: string | null;
   quotation_id?: string | null;
   weekly_report_id?: string | null;
   created_at: string;
@@ -151,6 +153,11 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
     if (n.type === "WEEKLY_TEAM_REPORT") {
       if (n.weekly_report_id) return `/client/reports/weekly/${n.weekly_report_id}`;
       return "/client/reports/weekly";
+    }
+    if (n.type === "BUYER_INTRODUCTION") {
+      const open = n.introduction_id ? `?open=${n.introduction_id}` : "";
+      if (role === "SALESPERSON") return `/sales/buyers/introductions${open}`;
+      return `/client/buyers/introductions${open}`;
     }
     if (role === "SALESPERSON") return "/sales/pipeline";
     if (role === "CLIENT_MANAGER") return "/client/leads";
@@ -285,6 +292,8 @@ function labelForType(type: string): string {
       return "Quotation";
     case "AGENT_ALERT":
       return "SegmiQ Agent";
+    case "BUYER_INTRODUCTION":
+      return "Buyer introduction";
     default:
       return type.replace(/_/g, " ").toLowerCase();
   }

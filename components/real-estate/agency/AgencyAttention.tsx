@@ -36,11 +36,11 @@ const PREVIEW = 6;
 
 const GENERIC_TITLES = new Set(["Mandate", "Commission", "Commission receipt", "Handover", "Transaction", "Listing"]);
 
-type Kind = "mandate" | "listing" | "expiry" | "offer" | "doc" | "pay" | "comm" | "hand" | "txn";
+type Kind = "mandate" | "listing" | "expiry" | "offer" | "doc" | "pay" | "comm" | "hand" | "txn" | "intro";
 
 function kindOf(id: string): Kind | null {
   const prefix = id.split("-", 1)[0] as Kind;
-  return ["mandate", "listing", "expiry", "offer", "doc", "pay", "comm", "hand", "txn"].includes(prefix) ? prefix : null;
+  return ["mandate", "listing", "expiry", "offer", "doc", "pay", "comm", "hand", "txn", "intro"].includes(prefix) ? prefix : null;
 }
 
 function describe(item: AgencyAttentionItem) {
@@ -65,6 +65,8 @@ function describe(item: AgencyAttentionItem) {
       return { category: "finance" as const, icon: <Wallet />, action: "Review commission", href: item.href };
     case "hand":
       return { category: "team" as const, icon: <UserRoundCog />, action: "Open handover", href: item.href };
+    case "intro":
+      return { category: "approvals" as const, icon: <Handshake />, action: "Review introduction", href: item.href };
     default:
       return { category: "deals" as const, icon: <FileWarning />, action: "Open", href: item.href };
   }

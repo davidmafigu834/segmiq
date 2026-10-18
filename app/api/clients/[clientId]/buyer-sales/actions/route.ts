@@ -72,6 +72,7 @@ const bodySchema = z.discriminatedUnion("action", [
     action: z.literal("review_introduction"),
     introductionId: z.string().uuid(),
     decision: z.enum(["accepted", "declined"]),
+    decisionReason: z.string().max(500).nullable().optional(),
   }),
 ]);
 

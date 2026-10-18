@@ -273,6 +273,7 @@ export function agencyAttention(input: {
   commissionsPending: Array<{ id: string; label: string }>;
   handoversOpen: Array<{ id: string; label: string }>;
   stalledTransactions: Array<{ id: string; label: string; daysIdle: number }>;
+  introductionsPending?: Array<{ id: string; label: string }>;
 }): AttentionItem[] {
   const items: AttentionItem[] = [];
   for (const row of input.mandatesPending) items.push({ id: `mandate-${row.id}`, title: row.label, reason: "Mandate awaiting approval", href: `/client/mandates` });
@@ -284,6 +285,14 @@ export function agencyAttention(input: {
   for (const row of input.commissionsPending) items.push({ id: `comm-${row.id}`, title: row.label, reason: "Commission allocation awaiting review", href: `/client/commissions` });
   for (const row of input.handoversOpen) items.push({ id: `hand-${row.id}`, title: row.label, reason: "Staff handover is not finished", href: `/client/agency/team` });
   for (const row of input.stalledTransactions) items.push({ id: `txn-${row.id}`, title: row.label, reason: `No transaction activity for ${row.daysIdle} days`, href: `/client/transactions` });
+  for (const row of input.introductionsPending ?? []) {
+    items.push({
+      id: `intro-${row.id}`,
+      title: row.label,
+      reason: "Buyer introduction awaiting review",
+      href: `/client/buyers/introductions?open=${row.id}`,
+    });
+  }
   return items;
 }
 

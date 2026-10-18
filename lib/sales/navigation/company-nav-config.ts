@@ -526,7 +526,16 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     section: "buyer_sales",
     mobileSlot: "more",
     mobileLabel: "Buyers",
-    match: (p) => exactOrChild(p, "/client/buyers"),
+    match: (p) => exactOrChild(p, "/client/buyers") && !p.startsWith("/client/buyers/introductions"),
+  },
+  {
+    id: "introductions",
+    label: "Introductions",
+    href: "/client/buyers/introductions",
+    icon: "buyers",
+    section: "buyer_sales",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/buyers/introductions"),
   },
   {
     id: "matching",

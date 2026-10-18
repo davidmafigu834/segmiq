@@ -38,6 +38,11 @@ import {
   type SearchSnapshot,
 } from "@/lib/real-estate/buyer-match";
 import { isListingLive } from "@/lib/real-estate/listings";
+import { reviewerWaitingCopy } from "@/lib/real-estate/buyer-introduction-review";
+import {
+  notifyIntroductionRequested,
+  reviewBuyerIntroduction as decideBuyerIntroduction,
+} from "@/lib/real-estate/buyer-introduction-service";
 import { readAllPages, type PageFetcher } from "@/lib/real-estate/paging";
 import { viewingTransitionError } from "@/lib/real-estate/viewing-access";
 
@@ -887,6 +892,7 @@ export async function buyersForListing(clientId: string, listingId: string, acto
     .eq("client_id", clientId)
     .eq("listing_id", listingId)
     .eq("requesting_agent_id", actor.id);
+  const introBySearch = new Map((intros ?? []).map((row) => [row.search_id as string, String(row.status)]));
   const accepted = new Set((intros ?? []).filter((row) => row.status === "accepted").map((row) => row.search_id as string));
   const explanations = matchSearchesForListing(candidate, rows.map((row) => asSearch(row as Record<string, unknown>)), rejectedBySearch);
   const searchById = new Map(rows.map((row) => [row.id as string, row]));
@@ -925,12 +931,23 @@ export async function buyersForListing(clientId: string, listingId: string, acto
         introductionAccepted: accepted.has(item.searchId),
       });
       const contact = search ? contactById.get(search.contact_id as string) : null;
+      const introductionStatus = introBySearch.get(item.searchId) ?? null;
+      const managedBy = ownerId ? agentById.get(ownerId) ?? "Another agent" : "Unassigned";
       return {
         ...item,
-        managedBy: ownerId ? agentById.get(ownerId) ?? "Another agent" : "Unassigned",
+        managedBy,
         contactName: visible ? (contact?.name as string | null) ?? "Customer" : null,
         phone: visible ? (contact?.phone as string | null) ?? null : null,
-        canRequestIntroduction: !visible,
+        canRequestIntroduction: !visible && !introductionStatus,
+        introductionStatus,
+        introductionNote:
+          introductionStatus === "requested"
+            ? reviewerWaitingCopy({ assigneeName: ownerId ? managedBy : null })
+            : introductionStatus === "declined"
+              ? "Buyer details stay private."
+              : introductionStatus === "accepted"
+                ? "You can see the contact details authorised for this property."
+                : null,
       };
     }),
   };
@@ -1103,7 +1120,7 @@ export async function requestBuyerIntroduction(input: {
     return { ok: true as const, introduction: existing };
   }
   if (existing?.status === "declined") {
-    return { ok: false as const, error: "The agent managing this buyer declined this introduction.", status: 409 };
+    return { ok: false as const, error: "This introduction was declined. It cannot be requested again.", status: 409 };
   }
   const { data, error } = await supabase
     .from("real_estate_buyer_introductions")
@@ -1121,6 +1138,11 @@ export async function requestBuyerIntroduction(input: {
     .select("*")
     .single();
   if (error || !data) return { ok: false as const, error: error?.message ?? "Could not send the request.", status: 500 };
+  await notifyIntroductionRequested({
+    clientId: input.clientId,
+    introductionId: data.id as string,
+    requesterId: input.actor.id,
+  });
   return { ok: true as const, introduction: data };
 }
 
@@ -1129,28 +1151,9 @@ export async function reviewBuyerIntroduction(input: {
   actor: BuyerActor;
   introductionId: string;
   decision: "accepted" | "declined";
+  decisionReason?: string | null;
 }) {
-  const supabase = createAdminClient();
-  const { data: row } = await supabase
-    .from("real_estate_buyer_introductions")
-    .select("*")
-    .eq("id", input.introductionId)
-    .eq("client_id", input.clientId)
-    .maybeSingle();
-  if (!row) return { ok: false as const, error: "Request not found.", status: 404 };
-  const owner = row.owning_agent_id as string | null;
-  if (!isManager(input.actor.role) && owner !== input.actor.id) {
-    return { ok: false as const, error: "Forbidden.", status: 403 };
-  }
-  const { data, error } = await supabase
-    .from("real_estate_buyer_introductions")
-    .update({ status: input.decision })
-    .eq("id", input.introductionId)
-    .eq("client_id", input.clientId)
-    .select("*")
-    .single();
-  if (error || !data) return { ok: false as const, error: error?.message ?? "Could not update the request.", status: 500 };
-  return { ok: true as const, introduction: data };
+  return decideBuyerIntroduction(input);
 }
 
 export async function scheduleSearchViewing(input: {

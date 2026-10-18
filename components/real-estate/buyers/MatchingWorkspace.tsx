@@ -18,6 +18,7 @@ import {
   ReStatusBadge,
 } from "@/components/real-estate/ui";
 import { acqFieldClass, acqLabelClass } from "@/components/real-estate/acquisition/acquisition-ui";
+import { IntroductionMatchStatus, strengthLabel } from "@/components/real-estate/buyers/IntroductionMatchStatus";
 
 type SearchOption = {
   id: string;
@@ -57,6 +58,8 @@ type BuyerMatch = {
   contactName: string | null;
   phone: string | null;
   canRequestIntroduction: boolean;
+  introductionStatus?: string | null;
+  introductionNote?: string | null;
 };
 
 type Gap = {
@@ -70,13 +73,6 @@ type Gap = {
 };
 
 const shell = reSalesShell;
-
-function strengthLabel(strength: string): string {
-  if (strength === "strong") return "Strong match";
-  if (strength === "alternative") return "Alternative";
-  if (strength === "partial") return "Partial match";
-  return "Match";
-}
 
 function searchLine(row: SearchOption): string {
   const place = (row.locations ?? []).filter(Boolean).join(", ") || "Location open";
@@ -108,8 +104,8 @@ export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { cl
   const [demandIncomplete, setDemandIncomplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [requestErrors, setRequestErrors] = useState<Record<string, string>>({});
   const [matching, setMatching] = useState(false);
-  const [requested, setRequested] = useState<Record<string, string>>({});
 
   useEffect(() => {
     void fetch(`/api/clients/${clientId}/buyer-searches?status=active`)
@@ -181,19 +177,33 @@ export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { cl
 
   async function requestIntroduction(match: BuyerMatch) {
     setBusyId(match.searchId);
-    setError(null);
+    setRequestErrors((current) => ({ ...current, [match.searchId]: "" }));
     const res = await fetch(`/api/clients/${clientId}/buyer-sales/actions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "introduction", listingId, searchId: match.searchId }),
     });
-    const json = await res.json().catch(() => ({}));
+    const json = (await res.json().catch(() => ({}))) as { error?: string };
     setBusyId(null);
     if (!res.ok) {
-      setError(json.error ?? "Could not request an introduction");
+      setRequestErrors((current) => ({ ...current, [match.searchId]: json.error ?? "Could not request an introduction" }));
       return;
     }
-    setRequested((current) => ({ ...current, [match.searchId]: "requested" }));
+    setBuyers((current) =>
+      (current ?? []).map((row) =>
+        row.searchId === match.searchId
+          ? {
+              ...row,
+              introductionStatus: "requested",
+              canRequestIntroduction: false,
+              introductionNote:
+                row.managedBy === "Unassigned"
+                  ? "Awaiting review by agency management."
+                  : `Awaiting review by ${row.managedBy}.`,
+            }
+          : row
+      )
+    );
   }
 
   const filteredSearches = searches.filter((row) => {
@@ -296,22 +306,24 @@ export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { cl
                     <ReStatusBadge label={strengthLabel(match.strength)} />
                   </div>
                   <p className="mt-1 text-[13px] text-sales-text-secondary">Managed by {match.managedBy}</p>
-                  {match.phone ? <p className="mt-1 text-[13px]">{match.phone}</p> : null}
-                  {match.reasons[0] ? <p className="mt-1 text-[13px] text-sales-text-secondary">{match.reasons.join(" ")}</p> : null}
-                  {typeof match.score === "number" ? <p className="mt-1 text-[12px] text-sales-text-muted">Match score {match.score}</p> : null}
-                  <div className="mt-2">
-                    {match.canRequestIntroduction ? (
-                      requested[match.searchId] ? (
-                        <p className="text-[13px] font-semibold">Introduction requested</p>
-                      ) : (
-                        <button type="button" className={cn(salesMenuTriggerClass({ variant: "secondary", size: "sm" }), "min-h-11")} disabled={busyId === match.searchId} onClick={() => void requestIntroduction(match)}>
-                          {busyId === match.searchId ? "Sending…" : "Request introduction"}
-                        </button>
-                      )
-                    ) : (
-                      <Link className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold" href={`${buyersPath}/${match.searchId}`}>Open search</Link>
-                    )}
-                  </div>
+                  {!match.introductionStatus && match.phone ? <p className="mt-1 text-[13px] text-sales-text-secondary">{match.phone}</p> : null}
+                  {match.reasons[0] ? <p className="mt-1 text-[13px] text-sales-text-secondary">{match.reasons.slice(0, 3).join(" · ")}</p> : null}
+                  {typeof match.score === "number" ? <p className="mt-1 text-[12px] text-sales-text-muted">Match score {match.score}. Not a chance of closing.</p> : null}
+                  {match.introductionStatus || match.canRequestIntroduction ? (
+                    <IntroductionMatchStatus
+                      status={match.introductionStatus ?? null}
+                      note={match.introductionNote ?? null}
+                      contactName={match.introductionStatus === "accepted" ? match.contactName : null}
+                      phone={match.introductionStatus === "accepted" ? match.phone : null}
+                      managedBy={match.managedBy}
+                      canRequest={match.canRequestIntroduction}
+                      busy={busyId === match.searchId}
+                      error={requestErrors[match.searchId] || null}
+                      onRequest={() => void requestIntroduction(match)}
+                    />
+                  ) : match.contactName ? (
+                    <Link className="re-focus mt-2 inline-flex min-h-11 items-center text-[13px] font-semibold" href={`${buyersPath}/${match.searchId}`}>Open search</Link>
+                  ) : null}
                 </li>
               ))}
             </ul>

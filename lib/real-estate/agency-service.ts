@@ -2194,6 +2194,20 @@ export async function agencyAttentionFeed(clientId: string, actor: AgencyActor) 
       .lt("created_at", docCutoff)
       .limit(20),
   ]);
+  const introductions = await supabase
+    .from("real_estate_buyer_introductions")
+    .select("id, listing_id")
+    .eq("client_id", clientId)
+    .eq("status", "requested")
+    .order("created_at", { ascending: true })
+    .limit(20);
+  const introListingIds = [...new Set((introductions.data ?? []).map((row) => row.listing_id as string))];
+  const { data: introListings } = introListingIds.length
+    ? await supabase.from("listings").select("id, suburb, address").eq("client_id", clientId).in("id", introListingIds)
+    : { data: [] };
+  const introPlace = new Map(
+    (introListings ?? []).map((row) => [row.id as string, (row.suburb as string) || (row.address as string) || "Property"])
+  );
   const items = agencyAttention({
     mandatesPending: (mandates.data ?? []).map((row) => ({ id: row.id as string, label: "Mandate" })),
     listingsPending: (listings.data ?? []).map((row) => ({ id: row.id as string, label: (row.suburb as string) || (row.address as string) || "Listing" })),
@@ -2207,6 +2221,10 @@ export async function agencyAttentionFeed(clientId: string, actor: AgencyActor) 
       id: row.id as string,
       label: "Transaction",
       daysIdle: Math.max(14, Math.floor((Date.now() - new Date(row.updated_at as string).getTime()) / 86400000)),
+    })),
+    introductionsPending: (introductions.data ?? []).map((row) => ({
+      id: row.id as string,
+      label: introPlace.get(row.listing_id as string) ?? "Property",
     })),
   });
   return { ok: true as const, items };

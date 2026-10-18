@@ -40,7 +40,7 @@ export async function GET(req: Request) {
 
   let { data, error } = await supabase
     .from("notifications")
-    .select("id, type, message, read, lead_id, client_id, quotation_id, weekly_report_id, created_at")
+    .select("id, type, message, read, lead_id, client_id, quotation_id, weekly_report_id, introduction_id, created_at")
     .eq("user_id", auth.userId)
     .order("created_at", { ascending: false })
     .limit(limit);

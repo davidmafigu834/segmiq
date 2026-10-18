@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Badge, Button } from "@/components/sales/ui";
+import { IntroductionMatchStatus, strengthLabel } from "@/components/real-estate/buyers/IntroductionMatchStatus";
 import {
   REGISTER_ISSUE_LABEL,
   REGISTER_MANDATE_LABEL,
@@ -15,7 +16,10 @@ type Match = {
   reasons: string[];
   managedBy: string;
   contactName: string | null;
+  phone?: string | null;
   canRequestIntroduction: boolean;
+  introductionStatus?: string | null;
+  introductionNote?: string | null;
 };
 
 export function mandateTone(state: RegisterMandateState): "success" | "warning" | "danger" | "neutral" {
@@ -54,7 +58,8 @@ export function ListingRegisterDetails({
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [requested, setRequested] = useState(false);
-  const [introduced, setIntroduced] = useState<Set<string>>(new Set());
+  const [requestingId, setRequestingId] = useState<string | null>(null);
+  const [requestErrors, setRequestErrors] = useState<Record<string, string>>({});
 
   async function loadMatches() {
     setBusy(true);
@@ -73,7 +78,8 @@ export function ListingRegisterDetails({
   }
 
   async function requestIntroduction(searchId: string) {
-    setBusy(true);
+    setRequestingId(searchId);
+    setRequestErrors((current) => ({ ...current, [searchId]: "" }));
     try {
       const res = await fetch(`/api/clients/${clientId}/buyer-sales/actions`, {
         method: "POST",
@@ -82,13 +88,26 @@ export function ListingRegisterDetails({
       });
       const json = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        onToast(json.error ?? "The introduction could not be requested.");
+        setRequestErrors((current) => ({ ...current, [searchId]: json.error ?? "The introduction could not be requested." }));
         return;
       }
-      setIntroduced((prev) => new Set(prev).add(searchId));
-      onToast("Introduction requested. The agent managing this buyer will decide.");
+      setMatches((current) =>
+        (current ?? []).map((match) =>
+          match.searchId === searchId
+            ? {
+                ...match,
+                introductionStatus: "requested",
+                canRequestIntroduction: false,
+                introductionNote:
+                  match.managedBy === "Unassigned"
+                    ? "Awaiting review by agency management."
+                    : `Awaiting review by ${match.managedBy}.`,
+              }
+            : match
+        )
+      );
     } finally {
-      setBusy(false);
+      setRequestingId(null);
     }
   }
 
@@ -207,34 +226,32 @@ export function ListingRegisterDetails({
                       {match.contactName ?? "Private buyer"}
                     </p>
                     <Badge tone={match.strength === "strong" ? "success" : "neutral"} appearance="soft">
-                      {match.strength}
+                      {strengthLabel(match.strength)}
                     </Badge>
                   </div>
                   <p className="mt-0.5 text-[11px] text-sales-text-muted">Managed by {match.managedBy}</p>
                   {match.reasons.length ? (
                     <p className="mt-1 text-[12px] text-sales-text-secondary">{match.reasons.slice(0, 3).join(" · ")}</p>
                   ) : null}
-                  {match.contactName ? (
+                  {match.contactName && !match.introductionStatus ? (
                     <a
-                      className="mt-1 inline-block text-[12px] font-semibold text-sales-brand"
+                      className="re-focus mt-1 inline-flex min-h-11 items-center text-[13px] font-semibold text-sales-brand"
                       href={`${basePath}/buyers/${match.searchId}`}
                     >
-                      Open search to schedule a viewing
+                      Open search
                     </a>
-                  ) : match.canRequestIntroduction ? (
-                    introduced.has(match.searchId) ? (
-                      <p className="mt-1 text-[12px] text-sales-text-muted">Introduction requested</p>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={busy}
-                        className="mt-1 text-[12px] font-semibold text-sales-brand disabled:opacity-60"
-                        onClick={() => void requestIntroduction(match.searchId)}
-                      >
-                        Request an introduction
-                      </button>
-                    )
                   ) : null}
+                  <IntroductionMatchStatus
+                    status={match.introductionStatus ?? null}
+                    note={match.introductionNote ?? null}
+                    contactName={null}
+                    phone={match.introductionStatus === "accepted" ? match.phone ?? null : null}
+                    managedBy={match.managedBy}
+                    canRequest={match.canRequestIntroduction}
+                    busy={requestingId === match.searchId}
+                    error={requestErrors[match.searchId] || null}
+                    onRequest={() => void requestIntroduction(match.searchId)}
+                  />
                 </li>
               ))}
             </ul>
