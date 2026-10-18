@@ -31,6 +31,7 @@ export function AnnouncementPublisher() {
   const [preview, setPreview] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
 
   async function save(action: "draft" | "publish" | "archive") {
