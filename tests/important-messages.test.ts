@@ -8,9 +8,11 @@ import {
   filterImportantMessages,
   introductionDestination,
   mapIntroductionNotification,
+  pendingIntroductionMessage,
   redactPrivateContact,
   safeInternalPath,
   unreadImportantCount,
+  viewerCanReviewIntroduction,
   type ImportantMessage,
 } from "@/lib/important-messages/model";
 
@@ -144,6 +146,51 @@ describe("important messages", () => {
 
   it("redacts a phone that was stored in an older message", () => {
     assert.equal(redactPrivateContact("Call +263771234567 today").includes("263"), false);
+  });
+
+  it("shows a manager the same pending introduction that management attention lists", () => {
+    assert.equal(
+      viewerCanReviewIntroduction({
+        requesterId: "agent",
+        viewerId: "manager",
+        viewerRole: "CLIENT_MANAGER",
+        assigneeId: null,
+        assigneeActive: false,
+      }),
+      true
+    );
+    assert.equal(
+      viewerCanReviewIntroduction({
+        requesterId: "agent",
+        viewerId: "agent",
+        viewerRole: "CLIENT_MANAGER",
+        assigneeId: null,
+        assigneeActive: false,
+      }),
+      false
+    );
+    assert.equal(
+      viewerCanReviewIntroduction({
+        requesterId: "agent",
+        viewerId: "other-agent",
+        viewerRole: "SALESPERSON",
+        assigneeId: null,
+        assigneeActive: false,
+      }),
+      false
+    );
+    const item = pendingIntroductionMessage({
+      id: "intro-1",
+      createdAt: now.toISOString(),
+      place: "Belvedere",
+      role: "CLIENT_MANAGER",
+    });
+    assert.equal(item.category, "approvals");
+    assert.equal(item.title, "Buyer introduction requested");
+    assert.equal(item.description.includes("Belvedere"), true);
+    assert.equal(item.actionLabel, "Review introduction");
+    assert.equal(item.href, "/client/buyers/introductions?open=intro-1");
+    assert.equal(item.resolved, false);
   });
 });
 

@@ -3,7 +3,7 @@ export type ImportantPriority = "action" | "info" | "notice";
 
 export type ImportantMessage = {
   id: string;
-  source: "notification" | "announcement";
+  source: "notification" | "announcement" | "introduction";
   category: ImportantCategory;
   priority: ImportantPriority;
   title: string;
@@ -96,6 +96,49 @@ export function mapIntroductionNotification(input: {
     };
   }
   return null;
+}
+
+export function viewerCanReviewIntroduction(input: {
+  requesterId: string | null;
+  viewerId: string;
+  viewerRole: string | null | undefined;
+  assigneeId: string | null;
+  assigneeActive: boolean;
+}): boolean {
+  if (input.requesterId && input.requesterId === input.viewerId) return false;
+  if (input.viewerRole === "CLIENT_MANAGER" || input.viewerRole === "SUPER_ADMIN") return true;
+  return Boolean(input.assigneeId && input.assigneeId === input.viewerId && input.assigneeActive);
+}
+
+export function pendingIntroductionMessage(input: {
+  id: string;
+  createdAt: string;
+  place: string | null;
+  role: string | null | undefined;
+}): ImportantMessage {
+  const place = input.place?.replace(PHONE_LIKE, "").replace(/\s{2,}/g, " ").trim();
+  const href = introductionDestination({ role: input.role, introductionId: input.id });
+  return {
+    id: `introduction:${input.id}`,
+    source: "introduction",
+    category: "approvals",
+    priority: "action",
+    title: "Buyer introduction requested",
+    description: place
+      ? `An agent wants to collaborate on a matching property in ${place}.`
+      : "An agent wants to collaborate on a matching property.",
+    createdAt: input.createdAt,
+    read: false,
+    href,
+    actionLabel: href ? "Review introduction" : null,
+    resolved: false,
+  };
+}
+
+export function introductionIdFromMessage(item: ImportantMessage): string | null {
+  if (item.id.startsWith("introduction:")) return item.id.slice("introduction:".length);
+  const match = item.href?.match(/[?&]open=([^&]+)/);
+  return match?.[1] ?? null;
 }
 
 export type AnnouncementAudience = "all" | "industry" | "role" | "organisation";

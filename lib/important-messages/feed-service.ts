@@ -3,8 +3,11 @@ import {
   announcementVisible,
   canPublishAnnouncements,
   filterImportantMessages,
+  introductionIdFromMessage,
   mapIntroductionNotification,
+  pendingIntroductionMessage,
   safeInternalPath,
+  viewerCanReviewIntroduction,
   type AnnouncementAudience,
   type ImportantMessage,
 } from "@/lib/important-messages/model";
@@ -60,6 +63,20 @@ export async function loadImportantMessages(input: {
       role: input.role,
     });
     if (mapped) items.push(mapped);
+  }
+
+  if (input.clientId) {
+    const pending = await loadPendingIntroductionMessages({
+      userId: input.userId,
+      role: input.role,
+      clientId: input.clientId,
+    });
+    const linked = new Set(items.map(introductionIdFromMessage).filter((id): id is string => Boolean(id)));
+    for (const item of pending) {
+      const introductionId = introductionIdFromMessage(item);
+      if (introductionId && linked.has(introductionId)) continue;
+      items.push(item);
+    }
   }
 
   const announcements = await supabase
@@ -124,6 +141,65 @@ export async function loadImportantMessages(input: {
     return { items: [], announcementsAvailable, error: "Could not load important messages." };
   }
   return { items: filterImportantMessages(items, "all"), announcementsAvailable, error: null };
+}
+
+async function loadPendingIntroductionMessages(input: {
+  userId: string;
+  role: string | null;
+  clientId: string;
+}): Promise<ImportantMessage[]> {
+  const supabase = createAdminClient();
+  const introductions = await supabase
+    .from("real_estate_buyer_introductions")
+    .select("id, listing_id, search_id, requesting_agent_id, created_at")
+    .eq("client_id", input.clientId)
+    .eq("status", "requested")
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (introductions.error || !introductions.data?.length) return [];
+
+  const manager = input.role === "CLIENT_MANAGER" || input.role === "SUPER_ADMIN";
+  const searchIds = [...new Set(introductions.data.map((row) => row.search_id as string))];
+  const listingIds = [...new Set(introductions.data.map((row) => row.listing_id as string))];
+  const [searches, listings] = await Promise.all([
+    manager
+      ? Promise.resolve({ data: [] as Array<{ id: string; assigned_agent_id: string | null }> })
+      : supabase.from("real_estate_buyer_searches").select("id, assigned_agent_id").eq("client_id", input.clientId).in("id", searchIds),
+    supabase.from("listings").select("id, suburb, address").eq("client_id", input.clientId).in("id", listingIds),
+  ]);
+  const assigneeIds = [...new Set((searches.data ?? []).map((row) => row.assigned_agent_id).filter((id): id is string => Boolean(id)))];
+  const assignees = !manager && assigneeIds.length
+    ? await supabase.from("users").select("id, is_active").in("id", assigneeIds)
+    : { data: [] as Array<{ id: string; is_active: boolean | null }> };
+  const assigneeActive = new Map((assignees.data ?? []).map((row) => [row.id as string, Boolean(row.is_active)]));
+  const assigneeBySearch = new Map(
+    (searches.data ?? []).map((row) => [row.id as string, (row.assigned_agent_id as string | null) ?? null])
+  );
+  const placeByListing = new Map(
+    (listings.data ?? []).map((row) => [row.id as string, ((row.suburb as string) || (row.address as string) || "").trim()])
+  );
+
+  const messages: ImportantMessage[] = [];
+  for (const row of introductions.data) {
+    const assigneeId = assigneeBySearch.get(row.search_id as string) ?? null;
+    const visible = viewerCanReviewIntroduction({
+      requesterId: (row.requesting_agent_id as string | null) ?? null,
+      viewerId: input.userId,
+      viewerRole: input.role,
+      assigneeId,
+      assigneeActive: assigneeId ? assigneeActive.get(assigneeId) === true : false,
+    });
+    if (!visible) continue;
+    messages.push(
+      pendingIntroductionMessage({
+        id: row.id as string,
+        createdAt: String(row.created_at),
+        place: placeByListing.get(row.listing_id as string) || null,
+        role: input.role,
+      })
+    );
+  }
+  return messages;
 }
 
 export async function markImportantMessagesRead(input: {

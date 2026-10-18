@@ -111,6 +111,7 @@ export function ImportantMessagesProvider({
   }, []);
 
   const markRead = useCallback((item: ImportantMessage) => {
+    if (item.source === "introduction") return;
     const notificationIds = item.source === "notification" ? [item.id] : [];
     const announcementIds = item.source === "announcement" ? [item.id.replace("announcement:", "")] : [];
     setItems((current) => current.map((row) => (row.id === item.id ? { ...row, read: true } : row)));
