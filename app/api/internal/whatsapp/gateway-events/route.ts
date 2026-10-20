@@ -18,8 +18,12 @@ import { verifyInternalWhatsAppRequest } from "@/lib/whatsapp/security/verify-in
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-/** Keep under long hangs; gateway client already aborts at 20s. */
-export const maxDuration = 30;
+/**
+ * Message ingestion returns immediately, but waitUntil keeps agent work on this
+ * invocation. The agent runtime has a 120s budget, so leave enough headroom for
+ * context loading and cleanup instead of terminating an otherwise healthy run.
+ */
+export const maxDuration = 180;
 
 const base = z.object({ connectionId: z.string().uuid() });
 const eventSchema = z.discriminatedUnion("type", [

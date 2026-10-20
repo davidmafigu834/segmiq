@@ -22,7 +22,7 @@ const DEFAULT_GATEWAY_URL = "https://ai-gateway.vercel.sh/v1";
 const DEFAULT_GATEWAY_MODEL = "minimax/minimax-m3.1-flash";
 const LEGACY_GATEWAY_MODELS = new Set(["minimax/minimax-m3"]);
 const GATEWAY_MODEL_ID = /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i;
-const REQUEST_TIMEOUT_MS = 60_000;
+const REQUEST_TIMEOUT_MS = 45_000;
 const MAX_RETRIES = 2;
 
 export function getVercelGatewayApiKey(): string | undefined {
@@ -149,7 +149,10 @@ export class VercelGatewayAgentProvider implements AgentModelProvider {
         lastError = err instanceof Error ? err : new Error(String(err));
         if (lastError instanceof AgentLlmRateLimitError && attempt >= MAX_RETRIES) throw lastError;
         const aborted = lastError.name === "AbortError";
-        if (attempt < MAX_RETRIES && (aborted || /fetch failed|network/i.test(lastError.message))) {
+        // A timed-out request has already consumed a large part of the agent's
+        // execution budget. Retrying it can outlive the webhook invocation and
+        // strand the conversation lock, so only retry fast network failures.
+        if (attempt < MAX_RETRIES && !aborted && /fetch failed|network/i.test(lastError.message)) {
           await sleep(750 * Math.pow(2, attempt));
           continue;
         }
