@@ -19,7 +19,9 @@ import {
  */
 
 const DEFAULT_GATEWAY_URL = "https://ai-gateway.vercel.sh/v1";
-const DEFAULT_GATEWAY_MODEL = "minimax/minimax-m3";
+const DEFAULT_GATEWAY_MODEL = "minimax/minimax-m3.1-flash";
+const LEGACY_GATEWAY_MODELS = new Set(["minimax/minimax-m3"]);
+const GATEWAY_MODEL_ID = /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i;
 const REQUEST_TIMEOUT_MS = 60_000;
 const MAX_RETRIES = 2;
 
@@ -28,7 +30,11 @@ export function getVercelGatewayApiKey(): string | undefined {
 }
 
 export function getVercelGatewayModel(): string {
-  return process.env.AI_GATEWAY_MODEL?.trim() || DEFAULT_GATEWAY_MODEL;
+  const configured = process.env.AI_GATEWAY_MODEL?.trim();
+  if (!configured || LEGACY_GATEWAY_MODELS.has(configured) || !GATEWAY_MODEL_ID.test(configured)) {
+    return DEFAULT_GATEWAY_MODEL;
+  }
+  return configured;
 }
 
 function gatewayChatUrl(): string {
@@ -66,14 +72,19 @@ export class VercelGatewayAgentProvider implements AgentModelProvider {
     const apiKey = getVercelGatewayApiKey();
     if (!apiKey) throw new Error("AI_GATEWAY_API_KEY is not configured");
 
-    const body = buildOpenAiChatBody({
-      model: this.modelId,
-      system: req.system,
-      messages: req.messages,
-      tools: req.tools,
-      maxTokens: req.maxTokens,
-      temperature: req.temperature,
-    });
+    const body = {
+      ...buildOpenAiChatBody({
+        model: this.modelId,
+        system: req.system,
+        messages: req.messages,
+        tools: req.tools,
+        maxTokens: req.maxTokens,
+        temperature: req.temperature,
+      }),
+      ...(this.modelId === DEFAULT_GATEWAY_MODEL
+        ? { providerOptions: { gateway: { order: ["minimax"] } } }
+        : {}),
+    };
 
     let lastError: Error | null = null;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {

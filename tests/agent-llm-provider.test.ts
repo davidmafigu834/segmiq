@@ -10,6 +10,7 @@ import {
   type ModelResponse,
 } from "../lib/agent/provider";
 import { toGroqMessages } from "../lib/agent/provider-groq";
+import { getVercelGatewayModel, VercelGatewayAgentProvider } from "../lib/agent/provider-gateway";
 
 const ENV_KEYS = [
   "AGENT_LLM_PROVIDER",
@@ -19,12 +20,15 @@ const ENV_KEYS = [
   "ANTHROPIC_API_KEY",
   "AI_GATEWAY_API_KEY",
   "VERCEL_OIDC_TOKEN",
+  "AI_GATEWAY_MODEL",
 ] as const;
 
 const originalEnv: Record<string, string | undefined> = {};
 for (const key of ENV_KEYS) originalEnv[key] = process.env[key];
+const originalFetch = global.fetch;
 
 afterEach(() => {
+  global.fetch = originalFetch;
   for (const key of ENV_KEYS) {
     const value = originalEnv[key];
     if (value === undefined) delete process.env[key];
@@ -51,6 +55,43 @@ function dummyResponse(model: string): ModelResponse {
 }
 
 describe("agent LLM provider selection", () => {
+  it("uses MiniMax M3.1 Flash by default and migrates the previous MiniMax model", () => {
+    setEnv({ AI_GATEWAY_API_KEY: "vck" });
+    assert.equal(getVercelGatewayModel(), "minimax/minimax-m3.1-flash");
+    process.env.AI_GATEWAY_MODEL = "minimax/minimax-m3";
+    assert.equal(getVercelGatewayModel(), "minimax/minimax-m3.1-flash");
+  });
+
+  it("keeps a valid custom Gateway model and rejects a malformed model id", () => {
+    setEnv({ AI_GATEWAY_API_KEY: "vck", AI_GATEWAY_MODEL: "google/gemini-3-flash" });
+    assert.equal(getVercelGatewayModel(), "google/gemini-3-flash");
+    process.env.AI_GATEWAY_MODEL = "not a model id";
+    assert.equal(getVercelGatewayModel(), "minimax/minimax-m3.1-flash");
+  });
+
+  it("prefers MiniMax as the provider for the temporary free model", async () => {
+    setEnv({ AI_GATEWAY_API_KEY: "vck" });
+    const requests: Array<Record<string, unknown>> = [];
+    global.fetch = async (_input, init) => {
+      requests.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+      return new Response(
+        JSON.stringify({
+          model: "minimax/minimax-m3.1-flash",
+          choices: [{ finish_reason: "stop", message: { content: "ok" } }],
+          usage: { prompt_tokens: 1, completion_tokens: 1 },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    };
+
+    await new VercelGatewayAgentProvider().generate({
+      system: "test",
+      messages: [{ role: "user", text: "hello" }],
+    });
+
+    assert.deepEqual(requests[0]?.providerOptions, { gateway: { order: ["minimax"] } });
+  });
+
   it("honours AGENT_LLM_PROVIDER=groq", () => {
     setEnv({ AGENT_LLM_PROVIDER: "groq", GROQ_API_KEY: "gsk_test" });
     assert.equal(getAgentLlmProviderName(), "groq");
