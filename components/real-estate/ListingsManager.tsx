@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Building2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { Building2, ImagePlus, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 import { ReMetricOverview } from "@/components/real-estate/ui";
 import { useMediaQuery } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
@@ -47,6 +47,7 @@ import {
   mandateTone,
   registerActivityLine,
 } from "@/components/real-estate/listings/ListingRegisterDetails";
+import { uploadErrorMessage, uploadProjectMediaFile } from "@/app/cloud/lib/upload-project-media";
 
 const LISTING_PAGE_LIMIT = 1000;
 
@@ -54,6 +55,7 @@ type AgentOption = { id: string; name: string };
 type DevelopmentOption = { id: string; name: string };
 type StatusTab = "all" | "available" | "under_offer" | "reserved" | "management" | "approval" | "closed";
 type TypeFilter = "all" | ListingTransactionType;
+type PendingPhoto = { id: string; file: File; previewUrl: string };
 
 type ListingForm = {
   transaction_type: ListingTransactionType;
@@ -71,7 +73,7 @@ type ListingForm = {
   mandate_expiry_date: string;
   lease_term_months: string;
   external_reference: string;
-  photos: string;
+  photos: string[];
   property_category: "" | PropertyCategory;
 };
 
@@ -91,7 +93,7 @@ const EMPTY: ListingForm = {
   mandate_expiry_date: "",
   lease_term_months: "",
   external_reference: "",
-  photos: "",
+  photos: [],
   property_category: "",
 };
 
@@ -188,6 +190,11 @@ export function ListingsManager({
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [register, setRegister] = useState<Record<string, RegisterRow>>({});
   const [registerNote, setRegisterNote] = useState<string | null>(null);
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
+  const pendingPhotosRef = useRef<PendingPhoto[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [uploadTargetId, setUploadTargetId] = useState("");
 
   const hrefFor = listingHref ?? (canApprove ? (id: string) => `/client/listings/${id}` : undefined);
 
@@ -196,6 +203,12 @@ export function ListingsManager({
     const t = setTimeout(() => setToast(null), 4000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    return () => {
+      pendingPhotosRef.current.forEach((photo) => URL.revokeObjectURL(photo.previewUrl));
+    };
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -299,13 +312,17 @@ export function ListingsManager({
   }
 
   function openCreate() {
+    clearPendingPhotos();
     setEditingId(null);
     setEditingCategory(null);
     setForm(EMPTY);
+    setPhotoError(null);
+    setUploadTargetId(crypto.randomUUID());
     setShowForm(true);
   }
 
   function openEdit(listing: ListingRow) {
+    clearPendingPhotos();
     setEditingId(listing.id);
     setForm({
       transaction_type: listing.transaction_type,
@@ -323,14 +340,59 @@ export function ListingsManager({
       mandate_expiry_date: listing.mandate_expiry_date ?? "",
       lease_term_months: listing.lease_term_months != null ? String(listing.lease_term_months) : "",
       external_reference: listing.external_reference ?? "",
-      photos: Array.isArray(listing.photos) ? listing.photos.join("\n") : "",
+      photos: Array.isArray(listing.photos) ? listing.photos : [],
       property_category: asPropertyCategory(listing.property_category) ?? "",
     });
     setEditingCategory(listing.property_category ?? null);
+    setPhotoError(null);
+    setUploadTargetId(listing.id);
     setShowForm(true);
   }
 
-  function buildPayload() {
+  function clearPendingPhotos() {
+    pendingPhotosRef.current.forEach((photo) => URL.revokeObjectURL(photo.previewUrl));
+    pendingPhotosRef.current = [];
+    setPendingPhotos([]);
+  }
+
+  function closeForm() {
+    clearPendingPhotos();
+    setPhotoError(null);
+    setShowForm(false);
+  }
+
+  function addPhotos(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (!files.length) return;
+
+    const availableSlots = Math.max(0, 50 - form.photos.length - pendingPhotosRef.current.length);
+    if (!availableSlots) {
+      setPhotoError("A listing can have up to 50 photos.");
+      return;
+    }
+
+    const selected = files.slice(0, availableSlots).map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+    const next = [...pendingPhotosRef.current, ...selected];
+    pendingPhotosRef.current = next;
+    setPendingPhotos(next);
+    setPhotoError(files.length > availableSlots ? `Only ${availableSlots} more photo${availableSlots === 1 ? "" : "s"} can be added.` : null);
+  }
+
+  function removePendingPhoto(id: string) {
+    const photo = pendingPhotosRef.current.find((item) => item.id === id);
+    if (photo) URL.revokeObjectURL(photo.previewUrl);
+    const next = pendingPhotosRef.current.filter((item) => item.id !== id);
+    pendingPhotosRef.current = next;
+    setPendingPhotos(next);
+    setPhotoError(null);
+  }
+
+  function buildPayload(photos = form.photos) {
     // Only send the category when set or when clearing an existing value, so saves keep working
     // before the final corrections migration adds the column.
     const category =
@@ -352,10 +414,7 @@ export function ListingsManager({
       mandate_expiry_date: form.mandate_expiry_date || null,
       lease_term_months: numOrNull(form.lease_term_months),
       external_reference: form.external_reference.trim() || null,
-      photos: form.photos
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      photos,
     };
   }
 
@@ -376,8 +435,29 @@ export function ListingsManager({
 
   async function save() {
     setSaving(true);
+    setPhotoError(null);
     try {
-      const payload = buildPayload();
+      let photos = form.photos;
+      if (pendingPhotos.length) {
+        setUploadingPhotos(true);
+        try {
+          const uploaded = await Promise.all(
+            pendingPhotos.map((photo) =>
+              uploadProjectMediaFile(photo.file, clientId, `real-estate-listing-${uploadTargetId}`)
+            )
+          );
+          photos = [...photos, ...uploaded.map((photo) => photo.publicUrl)];
+          setForm((current) => ({ ...current, photos }));
+          clearPendingPhotos();
+        } catch (error) {
+          setPhotoError(uploadErrorMessage(error));
+          return;
+        } finally {
+          setUploadingPhotos(false);
+        }
+      }
+
+      const payload = buildPayload(photos);
       const url = editingId
         ? `/api/clients/${clientId}/listings/${editingId}`
         : `/api/clients/${clientId}/listings`;
@@ -398,7 +478,7 @@ export function ListingsManager({
             ? "Listing created"
             : "Listing submitted for approval"
       );
-      setShowForm(false);
+      closeForm();
       await load();
     } finally {
       setSaving(false);
@@ -411,7 +491,7 @@ export function ListingsManager({
     try {
       await fetch(`/api/clients/${clientId}/listings/${deleteTargetId}`, { method: "DELETE" });
       setToast("Listing deleted");
-      setShowForm(false);
+      closeForm();
       setDeleteTargetId(null);
       await load();
     } finally {
@@ -875,7 +955,7 @@ export function ListingsManager({
           size="lg"
           title={editingId ? "Edit listing" : "New listing"}
           description="Sale, rental, development, or managed stock."
-          onClose={() => setShowForm(false)}
+          onClose={closeForm}
           footer={
             <div className="flex items-center justify-between gap-2">
               {editingId && canApprove ? (
@@ -886,11 +966,11 @@ export function ListingsManager({
                 <span />
               )}
               <div className="flex gap-2">
-                <Button type="button" variant="secondary" size="md" onClick={() => setShowForm(false)}>
+                <Button type="button" variant="secondary" size="md" disabled={saving} onClick={closeForm}>
                   Cancel
                 </Button>
                 <Button type="button" variant="primary" size="md" loading={saving} disabled={saving} onClick={() => void save()}>
-                  {saving ? "Saving…" : "Save listing"}
+                  {uploadingPhotos ? "Uploading photos…" : saving ? "Saving…" : "Save listing"}
                 </Button>
               </div>
             </div>
@@ -1044,14 +1124,75 @@ export function ListingsManager({
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               />
             </Field>
-            <Field label="Photo URLs (one per line)">
-              <TextArea
-                rows={3}
-                className="font-mono text-[12px]"
-                value={form.photos}
-                onChange={(e) => setForm((f) => ({ ...f, photos: e.target.value }))}
-              />
-            </Field>
+            <section aria-labelledby="listing-photos-label" aria-busy={uploadingPhotos}>
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <h3 id="listing-photos-label" className="text-[12px] font-medium text-sales-text-secondary">
+                    Property photos
+                  </h3>
+                  <p className="mt-0.5 text-[11px] text-sales-text-muted">JPEG, PNG, WEBP or HEIC. Up to 20 MB each.</p>
+                </div>
+                <span className="text-[11px] tabular-nums text-sales-text-muted">
+                  {form.photos.length + pendingPhotos.length}/50
+                </span>
+              </div>
+
+              {form.photos.length || pendingPhotos.length ? (
+                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {form.photos.map((src, index) => (
+                    <div key={`${src}-${index}`} className="group relative aspect-[4/3] overflow-hidden rounded-[10px] border border-sales-border-subtle bg-sales-surface-subtle">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt={`Property photo ${index + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                      <button
+                        type="button"
+                        className="absolute right-1.5 top-1.5 flex h-11 w-11 items-center justify-center rounded-full bg-black/65 text-white shadow-sm transition-colors hover:bg-black/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sales-brand sm:h-9 sm:w-9"
+                        aria-label={`Remove property photo ${index + 1}`}
+                        onClick={() => setForm((current) => ({ ...current, photos: current.photos.filter((_, photoIndex) => photoIndex !== index) }))}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden />
+                      </button>
+                    </div>
+                  ))}
+                  {pendingPhotos.map((photo, index) => (
+                    <div key={photo.id} className="relative aspect-[4/3] overflow-hidden rounded-[10px] border border-sales-border-subtle bg-sales-surface-subtle">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={photo.previewUrl} alt={`Selected photo ${index + 1}: ${photo.file.name}`} className="h-full w-full object-cover" />
+                      <span className="absolute bottom-1.5 left-1.5 max-w-[calc(100%-12px)] truncate rounded-full bg-black/65 px-2 py-1 text-[10px] font-medium text-white">
+                        Ready to upload
+                      </span>
+                      <button
+                        type="button"
+                        className="absolute right-1.5 top-1.5 flex h-11 w-11 items-center justify-center rounded-full bg-black/65 text-white shadow-sm transition-colors hover:bg-black/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sales-brand sm:h-9 sm:w-9"
+                        aria-label={`Remove selected photo ${photo.file.name}`}
+                        onClick={() => removePendingPhoto(photo.id)}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              <label className="mt-2 flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-sales-border bg-sales-surface-subtle px-4 text-center transition-colors hover:border-sales-brand hover:bg-sales-brand-soft focus-within:border-sales-brand focus-within:ring-2 focus-within:ring-sales-brand/20">
+                {uploadingPhotos ? <Loader2 className="h-5 w-5 animate-spin text-sales-brand" aria-hidden /> : <ImagePlus className="h-5 w-5 text-sales-brand" aria-hidden />}
+                <span className="text-[13px] font-semibold text-sales-text-primary">Choose photos</span>
+                <span className="text-[11px] text-sales-text-muted">Select one or several images from this device</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                  multiple
+                  className="sr-only"
+                  disabled={saving || form.photos.length + pendingPhotos.length >= 50}
+                  onChange={addPhotos}
+                  aria-describedby={photoError ? "listing-photos-error" : undefined}
+                />
+              </label>
+              {photoError ? (
+                <p id="listing-photos-error" className="mt-2 text-[12px] text-sales-danger-fg" role="alert">
+                  {photoError}
+                </p>
+              ) : null}
+            </section>
           </div>
         </PremiumSheet>
       ) : null}
