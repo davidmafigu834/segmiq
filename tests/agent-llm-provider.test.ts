@@ -55,28 +55,30 @@ function dummyResponse(model: string): ModelResponse {
 }
 
 describe("agent LLM provider selection", () => {
-  it("uses MiniMax M3.1 Flash by default and migrates the previous MiniMax model", () => {
+  it("uses Beam Free by default and migrates previous MiniMax models", () => {
     setEnv({ AI_GATEWAY_API_KEY: "vck" });
-    assert.equal(getVercelGatewayModel(), "minimax/minimax-m3.1-flash");
+    assert.equal(getVercelGatewayModel(), "reflection/beam-free");
     process.env.AI_GATEWAY_MODEL = "minimax/minimax-m3";
-    assert.equal(getVercelGatewayModel(), "minimax/minimax-m3.1-flash");
+    assert.equal(getVercelGatewayModel(), "reflection/beam-free");
+    process.env.AI_GATEWAY_MODEL = "minimax/minimax-m3.1-flash";
+    assert.equal(getVercelGatewayModel(), "reflection/beam-free");
   });
 
   it("keeps a valid custom Gateway model and rejects a malformed model id", () => {
     setEnv({ AI_GATEWAY_API_KEY: "vck", AI_GATEWAY_MODEL: "google/gemini-3-flash" });
     assert.equal(getVercelGatewayModel(), "google/gemini-3-flash");
     process.env.AI_GATEWAY_MODEL = "not a model id";
-    assert.equal(getVercelGatewayModel(), "minimax/minimax-m3.1-flash");
+    assert.equal(getVercelGatewayModel(), "reflection/beam-free");
   });
 
-  it("prefers MiniMax as the provider for the temporary free model", async () => {
+  it("pins Beam Free to Reflection for the temporary free model", async () => {
     setEnv({ AI_GATEWAY_API_KEY: "vck" });
     const requests: Array<Record<string, unknown>> = [];
     global.fetch = async (_input, init) => {
       requests.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
       return new Response(
         JSON.stringify({
-          model: "minimax/minimax-m3.1-flash",
+          model: "reflection/beam-free",
           choices: [{ finish_reason: "stop", message: { content: "ok" } }],
           usage: { prompt_tokens: 1, completion_tokens: 1 },
         }),
@@ -89,7 +91,12 @@ describe("agent LLM provider selection", () => {
       messages: [{ role: "user", text: "hello" }],
     });
 
-    assert.deepEqual(requests[0]?.providerOptions, { gateway: { order: ["minimax"] } });
+    assert.deepEqual(requests[0]?.providerOptions, {
+      gateway: {
+        order: ["reflection", "nvidia", "minimax"],
+        models: ["nvidia/nemotron-3.5-lightning-free", "minimax/minimax-m3.1-flash"],
+      },
+    });
   });
 
   it("honours AGENT_LLM_PROVIDER=groq", () => {

@@ -617,8 +617,35 @@ async function reasonAndAct(
 
   let finalText: string | null = null;
   for (let turn = 0; turn < MAX_MODEL_TURNS; turn++) {
-    if (Date.now() > deadline || executedCalls.length >= MAX_TOOL_CALLS) {
+    if (Date.now() > deadline) {
       log("loop_limit", { executionId: opts.executionId, turn, toolCalls: executedCalls.length });
+      break;
+    }
+
+    // Tool batches can consume the remaining budget in one turn. Always give
+    // the model one tool-free synthesis turn so completed lookups become a
+    // customer reply instead of an avoidable LOOP_LIMIT escalation.
+    if (executedCalls.length >= MAX_TOOL_CALLS) {
+      messages.push({
+        role: "user",
+        text:
+          "The tool budget is exhausted. Do not call any more tools. Using only the results already returned, output ONLY the required final JSON object now. If a fact is still missing, say it needs team confirmation.",
+      });
+      const response = await provider.generate({
+        system,
+        messages,
+        tools: [],
+        maxTokens: 1200,
+      });
+      inputTokens += response.usage.inputTokens;
+      outputTokens += response.usage.outputTokens;
+      model = response.model;
+      finalText = response.text;
+      log("loop_limit.finalized", {
+        executionId: opts.executionId,
+        turn,
+        toolCalls: executedCalls.length,
+      });
       break;
     }
 

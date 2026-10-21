@@ -19,8 +19,15 @@ import {
  */
 
 const DEFAULT_GATEWAY_URL = "https://ai-gateway.vercel.sh/v1";
-const DEFAULT_GATEWAY_MODEL = "minimax/minimax-m3.1-flash";
-const LEGACY_GATEWAY_MODELS = new Set(["minimax/minimax-m3"]);
+const DEFAULT_GATEWAY_MODEL = "reflection/beam-free";
+const DEFAULT_GATEWAY_FALLBACK_MODELS = [
+  "nvidia/nemotron-3.5-lightning-free",
+  "minimax/minimax-m3.1-flash",
+] as const;
+const LEGACY_GATEWAY_MODELS = new Set([
+  "minimax/minimax-m3",
+  "minimax/minimax-m3.1-flash",
+]);
 const GATEWAY_MODEL_ID = /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i;
 const REQUEST_TIMEOUT_MS = 45_000;
 const MAX_RETRIES = 2;
@@ -82,7 +89,14 @@ export class VercelGatewayAgentProvider implements AgentModelProvider {
         temperature: req.temperature,
       }),
       ...(this.modelId === DEFAULT_GATEWAY_MODEL
-        ? { providerOptions: { gateway: { order: ["minimax"] } } }
+        ? {
+            providerOptions: {
+              gateway: {
+                order: ["reflection", "nvidia", "minimax"],
+                models: [...DEFAULT_GATEWAY_FALLBACK_MODELS],
+              },
+            },
+          }
         : {}),
     };
 
