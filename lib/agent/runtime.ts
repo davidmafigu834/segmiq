@@ -21,6 +21,7 @@ import {
 import { replyHandsOffToTeam } from "./team-handoff";
 import { getAgentModelProvider, AgentLlmRateLimitError, type AgentChatMessage, type ModelToolCall } from "./provider";
 import { getAgentCompanySettings, isAgentGloballyEnabled } from "./settings";
+import { simpleGreetingReply } from "./simple-replies";
 import {
   patchForConversationMode,
 } from "./real-estate/conversation-mode";
@@ -615,8 +616,22 @@ async function reasonAndAct(
   let model = provider.modelId;
   const deadline = Date.now() + MAX_RUN_MS;
 
-  let finalText: string | null = null;
-  for (let turn = 0; turn < MAX_MODEL_TURNS; turn++) {
+  const latestCustomerMessage = [...context.conversation.recentMessages]
+    .reverse()
+    .find((message) => message.direction === "inbound")?.body;
+  const greetingReply = simpleGreetingReply(latestCustomerMessage);
+  let finalText: string | null = greetingReply
+    ? JSON.stringify({
+        intents: ["GENERAL_MESSAGE"],
+        confidence: 1,
+        decision_summary: "Replied to a simple greeting without calling the model or tools.",
+        evidence: latestCustomerMessage ?? null,
+        reply: greetingReply,
+      })
+    : null;
+  if (greetingReply) model = "deterministic/greeting-v1";
+
+  for (let turn = 0; finalText === null && turn < MAX_MODEL_TURNS; turn++) {
     if (Date.now() > deadline) {
       log("loop_limit", { executionId: opts.executionId, turn, toolCalls: executedCalls.length });
       break;
