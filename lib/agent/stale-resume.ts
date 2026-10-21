@@ -185,7 +185,7 @@ async function queueStaleResume(
     .select("id", { count: "exact", head: true })
     .eq("lead_id", leadId)
     .gte("created_at", since)
-    .in("error_code", ["RATE_LIMITED", "STALE_RUN"]);
+    .in("error_code", ["RATE_LIMITED", "STALE_RUN", "LOOP_LIMIT", "INVALID_MODEL_OUTPUT"]);
   if ((count ?? 0) >= MAX_STALE_FAILURES) {
     const settings = await getAgentCompanySettings(clientId);
     await createAgentEscalation({

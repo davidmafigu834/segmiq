@@ -26,7 +26,7 @@ import {
   type ModelToolCall,
 } from "./provider";
 import { getAgentCompanySettings, isAgentGloballyEnabled } from "./settings";
-import { simpleGreetingReply } from "./simple-replies";
+import { simpleGreetingReply, tyrePriceQuery } from "./simple-replies";
 import {
   patchForConversationMode,
 } from "./real-estate/conversation-mode";
@@ -625,6 +625,7 @@ async function reasonAndAct(
     .reverse()
     .find((message) => message.direction === "inbound")?.body;
   const greetingReply = simpleGreetingReply(latestCustomerMessage);
+  const directTyrePriceQuery = greetingReply ? null : tyrePriceQuery(latestCustomerMessage);
   let finalText: string | null = greetingReply
     ? JSON.stringify({
         intents: ["GENERAL_MESSAGE"],
@@ -635,6 +636,50 @@ async function reasonAndAct(
       })
     : null;
   if (greetingReply) model = "deterministic/greeting-v1";
+
+  if (directTyrePriceQuery) {
+    await executeToolBatch(
+      toolCtx,
+      [
+        {
+          id: "deterministic-tyre-price-search",
+          name: "product.search",
+          input: { query: directTyrePriceQuery, limit: 12 },
+        },
+      ],
+      executedCalls,
+      opts
+    );
+    const productsRaw = executedCalls[0]?.result.summary.products;
+    const products = Array.isArray(productsRaw)
+      ? productsRaw.filter(
+          (item): item is Record<string, unknown> => Boolean(item && typeof item === "object")
+        )
+      : [];
+    const priced = products
+      .filter((item) => typeof item.name === "string" && typeof item.price === "number")
+      .slice(0, 8);
+    const reply = priced.length
+      ? [
+          `Our current catalogue prices for ${directTyrePriceQuery} are:`,
+          ...priced.map(
+            (item) =>
+              `• ${String(item.name)} — ${String(item.currency ?? "USD")} ${Number(item.price).toFixed(2)}`
+          ),
+          "Which option and quantity would you like? Physical stock availability still needs confirmation.",
+        ].join("\n")
+      : `I couldn't find an exact ${directTyrePriceQuery} match in our current catalogue. Let me confirm availability and pricing with the Rossi Tyre team.`;
+    finalText = JSON.stringify({
+      intents: ["PRICING_REQUEST"],
+      confidence: priced.length ? 0.98 : 0.75,
+      decision_summary: priced.length
+        ? `Returned exact ${directTyrePriceQuery} catalogue matches without model reasoning.`
+        : `No exact ${directTyrePriceQuery} catalogue match; requested team confirmation.`,
+      evidence: latestCustomerMessage ?? null,
+      reply,
+    });
+    model = "deterministic/tyre-price-v1";
+  }
 
   for (let turn = 0; finalText === null && turn < MAX_MODEL_TURNS; turn++) {
     if (Date.now() > deadline) {
@@ -711,20 +756,8 @@ async function reasonAndAct(
 
   // Loop limit reached without a final answer.
   if (finalText === null && executedCalls.length >= MAX_TOOL_CALLS) {
-    if (!opts.testMode) {
-      await createAgentEscalation({
-        clientId: opts.clientId,
-        leadId: opts.leadId,
-        executionId: opts.executionId,
-        reason: "SYSTEM_FAILURE",
-        summary:
-          "The agent hit its tool-call limit without completing. A human should review the conversation and the actions already taken.",
-        ownerId: context.lead.ownerId,
-        escalationUserId: settings.escalationUserId,
-      });
-    }
     return {
-      executionState: "WAITING_FOR_HUMAN",
+      executionState: "FAILED",
       final: null,
       reply: null,
       replyStatus: "SUPPRESSED",
@@ -760,17 +793,6 @@ async function reasonAndAct(
     final = parseAgentFinalOutput(repair.text);
   }
   if (!final) {
-    if (!opts.testMode) {
-      await createAgentEscalation({
-        clientId: opts.clientId,
-        leadId: opts.leadId,
-        executionId: opts.executionId,
-        reason: "SYSTEM_FAILURE",
-        summary: "The agent could not produce a valid response for this customer message.",
-        ownerId: context.lead.ownerId,
-        escalationUserId: settings.escalationUserId,
-      });
-    }
     return {
       executionState: "FAILED",
       final: null,
