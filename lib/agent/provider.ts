@@ -230,8 +230,20 @@ export function isAgentLlmRateLimitError(err: unknown): boolean {
   return err instanceof Error && /\b429\b/.test(err.message);
 }
 
-export function isAgentLlmFailoverError(err: unknown): boolean {
+/** Provider failures that are expected to recover without human intervention. */
+export function isAgentLlmTransientError(err: unknown): boolean {
   if (isAgentLlmRateLimitError(err)) return true;
+  if (!(err instanceof Error)) return false;
+  return (
+    /\b(?:408|425|500|502|503|504)\b/.test(err.message) ||
+    /\b(?:timeout|timed out|high demand|temporarily unavailable|service unavailable|unavailable|fetch failed|network)\b/i.test(
+      err.message
+    )
+  );
+}
+
+export function isAgentLlmFailoverError(err: unknown): boolean {
+  if (isAgentLlmTransientError(err)) return true;
   return err instanceof Error && /thought_signature/i.test(err.message);
 }
 
@@ -308,10 +320,10 @@ export function describeAgentLlm(): {
 const FALLBACK_EXHAUSTED_RETRY_MS = 8_000;
 
 /**
- * Tries the primary provider on every call. A 429 fails over to the secondary
- * for that call only — Groq's free TPM is too small to pin a whole tool loop
- * onto after Gemini rate-limits. If the fallback also 429s, wait briefly and
- * retry the primary once (it often recovers while Groq is still exhausted).
+ * Tries the primary provider on every call. A transient provider failure
+ * (rate limit, high demand, timeout or 5xx) fails over to the secondary for
+ * that call only. If both providers are transiently unavailable, wait briefly
+ * and retry the primary once before the runtime queues a later recovery.
  */
 export class FailoverAgentProvider implements AgentModelProvider {
   constructor(

@@ -1,11 +1,12 @@
-/** Cap cool-down resumes so a persistent 429 becomes a human escalation, not a loop. */
-export const MAX_STALE_FAILURES = 4;
+/** Cap cool-down resumes so a persistent provider outage eventually alerts a human. */
+export const MAX_STALE_FAILURES = 6;
 
 /** Shared with the conversation lock TTL — a live run is treated as dead after this. */
 export const STALE_RESUME_AFTER_MS = 3 * 60 * 1000;
 
 /** Must match agent_escalations RATE_LIMITED label in escalation.ts. */
-export const RATE_LIMIT_HOLD_REASON = "Agent rate limit reached";
+export const RATE_LIMIT_HOLD_REASON = "AI provider temporarily unavailable — automatic retry pending";
+const LEGACY_RATE_LIMIT_HOLD_REASON = "Agent rate limit reached";
 
 export type StaleResumeCandidate = {
   status: string;
@@ -19,7 +20,10 @@ export type StaleResumeCandidate = {
 };
 
 export function isRateLimitHold(status: string, humanNeededReason: string | null | undefined): boolean {
-  return status === "HUMAN_NEEDED" && humanNeededReason === RATE_LIMIT_HOLD_REASON;
+  return (
+    status === "HUMAN_NEEDED" &&
+    (humanNeededReason === RATE_LIMIT_HOLD_REASON || humanNeededReason === LEGACY_RATE_LIMIT_HOLD_REASON)
+  );
 }
 
 /** True when AI started a turn, never finished, and the lock is old enough to steal. */

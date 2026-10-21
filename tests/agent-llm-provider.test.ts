@@ -5,6 +5,7 @@ import {
   FailoverAgentProvider,
   getAgentLlmFallbackName,
   getAgentLlmProviderName,
+  isAgentLlmTransientError,
   type AgentModelProvider,
   type GenerateRequest,
   type ModelResponse,
@@ -184,6 +185,33 @@ describe("Groq message conversion", () => {
 });
 
 describe("LLM failover", () => {
+  it("classifies high-demand and timeout failures as retryable", () => {
+    assert.equal(isAgentLlmTransientError(new Error("Gemini API 503: high demand")), true);
+    assert.equal(isAgentLlmTransientError(new Error("Vercel AI Gateway timeout")), true);
+    assert.equal(isAgentLlmTransientError(new Error("Gemini API 400: bad request")), false);
+  });
+
+  it("falls over when the primary provider is temporarily unavailable", async () => {
+    const primary: AgentModelProvider = {
+      modelId: "gemini-3.6-flash",
+      async generate() {
+        throw new Error("Gemini API 503: high demand");
+      },
+    };
+    const fallback: AgentModelProvider = {
+      modelId: "reflection/beam-free",
+      async generate() {
+        return dummyResponse("reflection/beam-free");
+      },
+    };
+    const provider = new FailoverAgentProvider(primary, fallback, 0);
+    const result = await provider.generate({
+      system: "s",
+      messages: [{ role: "user", text: "price please" }],
+    });
+    assert.equal(result.model, "reflection/beam-free");
+  });
+
   it("falls over to Groq for a rate-limited call, then tries Gemini again on the next call", async () => {
     let geminiCalls = 0;
     let groqCalls = 0;

@@ -68,6 +68,20 @@ describe("conversationNeedsStaleResume", () => {
     );
   });
 
+  it("resumes a temporary provider outage hold after the cool-down", () => {
+    assert.equal(
+      conversationNeedsStaleResume(
+        row({
+          status: "HUMAN_NEEDED",
+          humanNeededReason: "AI provider temporarily unavailable — automatic retry pending",
+          lockAcquiredAt: null,
+        }),
+        NOW
+      ),
+      true
+    );
+  });
+
   it("does not resume a genuine human-needed handoff", () => {
     assert.equal(
       conversationNeedsStaleResume(

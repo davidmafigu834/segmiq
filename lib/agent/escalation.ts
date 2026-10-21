@@ -102,7 +102,7 @@ export async function createAgentEscalation(input: CreateEscalationInput): Promi
   return asRow<{ id: string }>(escalation)?.id ?? null;
 }
 
-/** Drop transient 429 handoffs so the agent can continue after cool-down. */
+/** Drop transient provider handoffs so the agent can continue after cool-down. */
 export async function resolveOpenRateLimitEscalations(clientId: string, leadId: string): Promise<void> {
   const supabase = createAdminClient();
   await supabase

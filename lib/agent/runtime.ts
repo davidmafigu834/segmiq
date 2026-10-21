@@ -19,7 +19,12 @@ import {
   type AgentFinalOutput,
 } from "./prompt";
 import { replyHandsOffToTeam } from "./team-handoff";
-import { getAgentModelProvider, AgentLlmRateLimitError, type AgentChatMessage, type ModelToolCall } from "./provider";
+import {
+  getAgentModelProvider,
+  isAgentLlmTransientError,
+  type AgentChatMessage,
+  type ModelToolCall,
+} from "./provider";
 import { getAgentCompanySettings, isAgentGloballyEnabled } from "./settings";
 import { simpleGreetingReply } from "./simple-replies";
 import {
@@ -463,15 +468,15 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    const rateLimited = err instanceof AgentLlmRateLimitError || /\b429\b/.test(message);
+    const transientLlmFailure = isAgentLlmTransientError(err);
     console.error("[agent] execution failed", err);
     await finishExecution(executionId, {
       state: "FAILED",
-      error_code: rateLimited ? "RATE_LIMITED" : "RUNTIME_ERROR",
+      error_code: transientLlmFailure ? "RATE_LIMITED" : "RUNTIME_ERROR",
       error_message: message.slice(0, 500),
       latency_ms: Date.now() - startedAt,
     });
-    if (!opts.testMode && !rateLimited) {
+    if (!opts.testMode && !transientLlmFailure) {
       await createAgentEscalation({
         clientId: opts.clientId,
         leadId: opts.leadId,
@@ -481,7 +486,7 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
         ownerId: null,
         escalationUserId: opts.settings.escalationUserId,
       });
-    } else if (!opts.testMode && rateLimited && opts.retryOnLlmRateLimit) {
+    } else if (!opts.testMode && transientLlmFailure && opts.retryOnLlmRateLimit) {
       // Unique trigger index would otherwise block a retry of this inbound message.
       await supabase
         .from("agent_executions")
@@ -490,7 +495,7 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
       retryRateLimit = true;
       await updateConversationAgentState(opts.clientId, opts.leadId, { status: "IDLE" });
       log("retry.llm_rate_limited", { leadId: opts.leadId, executionId, waitMs: LLM_RATE_LIMIT_RETRY_MS });
-    } else if (!opts.testMode && rateLimited) {
+    } else if (!opts.testMode && transientLlmFailure) {
       await supabase
         .from("agent_executions")
         .update({ trigger_message_id: null })
