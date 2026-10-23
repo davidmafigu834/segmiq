@@ -51,8 +51,8 @@ describe("Commercial migration reconciliation", () => {
     for (const name of migrationNames.slice(2, 5)) {
       const sql = migration(name);
       assert.match(sql, /enable row level security/i, name);
-      assert.match(sql, /revoke (all|execute).*authenticated/is, name);
-      assert.match(sql, /grant (all|execute).*service_role/is, name);
+      assert.match(sql, /revoke (all|execute)[\s\S]*authenticated/i, name);
+      assert.match(sql, /grant (all|execute)[\s\S]*service_role/i, name);
     }
   });
 

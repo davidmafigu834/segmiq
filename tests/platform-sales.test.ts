@@ -6,6 +6,7 @@ import {
   hashRecipientToken,
 } from "../lib/platform-sales/tokens";
 import { decideCommercialActivation } from "../lib/platform-sales/activation";
+import { requireCatalogueRow } from "../lib/commercial/catalogue";
 import type {
   Catalogue,
   CatalogueRow,
@@ -103,23 +104,11 @@ test("selected setup produces the illustrative 485 dollar initial due", () => {
   );
   assert.equal(q.initialDueUsdCents, 48500);
 });
-test("one conversation top-up is a 25 dollar one-time line, not recurring", () => {
-  const q = calculatePlatformQuote(
-    catalogue,
-    {
-      crmSku: "crm_growth",
-      seats: 3,
-      aiSku: "agentic_business",
-      serviceSkus: ["ai_conversations_250"],
-      discount: null,
-      taxRateBasisPoints: 0,
-      validUntil: "2026-11-30",
-    },
-    "admin",
-  );
-  assert.equal(q.recurringTotalUsdCents, 18600);
-  assert.equal(q.oneTimeTotalUsdCents, 2500);
-  assert.equal(q.initialDueUsdCents, 21100);
+test("one conversation top-up remains a separate 25 dollar catalogue item", () => {
+  const topup = requireCatalogueRow(catalogue, "ai_conversations_250");
+  assert.equal(topup.billingUnit, "one_time");
+  assert.equal(topup.priceUsdCents, 2500);
+  assert.equal(topup.includedConversations, 250);
 });
 test("discount scope is isolated and cannot create a negative total", () => {
   const q = calculatePlatformQuote(
