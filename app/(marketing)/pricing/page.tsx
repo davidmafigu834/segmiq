@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, Check, ChevronDown, MessageSquare, Users } from "lucide-react";
+import { Check, ChevronDown, Users } from "lucide-react";
 import JsonLd from "@/components/seo/JsonLd";
 import { m } from "@/components/marketing/marketingTheme";
 import { ML } from "@/lib/marketing-links";
