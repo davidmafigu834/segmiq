@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   crmSubscriptionQuery,
+  fetchMiddlewareCrmBillingAccessStatus,
   fetchMiddlewareCrmSubscriptionStatus,
   fetchMiddlewareFirstRow,
   fetchMiddlewareSessionAlive,
@@ -19,12 +20,35 @@ test("middleware REST URLs stay scoped to one user or one CRM subscription", () 
   );
   assert.equal(
     crmSubscriptionQuery("client-1"),
-    "select=status&client_id=eq.client-1&product=eq.crm&limit=1"
+    "select=status,grace_days&client_id=eq.client-1&product=eq.crm&limit=1"
   );
   assert.equal(
     userSessionAliveQuery("sess-1"),
     "select=id,user_id,revoked_at,expires_at,last_seen_at,metadata&id=eq.sess-1"
   );
+});
+
+test("middleware enforces an expired grace without waiting for cron", async () => {
+  const prevUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const prevKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role";
+  try {
+    const status = await fetchMiddlewareCrmBillingAccessStatus("client-1", {
+      now: new Date("2026-10-23T12:00:00Z"),
+      fetchImpl: async (input) => {
+        const url = String(input);
+        if (url.includes("/subscriptions?")) return Response.json([{ status: "past_due", grace_days: 7 }]);
+        if (url.includes("/invoices?")) return Response.json([{ due_at: "2026-10-01T00:00:00Z" }]);
+        if (url.includes("/platform_grace_periods?")) return Response.json([]);
+        return new Response("unexpected", { status: 500 });
+      },
+    });
+    assert.equal(status, "suspended");
+  } finally {
+    if (prevUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = prevUrl;
+    if (prevKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = prevKey;
+  }
 });
 
 test("middleware session alive rejects revoked / idle / missing rows", async () => {

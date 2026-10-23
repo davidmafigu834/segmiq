@@ -1,0 +1,21 @@
+{
+  "scannedAt": "2026-10-24",
+  "designSystem": "design.md",
+  "genre": "modern-minimal",
+  "macrostructureFamily": "Workbench",
+  "framework": "Next.js 14 App Router",
+  "fontStack": {
+    "display": "Geist 600 roman",
+    "body": "Inter 400"
+  },
+  "palette": "Existing SegmiQ and sales CSS tokens; near-black ink with restrained electric-lime accent",
+  "motion": "Framer Motion installed; locked system permits colour-only hover/focus and no positional reduced-motion animation",
+  "spacing": "Existing Tailwind sales scale",
+  "preserve": [
+    "existing routes and component ownership",
+    "existing SegmiQ palette and tokens",
+    "Geist and Inter typography",
+    "Workbench hierarchy",
+    "existing authentication and release gates"
+  ]
+}

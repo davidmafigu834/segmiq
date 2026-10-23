@@ -7,8 +7,7 @@ export function isR2Configured(): boolean {
   const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID;
   const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY;
   const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
-  const publicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL;
-  return Boolean(accountId && accessKeyId && secretAccessKey && bucket && publicUrl);
+  return Boolean(accountId && accessKeyId && secretAccessKey && bucket);
 }
 
 function getR2Client(): S3Client {
@@ -42,7 +41,7 @@ export async function generatePresignedDownloadUrl(
 ): Promise<string> {
   const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
   if (!bucket) throw new Error("CLOUDFLARE_R2_BUCKET_NAME is not configured");
-  const safeName = filename.replace(/["\\]/g, "");
+  const safeName = filename.replace(/["\\\r\n\u0000-\u001f\u007f]/g, "").slice(0, 180) || "document";
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
@@ -167,6 +166,17 @@ export function isTransactionDocumentKeyForClient(clientId: string, storageKey: 
 export function generateWeeklyTeamReportKey(clientId: string, reportId: string): string {
   const safeReportId = reportId.replace(/[^a-zA-Z0-9-]/g, "") || "report";
   return `clients/${clientId}/weekly-reports/${safeReportId}.pdf`;
+}
+
+/** Private platform-owned sales quote PDF; never used by tenant quotations. */
+export function generatePlatformSalesQuoteKey(quoteId: string, revision: number): string {
+  const safeQuote = quoteId.replace(/[^a-zA-Z0-9-]/g, "");
+  if (!safeQuote || !Number.isSafeInteger(revision) || revision < 1) throw new Error("Invalid platform quote storage key");
+  return `platform/commercial/quotes/${safeQuote}/revisions/${revision}.pdf`;
+}
+
+export function isPlatformSalesQuoteKey(quoteId: string, revision: number, key: string): boolean {
+  return key === generatePlatformSalesQuoteKey(quoteId, revision);
 }
 
 export function isWeeklyTeamReportKeyForClient(clientId: string, storageKey: string): boolean {

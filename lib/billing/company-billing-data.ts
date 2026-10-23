@@ -17,6 +17,7 @@ import type {
   CompanyBillingUsageMetric,
   CompanyPaymentMethodDisplay,
 } from "./company-billing-types";
+import { loadClientAiUsage } from "@/lib/platform-ai-usage/read-model";
 
 const UNPAID = ["sent", "overdue"];
 
@@ -31,7 +32,9 @@ const EMPTY_SETTINGS: PaymentSettings = {
   payment_instructions: null,
 };
 
-export function emptyCompanyBillingPageData(clientId: string): CompanyBillingPageData {
+export function emptyCompanyBillingPageData(
+  clientId: string,
+): CompanyBillingPageData {
   return {
     clientId,
     companyName: "Company",
@@ -41,8 +44,14 @@ export function emptyCompanyBillingPageData(clientId: string): CompanyBillingPag
     invoices: [],
     outstanding: 0,
     usage: [],
+    aiUsage: null,
     paymentSettings: EMPTY_SETTINGS,
-    paymentMethod: { kind: "none", brandLabel: "No payment method added", masked: null, detail: null },
+    paymentMethod: {
+      kind: "none",
+      brandLabel: "No payment method added",
+      masked: null,
+      detail: null,
+    },
     capabilities: {
       canViewBilling: true,
       canManageSubscription: false,
@@ -60,7 +69,9 @@ export function emptyCompanyBillingPageData(clientId: string): CompanyBillingPag
   };
 }
 
-function paymentMethodDisplay(settings: PaymentSettings): CompanyPaymentMethodDisplay {
+function paymentMethodDisplay(
+  settings: PaymentSettings,
+): CompanyPaymentMethodDisplay {
   if (settings.bank_account_number || settings.bank_name) {
     return {
       kind: "bank_transfer",
@@ -77,12 +88,17 @@ function paymentMethodDisplay(settings: PaymentSettings): CompanyPaymentMethodDi
       detail: settings.mobile_money_name,
     };
   }
-  return { kind: "none", brandLabel: "No payment method added", masked: null, detail: null };
+  return {
+    kind: "none",
+    brandLabel: "No payment method added",
+    masked: null,
+    detail: null,
+  };
 }
 
 function invoicePaymentLabel(
   method: string | null,
-  settings: PaymentSettings
+  settings: PaymentSettings,
 ): string | null {
   if (!method) return null;
   if (method === "bank_transfer") {
@@ -96,7 +112,9 @@ function invoicePaymentLabel(
   return methodLabel(method);
 }
 
-export async function getCompanyBillingPageData(clientId: string): Promise<CompanyBillingPageData> {
+export async function getCompanyBillingPageData(
+  clientId: string,
+): Promise<CompanyBillingPageData> {
   const supabase = createAdminClient();
 
   const [
@@ -108,6 +126,7 @@ export async function getCompanyBillingPageData(clientId: string): Promise<Compa
     receiptsRes,
     settingsRes,
     seatsRes,
+    aiUsage,
   ] = await Promise.all([
     supabase
       .from("clients")
@@ -117,7 +136,7 @@ export async function getCompanyBillingPageData(clientId: string): Promise<Compa
     supabase
       .from("subscriptions")
       .select(
-        "id, plan, billing_cycle, amount, currency, status, current_period_start, current_period_end, cancelled_at, grace_days"
+        "id, plan, billing_cycle, amount, currency, status, current_period_start, current_period_end, cancelled_at, grace_days",
       )
       .eq("client_id", clientId)
       .eq("product", "crm")
@@ -127,24 +146,31 @@ export async function getCompanyBillingPageData(clientId: string): Promise<Compa
     supabase
       .from("invoices")
       .select(
-        "id, invoice_number, amount, currency, status, issued_at, due_at, paid_at, period_start, period_end, pdf_url, subscription_id"
+        "id, invoice_number, amount, currency, status, issued_at, due_at, paid_at, period_start, period_end, pdf_url, subscription_id",
       )
       .eq("client_id", clientId)
       .neq("status", "draft")
       .order("created_at", { ascending: false })
       .limit(500),
-    supabase.from("payments").select("invoice_id").eq("client_id", clientId).eq("status", "pending"),
+    supabase
+      .from("payments")
+      .select("invoice_id")
+      .eq("client_id", clientId)
+      .eq("status", "pending"),
     supabase
       .from("payments")
       .select("id, invoice_id, method, status, paid_at, confirmed_at")
       .eq("client_id", clientId)
       .eq("status", "confirmed")
       .order("confirmed_at", { ascending: false }),
-    supabase.from("receipts").select("payment_id, pdf_url").eq("client_id", clientId),
+    supabase
+      .from("receipts")
+      .select("payment_id, pdf_url")
+      .eq("client_id", clientId),
     supabase
       .from("billing_settings")
       .select(
-        "bank_name, bank_account_name, bank_account_number, bank_branch, swift, mobile_money_number, mobile_money_name, payment_instructions"
+        "bank_name, bank_account_name, bank_account_number, bank_branch, swift, mobile_money_number, mobile_money_name, payment_instructions",
       )
       .limit(1)
       .maybeSingle(),
@@ -154,6 +180,7 @@ export async function getCompanyBillingPageData(clientId: string): Promise<Compa
       .eq("client_id", clientId)
       .eq("role", "SALESPERSON")
       .eq("is_active", true),
+    loadClientAiUsage(clientId).catch(() => null),
   ]);
 
   const client = clientRes.data;
@@ -166,7 +193,9 @@ export async function getCompanyBillingPageData(clientId: string): Promise<Compa
   const salespersonCount = seatsRes.error ? null : seatsRes.count;
 
   const settings = (settingsRow as PaymentSettings | null) ?? EMPTY_SETTINGS;
-  const pendingInvoiceIds = new Set((pending ?? []).map((p) => p.invoice_id as string));
+  const pendingInvoiceIds = new Set(
+    (pending ?? []).map((p) => p.invoice_id as string),
+  );
 
   const paymentIdToInvoice = new Map<string, string>();
   const latestMethodByInvoice = new Map<string, string>();
@@ -187,7 +216,8 @@ export async function getCompanyBillingPageData(clientId: string): Promise<Compa
     }
   }
 
-  const planKey: CrmPlan | null = sub && isCrmPlan(sub.plan as string) ? (sub.plan as CrmPlan) : null;
+  const planKey: CrmPlan | null =
+    sub && isCrmPlan(sub.plan as string) ? (sub.plan as CrmPlan) : null;
 
   const invoices: CompanyBillingInvoice[] = (invoiceRows ?? []).map((i) => {
     const method = latestMethodByInvoice.get(i.id as string) ?? null;
@@ -217,8 +247,12 @@ export async function getCompanyBillingPageData(clientId: string): Promise<Compa
         plan: sub.plan as string,
         planKey,
         planLabel: planLabel(sub.plan as string),
-        description: planKey ? CRM_PLAN_DESCRIPTIONS[planKey] : "Custom billing agreement.",
-        features: planKey ? CRM_PLAN_FEATURES[planKey] : ["Custom commercial terms"],
+        description: planKey
+          ? CRM_PLAN_DESCRIPTIONS[planKey]
+          : "Custom billing agreement.",
+        features: planKey
+          ? CRM_PLAN_FEATURES[planKey]
+          : ["Custom commercial terms"],
         billingCycle: sub.billing_cycle as string,
         amount: Number(sub.amount),
         currency: sub.currency as string,
@@ -234,7 +268,11 @@ export async function getCompanyBillingPageData(clientId: string): Promise<Compa
   if (subscription) {
     const overdue = invoices
       .filter((i) => i.status === "overdue" && i.dueAt)
-      .sort((a, b) => new Date(a.dueAt as string).getTime() - new Date(b.dueAt as string).getTime())[0];
+      .sort(
+        (a, b) =>
+          new Date(a.dueAt as string).getTime() -
+          new Date(b.dueAt as string).getTime(),
+      )[0];
     if (overdue?.dueAt) {
       const due = new Date(overdue.dueAt);
       if (!Number.isNaN(due.getTime())) {
@@ -276,6 +314,7 @@ export async function getCompanyBillingPageData(clientId: string): Promise<Compa
     invoices,
     outstanding,
     usage,
+    aiUsage,
     paymentSettings: settings,
     paymentMethod: paymentMethodDisplay(settings),
     capabilities: {

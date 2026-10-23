@@ -9,6 +9,8 @@ import { getPublicLandingPageUrl } from "@/lib/public-url";
 import { buildClientDetailHero } from "@/lib/client-hero";
 import { authOptions } from "@/lib/auth";
 import { fetchOrganisationDiagnostics } from "@/lib/security/support-access/diagnostics";
+import { loadCommercialOverview } from "@/lib/commercial/account-repository";
+import { CommercialOverviewPanel } from "@/components/commercial/CommercialOverviewPanel";
 import {
   effectiveGrantStatus,
   grantRemainingMs,
@@ -18,9 +20,10 @@ import {
 export default async function ClientDetailPage({ params }: { params: { clientId: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");
+  if (session.role !== "SUPER_ADMIN" || session.isImpersonating) redirect("/login");
 
   const supabase = createAdminClient();
-  const [{ data: client }, diagnostics] = await Promise.all([
+  const [{ data: client }, diagnostics, commercial] = await Promise.all([
     supabase
       .from("clients")
       .select(
@@ -29,6 +32,7 @@ export default async function ClientDetailPage({ params }: { params: { clientId:
       .eq("id", params.clientId)
       .maybeSingle(),
     fetchOrganisationDiagnostics(params.clientId),
+    loadCommercialOverview(params.clientId),
   ]);
   if (!client || !diagnostics) notFound();
 
@@ -85,6 +89,7 @@ export default async function ClientDetailPage({ params }: { params: { clientId:
         statusLabel={diagnostics.organisation.status}
         planLabel={diagnostics.organisation.plan ?? undefined}
       >
+        <CommercialOverviewPanel clientId={cid} overview={commercial} />
         <OrganisationOperationsTab
           diagnostics={diagnostics}
           supportAccess={

@@ -6,7 +6,7 @@ import { homeForRole } from "@/lib/auth/impersonation";
 import { isSuperAdminRole, normalizeUserRole } from "@/lib/auth/roles";
 import { isMfaRestrictedAllowlistedPath } from "@/lib/auth/mfa/allowlist";
 import {
-  fetchMiddlewareCrmSubscriptionStatus,
+  fetchMiddlewareCrmBillingAccessStatus,
   fetchMiddlewareSessionAlive,
   fetchMiddlewareSessionVersion,
 } from "@/lib/supabase/middleware-admin";
@@ -220,6 +220,7 @@ export async function middleware(req: NextRequest) {
     path.startsWith("/onboard/") ||
     path.startsWith("/proposal/") ||
     path.startsWith("/quote/") ||
+    path.startsWith("/offer/") ||
     path === "/portal" ||
     path.startsWith("/portal/") ||
     path.startsWith("/api/portal") ||
@@ -299,7 +300,7 @@ export async function middleware(req: NextRequest) {
     sessionOwnerId && sessionId
       ? fetchMiddlewareSessionAlive(sessionId, String(sessionOwnerId), role)
       : Promise.resolve(uid ? false : null),
-    needBilling && cid ? fetchMiddlewareCrmSubscriptionStatus(cid) : Promise.resolve(null),
+    needBilling && cid ? fetchMiddlewareCrmBillingAccessStatus(cid) : Promise.resolve(null),
   ]);
 
   // Only destroy the cookie after an authoritative invalid result. A transient

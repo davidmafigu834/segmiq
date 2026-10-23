@@ -1,5 +1,6 @@
 import type { PaymentSettings } from "@/components/billing/HowToPay";
 import type { CrmPlan } from "./plans";
+import type { AiUsageOverview } from "@/lib/platform-ai-usage/types";
 
 export const COMPANY_BILLING_INVOICE_PAGE_SIZE = 5;
 
@@ -84,6 +85,7 @@ export type CompanyBillingPageData = {
   invoices: CompanyBillingInvoice[];
   outstanding: number;
   usage: CompanyBillingUsageMetric[];
+  aiUsage: AiUsageOverview | null;
   paymentSettings: PaymentSettings;
   paymentMethod: CompanyPaymentMethodDisplay;
   capabilities: CompanyBillingCapabilities;

@@ -1,5 +1,14 @@
 [
   {
+    "date": "2026-10-24",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "SegmiQ Commercial modern-minimal",
+    "design_system": "design.md",
+    "enrichment": "none",
+    "brief": "Commercial control centre, lifecycle navigation, quotation and agreement registers, grace and audit workspaces, AI usage states, mobile billing cards, and a public seat-price estimator"
+  },
+  {
     "date": "2026-10-17",
     "scope": "app",
     "macrostructure": "Workbench",

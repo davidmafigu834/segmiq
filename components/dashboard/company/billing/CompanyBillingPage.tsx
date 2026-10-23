@@ -15,8 +15,12 @@ import { PaymentInstructionsModal } from "./PaymentInstructionsModal";
 import { BillingInformationModal } from "./BillingInformationModal";
 import { Alert, Button, useSalesToast } from "@/components/sales/ui";
 import { formatDate } from "@/lib/billing/format";
-import type { CompanyBillingInvoice, CompanyBillingPageData } from "@/lib/billing/company-billing-types";
+import type {
+  CompanyBillingInvoice,
+  CompanyBillingPageData,
+} from "@/lib/billing/company-billing-types";
 import type { UserRole } from "@/types";
+import { CompanyAiUsageCard } from "@/components/platform-ai-usage/CompanyAiUsageCard";
 
 export function CompanyBillingPage({
   data,
@@ -52,15 +56,20 @@ export function CompanyBillingPage({
     data.invoices.some((i) => i.status === "overdue");
 
   const latestUnpaid = useMemo(
-    () => data.invoices.find((i) => i.status === "overdue") ?? data.invoices.find((i) => i.status === "sent"),
-    [data.invoices]
+    () =>
+      data.invoices.find((i) => i.status === "overdue") ??
+      data.invoices.find((i) => i.status === "sent"),
+    [data.invoices],
   );
 
   function retry() {
     router.refresh();
   }
 
-  function downloadInvoice(invoice: CompanyBillingInvoice, kind: "invoice" | "receipt" = "invoice") {
+  function downloadInvoice(
+    invoice: CompanyBillingInvoice,
+    kind: "invoice" | "receipt" = "invoice",
+  ) {
     if (kind === "invoice" && !invoice.pdfUrl) {
       toast({ title: "Invoice PDF is not available yet.", tone: "warning" });
       return;
@@ -94,14 +103,26 @@ export function CompanyBillingPage({
           <Alert
             tone="danger"
             icon={<AlertTriangle size={16} />}
-            title={data.subscription?.status === "suspended" ? "Account paused for billing" : "Payment past due"}
+            title={
+              data.subscription?.status === "suspended"
+                ? "Account paused for billing"
+                : "Payment past due"
+            }
             action={
               <div className="flex flex-wrap gap-2">
-                <Button variant="primary" size="sm" onClick={() => setPayOpen(true)}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setPayOpen(true)}
+                >
                   Update payment method
                 </Button>
                 {latestUnpaid ? (
-                  <Button variant="secondary" size="sm" onClick={() => setSelected(latestUnpaid)}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setSelected(latestUnpaid)}
+                  >
                     View invoice
                   </Button>
                 ) : null}
@@ -134,6 +155,11 @@ export function CompanyBillingPage({
                 onUpgrade={() => setManageOpen(true)}
               />
             </div>
+            {data.aiUsage ? (
+              <div className="order-4 layout:order-none">
+                <CompanyAiUsageCard usage={data.aiUsage} />
+              </div>
+            ) : null}
             <div className="order-5 layout:order-none">
               <BillingInvoiceTable
                 invoices={data.invoices}
@@ -152,7 +178,9 @@ export function CompanyBillingPage({
               onUpdatePayment={() => setPayOpen(true)}
               onBillingInfo={() => setInfoOpen(true)}
               onHistoryInvoices={() => {
-                document.getElementById("billing-invoices")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                document
+                  .getElementById("billing-invoices")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
               onRetryPayment={retry}
             />
@@ -172,10 +200,16 @@ export function CompanyBillingPage({
       ) : null}
 
       {manageOpen ? (
-        <ManageSubscriptionModal subscription={data.subscription} onClose={() => setManageOpen(false)} />
+        <ManageSubscriptionModal
+          subscription={data.subscription}
+          onClose={() => setManageOpen(false)}
+        />
       ) : null}
       {payOpen ? (
-        <PaymentInstructionsModal settings={data.paymentSettings} onClose={() => setPayOpen(false)} />
+        <PaymentInstructionsModal
+          settings={data.paymentSettings}
+          onClose={() => setPayOpen(false)}
+        />
       ) : null}
       {infoOpen ? (
         <BillingInformationModal

@@ -8,9 +8,16 @@ import {
   updateConversationAgentState,
 } from "./conversation-state";
 import { assembleAgentContext, type AgentContext } from "./context";
-import { createAgentEscalation, resolveOpenRateLimitEscalations } from "./escalation";
+import {
+  createAgentEscalation,
+  resolveOpenRateLimitEscalations,
+} from "./escalation";
 import { notifyOwnerOrManagers } from "./notifications";
-import { canSendCustomerReply, evaluateBusinessHours, evaluateToolPolicy } from "./policy";
+import {
+  canSendCustomerReply,
+  evaluateBusinessHours,
+  evaluateToolPolicy,
+} from "./policy";
 import {
   AGENT_PROMPT_VERSION,
   buildContextMessage,
@@ -27,13 +34,20 @@ import {
 } from "./provider";
 import { getAgentCompanySettings, isAgentGloballyEnabled } from "./settings";
 import { simpleGreetingReply, tyrePriceQuery } from "./simple-replies";
-import {
-  patchForConversationMode,
-} from "./real-estate/conversation-mode";
+import { patchForConversationMode } from "./real-estate/conversation-mode";
 import { defaultConversationModeForNewThread } from "./real-estate/settings";
 import { runAgentTool, type ExecutedToolCall } from "./tools/execute";
-import { ASSIST_SAFE_TOOLS, TOOL_METADATA, buildToolDefinitions, type AgentToolName } from "./tools/registry";
-import { evaluateRealEstateToolPolicy, isReAgentTool, RE_ASSIST_SAFE_TOOLS } from "./real-estate/policy";
+import {
+  ASSIST_SAFE_TOOLS,
+  TOOL_METADATA,
+  buildToolDefinitions,
+  type AgentToolName,
+} from "./tools/registry";
+import {
+  evaluateRealEstateToolPolicy,
+  isReAgentTool,
+  RE_ASSIST_SAFE_TOOLS,
+} from "./real-estate/policy";
 import type { ToolExecutionContext } from "./tools/context";
 import type { AgentCompanySettings, InboundConversationEvent } from "./types";
 import { asRow } from "./rows";
@@ -50,7 +64,14 @@ const MAX_RUN_MS = 120_000;
 const LLM_RATE_LIMIT_RETRY_MS = 15_000;
 
 function log(event: string, data: Record<string, unknown>): void {
-  console.log(JSON.stringify({ ts: new Date().toISOString(), scope: "agent", event, ...data }));
+  console.log(
+    JSON.stringify({
+      ts: new Date().toISOString(),
+      scope: "agent",
+      event,
+      ...data,
+    }),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -66,7 +87,7 @@ export type HandleAgentInboundOptions = {
 
 export async function handleAgentInboundMessage(
   event: InboundConversationEvent,
-  inboundOpts: HandleAgentInboundOptions = {}
+  inboundOpts: HandleAgentInboundOptions = {},
 ): Promise<void> {
   const retryOnLlmRateLimit = inboundOpts.retryOnLlmRateLimit ?? true;
   // 429s are retried after cool-down; do not park the thread as HUMAN_NEEDED.
@@ -88,7 +109,9 @@ export async function handleAgentInboundMessage(
 
     await ensureConversationAgentState(event.clientId, event.leadId);
     if (event.isNewLead && settings.realEstate) {
-      const modePatch = patchForConversationMode(defaultConversationModeForNewThread(settings));
+      const modePatch = patchForConversationMode(
+        defaultConversationModeForNewThread(settings),
+      );
       await updateConversationAgentState(event.clientId, event.leadId, {
         ...modePatch,
         lastCustomerMessageAt: event.timestamp,
@@ -99,29 +122,45 @@ export async function handleAgentInboundMessage(
       });
     }
 
-    const state = await ensureConversationAgentState(event.clientId, event.leadId);
+    const state = await ensureConversationAgentState(
+      event.clientId,
+      event.leadId,
+    );
     const gate = conversationAllowsAgent(state);
     const draftOnly = !settings.enabled && settings.suggestReplies;
     if (!gate.allowed) {
       const allowDraftAnyway =
-        draftOnly && (gate.reason === "HUMAN_TAKEOVER" || gate.reason === "HUMAN_NEEDED");
+        draftOnly &&
+        (gate.reason === "HUMAN_TAKEOVER" || gate.reason === "HUMAN_NEEDED");
       if (!allowDraftAnyway) {
-        log("skip.conversation_gate", { leadId: event.leadId, reason: gate.reason });
+        log("skip.conversation_gate", {
+          leadId: event.leadId,
+          reason: gate.reason,
+        });
         return;
       }
     }
 
     // Human takeover: a team member replied recently — the human is handling.
-    if (!draftOnly && (await humanRepliedRecently(event.clientId, event.leadId))) {
+    if (
+      !draftOnly &&
+      (await humanRepliedRecently(event.clientId, event.leadId))
+    ) {
       const copilotPatch = patchForConversationMode("AI_COPILOT");
-      await updateConversationAgentState(event.clientId, event.leadId, copilotPatch);
+      await updateConversationAgentState(
+        event.clientId,
+        event.leadId,
+        copilotPatch,
+      );
       log("skip.human_handling", { leadId: event.leadId });
       return;
     }
 
     // Aggregation window: rapid consecutive messages collapse into one run.
     if (settings.debounceSeconds > 0 && !inboundOpts.skipDebounceWait) {
-      await new Promise((resolve) => setTimeout(resolve, settings.debounceSeconds * 1000));
+      await new Promise((resolve) =>
+        setTimeout(resolve, settings.debounceSeconds * 1000),
+      );
     }
     if (settings.debounceSeconds > 0 || inboundOpts.skipDebounceWait) {
       const newest = await latestInboundMessageId(event.clientId, event.leadId);
@@ -149,9 +188,12 @@ export async function handleAgentInboundMessage(
       return;
     }
 
-    const { loadCachedCompanyBrainSnapshot } = await import("@/lib/company-brain");
+    const { loadCachedCompanyBrainSnapshot } =
+      await import("@/lib/company-brain");
     const tz = await conversationTimezone(event.clientId);
-    let hours: { workingDays: number[]; workStartTime: string; workEndTime: string } | undefined;
+    let hours:
+      | { workingDays: number[]; workStartTime: string; workEndTime: string }
+      | undefined;
     try {
       const snapshot = await loadCachedCompanyBrainSnapshot(event.clientId);
       hours = {
@@ -162,7 +204,12 @@ export async function handleAgentInboundMessage(
     } catch {
       hours = undefined;
     }
-    const hoursDecision = evaluateBusinessHours(settings, tz, new Date(), hours);
+    const hoursDecision = evaluateBusinessHours(
+      settings,
+      tz,
+      new Date(),
+      hours,
+    );
     if (hoursDecision === "SUPPRESS") {
       log("skip.outside_business_hours", { leadId: event.leadId });
       return;
@@ -193,13 +240,15 @@ export async function handleAgentInboundMessage(
 }
 
 async function conversationTimezone(clientId: string): Promise<string> {
-  const { resolveClientSalesTimezone } = await import(
-    "@/lib/sales/intelligence/daily-plan-service"
-  );
+  const { resolveClientSalesTimezone } =
+    await import("@/lib/sales/intelligence/daily-plan-service");
   return resolveClientSalesTimezone(clientId);
 }
 
-async function humanRepliedRecently(clientId: string, leadId: string): Promise<boolean> {
+async function humanRepliedRecently(
+  clientId: string,
+  leadId: string,
+): Promise<boolean> {
   const supabase = createAdminClient();
   const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
   const { data } = await supabase
@@ -214,7 +263,10 @@ async function humanRepliedRecently(clientId: string, leadId: string): Promise<b
   return Boolean(data?.length);
 }
 
-async function latestInboundMessageId(clientId: string, leadId: string): Promise<string | null> {
+async function latestInboundMessageId(
+  clientId: string,
+  leadId: string,
+): Promise<string | null> {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("whatsapp_messages")
@@ -231,27 +283,29 @@ async function latestInboundMessageId(clientId: string, leadId: string): Promise
 async function checkRateLimits(
   clientId: string,
   leadId: string,
-  settings: AgentCompanySettings
+  settings: AgentCompanySettings,
 ): Promise<{ ok: true } | { ok: false; which: "company" | "conversation" }> {
   const supabase = createAdminClient();
   const dayStart = new Date();
   dayStart.setUTCHours(0, 0, 0, 0);
   const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-  const [{ count: companyToday }, { count: conversationHour }] = await Promise.all([
-    supabase
-      .from("agent_executions")
-      .select("id", { count: "exact", head: true })
-      .eq("client_id", clientId)
-      .gte("created_at", dayStart.toISOString()),
-    supabase
-      .from("agent_executions")
-      .select("id", { count: "exact", head: true })
-      .eq("lead_id", leadId)
-      .gte("created_at", hourAgo),
-  ]);
+  const [{ count: companyToday }, { count: conversationHour }] =
+    await Promise.all([
+      supabase
+        .from("agent_executions")
+        .select("id", { count: "exact", head: true })
+        .eq("client_id", clientId)
+        .gte("created_at", dayStart.toISOString()),
+      supabase
+        .from("agent_executions")
+        .select("id", { count: "exact", head: true })
+        .eq("lead_id", leadId)
+        .gte("created_at", hourAgo),
+    ]);
 
-  if ((companyToday ?? 0) >= settings.dailyExecutionLimit) return { ok: false, which: "company" };
+  if ((companyToday ?? 0) >= settings.dailyExecutionLimit)
+    return { ok: false, which: "company" };
   if ((conversationHour ?? 0) >= settings.conversationHourlyLimit) {
     return { ok: false, which: "conversation" };
   }
@@ -291,11 +345,18 @@ export type AgentRunResult = {
     riskLevel: string;
     summary: Record<string, unknown>;
   }>;
-  sources?: Array<{ type: string; key: string; label: string; authority: number }>;
+  sources?: Array<{
+    type: string;
+    key: string;
+    label: string;
+    authority: number;
+  }>;
   why?: string[];
 };
 
-export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResult> {
+export async function runAgentExecution(
+  opts: RunOptions,
+): Promise<AgentRunResult> {
   const supabase = createAdminClient();
   const startedAt = Date.now();
 
@@ -316,7 +377,10 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
   const execution = asRow<{ id: string }>(executionData);
   if (executionError || !execution) {
     if (executionError?.code === "23505") {
-      log("skip.duplicate_trigger", { leadId: opts.leadId, trigger: opts.triggerMessageId });
+      log("skip.duplicate_trigger", {
+        leadId: opts.leadId,
+        trigger: opts.triggerMessageId,
+      });
     } else {
       console.error("[agent] failed to create execution", executionError);
     }
@@ -330,7 +394,10 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
     executionId,
   });
   if (!locked) {
-    await finishExecution(executionId, { state: "SKIPPED", error_code: "LOCK_HELD" });
+    await finishExecution(executionId, {
+      state: "SKIPPED",
+      error_code: "LOCK_HELD",
+    });
     log("skip.lock_held", { leadId: opts.leadId, executionId });
     return emptyResult(executionId, "SKIPPED");
   }
@@ -356,9 +423,14 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
       overlayCustomerMessage: opts.simulatedCustomerMessage,
     });
     if (!context) {
-      await finishExecution(executionId, { state: "FAILED", error_code: "CONTEXT_UNAVAILABLE" });
+      await finishExecution(executionId, {
+        state: "FAILED",
+        error_code: "CONTEXT_UNAVAILABLE",
+      });
       if (!opts.testMode) {
-        await updateConversationAgentState(opts.clientId, opts.leadId, { status: "IDLE" });
+        await updateConversationAgentState(opts.clientId, opts.leadId, {
+          status: "IDLE",
+        });
       }
       return emptyResult(executionId, "FAILED");
     }
@@ -402,7 +474,8 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
       context.learnedKnowledge?.refs?.length
     ) {
       try {
-        const { recordKnowledgeUsage } = await import("@/lib/agent/learning/retrieval");
+        const { recordKnowledgeUsage } =
+          await import("@/lib/agent/learning/retrieval");
         await recordKnowledgeUsage({
           clientId: opts.clientId,
           executionId,
@@ -416,12 +489,23 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
 
     // Stale context: a newer customer message (or human reply) invalidated the
     // run before send. Re-evaluate once with fresh context.
-    if (outcome.executionState === "CANCELLED" && outcome.staleRerun && opts.retryOnStaleContext) {
-      await releaseConversationLock({ clientId: opts.clientId, leadId: opts.leadId, executionId });
+    if (
+      outcome.executionState === "CANCELLED" &&
+      outcome.staleRerun &&
+      opts.retryOnStaleContext
+    ) {
+      await releaseConversationLock({
+        clientId: opts.clientId,
+        leadId: opts.leadId,
+        executionId,
+      });
       log("rerun.stale_context", { leadId: opts.leadId, executionId });
       return runAgentExecution({
         ...opts,
-        triggerMessageId: await latestInboundMessageId(opts.clientId, opts.leadId),
+        triggerMessageId: await latestInboundMessageId(
+          opts.clientId,
+          opts.leadId,
+        ),
         retryOnStaleContext: false,
       });
     }
@@ -486,22 +570,34 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
         ownerId: null,
         escalationUserId: opts.settings.escalationUserId,
       });
-    } else if (!opts.testMode && transientLlmFailure && opts.retryOnLlmRateLimit) {
+    } else if (
+      !opts.testMode &&
+      transientLlmFailure &&
+      opts.retryOnLlmRateLimit
+    ) {
       // Unique trigger index would otherwise block a retry of this inbound message.
       await supabase
         .from("agent_executions")
         .update({ trigger_message_id: null })
         .eq("id", executionId);
       retryRateLimit = true;
-      await updateConversationAgentState(opts.clientId, opts.leadId, { status: "IDLE" });
-      log("retry.llm_rate_limited", { leadId: opts.leadId, executionId, waitMs: LLM_RATE_LIMIT_RETRY_MS });
+      await updateConversationAgentState(opts.clientId, opts.leadId, {
+        status: "IDLE",
+      });
+      log("retry.llm_rate_limited", {
+        leadId: opts.leadId,
+        executionId,
+        waitMs: LLM_RATE_LIMIT_RETRY_MS,
+      });
     } else if (!opts.testMode && transientLlmFailure) {
       await supabase
         .from("agent_executions")
         .update({ trigger_message_id: null })
         .eq("id", executionId);
       if (opts.escalateOnLlmRateLimit !== false) {
-        await updateConversationAgentState(opts.clientId, opts.leadId, { status: "IDLE" });
+        await updateConversationAgentState(opts.clientId, opts.leadId, {
+          status: "IDLE",
+        });
         await createAgentEscalation({
           clientId: opts.clientId,
           leadId: opts.leadId,
@@ -517,7 +613,11 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
     }
     if (!retryRateLimit) return emptyResult(executionId, "FAILED");
   } finally {
-    await releaseConversationLock({ clientId: opts.clientId, leadId: opts.leadId, executionId });
+    await releaseConversationLock({
+      clientId: opts.clientId,
+      leadId: opts.leadId,
+      executionId,
+    });
   }
 
   await new Promise((resolve) => setTimeout(resolve, LLM_RATE_LIMIT_RETRY_MS));
@@ -528,7 +628,10 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
   });
 }
 
-function emptyResult(executionId: string | null, state: string): AgentRunResult {
+function emptyResult(
+  executionId: string | null,
+  state: string,
+): AgentRunResult {
   return {
     executionId,
     state,
@@ -543,7 +646,7 @@ function emptyResult(executionId: string | null, state: string): AgentRunResult 
 
 async function finishExecution(
   executionId: string,
-  patch: Record<string, unknown>
+  patch: Record<string, unknown>,
 ): Promise<void> {
   const supabase = createAdminClient();
   await supabase
@@ -570,7 +673,7 @@ type ReasonOutcome = {
 };
 
 async function reasonAndAct(
-  opts: RunOptions & { executionId: string; context: AgentContext }
+  opts: RunOptions & { executionId: string; context: AgentContext },
 ): Promise<ReasonOutcome> {
   const supabase = createAdminClient();
   const provider = getAgentModelProvider();
@@ -590,26 +693,41 @@ async function reasonAndAct(
     workingDays: context.company.workingDays,
     workStartTime: context.company.workStartTime,
     workEndTime: context.company.workEndTime,
-    playbookFieldKeys: context.companyBrain?.playbook?.fields.map((f) => f.internalKey) ?? [],
+    playbookFieldKeys:
+      context.companyBrain?.playbook?.fields.map((f) => f.internalKey) ?? [],
     playbookRequiredKeys:
-      context.companyBrain?.playbook?.fields.filter((f) => f.required).map((f) => f.internalKey) ?? [],
+      context.companyBrain?.playbook?.fields
+        .filter((f) => f.required)
+        .map((f) => f.internalKey) ?? [],
   };
 
   // Expose only tools the current policy could ever allow, so the model does
   // not plan around unavailable actions.
-  const availableTools = (Object.keys(TOOL_METADATA) as AgentToolName[]).filter((name) => {
-    if (isReAgentTool(name)) {
-      if (!settings.realEstate) return false;
-      if (!evaluateRealEstateToolPolicy(name, settings.realEstate).allowed) return false;
-    }
-    if (settings.autonomyMode === "ASSIST") {
-      return ASSIST_SAFE_TOOLS.has(name) || (isReAgentTool(name) && RE_ASSIST_SAFE_TOOLS.has(name));
-    }
-    return evaluateToolPolicy(TOOL_METADATA[name], settings).allowed;
-  });
+  const availableTools = (Object.keys(TOOL_METADATA) as AgentToolName[]).filter(
+    (name) => {
+      if (isReAgentTool(name)) {
+        if (!settings.realEstate) return false;
+        if (!evaluateRealEstateToolPolicy(name, settings.realEstate).allowed)
+          return false;
+      }
+      if (settings.autonomyMode === "ASSIST") {
+        return (
+          ASSIST_SAFE_TOOLS.has(name) ||
+          (isReAgentTool(name) && RE_ASSIST_SAFE_TOOLS.has(name))
+        );
+      }
+      return evaluateToolPolicy(TOOL_METADATA[name], settings).allowed;
+    },
+  );
 
-  const system = buildSystemPrompt({ settings, companyName: context.company.name });
-  let contextMessage = buildContextMessage({ context, afterHoursAck: opts.afterHoursAck });
+  const system = buildSystemPrompt({
+    settings,
+    companyName: context.company.name,
+  });
+  let contextMessage = buildContextMessage({
+    context,
+    afterHoursAck: opts.afterHoursAck,
+  });
   if (opts.simulatedCustomerMessage) {
     contextMessage += `\n\n[CUSTOMER] ${opts.simulatedCustomerMessage}`;
   }
@@ -625,12 +743,15 @@ async function reasonAndAct(
     .reverse()
     .find((message) => message.direction === "inbound")?.body;
   const greetingReply = simpleGreetingReply(latestCustomerMessage);
-  const directTyrePriceQuery = greetingReply ? null : tyrePriceQuery(latestCustomerMessage);
+  const directTyrePriceQuery = greetingReply
+    ? null
+    : tyrePriceQuery(latestCustomerMessage);
   let finalText: string | null = greetingReply
     ? JSON.stringify({
         intents: ["GENERAL_MESSAGE"],
         confidence: 1,
-        decision_summary: "Replied to a simple greeting without calling the model or tools.",
+        decision_summary:
+          "Replied to a simple greeting without calling the model or tools.",
         evidence: latestCustomerMessage ?? null,
         reply: greetingReply,
       })
@@ -648,23 +769,26 @@ async function reasonAndAct(
         },
       ],
       executedCalls,
-      opts
+      opts,
     );
     const productsRaw = executedCalls[0]?.result.summary.products;
     const products = Array.isArray(productsRaw)
-      ? productsRaw.filter(
-          (item): item is Record<string, unknown> => Boolean(item && typeof item === "object")
+      ? productsRaw.filter((item): item is Record<string, unknown> =>
+          Boolean(item && typeof item === "object"),
         )
       : [];
     const priced = products
-      .filter((item) => typeof item.name === "string" && typeof item.price === "number")
+      .filter(
+        (item) =>
+          typeof item.name === "string" && typeof item.price === "number",
+      )
       .slice(0, 8);
     const reply = priced.length
       ? [
           `Our current catalogue prices for ${directTyrePriceQuery} are:`,
           ...priced.map(
             (item) =>
-              `• ${String(item.name)} — ${String(item.currency ?? "USD")} ${Number(item.price).toFixed(2)}`
+              `• ${String(item.name)} — ${String(item.currency ?? "USD")} ${Number(item.price).toFixed(2)}`,
           ),
           "Which option and quantity would you like? Physical stock availability still needs confirmation.",
         ].join("\n")
@@ -683,7 +807,11 @@ async function reasonAndAct(
 
   for (let turn = 0; finalText === null && turn < MAX_MODEL_TURNS; turn++) {
     if (Date.now() > deadline) {
-      log("loop_limit", { executionId: opts.executionId, turn, toolCalls: executedCalls.length });
+      log("loop_limit", {
+        executionId: opts.executionId,
+        turn,
+        toolCalls: executedCalls.length,
+      });
       break;
     }
 
@@ -693,8 +821,7 @@ async function reasonAndAct(
     if (executedCalls.length >= MAX_TOOL_CALLS) {
       messages.push({
         role: "user",
-        text:
-          "The tool budget is exhausted. Do not call any more tools. Using only the results already returned, output ONLY the required final JSON object now. If a fact is still missing, say it needs team confirmation.",
+        text: "The tool budget is exhausted. Do not call any more tools. Using only the results already returned, output ONLY the required final JSON object now. If a fact is still missing, say it needs team confirmation.",
       });
       const response = await provider.generate({
         system,
@@ -730,7 +857,11 @@ async function reasonAndAct(
         break;
       }
       if (turn < MAX_MODEL_TURNS - 1) {
-        messages.push({ role: "assistant", text: response.text, toolCalls: [] });
+        messages.push({
+          role: "assistant",
+          text: response.text,
+          toolCalls: [],
+        });
         messages.push({
           role: "user",
           text: "Your previous reply was cut off. Output ONLY the required final JSON object now, with no other text.",
@@ -750,7 +881,12 @@ async function reasonAndAct(
       toolCalls: response.toolCalls,
       echo: response.echo,
     });
-    const results = await executeToolBatch(toolCtx, response.toolCalls, executedCalls, opts);
+    const results = await executeToolBatch(
+      toolCtx,
+      response.toolCalls,
+      executedCalls,
+      opts,
+    );
     messages.push({ role: "toolResult", results });
   }
 
@@ -778,7 +914,14 @@ async function reasonAndAct(
       messages: [
         ...messages,
         ...(finalText
-          ? [{ role: "assistant" as const, text: finalText, toolCalls: [], echo: undefined }]
+          ? [
+              {
+                role: "assistant" as const,
+                text: finalText,
+                toolCalls: [],
+                echo: undefined,
+              },
+            ]
           : []),
         {
           role: "user",
@@ -808,10 +951,13 @@ async function reasonAndAct(
   }
 
   const escalatedByTool = executedCalls.some(
-    (c) => c.toolName === "agent_escalate" && (c.status === "EXECUTED" || c.status === "SIMULATED")
+    (c) =>
+      c.toolName === "agent_escalate" &&
+      (c.status === "EXECUTED" || c.status === "SIMULATED"),
   );
   const deferredToTeam =
-    replyHandsOffToTeam(final.reply) || replyHandsOffToTeam(final.decisionSummary);
+    replyHandsOffToTeam(final.reply) ||
+    replyHandsOffToTeam(final.decisionSummary);
   let escalated = escalatedByTool;
 
   if (deferredToTeam && !escalated && !opts.testMode) {
@@ -820,16 +966,20 @@ async function reasonAndAct(
       leadId: opts.leadId,
       executionId: opts.executionId,
       reason: "UNSUPPORTED_REQUEST",
-      summary: `Agent told the customer it would confirm with the team and stopped autonomous replies. ${final.decisionSummary}`.slice(
-        0,
-        1000
-      ),
+      summary:
+        `Agent told the customer it would confirm with the team and stopped autonomous replies. ${final.decisionSummary}`.slice(
+          0,
+          1000,
+        ),
       briefing: final.evidence ? { evidence: final.evidence } : null,
       ownerId: context.lead.ownerId,
       escalationUserId: settings.escalationUserId,
     });
     escalated = true;
-    log("handoff.team_confirmation", { leadId: opts.leadId, executionId: opts.executionId });
+    log("handoff.team_confirmation", {
+      leadId: opts.leadId,
+      executionId: opts.executionId,
+    });
   }
 
   // Low confidence without an explicit escalation → stop and escalate.
@@ -910,7 +1060,9 @@ async function reasonAndAct(
   ]);
   if (humanReplied) {
     log("cancel.human_replied", { executionId: opts.executionId });
-    await updateConversationAgentState(opts.clientId, opts.leadId, { status: "HUMAN_HANDLING" });
+    await updateConversationAgentState(opts.clientId, opts.leadId, {
+      status: "HUMAN_HANDLING",
+    });
     return {
       executionState: "CANCELLED",
       final,
@@ -950,7 +1102,10 @@ async function reasonAndAct(
   });
 
   if (!sendResult.ok) {
-    log("send_failed", { executionId: opts.executionId, error: sendResult.error });
+    log("send_failed", {
+      executionId: opts.executionId,
+      error: sendResult.error,
+    });
     // CRM work already happened; the customer just hasn't received the reply.
     await createAgentEscalation({
       clientId: opts.clientId,
@@ -981,6 +1136,28 @@ async function reasonAndAct(
     .update({ reply_status: "SENT" })
     .eq("id", opts.executionId);
 
+  // Release 4 shadow observer: the provider-accepted customer reply is the
+  // success boundary. It is allowlisted per organisation and never blocks an
+  // already-delivered message when the commercial shadow store is unavailable.
+  try {
+    const { recordBillableAiConversation } =
+      await import("@/lib/platform-ai-usage/record");
+    await recordBillableAiConversation({
+      clientId: opts.clientId,
+      sourceEventKey: `agent-reply:${opts.executionId}`,
+      channel: "whatsapp",
+      subjectKey: opts.leadId,
+      occurredAt: new Date().toISOString(),
+      successful: true,
+      testMode: false,
+    });
+  } catch (error) {
+    log("usage.shadow_failed", {
+      executionId: opts.executionId,
+      error: error instanceof Error ? error.message : "unknown",
+    });
+  }
+
   return {
     executionState: escalated ? "WAITING_FOR_HUMAN" : "COMPLETED",
     final,
@@ -997,16 +1174,21 @@ async function executeToolBatch(
   toolCtx: ToolExecutionContext,
   toolCalls: ModelToolCall[],
   executedCalls: ExecutedToolCall[],
-  opts: RunOptions & { executionId: string }
+  opts: RunOptions & { executionId: string },
 ): Promise<Array<{ toolCallId: string; content: string; isError?: boolean }>> {
   const supabase = createAdminClient();
-  const results: Array<{ toolCallId: string; content: string; isError?: boolean }> = [];
+  const results: Array<{
+    toolCallId: string;
+    content: string;
+    isError?: boolean;
+  }> = [];
 
   for (const call of toolCalls) {
     if (executedCalls.length >= MAX_TOOL_CALLS) {
       results.push({
         toolCallId: call.id,
-        content: "Tool budget exhausted for this run. Finish with your final JSON now.",
+        content:
+          "Tool budget exhausted for this run. Finish with your final JSON now.",
         isError: true,
       });
       continue;
@@ -1025,19 +1207,41 @@ async function executeToolBatch(
     });
 
     // Audit record per action (input summary trimmed; no secrets).
-    await supabase.from("agent_execution_actions").insert({
-      execution_id: opts.executionId,
-      client_id: opts.clientId,
-      tool_name: executed.toolName,
-      risk_level: executed.riskLevel,
-      status: executed.status,
-      input_summary: truncateJson(call.input),
-      result_summary: truncateJson(executed.result.summary),
-      blocked_reason: executed.blockedReason ?? null,
-      error: executed.result.error?.slice(0, 400) ?? null,
-      created_record_type: executed.result.createdRecordType ?? null,
-      created_record_id: executed.result.createdRecordId ?? null,
-    });
+    const { data: actionAudit } = await supabase
+      .from("agent_execution_actions")
+      .insert({
+        execution_id: opts.executionId,
+        client_id: opts.clientId,
+        tool_name: executed.toolName,
+        risk_level: executed.riskLevel,
+        status: executed.status,
+        input_summary: truncateJson(call.input),
+        result_summary: truncateJson(executed.result.summary),
+        blocked_reason: executed.blockedReason ?? null,
+        error: executed.result.error?.slice(0, 400) ?? null,
+        created_record_type: executed.result.createdRecordType ?? null,
+        created_record_id: executed.result.createdRecordId ?? null,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (executed.status === "EXECUTED" && actionAudit?.id) {
+      try {
+        const { recordBillableAiAction } =
+          await import("@/lib/platform-ai-usage/record");
+        await recordBillableAiAction({
+          clientId: opts.clientId,
+          actionId: actionAudit.id as string,
+          occurredAt: new Date().toISOString(),
+        });
+      } catch (error) {
+        log("usage.action_shadow_failed", {
+          executionId: opts.executionId,
+          actionId: actionAudit.id,
+          error: error instanceof Error ? error.message : "unknown",
+        });
+      }
+    }
 
     results.push({
       toolCallId: call.id,

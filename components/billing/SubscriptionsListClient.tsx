@@ -114,7 +114,8 @@ export function SubscriptionsListClient({ rows }: { rows: SubscriptionRow[] }) {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <div className="hidden overflow-x-auto lg:block">
             <Table>
               <TableHeader>
                 <TableRow isHeader>
@@ -154,6 +155,25 @@ export function SubscriptionsListClient({ rows }: { rows: SubscriptionRow[] }) {
               </TableBody>
             </Table>
           </div>
+          <div className="divide-y divide-[var(--border)] lg:hidden">
+            {filtered.map((r) => (
+              <article key={r.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <Link href={`/dashboard/billing/subscriptions/${r.id}`} className="block truncate text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]">{r.clientName}</Link>
+                    <p className="mt-1 text-xs capitalize text-[var(--text-tertiary)]">{planLabel(r.plan)} · {r.billingCycle}</p>
+                  </div>
+                  <BillingStatusBadge status={r.status} />
+                </div>
+                <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-[var(--border)] pt-3">
+                  <div><dt className="text-xs text-[var(--text-tertiary)]">Next renewal</dt><dd className="mt-1 text-sm text-[var(--text-primary)]">{formatDate(r.currentPeriodEnd)}</dd></div>
+                  <div><dt className="text-xs text-[var(--text-tertiary)]">Outstanding</dt><dd className={`mt-1 text-sm ${r.outstanding > 0 ? "text-[var(--warning)]" : "text-[var(--text-primary)]"}`}>{formatMoney(r.outstanding, r.currency)}</dd></div>
+                </dl>
+                <Link href={`/dashboard/billing/subscriptions/${r.id}`} className="mt-4 inline-flex min-h-10 items-center text-sm font-medium text-[var(--text-primary)] hover:text-[var(--accent)]">Review subscription</Link>
+              </article>
+            ))}
+          </div>
+          </>
         )}
       </Card>
     </div>

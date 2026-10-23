@@ -173,11 +173,21 @@ export async function runBillingDailyCron(): Promise<BillingCronResult> {
       .in("id", subIdsToCheck)
       .neq("status", "suspended");
 
+    const clientIds = Array.from(new Set((suspendCandidates ?? []).map((i) => i.client_id as string)));
+    const { data: activeGraceRows } = await supabase
+      .from("platform_grace_periods")
+      .select("client_id")
+      .in("client_id", clientIds)
+      .is("ended_at", null)
+      .lte("starts_at", nowIso)
+      .gt("ends_at", nowIso);
+    const clientsWithActiveGrace = new Set((activeGraceRows ?? []).map((row) => row.client_id as string));
     const subById = new Map((subs ?? []).map((s) => [s.id as string, s]));
 
     for (const inv of suspendCandidates ?? []) {
       const sub = subById.get(inv.subscription_id as string);
       if (!sub) continue;
+      if (clientsWithActiveGrace.has(inv.client_id as string)) continue;
       const graceDays = Number(sub.grace_days ?? 7);
       const suspendAt = new Date(inv.due_at as string).getTime() + graceDays * MS_PER_DAY;
       if (now.getTime() < suspendAt) continue;

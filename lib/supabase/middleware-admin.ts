@@ -33,7 +33,15 @@ export function userSessionAliveQuery(sessionId: string): string {
 }
 
 export function crmSubscriptionQuery(clientId: string): string {
-  return `select=status&client_id=eq.${encodeURIComponent(clientId)}&product=eq.crm&limit=1`;
+  return `select=status,grace_days&client_id=eq.${encodeURIComponent(clientId)}&product=eq.crm&limit=1`;
+}
+
+export function overdueInvoiceQuery(clientId: string): string {
+  return `select=due_at&client_id=eq.${encodeURIComponent(clientId)}&status=eq.overdue&order=due_at.asc&limit=1`;
+}
+
+export function activePlatformGraceQuery(clientId: string, nowIso: string): string {
+  return `select=id&client_id=eq.${encodeURIComponent(clientId)}&ended_at=is.null&starts_at=lte.${encodeURIComponent(nowIso)}&ends_at=gt.${encodeURIComponent(nowIso)}&limit=1`;
 }
 
 export async function fetchMiddlewareFirstRow<T extends Record<string, unknown>>(
@@ -149,4 +157,24 @@ export async function fetchMiddlewareCrmSubscriptionStatus(
     options
   );
   return row?.status ?? null;
+}
+
+/** Current-time billing decision. A platform grace delays billing enforcement, never an existing suspension. */
+export async function fetchMiddlewareCrmBillingAccessStatus(
+  clientId: string,
+  options?: { fetchImpl?: MiddlewareFetch; timeoutMs?: number; now?: Date }
+): Promise<string | null> {
+  const now = options?.now ?? new Date();
+  const subResult = await fetchMiddlewareFirstRowResult<{ status?: string; grace_days?: number }>("subscriptions", crmSubscriptionQuery(clientId), options);
+  if (subResult.status !== "found") return null;
+  const subscriptionStatus = subResult.row.status ?? null;
+  if (!subscriptionStatus || subscriptionStatus === "suspended" || subscriptionStatus === "cancelled") return subscriptionStatus;
+  const invoiceResult = await fetchMiddlewareFirstRowResult<{ due_at?: string }>("invoices", overdueInvoiceQuery(clientId), options);
+  if (invoiceResult.status === "unavailable") return null;
+  if (invoiceResult.status === "missing" || !invoiceResult.row.due_at) return subscriptionStatus;
+  const enforcementAt = new Date(invoiceResult.row.due_at).getTime() + Number(subResult.row.grace_days ?? 7) * 86_400_000;
+  if (now.getTime() < enforcementAt) return subscriptionStatus;
+  const graceResult = await fetchMiddlewareFirstRowResult<{ id?: string }>("platform_grace_periods", activePlatformGraceQuery(clientId, now.toISOString()), options);
+  if (graceResult.status === "unavailable") return null;
+  return graceResult.status === "found" ? subscriptionStatus : "suspended";
 }
