@@ -12,6 +12,7 @@ export const PLATFORM_NAV_GROUPS: AppShellNavGroup[] = [
       { href: "/dashboard/clients", label: "Organisations", icon: "building2" },
       { href: "/dashboard/cloud-clients", label: "Users", icon: "users" },
       { href: "/dashboard/billing", label: "Subscriptions", icon: "receipt" },
+      { href: "/dashboard/pricing", label: "Pricing & Plans", icon: "receipt" },
     ],
   },
   {
@@ -48,6 +49,7 @@ export const PLATFORM_COMMAND_PAGES: { href: string; label: string; hint: string
   { href: "/dashboard/clients", label: "Organisations", hint: "Customer tenants" },
   { href: "/dashboard/cloud-clients", label: "Users", hint: "Cloud subscriptions" },
   { href: "/dashboard/billing", label: "Subscriptions", hint: "Billing" },
+  { href: "/dashboard/pricing", label: "Pricing & Plans", hint: "Commercial catalogue" },
   { href: "/dashboard/status-incidents", label: "Platform health", hint: "Incidents and status" },
   { href: "/dashboard/support-access", label: "Support access", hint: "Privileged sessions" },
   { href: "/dashboard/demos", label: "Demonstrations", hint: "Guest demonstration links" },
