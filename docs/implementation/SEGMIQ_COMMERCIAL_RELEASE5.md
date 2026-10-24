@@ -14,10 +14,10 @@ The commercial launch gate must remain `OFF`. Releases 2–4 are present as appl
 | Environment identity | No authoritative environment label or revision source was available                                            | `UNKNOWN`                                             |
 | Database history     | Latest observed migration: `20261023114812_segmiq_commercial_foundation_release1`                              | R2–R5 migrations not evidenced in the target database |
 | Live record counts   | 29 clients; 9 legacy subscriptions; 0 commercial accounts, usage-ledger rows, plan changes, and grace periods  | Legacy estate retained; no v2 journey evidence        |
-| R2                   | `20261023160000_platform_commercial_atomic_workflows.sql`, plan-change/grace code and focused tests            | `CODE_ONLY`                                           |
-| R3                   | `20261023180000_platform_sales_quotes_and_agreement_foundation.sql`, quote domain and focused tests            | `CODE_ONLY`                                           |
-| R4                   | `20261023210000_platform_ai_usage_shadow_and_topup_foundation.sql`, shadow metering and focused tests          | `CODE_ONLY`                                           |
-| R5                   | `20261023230000_commercial_launch_controls.sql`, dashboard, gates, reconciliation read model and focused tests | `CODE_ONLY`                                           |
+| R2                   | `20261024055631_platform_commercial_atomic_workflows.sql`, plan-change/grace code and focused tests            | `CODE_ONLY`                                           |
+| R3                   | `20261024055657_platform_sales_quotes_and_agreement_foundation.sql`, quote domain and focused tests            | `CODE_ONLY`                                           |
+| R4                   | `20261024055726_platform_ai_usage_shadow_and_topup_foundation.sql`, shadow metering and focused tests          | `CODE_ONLY`                                           |
+| R5                   | `20261024055745_commercial_launch_controls.sql`, dashboard, gates, reconciliation read model and focused tests | `CODE_ONLY`                                           |
 
 The Supabase Security Advisor reported existing warnings, including RLS-enabled tables without policies and mutable function search paths. Because the Release 5 migration was not applied, that advisor result cannot validate the new objects and must not be treated as proof of Release 5 security.
 
@@ -47,7 +47,7 @@ The lightweight Node test selection passed 27 of 27 tests:
 
 ## Unmet mandatory gates
 
-- Apply and inspect migrations `20261023160000`, `20261023180000`, `20261023210000`, and `20261023230000` in order in an isolated target environment.
+- Apply and inspect migrations `20261024055631`, `20261024055657`, `20261024055726`, and `20261024055745` in order in an isolated target environment.
 - Provide a counsel-approved agreement template, approved electronic-signature method, proportionate evidence-retention policy, sealed private PDF path, and fresh five-minute download authorization.
 - Prove tenant isolation, token expiry/revocation, stale-signature rejection, malformed input handling, service-role non-exposure, and cross-tenant object denial.
 - Exercise the R2 amendment and grace transactions under concurrency and verify audit, billing recalculation, permissions, and deterministic expiry.

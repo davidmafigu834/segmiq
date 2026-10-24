@@ -4,8 +4,8 @@ Date: 23 October 2026
 
 ## Dependency and gap report
 
-- Release 2 application code and `20261023160000_platform_commercial_atomic_workflows.sql` exist in the repository. The remote migration history ends at `20261023114812_segmiq_commercial_foundation_release1`.
-- Release 3 application code and `20261023180000_platform_sales_quotes_and_agreement_foundation.sql` exist in the repository. Its agreement and activation flags default off.
+- Release 2 application code and `20261024055631_platform_commercial_atomic_workflows.sql` exist in the repository. The remote migration history ends at `20261023114812_segmiq_commercial_foundation_release1`.
+- Release 3 application code and `20261024055657_platform_sales_quotes_and_agreement_foundation.sql` exist in the repository. Its agreement and activation flags default off.
 - The remote read-only reconciliation returned 29 clients, 9 subscriptions, and zero commercial accounts, usage-ledger rows, plan changes, and grace periods.
 - Release 4 therefore remains inactive and does not treat operational history as contracted usage.
 
@@ -35,7 +35,7 @@ Date: 23 October 2026
 
 ## Files and routes
 
-- Migration: `20261023210000_platform_ai_usage_shadow_and_topup_foundation.sql`
+- Migration: `20261024055726_platform_ai_usage_shadow_and_topup_foundation.sql`
 - Domain: `lib/platform-ai-usage/*`
 - Admin routes: `/dashboard/commercial-ai-usage`, `/dashboard/commercial-topups`
 - Customer integration: existing `/client/billing`

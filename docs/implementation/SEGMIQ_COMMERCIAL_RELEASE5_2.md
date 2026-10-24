@@ -4,40 +4,43 @@ Date: 24 October 2026
 
 ## Decision: NO-GO
 
-Commercial launch mode must remain `OFF`. Release 5.2 adds a controlled legacy-customer migration queue and closes backdating/premature-activation defects, but production backup/recovery evidence, database compilation/integration evidence, legal signing approval, and full release verification are still missing.
+Commercial launch mode remains `OFF`. The authorised R2-R5.2 schema chain and privilege hardening are now installed, but database workflow evidence, legal signing approval, and full release verification are still incomplete.
 
-No production migration was applied. No customer was migrated, no historical subscription/payment/invoice was changed, no invoice or communication was sent, no payment was confirmed, no Agentic AI package was activated, and no launch flag was changed.
+Seven production migrations were applied after the founder explicitly accepted the confirmed backup recovery window. No customer was migrated, no historical subscription/payment/invoice was changed, no invoice or communication was sent, no payment was confirmed, no Agentic AI package was activated, and no launch flag was changed.
 
 ## Production baseline and migration reconciliation
 
 - Project: `leadstaq` (`gnnqzboaeezzevlwwryp`), region `eu-west-1`, observed `ACTIVE_HEALTHY`, PostgreSQL 17.
-- Production migration history still ends at `20261023114812_segmiq_commercial_foundation_release1`.
+- Production migration history now ends at `20261024055835_commercial_history_privilege_hardening`.
 - R1 is already present and **must not be reapplied**.
-- The required pending order is:
-  1. `20261023160000_platform_commercial_atomic_workflows.sql` (R2)
-  2. `20261023180000_platform_sales_quotes_and_agreement_foundation.sql` (R3)
-  3. `20261023210000_platform_ai_usage_shadow_and_topup_foundation.sql` (R4)
-  4. `20261023230000_commercial_launch_controls.sql` (R5)
-  5. `20261023233000_commercial_release5_1_safety_workflows.sql` (R5.1)
-  6. `20261023234500_commercial_release5_2_controlled_customer_migrations.sql` (R5.2)
+- A pre-change inspection confirmed that only R1 was present. The seven migrations below were then applied atomically and verified one at a time through the authenticated Supabase migration interface.
+- Current commercial row counts are 9 catalogue rows, 0 v2 commercial accounts, 0 plan-change requests, 0 grace periods, and 0 AI usage-ledger rows. The legacy CRM subscription count remains 9.
+- Applied production order:
+  1. `20261024055631_platform_commercial_atomic_workflows.sql` (R2)
+  2. `20261024055657_platform_sales_quotes_and_agreement_foundation.sql` (R3)
+  3. `20261024055726_platform_ai_usage_shadow_and_topup_foundation.sql` (R4)
+  4. `20261024055745_commercial_launch_controls.sql` (R5)
+  5. `20261024055804_commercial_release5_1_safety_workflows.sql` (R5.1)
+  6. `20261024055820_commercial_release5_2_controlled_customer_migrations.sql` (R5.2)
+  7. `20261024055835_commercial_history_privilege_hardening.sql` (R5.2 security hardening)
 - The post-R1 SQL contains no `DROP TABLE`, `TRUNCATE`, or `DELETE FROM` operation. R5.2 only replaces the service-role migration RPC; it does not migrate data by itself.
 - Static dependency tests pass for the above ordering. R2 depends on R1; R3 depends on R1; R4 depends on R1 and the legacy billing/agent tables; R5 depends on R1 audit/users/invoices; R5.1 depends on R2/R4; R5.2 depends on R2's validation and mutation functions.
 
 ### Backup and recovery gate
 
-The available project metadata and database connector do not expose the project's current backup inventory, retention, last successful recovery point, or a completed restore exercise. Therefore backup/recovery arrangements are **not verified** and the production migration gate is closed.
+The Supabase organisation is on the Pro plan. The dashboard backup inventory supplied on 24 October 2026 confirms seven restorable physical backups dated 17-23 October. The newest shown recovery point is **23 October 2026 06:48:43 UTC**. That point predates R1 and may omit later business writes; no 24 October recovery point or PITR capability was evidenced. The founder explicitly accepted this recovery window when authorising the seven migrations. A restore would require project downtime and would not restore deleted Storage API objects.
 
 No transactionally rolled-back DDL dry run was attempted against the shared production database. A successful rollback would not prove application workflow, concurrency, privilege, or recovery safety and could still acquire production locks.
 
-Testing without an isolated database cannot prove PostgreSQL function compilation as a complete chain, migration transaction behavior, concurrent replay behavior, RLS impersonation, tenant isolation, or restoration. Static SQL inspection and in-memory fixtures reduce risk but do not replace those gates.
+The successful migration chain proves production DDL compilation and ordered dependency resolution. It does not prove concurrent replay behavior, RLS impersonation, tenant isolation, full workflow behavior, or restoration.
 
 ### Authorised production migration procedure
 
-1. In the Supabase dashboard, record the backup method, retention, latest successful backup/recovery point, and the person authorised to restore it. Record the expected restore downtime.
+1. Confirm a newer post-R1 backup, or have the named release owner explicitly accept the recovery window beginning at 23 October 2026 06:48:43 UTC. Name the person authorised to restore it and record the expected restore downtime.
 2. Export/capture the current schema, grants, advisors, row counts, and migration history. Confirm R1 is present and R2 is absent.
 3. Keep all commercial application kill switches closed and launch mode effectively `OFF`.
 4. Schedule a maintenance window and name the release and recovery owners.
-5. Apply R2 through R5.2 in the exact order above, one migration/history entry at a time. Never submit R1.
+5. Apply R2 through the R5.2 privilege-hardening migration in the exact order above, one migration/history entry at a time. Never submit R1.
 6. After each migration, verify expected objects, constraints, RLS, grants, function execution privileges, and migration history before continuing.
 7. Run synthetic database checks for idempotency, stale snapshots, effective-date bounds, tenant swaps, token expiry/revocation, AI windows, renewal boundaries, and exact-payment matching.
 8. Rerun Security Advisor and compare it with the recorded baseline.
@@ -99,9 +102,11 @@ This is eligibility evidence only. It does not mean consent, contract, pricing a
 
 ## Security review
 
-- Current Security Advisor baseline: 31 `WARN` mutable-function-search-path findings, one `WARN` extension-in-public finding, and 282 `INFO` RLS-enabled-without-policy findings.
+- Post-migration Security Advisor: 31 pre-existing `WARN` mutable-function-search-path findings, one pre-existing `WARN` extension-in-public finding, and 304 `INFO` RLS-enabled-without-policy findings. None of the warning-level findings targets a new commercial object.
+- The commercial `RLS Enabled No Policy` findings are intentional deny-by-default design: RLS is enabled, `anon` and `authenticated` have no grants, and only `service_role` has the required table access.
+- The live privilege audit found that R1's original `grant all` also gave `service_role` `TRUNCATE` on append-only commercial history. Row triggers do not protect against `TRUNCATE`. Applied migration `20261024055835_commercial_history_privilege_hardening.sql` removed `TRUNCATE` from every R1-R5 commercial relation and removed `UPDATE`/`DELETE` from append-only history relations. Post-migration verification found no remaining destructive grants on commercial history.
 - Billing-adjacent legacy warnings include `create_crm_invoice`, `confirm_work_project_payment`, and `reverse_work_project_payment`. They were not broadly rewritten without database regression evidence.
-- The R1 commercial tables remain private/service-role-oriented; the pending migrations explicitly enable RLS and revoke `public`, `anon`, and `authenticated` privileges for their new private objects.
+- All R1-R5 commercial tables remain private/service-role-oriented. RLS is enabled and the post-migration grant audit found no table privileges for `public`, `anon`, or `authenticated`.
 - Migration preview/confirmation require Super Admin; confirmation rejects impersonation, requires same-origin, and passes the independent environment and database launch gates.
 - R5.2 uses `search_path=''`, fully qualified relations/functions where applicable, an advisory lock, stable idempotency, and immutable audit evidence.
 - Database-backed cross-tenant, privilege, and concurrency tests remain incomplete.
@@ -113,17 +118,18 @@ Advisor reference: <https://supabase.com/docs/guides/database/database-linter>
 ### Passed
 
 - Focused lightweight commercial suite: **45 tests passed, 0 failed**.
+- After the production migration and filename reconciliation, the focused migration/R5.1/R5.2/privilege subset completed: **21 tests passed, 0 failed**, including dependency-order and destructive-privilege checks.
 - Covered official price arithmetic, unique paid-seat counts, AI/Growth coupling, migration comparison, annual-to-monthly display, AI default-off, agreement requirement, effective-date enforcement, plan amendments, grace expiry, launch fail-closed behavior, quotation/token controls, AI shadow reconciliation, renewal boundaries, quota reset, and exact-payment top-up activation.
 - Release migration static checks: dependency order valid; no table drops, truncation, or history deletion; expected service-role/RLS controls present.
 - Targeted TypeScript syntax transpilation: passed for 9 Release 5.2 files.
 - `git diff --check`: no whitespace errors (line-ending notices only).
-- Production inspection was read-only.
+- Production DDL compilation and dependency order passed for all seven authorised migrations. Post-migration checks confirmed effective mode `OFF`, zero commercial workflow rows, private client privileges, and synchronized migration history.
 
 ### Not completed
 
 - The targeted semantic TypeScript check produced no diagnostics but did not finish within 60 seconds and was stopped to protect the low-end machine; no pass is claimed.
 - Full repository type-check, production build, browser/UI tests, responsive inspection, and screenshots were intentionally not run under the user's low-end-PC instruction.
-- No production SQL compilation/rolled-back DDL test, database integration test, restore exercise, invoice issue/send, customer communication, payment mutation, or customer migration was performed.
+- No restore exercise, synthetic database workflow execution, invoice issue/send, customer communication, payment mutation, or customer migration was performed.
 - No deployment status is claimed.
 
 ## Files changed for Release 5.2
@@ -137,7 +143,8 @@ Advisor reference: <https://supabase.com/docs/guides/database/database-linter>
 - `lib/commercial/amendment-service.ts`
 - `lib/commercial/migration.ts`
 - `lib/commercial/migration-repository.ts`
-- `supabase/migrations/20261023234500_commercial_release5_2_controlled_customer_migrations.sql`
+- `supabase/migrations/20261024055820_commercial_release5_2_controlled_customer_migrations.sql`
+- `supabase/migrations/20261024055835_commercial_history_privilege_hardening.sql`
 - `tests/commercial-migrations.test.ts`
 - `tests/commercial-release5-2.test.ts`
 - `docs/implementation/SEGMIQ_COMMERCIAL_RELEASE5_2.md`
@@ -146,15 +153,13 @@ Unrelated pre-existing working-tree changes were preserved.
 
 ## Remaining commercial risks and exact pre-launch steps
 
-1. Verify and record production backup/restore evidence and recovery ownership.
-2. Obtain explicit authorisation for the exact R2–R5.2 production migration sequence.
-3. Apply and verify migrations using the procedure above; keep launch mode `OFF`.
-4. Complete database-backed synthetic tests for compilation, replay/concurrency, RLS, tenant isolation, renewal execution, grace/suspension, AI metering, and invoice reconciliation.
-5. Obtain counsel-approved agreement text, electronic-signature method, identity/evidence-retention policy, and sealed private final-PDF process.
-6. Complete the accepted-offer → agreement → signature → billing → activation saga without treating acceptance, signature, payment, and activation as the same event.
-7. Wire and verify the authorised due-plan-change executor and customer-approved top-up/payment workflow without automatic charging.
-8. Complete a semantic type-check, production build, and browser/responsive review on suitable hardware.
-9. Select one synthetic/internal pilot and collect rollback, support, finance, and security sign-off evidence.
-10. Only then make a separate, human-authorised decision whether to move from `OFF` to `INTERNAL_ONLY`. Never promote modes automatically.
+1. Record the next successful post-migration physical backup and assign the recovery owner.
+2. Complete database-backed synthetic tests for replay/concurrency, RLS, tenant isolation, renewal execution, grace/suspension, AI metering, and invoice reconciliation.
+3. Obtain counsel-approved agreement text, electronic-signature method, identity/evidence-retention policy, and sealed private final-PDF process.
+4. Complete the accepted-offer → agreement → signature → billing → activation saga without treating acceptance, signature, payment, and activation as the same event.
+5. Wire and verify the authorised due-plan-change executor and customer-approved top-up/payment workflow without automatic charging.
+6. Complete a semantic type-check, production build, and browser/responsive review on suitable hardware.
+7. Select one synthetic/internal pilot and collect rollback, support, finance, and security sign-off evidence.
+8. Only then make a separate, human-authorised decision whether to move from `OFF` to `INTERNAL_ONLY`. Never promote modes automatically.
 
 Until every mandatory gate is evidenced, the decision remains **NO-GO**.

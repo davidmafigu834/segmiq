@@ -30,7 +30,7 @@ Date: 2026-10-23
 - Remote history was read without mutation and confirms `20261023114812 segmiq_commercial_foundation_release1`.
 - Remote counts at reconciliation time: 29 clients, 9 subscriptions, 0 commercial accounts, 0 plan changes, 0 grace periods, 0 audit events, and 0 AI ledger rows.
 - `20261023114812_segmiq_commercial_foundation_release1.sql` is the local representation of the already-applied tables, constraints, catalogue rows, RLS, grants, indexes, and immutability triggers. It must not be replayed blindly against the existing remote project.
-- `20261023160000_platform_commercial_atomic_workflows.sql` is a separate additive change for atomic amendments and grace operations. Application writes remain disabled until this migration and the release flag are intentionally enabled.
+- `20261024055631_platform_commercial_atomic_workflows.sql` is a separate additive change for atomic amendments and grace operations. Application writes remain disabled until this migration and the release flag are intentionally enabled.
 
 ## Access enforcement
 

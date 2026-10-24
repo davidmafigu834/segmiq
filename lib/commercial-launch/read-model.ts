@@ -195,7 +195,7 @@ export async function loadCommercialHealth(): Promise<CommercialHealthSnapshot> 
         release: "R2",
         status: statusFor(!r2Probe.error, "r2_end_to_end"),
         schemaPresent: !r2Probe.error,
-        evidence: ["20261023160000_platform_commercial_atomic_workflows.sql"],
+        evidence: ["20261024055631_platform_commercial_atomic_workflows.sql"],
         blocker: passing.has("r2_end_to_end")
           ? null
           : "No recorded end-to-end evidence.",
@@ -205,7 +205,7 @@ export async function loadCommercialHealth(): Promise<CommercialHealthSnapshot> 
         status: statusFor(r3Table !== null, "r3_signing_end_to_end"),
         schemaPresent: r3Table !== null,
         evidence: [
-          "20261023180000_platform_sales_quotes_and_agreement_foundation.sql",
+          "20261024055657_platform_sales_quotes_and_agreement_foundation.sql",
         ],
         blocker: passing.has("r3_signing_end_to_end")
           ? null
@@ -216,7 +216,7 @@ export async function loadCommercialHealth(): Promise<CommercialHealthSnapshot> 
         status: statusFor(r4Table !== null, "r4_shadow_reconciled"),
         schemaPresent: r4Table !== null,
         evidence: [
-          "20261023210000_platform_ai_usage_shadow_and_topup_foundation.sql",
+          "20261024055726_platform_ai_usage_shadow_and_topup_foundation.sql",
         ],
         blocker: passing.has("r4_shadow_reconciled")
           ? null
@@ -226,7 +226,7 @@ export async function loadCommercialHealth(): Promise<CommercialHealthSnapshot> 
         release: "R5",
         status: controlRes.error ? "CODE_ONLY" : "SCHEMA_ONLY",
         schemaPresent: !controlRes.error,
-        evidence: ["20261023230000_commercial_launch_controls.sql"],
+        evidence: ["20261024055745_commercial_launch_controls.sql"],
         blocker: "Launch authorization remains a human decision.",
       },
     ],

@@ -41,8 +41,8 @@ Date: 23 October 2026
 ## Migration reconciliation
 
 - Existing remote foundation: `20261023114812_segmiq_commercial_foundation_release1`.
-- Release 2 local follow-up prerequisite: `20261023160000_platform_commercial_atomic_workflows.sql`.
-- Release 3 additive migration: `20261023180000_platform_sales_quotes_and_agreement_foundation.sql`.
+- Release 2 local follow-up prerequisite: `20261024055631_platform_commercial_atomic_workflows.sql`.
+- Release 3 additive migration: `20261024055657_platform_sales_quotes_and_agreement_foundation.sql`.
 - The Supabase CLI was not usable in this workspace, so the additive migration file was prepared locally and not applied remotely.
 - All new public-schema tables enable RLS, revoke `anon` and `authenticated`, and grant only `service_role`. Function execution is also explicitly revoked from public roles, consistent with current Supabase function-security guidance.
 

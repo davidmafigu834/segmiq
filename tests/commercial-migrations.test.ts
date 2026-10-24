@@ -6,12 +6,12 @@ import { describe, it } from "node:test";
 const root = process.cwd();
 const migrationNames = [
   "20261023114812_segmiq_commercial_foundation_release1.sql",
-  "20261023160000_platform_commercial_atomic_workflows.sql",
-  "20261023180000_platform_sales_quotes_and_agreement_foundation.sql",
-  "20261023210000_platform_ai_usage_shadow_and_topup_foundation.sql",
-  "20261023230000_commercial_launch_controls.sql",
-  "20261023233000_commercial_release5_1_safety_workflows.sql",
-  "20261023234500_commercial_release5_2_controlled_customer_migrations.sql",
+  "20261024055631_platform_commercial_atomic_workflows.sql",
+  "20261024055657_platform_sales_quotes_and_agreement_foundation.sql",
+  "20261024055726_platform_ai_usage_shadow_and_topup_foundation.sql",
+  "20261024055745_commercial_launch_controls.sql",
+  "20261024055804_commercial_release5_1_safety_workflows.sql",
+  "20261024055820_commercial_release5_2_controlled_customer_migrations.sql",
 ] as const;
 
 function migration(name: (typeof migrationNames)[number]): string {

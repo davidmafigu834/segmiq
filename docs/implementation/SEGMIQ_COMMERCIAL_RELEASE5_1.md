@@ -23,11 +23,11 @@ The launch mode must remain `OFF`. Release 5.1 closes several code-level safety 
 | Order | Migration                                                           | State                 | Dependencies and findings                                                                                                      |
 | ----- | ------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | R1    | `20261023114812_segmiq_commercial_foundation_release1.sql`          | Present in production | Do not reapply. Supplies catalogue, accounts, changes, grace, audit, usage ledger, and immutability trigger.                   |
-| R2    | `20261023160000_platform_commercial_atomic_workflows.sql`           | Local only            | Depends on R1. Now adds a consent-reference column for deferred changes.                                                       |
-| R3    | `20261023180000_platform_sales_quotes_and_agreement_foundation.sql` | Local only            | Depends on R1 tables and immutability trigger. Remains legally disabled.                                                       |
-| R4    | `20261023210000_platform_ai_usage_shadow_and_topup_foundation.sql`  | Local only            | Depends on R1, legacy invoices/payments, and existing agent execution tables. A blocking undeclared-variable defect was fixed. |
-| R5    | `20261023230000_commercial_launch_controls.sql`                     | Local only            | Depends on R1 audit/users/invoices. Defaults to `OFF`.                                                                         |
-| R5.1  | `20261023233000_commercial_release5_1_safety_workflows.sql`         | Local only            | Depends on R2 and R4. Adds period creation and payment-evidenced top-up workflows without executing them.                      |
+| R2    | `20261024055631_platform_commercial_atomic_workflows.sql`           | Local only            | Depends on R1. Now adds a consent-reference column for deferred changes.                                                       |
+| R3    | `20261024055657_platform_sales_quotes_and_agreement_foundation.sql` | Local only            | Depends on R1 tables and immutability trigger. Remains legally disabled.                                                       |
+| R4    | `20261024055726_platform_ai_usage_shadow_and_topup_foundation.sql`  | Local only            | Depends on R1, legacy invoices/payments, and existing agent execution tables. A blocking undeclared-variable defect was fixed. |
+| R5    | `20261024055745_commercial_launch_controls.sql`                     | Local only            | Depends on R1 audit/users/invoices. Defaults to `OFF`.                                                                         |
+| R5.1  | `20261024055804_commercial_release5_1_safety_workflows.sql`         | Local only            | Depends on R2 and R4. Adds period creation and payment-evidenced top-up workflows without executing them.                      |
 
 The ordering is valid and the post-R1 migrations contain no `DROP TABLE`, `TRUNCATE`, or history-deleting statements. Static checks verify service-role-only access for new commercial tables and functions.
 
@@ -142,9 +142,9 @@ No typecheck, build, browser, or screenshot success is claimed.
 
 ## Files changed for Release 5.1
 
-- `supabase/migrations/20261023160000_platform_commercial_atomic_workflows.sql`
-- `supabase/migrations/20261023210000_platform_ai_usage_shadow_and_topup_foundation.sql`
-- `supabase/migrations/20261023233000_commercial_release5_1_safety_workflows.sql`
+- `supabase/migrations/20261024055631_platform_commercial_atomic_workflows.sql`
+- `supabase/migrations/20261024055726_platform_ai_usage_shadow_and_topup_foundation.sql`
+- `supabase/migrations/20261024055804_commercial_release5_1_safety_workflows.sql`
 - `lib/commercial/plan-change.ts`
 - `lib/commercial-launch/control.ts`
 - `lib/platform-sales/http.ts`
