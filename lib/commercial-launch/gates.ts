@@ -28,6 +28,10 @@ export function canRequestLaunchMode(input: {
 }): { allowed: boolean; missing: string[] } {
   if (input.target === "OFF" || input.target === "INTERNAL_ONLY")
     return { allowed: true, missing: [] };
+  if (input.target === "PILOT_ALLOWLIST")
+    return input.pilotClientIds.length > 0
+      ? { allowed: true, missing: [] }
+      : { allowed: false, missing: ["pilot_allowlist"] };
   const required = [
     "r2_end_to_end",
     "r3_signing_end_to_end",
@@ -40,7 +44,5 @@ export function canRequestLaunchMode(input: {
     "support_owner",
   ];
   const missing = required.filter((key) => !input.passingChecks.has(key));
-  if (input.target === "PILOT_ALLOWLIST" && input.pilotClientIds.length === 0)
-    missing.push("pilot_allowlist");
   return { allowed: missing.length === 0, missing };
 }

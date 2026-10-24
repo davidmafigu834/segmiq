@@ -69,8 +69,9 @@ export function LaunchModeForm({
             Release decision
           </h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Current mode: {currentMode.replaceAll("_", " ")}. GA requires all
-            current evidence gates to pass inside the database transaction.
+            Current mode: {currentMode.replaceAll("_", " ")}. A pilot requires
+            an explicit client allowlist; GA requires every evidence gate to
+            pass inside the database transaction.
           </p>
         </div>
         {!writesEnabled ? (

@@ -110,14 +110,22 @@ describe("Release 5 launch promotion prerequisites", () => {
     );
   });
 
-  it("blocks pilot without both evidence and an allowlist", () => {
+  it("allows a named pilot without claiming GA evidence", () => {
     assert.deepEqual(
       canRequestLaunchMode({
         target: "PILOT_ALLOWLIST",
-        passingChecks: requiredChecks,
+        passingChecks: new Set(),
         pilotClientIds: [],
       }),
       { allowed: false, missing: ["pilot_allowlist"] },
+    );
+    assert.deepEqual(
+      canRequestLaunchMode({
+        target: "PILOT_ALLOWLIST",
+        passingChecks: new Set(),
+        pilotClientIds: ["client-1"],
+      }),
+      { allowed: true, missing: [] },
     );
   });
 

@@ -4,14 +4,14 @@ Date: 24 October 2026
 
 ## Decision: NO-GO
 
-Commercial launch mode remains `OFF`. The authorised R2-R5.2 schema chain and privilege hardening are now installed, but database workflow evidence, legal signing approval, and full release verification are still incomplete.
+Commercial launch mode remains `OFF`. The authorised R2-R5.2 schema chain, privilege hardening, and single-client pilot evidence policy are installed, but the authenticated release decision and production server write switch remain outstanding.
 
 Seven production migrations were applied after the founder explicitly accepted the confirmed backup recovery window. No customer was migrated, no historical subscription/payment/invoice was changed, no invoice or communication was sent, no payment was confirmed, no Agentic AI package was activated, and no launch flag was changed.
 
 ## Production baseline and migration reconciliation
 
 - Project: `leadstaq` (`gnnqzboaeezzevlwwryp`), region `eu-west-1`, observed `ACTIVE_HEALTHY`, PostgreSQL 17.
-- Production migration history now ends at `20261024055835_commercial_history_privilege_hardening`.
+- Production migration history now ends at `20261024062423_commercial_pilot_evidence_policy`.
 - R1 is already present and **must not be reapplied**.
 - A pre-change inspection confirmed that only R1 was present. The seven migrations below were then applied atomically and verified one at a time through the authenticated Supabase migration interface.
 - Current commercial row counts are 9 catalogue rows, 0 v2 commercial accounts, 0 plan-change requests, 0 grace periods, and 0 AI usage-ledger rows. The legacy CRM subscription count remains 9.
@@ -23,6 +23,7 @@ Seven production migrations were applied after the founder explicitly accepted t
   5. `20261024055804_commercial_release5_1_safety_workflows.sql` (R5.1)
   6. `20261024055820_commercial_release5_2_controlled_customer_migrations.sql` (R5.2)
   7. `20261024055835_commercial_history_privilege_hardening.sql` (R5.2 security hardening)
+  8. `20261024062423_commercial_pilot_evidence_policy.sql` (single-client pilot policy)
 - The post-R1 SQL contains no `DROP TABLE`, `TRUNCATE`, or `DELETE FROM` operation. R5.2 only replaces the service-role migration RPC; it does not migrate data by itself.
 - Static dependency tests pass for the above ordering. R2 depends on R1; R3 depends on R1; R4 depends on R1 and the legacy billing/agent tables; R5 depends on R1 audit/users/invoices; R5.1 depends on R2/R4; R5.2 depends on R2's validation and mutation functions.
 
@@ -108,6 +109,7 @@ This is eligibility evidence only. It does not mean consent, contract, pricing a
 - Billing-adjacent legacy warnings include `create_crm_invoice`, `confirm_work_project_payment`, and `reverse_work_project_payment`. They were not broadly rewritten without database regression evidence.
 - All R1-R5 commercial tables remain private/service-role-oriented. RLS is enabled and the post-migration grant audit found no table privileges for `public`, `anon`, or `authenticated`.
 - Migration preview/confirmation require Super Admin; confirmation rejects impersonation, requires same-origin, and passes the independent environment and database launch gates.
+- The founder explicitly authorised a less restrictive pilot policy: `PILOT_ALLOWLIST` requires an exact non-empty client allowlist plus decision/rollback ownership and audit evidence, but does not claim the nine GA readiness checks passed. `GENERAL_AVAILABILITY` still requires every latest readiness check to pass in the database transaction.
 - R5.2 uses `search_path=''`, fully qualified relations/functions where applicable, an advisory lock, stable idempotency, and immutable audit evidence.
 - Database-backed cross-tenant, privilege, and concurrency tests remain incomplete.
 
@@ -145,6 +147,7 @@ Advisor reference: <https://supabase.com/docs/guides/database/database-linter>
 - `lib/commercial/migration-repository.ts`
 - `supabase/migrations/20261024055820_commercial_release5_2_controlled_customer_migrations.sql`
 - `supabase/migrations/20261024055835_commercial_history_privilege_hardening.sql`
+- `supabase/migrations/20261024062423_commercial_pilot_evidence_policy.sql`
 - `tests/commercial-migrations.test.ts`
 - `tests/commercial-release5-2.test.ts`
 - `docs/implementation/SEGMIQ_COMMERCIAL_RELEASE5_2.md`
@@ -160,6 +163,6 @@ Unrelated pre-existing working-tree changes were preserved.
 5. Wire and verify the authorised due-plan-change executor and customer-approved top-up/payment workflow without automatic charging.
 6. Complete a semantic type-check, production build, and browser/responsive review on suitable hardware.
 7. Select one synthetic/internal pilot and collect rollback, support, finance, and security sign-off evidence.
-8. Only then make a separate, human-authorised decision whether to move from `OFF` to `INTERNAL_ONLY`. Never promote modes automatically.
+8. Use an authenticated Super Admin session to record Adlense Network as the sole `PILOT_ALLOWLIST` client after enabling the two production server kill switches. Never promote to GA automatically.
 
 Until every mandatory gate is evidenced, the decision remains **NO-GO**.
