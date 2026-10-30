@@ -218,9 +218,28 @@ export function canAccessClient(
   return userClientId === requestedClientId;
 }
 
-/** Company profile & branding: managers and salespeople edit their own client; super admin can edit any. */
+/**
+ * Company profile & branding writes: managers edit their own client; super admin can edit any.
+ * SECURITY: salespeople (including solo operators) must not change identity, owner_email,
+ * business_type, workflow configuration or assignment_mode.
+ */
 export function canManageClientProfile(role: string | null | undefined): boolean {
-  return role === "SUPER_ADMIN" || role === "CLIENT_MANAGER" || role === "SALESPERSON";
+  return role === "SUPER_ADMIN" || role === "CLIENT_MANAGER";
+}
+
+/** Server-side gate for company-profile and logo writes. */
+export function evaluateCompanyProfileWriteAccess(
+  session: { userId?: string | null; role?: string | null; clientId?: string | null } | null | undefined,
+  requestedClientId: string
+): { allowed: true } | { allowed: false; status: 401 | 403; error: string } {
+  if (!session?.userId) return { allowed: false, status: 401, error: "Unauthorized" };
+  if (!canAccessClient(session.role ?? "", session.clientId ?? null, requestedClientId)) {
+    return { allowed: false, status: 403, error: "Forbidden" };
+  }
+  if (!canManageClientProfile(session.role)) {
+    return { allowed: false, status: 403, error: "Only managers can edit company profile" };
+  }
+  return { allowed: true };
 }
 
 /** SegmiQ Cloud settings & team admin: managers on their client; super admin on any.

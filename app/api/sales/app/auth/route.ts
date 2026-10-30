@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { SignJWT } from "jose";
-import { verifyCredentials } from "@/lib/auth";
-import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
+import { AuthDatabaseUnavailableError, verifyCredentials, type VerifiedUser } from "@/lib/auth";
 import {
   createUserSession,
   clientIpFromRequest,
@@ -16,8 +15,47 @@ import {
   sendSecurityNotification,
   shouldSendNewSignInEmail,
 } from "@/lib/email/templates/security-alert";
+import { mobileApiError } from "@/lib/mobile/sales-app/errors";
+import {
+  evaluateMobileSalesEligibility,
+  loadOrganisationAccessState,
+} from "@/lib/mobile/sales-app/eligibility";
+import { SALES_APP_TOKEN_CHANNEL } from "@/lib/mobile/sales-app/subscription-gate";
 
 export const dynamic = "force-dynamic";
+
+async function signSalesAppToken(
+  user: VerifiedUser,
+  sessionId: string,
+  secret: string,
+  extra: Record<string, unknown> = {}
+): Promise<{ token: string; expiresAtMs: number }> {
+  const expSec = Math.floor(Date.now() / 1000) + JWT_MAX_AGE_SEC;
+  const token = await new SignJWT({
+    userId: user.id,
+    role: user.role,
+    clientId: user.clientId,
+    clientMode: user.clientMode,
+    alsoSells: user.alsoSells,
+    sessionVersion: user.sessionVersion,
+    sessionId,
+    name: user.name,
+    channel: SALES_APP_TOKEN_CHANNEL,
+    ...extra,
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(expSec)
+    .sign(new TextEncoder().encode(secret));
+  return { token, expiresAtMs: expSec * 1000 };
+}
+
+function earliestIso(sessionExpiresAt: string | null | undefined, tokenExpiresAtMs: number): string {
+  const sessionMs = sessionExpiresAt ? Date.parse(sessionExpiresAt) : NaN;
+  return new Date(
+    Number.isFinite(sessionMs) ? Math.min(sessionMs, tokenExpiresAtMs) : tokenExpiresAtMs
+  ).toISOString();
+}
 
 function parseLoginBody(parsed: unknown): {
   email?: string;
@@ -43,6 +81,10 @@ function parseLoginBody(parsed: unknown): {
   };
 }
 
+/**
+ * SegmiQ Sales password sign-in. Contract and error codes:
+ * docs/android-integration/01-auth-and-bootstrap.md
+ */
 export async function POST(req: Request) {
   let body: {
     email?: string;
@@ -53,15 +95,15 @@ export async function POST(req: Request) {
   try {
     body = parseLoginBody(await req.json());
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return mobileApiError("INVALID_REQUEST", { error: "Invalid JSON" });
   }
 
-  const email = typeof body.email === "string" ? body.email.trim() : "";
-  const password = typeof body.password === "string" ? body.password : "";
+  const email = typeof body?.email === "string" ? body.email.trim() : "";
+  const password = typeof body?.password === "string" ? body.password : "";
   const ip = clientIpFromRequest(req);
   const ua = userAgentFromRequest(req);
   if (!email || !password) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return mobileApiError("INVALID_CREDENTIALS", { error: "Unauthorized" });
   }
 
   const emailHash = await hashLoginIdentifier(email);
@@ -77,51 +119,77 @@ export async function POST(req: Request) {
       userAgent: ua,
       metadata: { emailHash, channel: "mobile_sales", reason: "rate_limited" },
     });
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return mobileApiError("RATE_LIMITED", { error: "Unauthorized" });
   }
 
-  const user = await verifyCredentials(email, password);
+  let user: VerifiedUser | null;
+  try {
+    user = await verifyCredentials(email, password);
+  } catch (error) {
+    if (error instanceof AuthDatabaseUnavailableError) {
+      return mobileApiError("SERVICE_UNAVAILABLE");
+    }
+    throw error;
+  }
   if (!user) {
     void recordSecurityEvent({
       eventType: "LOGIN_FAILED",
       ip,
       userAgent: ua,
-      metadata: {
-        emailHash: await hashLoginIdentifier(email),
-        channel: "mobile_sales",
-      },
+      metadata: { emailHash, channel: "mobile_sales" },
     });
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return mobileApiError("INVALID_CREDENTIALS", { error: "Unauthorized" });
   }
 
-  if (!canActAsSalesperson(user)) {
-    return NextResponse.json(
-      { error: "Segmiq Sales is for salesperson and selling manager accounts only." },
-      { status: 403 }
-    );
+  let organisationState: Awaited<ReturnType<typeof loadOrganisationAccessState>> | null = null;
+  if (user.clientId) {
+    try {
+      organisationState = await loadOrganisationAccessState(user.clientId);
+    } catch (error) {
+      console.error("[sales/app/auth] organisation lookup failed", error);
+      return mobileApiError("SERVICE_UNAVAILABLE");
+    }
   }
-
-  if (!user.clientId) {
-    return NextResponse.json(
-      { error: "Your account is not linked to a client." },
-      { status: 403 }
-    );
+  const eligibility = evaluateMobileSalesEligibility(
+    {
+      userId: user.id,
+      role: user.role,
+      alsoSells: user.alsoSells,
+      clientId: user.clientId,
+      isActive: true,
+    },
+    organisationState
+  );
+  if (!eligibility.ok) {
+    void recordSecurityEvent({
+      eventType: "LOGIN_FAILED",
+      userId: user.id,
+      clientId: user.clientId,
+      ip,
+      userAgent: ua,
+      metadata: { emailHash, channel: "mobile_sales", reason: eligibility.code },
+    });
+    return mobileApiError(eligibility.code, { error: eligibility.error });
   }
+  const clientId = user.clientId as string;
 
   const mfaNeed = await userNeedsMfaChallenge(user.id, user.role);
   if (mfaNeed.required) {
     const challenge = await createLoginChallenge({ userId: user.id, ip, userAgent: ua });
-    return NextResponse.json({
-      mfaRequired: true,
-      challengeId: challenge.challengeId,
-      challengeToken: challenge.challengeToken,
-      expiresAt: challenge.expiresAt,
-    });
+    return NextResponse.json(
+      {
+        mfaRequired: true,
+        challengeId: challenge.challengeId,
+        challengeToken: challenge.challengeToken,
+        expiresAt: challenge.expiresAt,
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   }
 
   const secret = process.env.NEXTAUTH_SECRET;
   if (!secret) {
-    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+    return mobileApiError("SERVER_MISCONFIGURED", { error: "Server misconfigured" });
   }
 
   const deviceId =
@@ -133,14 +201,17 @@ export async function POST(req: Request) {
       ? body.deviceName.trim().slice(0, 120)
       : null;
 
-  const enrolmentRequired = await mustEnrollMfa(user.id, user.role, {
-    clientId: user.clientId,
-  });
+  const enrolmentRequired = await mustEnrollMfa(user.id, user.role, { clientId });
 
-  if (enrolmentRequired) {
-    const sessionRow = await createUserSession({
+  const sessionMetadata: Record<string, unknown> = enrolmentRequired
+    ? { channel: SALES_APP_TOKEN_CHANNEL, mfaEnrolmentRequired: true, restricted: true }
+    : { channel: SALES_APP_TOKEN_CHANNEL };
+
+  let sessionRow: Awaited<ReturnType<typeof createUserSession>>;
+  try {
+    sessionRow = await createUserSession({
       userId: user.id,
-      clientId: user.clientId,
+      clientId,
       role: user.role,
       sessionType: "MOBILE",
       sessionVersion: user.sessionVersion,
@@ -149,121 +220,63 @@ export async function POST(req: Request) {
       deviceId,
       deviceName,
       authStrength: "password",
-      metadata: {
-        channel: "sales_app",
-        mfaEnrolmentRequired: true,
-        restricted: true,
-      },
+      metadata: sessionMetadata,
     });
+  } catch (error) {
+    console.error("[sales/app/auth] session creation failed", error);
+    return mobileApiError("SERVICE_UNAVAILABLE");
+  }
 
-    void recordSecurityEvent({
-      eventType: "LOGIN_SUCCESS",
-      userId: user.id,
-      clientId: user.clientId,
-      sessionId: sessionRow.id,
-      ip,
+  void recordSecurityEvent({
+    eventType: "LOGIN_SUCCESS",
+    userId: user.id,
+    clientId,
+    sessionId: sessionRow.id,
+    ip,
+    userAgent: ua,
+    metadata: enrolmentRequired
+      ? { sessionType: "MOBILE", channel: SALES_APP_TOKEN_CHANNEL, mfaEnrolmentRequired: true }
+      : { sessionType: "MOBILE", channel: SALES_APP_TOKEN_CHANNEL },
+  });
+
+  if (!enrolmentRequired) {
+    const label = labelSessionDevice({
+      sessionType: "MOBILE",
       userAgent: ua,
-      metadata: {
-        sessionType: "MOBILE",
-        channel: "sales_app",
-        mfaEnrolmentRequired: true,
-      },
+      deviceName,
+      metadata: { channel: SALES_APP_TOKEN_CHANNEL },
     });
+    if (shouldSendNewSignInEmail(user.id, deviceId || label.deviceName)) {
+      void sendSecurityNotification({
+        to: user.email,
+        kind: "new_sign_in",
+        deviceLabel: label.deviceName,
+      });
+    }
+  }
 
-    const token = await new SignJWT({
-      userId: user.id,
-      role: user.role,
-      clientId: user.clientId,
-      clientMode: user.clientMode,
-      alsoSells: user.alsoSells,
-      sessionVersion: user.sessionVersion,
-      sessionId: sessionRow.id,
-      name: user.name,
-      mfaEnrolmentRequired: true,
-    })
-      .setProtectedHeader({ alg: "HS256" })
-      .setIssuedAt()
-      .setExpirationTime(Math.floor(Date.now() / 1000) + JWT_MAX_AGE_SEC)
-      .sign(new TextEncoder().encode(secret));
+  const { token, expiresAtMs } = await signSalesAppToken(
+    user,
+    sessionRow.id,
+    secret,
+    enrolmentRequired ? { mfaEnrolmentRequired: true } : {}
+  );
 
-    return NextResponse.json({
-      mfaEnrolmentRequired: true,
+  return NextResponse.json(
+    {
+      ...(enrolmentRequired ? { mfaEnrolmentRequired: true } : {}),
       token,
+      expiresAt: earliestIso(sessionRow.expires_at, expiresAtMs),
       user: {
         userId: user.id,
         name: user.name,
-        clientId: user.clientId,
+        clientId,
         role: user.role,
         clientMode: user.clientMode,
         alsoSells: user.alsoSells,
         sessionId: sessionRow.id,
       },
-    });
-  }
-
-  const sessionRow = await createUserSession({
-    userId: user.id,
-    clientId: user.clientId,
-    role: user.role,
-    sessionType: "MOBILE",
-    sessionVersion: user.sessionVersion,
-    ip,
-    userAgent: ua,
-    deviceId,
-    deviceName,
-    authStrength: "password",
-    metadata: { channel: "sales_app" },
-  });
-
-  void recordSecurityEvent({
-    eventType: "LOGIN_SUCCESS",
-    userId: user.id,
-    clientId: user.clientId,
-    sessionId: sessionRow.id,
-    ip,
-    userAgent: ua,
-    metadata: { sessionType: "MOBILE", channel: "sales_app" },
-  });
-
-  const label = labelSessionDevice({
-    sessionType: "MOBILE",
-    userAgent: ua,
-    deviceName,
-    metadata: { channel: "sales_app" },
-  });
-  if (shouldSendNewSignInEmail(user.id, deviceId || label.deviceName)) {
-    void sendSecurityNotification({
-      to: user.email,
-      kind: "new_sign_in",
-      deviceLabel: label.deviceName,
-    });
-  }
-
-  const token = await new SignJWT({
-    userId: user.id,
-    role: user.role,
-    clientId: user.clientId,
-    clientMode: user.clientMode,
-    alsoSells: user.alsoSells,
-    sessionVersion: user.sessionVersion,
-    sessionId: sessionRow.id,
-    name: user.name,
-  })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(Math.floor(Date.now() / 1000) + JWT_MAX_AGE_SEC)
-    .sign(new TextEncoder().encode(secret));
-
-  return NextResponse.json({
-    token,
-    user: {
-      userId: user.id,
-      name: user.name,
-      clientId: user.clientId,
-      role: user.role,
-      clientMode: user.clientMode,
-      alsoSells: user.alsoSells,
-      sessionId: sessionRow.id,
     },
-  });
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }

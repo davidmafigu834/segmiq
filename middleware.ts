@@ -10,6 +10,7 @@ import {
   fetchMiddlewareSessionAlive,
   fetchMiddlewareSessionVersion,
 } from "@/lib/supabase/middleware-admin";
+import { evaluateSalesAppSubscriptionGate } from "@/lib/mobile/sales-app/subscription-gate";
 import type { ClientMode, UserRole } from "@/types";
 
 export async function middleware(req: NextRequest) {
@@ -459,6 +460,7 @@ function mfaEnrolmentDeniedApi(): NextResponse {
   return NextResponse.json(
     {
       error: "MFA_ENROLMENT_REQUIRED",
+      code: "MFA_ENROLMENT_REQUIRED",
       message: "Complete two-step verification before using SegmiQ.",
       enrollPath: "/client/settings/security",
     },
@@ -509,6 +511,9 @@ async function enforceApiMfaEnrolmentGate(req: NextRequest): Promise<NextRespons
         if (Boolean(payload.mfaEnrolmentRequired)) {
           return mfaEnrolmentDeniedApi();
         }
+        // CRM subscription policy for SegmiQ Sales app tokens (402 SUBSCRIPTION_SUSPENDED).
+        const subscriptionGate = await evaluateSalesAppSubscriptionGate(path, payload);
+        if (subscriptionGate) return subscriptionGate;
       } catch {
         // Invalid bearer — leave to route auth.
       }

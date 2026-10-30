@@ -20,7 +20,7 @@ export function isCloudAdminRole(role: UserRole | string | null | undefined): bo
   return isSuperAdminRole(role) || role === "CLIENT_MANAGER";
 }
 
-/** Company profile & branding roles (no client scope). */
+/** Company profile & branding write roles (no client scope). Salespeople are read-only. */
 export function canManageClientProfileRole(role: string | null | undefined): boolean {
-  return isSuperAdminRole(role) || role === "CLIENT_MANAGER" || role === "SALESPERSON";
+  return isSuperAdminRole(role) || role === "CLIENT_MANAGER";
 }

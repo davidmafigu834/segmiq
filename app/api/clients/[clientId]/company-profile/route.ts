@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { canAccessClient, canManageClientProfile } from "@/lib/auth/permissions";
+import { canAccessClient, evaluateCompanyProfileWriteAccess } from "@/lib/auth/permissions";
 import { isClientSlugAvailable } from "@/lib/clients/slug";
 
 const patchSchema = z
@@ -56,12 +56,9 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
 
 export async function PATCH(req: Request, { params }: { params: { clientId: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role ?? "", session.clientId ?? null, params.clientId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  if (!canManageClientProfile(session.role)) {
-    return NextResponse.json({ error: "Only managers can edit company profile" }, { status: 403 });
+  const access = evaluateCompanyProfileWriteAccess(session, params.clientId);
+  if (!access.allowed) {
+    return NextResponse.json({ error: access.error }, { status: access.status });
   }
 
   const parsed = patchSchema.safeParse(await req.json().catch(() => ({})));

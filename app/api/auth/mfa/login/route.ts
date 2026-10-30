@@ -22,6 +22,13 @@ import { SignJWT } from "jose";
 import { JWT_MAX_AGE_SEC } from "@/lib/auth/session-policy";
 import { setSessionToken } from "@/lib/auth/session-token";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { mobileApiError } from "@/lib/mobile/sales-app/errors";
+import {
+  evaluateMobileSalesEligibility,
+  loadOrganisationAccessState,
+  type OrganisationAccessState,
+} from "@/lib/mobile/sales-app/eligibility";
+import { SALES_APP_TOKEN_CHANNEL } from "@/lib/mobile/sales-app/subscription-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -44,14 +51,14 @@ export async function POST(req: Request) {
     windowMs: 15 * 60_000,
   });
   if (!rl.ok) {
-    return NextResponse.json({ error: "Too many attempts" }, { status: 429 });
+    return mobileApiError("RATE_LIMITED", { error: "Too many attempts" });
   }
 
   let body: Record<string, unknown>;
   try {
     body = (await req.json()) as Record<string, unknown>;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return mobileApiError("INVALID_REQUEST", { error: "Invalid JSON" });
   }
 
   const action = body.action === "complete" ? "complete" : "prepare";
@@ -108,7 +115,7 @@ export async function POST(req: Request) {
   const deviceName = typeof body.deviceName === "string" ? body.deviceName.slice(0, 120) : null;
 
   if (!challengeId || !challengeToken) {
-    return NextResponse.json({ error: "Challenge required" }, { status: 400 });
+    return mobileApiError("INVALID_REQUEST", { error: "Challenge required" });
   }
 
   const verified = await verifyLoginChallenge({
@@ -118,7 +125,10 @@ export async function POST(req: Request) {
     recoveryCode,
   });
   if (!verified.ok) {
-    return NextResponse.json({ error: "Verification failed", reason: verified.reason }, { status: 401 });
+    return mobileApiError("MFA_VERIFICATION_FAILED", {
+      error: "Verification failed",
+      extra: { reason: verified.reason },
+    });
   }
 
   const supabase = createAdminClient();
@@ -128,13 +138,47 @@ export async function POST(req: Request) {
     .eq("id", verified.userId)
     .single();
   if (!userRow || !userRow.is_active) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return mobileApiError("ACCOUNT_DISABLED", { error: "Unauthorized" });
+  }
+
+  const clientId = (userRow.client_id as string | null) ?? null;
+  const role = userRow.role as string;
+
+  if (channel === "mobile_sales") {
+    let organisationState: OrganisationAccessState | null = null;
+    if (clientId) {
+      try {
+        organisationState = await loadOrganisationAccessState(clientId, supabase);
+      } catch (error) {
+        console.error("[auth/mfa/login] organisation lookup failed", error);
+        return mobileApiError("SERVICE_UNAVAILABLE");
+      }
+    }
+    const eligibility = evaluateMobileSalesEligibility(
+      {
+        userId: userRow.id as string,
+        role,
+        alsoSells: Boolean(userRow.also_sells),
+        clientId,
+        isActive: Boolean(userRow.is_active),
+      },
+      organisationState
+    );
+    if (!eligibility.ok) {
+      void recordSecurityEvent({
+        eventType: "LOGIN_FAILED",
+        userId: userRow.id as string,
+        clientId,
+        ip,
+        userAgent: ua,
+        metadata: { channel, mfa: true, reason: eligibility.code },
+      });
+      return mobileApiError(eligibility.code, { error: eligibility.error });
+    }
   }
 
   const { fetchClientMode } = await import("@/lib/supabase/auth-rest");
-  const clientId = (userRow.client_id as string | null) ?? null;
   const clientMode = clientId ? await fetchClientMode(clientId) : "team";
-  const role = userRow.role as string;
   const sessionVersion = Number(userRow.session_version ?? 0);
   const mfaVerifiedAt = new Date().toISOString();
 
@@ -201,6 +245,7 @@ export async function POST(req: Request) {
   if (!secret) {
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
+  const tokenExpSec = Math.floor(Date.now() / 1000) + JWT_MAX_AGE_SEC;
   const token = await new SignJWT({
     userId: userRow.id,
     role,
@@ -210,15 +255,24 @@ export async function POST(req: Request) {
     sessionVersion,
     sessionId: sessionRow.id,
     name: userRow.name,
+    ...(channel === "mobile_sales" ? { channel: SALES_APP_TOKEN_CHANNEL } : {}),
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime(Math.floor(Date.now() / 1000) + JWT_MAX_AGE_SEC)
+    .setExpirationTime(tokenExpSec)
     .sign(new TextEncoder().encode(secret));
 
+  const sessionExpMs = Date.parse(sessionRow.expires_at);
   return NextResponse.json({
     ok: true,
     token,
+    ...(channel === "mobile_sales"
+      ? {
+          expiresAt: new Date(
+            Number.isFinite(sessionExpMs) ? Math.min(sessionExpMs, tokenExpSec * 1000) : tokenExpSec * 1000
+          ).toISOString(),
+        }
+      : {}),
     user: {
       userId: userRow.id,
       name: userRow.name,
