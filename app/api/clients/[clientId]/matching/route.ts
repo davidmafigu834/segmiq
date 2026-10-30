@@ -1,3 +1,4 @@
+import { listingReadDto } from "@/lib/real-estate/listing-access";
 import { NextResponse } from "next/server";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { buyersForListing, matchesForSearch, type BuyerActor } from "@/lib/real-estate/buyer-sales-service";
@@ -17,12 +18,14 @@ export async function GET(req: Request, { params }: { params: { clientId: string
   const actor = actorFrom(g.session);
   if (searchId) {
     const result = await matchesForSearch(params.clientId, searchId, actor);
-    if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-    return NextResponse.json(result);
+    if (!result.ok) return NextResponse.json({ error: result.error, code: "code" in result ? result.code : result.status === 404 ? "NOT_FOUND" : result.status === 409 ? "CONFLICT" : result.status === 403 ? "FORBIDDEN" : result.status === 400 ? "INVALID_REQUEST" : "SERVICE_UNAVAILABLE" }, { status: result.status });
+    return NextResponse.json({ ...result, matches: result.matches.map(match => ({ ...match,
+      listing: match.listing ? listingReadDto(g.session, match.listing, req.headers.has("authorization")) : null,
+    })) }, { headers: { "Cache-Control": "no-store" } });
   }
   if (listingId) {
     const result = await buyersForListing(params.clientId, listingId, actor);
-    if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+    if (!result.ok) return NextResponse.json({ error: result.error, code: "code" in result ? result.code : result.status === 404 ? "NOT_FOUND" : result.status === 409 ? "CONFLICT" : result.status === 403 ? "FORBIDDEN" : result.status === 400 ? "INVALID_REQUEST" : "SERVICE_UNAVAILABLE" }, { status: result.status });
     return NextResponse.json(result);
   }
   return NextResponse.json({ error: "Provide searchId or listingId." }, { status: 400 });

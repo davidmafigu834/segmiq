@@ -37,7 +37,7 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
   const g = await requireClientAccessFromRequest(_req, params.clientId);
   if ("error" in g) return g.error;
   const result = await getBuyerSearchBundle(params.clientId, params.searchId, actorFrom(g.session));
-  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+  if (!result.ok) return NextResponse.json({ error: result.error, code: "code" in result ? result.code : result.status === 404 ? "NOT_FOUND" : result.status === 409 ? "CONFLICT" : result.status === 403 ? "FORBIDDEN" : result.status === 400 ? "INVALID_REQUEST" : "SERVICE_UNAVAILABLE" }, { status: result.status });
   return NextResponse.json(result);
 }
 
@@ -52,6 +52,6 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     actor: actorFrom(g.session),
     patch: parsed.data,
   });
-  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+  if (!result.ok) return NextResponse.json({ error: result.error, code: "code" in result ? result.code : result.status === 404 ? "NOT_FOUND" : result.status === 409 ? "CONFLICT" : result.status === 403 ? "FORBIDDEN" : result.status === 400 ? "INVALID_REQUEST" : "SERVICE_UNAVAILABLE" }, { status: result.status });
   return NextResponse.json({ search: result.search });
 }

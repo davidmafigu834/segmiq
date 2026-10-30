@@ -1,3 +1,5 @@
+import { canReadListing } from "@/lib/real-estate/listing-access";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -19,6 +21,10 @@ export async function GET(
   if (!(await assertRealEstateClient(params.clientId))) {
     return NextResponse.json({ error: "Not a real-estate workspace." }, { status: 404 });
   }
+  const found = await createAdminClient().from("listings").select("client_id, agent_id, approval_status").eq("client_id", params.clientId).eq("id", params.listingId).maybeSingle();
+  if (found.error) return NextResponse.json({ error: "Listing lookup unavailable", code: "SERVICE_UNAVAILABLE" }, { status: 503 });
+  if (!found.data) return NextResponse.json({ error: "Not found", code: "NOT_FOUND" }, { status: 404 });
+  if (!canReadListing(session, found.data)) return NextResponse.json({ error: "Listing is private", code: "LISTING_PRIVATE" }, { status: 403 });
   const result = await getListingMarketing({
     clientId: params.clientId,
     listingId: params.listingId,

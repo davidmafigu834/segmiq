@@ -1,9 +1,9 @@
+import { loadListingPage } from "@/lib/real-estate/listing-read-service";
+import { canReadListing, listingReadDto, canAssignListingAgent } from "@/lib/real-estate/listing-access";
 import { NextResponse } from "next/server";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessClient } from "@/lib/auth/permissions";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import {
   canApproveListings,
   canSubmitListings,
@@ -11,7 +11,6 @@ import {
   isListingLive,
   listingCreateSchema,
 } from "@/lib/real-estate/listings";
-import { listingMatchesSearch } from "@/lib/real-estate/matching";
 import { background } from "@/lib/background";
 
 export const dynamic = "force-dynamic";
@@ -22,75 +21,25 @@ export async function GET(req: Request, { params }: { params: { clientId: string
   const g = await requireClientAccessFromRequest(req, params.clientId);
   if ("error" in g) return g.error;
 
+  if (!canSubmitListings(g.session.role)) return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
   const url = new URL(req.url);
-  const status = url.searchParams.get("status");
-  const developmentId = url.searchParams.get("development_id");
-  const q = url.searchParams.get("q")?.trim().toLowerCase() ?? "";
-  const suburb = url.searchParams.get("suburb")?.trim().toLowerCase() ?? "";
-  const transactionType = url.searchParams.get("transaction_type");
-  const minPrice = url.searchParams.get("min_price");
-  const maxPrice = url.searchParams.get("max_price");
-  const bedrooms = url.searchParams.get("bedrooms");
-  const limitRaw = Number(url.searchParams.get("limit") ?? "80");
-  const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 1000) : 80;
-
+  const limit = Number(url.searchParams.get("limit") ?? "80"), page = Number(url.searchParams.get("page") ?? "1");
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1000 || !Number.isSafeInteger(page) || page < 1 || page > 100000)
+    return NextResponse.json({ error: "Invalid pagination", code: "INVALID_REQUEST" }, { status: 400 });
+  for (const name of ["min_price", "max_price", "bedrooms"]) {
+    if (url.searchParams.has(name) && !Number.isFinite(Number(url.searchParams.get(name))))
+      return NextResponse.json({ error: "Invalid numeric filter", code: "INVALID_REQUEST" }, { status: 400 });
+  }
   const supabase = createAdminClient();
-  let query = supabase
-    .from("listings")
-    .select("*, agent:users!listings_agent_id_fkey(id, name), development:developments(id, name)")
-    .eq("client_id", params.clientId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (status) query = query.eq("status", status);
-  if (developmentId) query = query.eq("development_id", developmentId);
-  if (transactionType) query = query.eq("transaction_type", transactionType);
-  if (suburb) query = query.ilike("suburb", `%${suburb}%`);
-  if (minPrice) query = query.gte("price", Number(minPrice));
-  if (maxPrice) query = query.lte("price", Number(maxPrice));
-  if (bedrooms) query = query.gte("bedrooms", Number(bedrooms));
-
-  const { data, error } = await query;
-  if (error) {
-    // Fallback without FK embed aliases if PostgREST naming differs
-    const fallback = await supabase
-      .from("listings")
-      .select("*")
-      .eq("client_id", params.clientId)
-      .order("created_at", { ascending: false });
-    if (fallback.error) {
-      return NextResponse.json({ error: fallback.error.message }, { status: 500 });
-    }
-    let fallbackListings = fallback.data ?? [];
-    fallbackListings = fallbackListings.filter((row) =>
-      listingMatchesSearch(row as Parameters<typeof listingMatchesSearch>[0], {
-        q: q || undefined,
-        suburb: suburb || undefined,
-        transactionType:
-          (transactionType as "sale" | "rental" | "new_development" | "property_management") ||
-          undefined,
-        status: status || undefined,
-        minPrice: minPrice ? Number(minPrice) : undefined,
-        maxPrice: maxPrice ? Number(maxPrice) : undefined,
-        bedrooms: bedrooms ? Number(bedrooms) : undefined,
-      })
-    );
-    return NextResponse.json({ listings: fallbackListings.slice(0, limit) });
-  }
-
-  let listings = data ?? [];
-  if (q) {
-    listings = listings.filter((row) =>
-      listingMatchesSearch(row as Parameters<typeof listingMatchesSearch>[0], { q })
-    );
-  }
-
-  return NextResponse.json({ listings });
+  const result = await loadListingPage(supabase, g.session, params.clientId, url, page, limit);
+  if (result.error) return NextResponse.json({ error: "Could not load listings", code: "SERVICE_UNAVAILABLE" }, { status: 503 });
+  return NextResponse.json({ listings: (result.data ?? []).filter(row => canReadListing(g.session, row)).map(row => listingReadDto(g.session, row, req.headers.has("authorization"))), page, limit, total: result.count ?? 0 }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(req: Request, { params }: { params: { clientId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireClientAccessFromRequest(req, params.clientId);
+  if (guard.error) return guard.error;
+  const session = guard.session;
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -115,6 +64,12 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   }
 
   const body = parsed.data;
+  if (!canAssignListingAgent(session, body.agent_id)) return NextResponse.json({ error: "Cannot assign another agent", code: "FORBIDDEN" }, { status: 403 });
+  if (body.agent_id) {
+    const agent = await supabase.from("users").select("id").eq("id", body.agent_id).eq("client_id", params.clientId).eq("is_active", true).maybeSingle();
+    if (agent.error) return NextResponse.json({ error: "Agent lookup unavailable", code: "SERVICE_UNAVAILABLE" }, { status: 503 });
+    if (!agent.data) return NextResponse.json({ error: "Invalid agent", code: "INVALID_REQUEST" }, { status: 400 });
+  }
   const status = body.status ?? "available";
   const now = new Date().toISOString();
   const manager = canApproveListings(session.role);

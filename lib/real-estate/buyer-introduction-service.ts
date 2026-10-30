@@ -401,6 +401,7 @@ export async function listBuyerIntroductions(clientId: string, actor: Introducti
             searchId: searchFact.id,
             requestingAgentId: requesterId,
             status: "accepted",
+            owningAgentId: (row.owning_agent_id as string | null) ?? null,
           },
         ],
       });

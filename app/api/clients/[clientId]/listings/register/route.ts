@@ -1,3 +1,4 @@
+import { canReadListing } from "@/lib/real-estate/listing-access";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
@@ -188,7 +189,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
       .eq("client_id", params.clientId)
       .in("id", part);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    listings.push(...((data ?? []) as Record<string, unknown>[]));
+    listings.push(...((data ?? []) as Record<string, unknown>[]).filter(row => canReadListing(g.session, { client_id: params.clientId, agent_id: row.agent_id as string | null, approval_status: row.approval_status as string | null })));
   }
   const ownIds = listings.map((l) => String(l.id));
   if (!ownIds.length) return NextResponse.json({ rows: [], incomplete: false });

@@ -60,7 +60,7 @@ function missing(error: { message?: string; code?: string } | null): boolean {
 
 function sameOrg(actor: BuyerActor, clientId: string): boolean {
   if (actor.role === "SUPER_ADMIN") return true;
-  return actor.clientId === clientId;
+  return (actor.role === "CLIENT_MANAGER" || actor.role === "SALESPERSON") && actor.clientId === clientId;
 }
 
 function isManager(role: string): boolean {
@@ -343,6 +343,7 @@ export async function listBuyerSearches(input: {
 }) {
   if (!sameOrg(input.actor, input.clientId)) return { ok: false as const, error: "Forbidden.", status: 403 };
   const supabase = createAdminClient();
+  if (input.page != null && (!Number.isSafeInteger(input.page) || input.page < 1 || input.page > 100000)) return { ok: false as const, error: "Invalid page.", status: 400 };
   const page = Math.max(1, input.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, input.pageSize ?? 25));
   let query = supabase
@@ -364,6 +365,16 @@ export async function listBuyerSearches(input: {
   if (input.followUp === "due") query = query.lte("next_action_at", new Date().toISOString()).eq("status", "active");
   if (input.location?.trim()) query = query.contains("locations", [input.location.trim()]);
 
+  const needle = input.q?.trim().toLowerCase() ?? "";
+  if (needle) {
+    const term = needle.replace(/[^\p{L}\p{N} +\-]/gu, " ").slice(0, 200);
+    const matchingContacts = await supabase.from("contacts").select("id", { count: "exact" }).eq("client_id", input.clientId).or(`name.ilike.%${term}%,phone.ilike.%${term}%`).limit(1000);
+    if (matchingContacts.error) return { ok: false as const, error: "Contact search unavailable.", status: 503 };
+    if ((matchingContacts.count ?? 0) > 1000) return { ok: false as const, error: "Narrow the contact search.", status: 400 };
+    const ids = (matchingContacts.data ?? []).map(row => row.id);
+    if (!ids.length) return { ok: true as const, searches: [], page, pageSize, total: 0 };
+    query = query.in("contact_id", ids);
+  }
   const { data, error, count } = await query.range((page - 1) * pageSize, page * pageSize - 1);
   if (error) {
     if (missing(error)) return { ok: false as const, error: "Apply the Phase 3 migration before using buyer searches.", status: 503 };
@@ -383,7 +394,6 @@ export async function listBuyerSearches(input: {
   ]);
   const contactById = new Map((contacts ?? []).map((row) => [row.id as string, row]));
   const agentById = new Map((agents ?? []).map((row) => [row.id as string, row.name as string]));
-  const needle = input.q?.trim().toLowerCase() ?? "";
   const searches = rows
     .map((row) => {
       const contact = contactById.get(row.contact_id as string);
@@ -472,7 +482,7 @@ async function loadOwnedSearch(clientId: string, searchId: string, actor: BuyerA
   if (!data) return { ok: false as const, error: "Search not found.", status: 404 };
   if (!sameOrg(actor, clientId)) return { ok: false as const, error: "Forbidden.", status: 403 };
   if (actor.role === "SALESPERSON" && data.assigned_agent_id !== actor.id) {
-    return { ok: false as const, error: "Forbidden.", status: 403 };
+    return { ok: false as const, error: "Forbidden.", code: "PRIVATE_BUYER", status: 403 };
   }
   return { ok: true as const, search: data as Record<string, unknown> };
 }
@@ -546,7 +556,7 @@ export async function updateBuyerSearch(input: {
 }) {
   const owned = await loadOwnedSearch(input.clientId, input.searchId, input.actor);
   if (!owned.ok) return owned;
-  if (input.patch.assignedAgentId && !isManager(input.actor.role)) {
+  if (input.patch.assignedAgentId !== undefined && !isManager(input.actor.role)) {
     return { ok: false as const, error: "Only a manager can reassign a search.", status: 403 };
   }
   if (input.patch.assignedAgentId) {
@@ -888,12 +898,12 @@ export async function buyersForListing(clientId: string, listingId: string, acto
   const rejectedBySearch = await rejectedBySearchForListing(clientId, listingId, rows, listingFingerprint(candidate));
   const { data: intros } = await supabase
     .from("real_estate_buyer_introductions")
-    .select("search_id, status")
+    .select("search_id, status, owning_agent_id")
     .eq("client_id", clientId)
     .eq("listing_id", listingId)
     .eq("requesting_agent_id", actor.id);
   const introBySearch = new Map((intros ?? []).map((row) => [row.search_id as string, String(row.status)]));
-  const accepted = new Set((intros ?? []).filter((row) => row.status === "accepted").map((row) => row.search_id as string));
+  const accepted = new Set((intros ?? []).filter((intro) => intro.status === "accepted" && rows.some(row => row.id === intro.search_id && row.assigned_agent_id === intro.owning_agent_id)).map(row => row.search_id as string));
   const explanations = matchSearchesForListing(candidate, rows.map((row) => asSearch(row as Record<string, unknown>)), rejectedBySearch);
   const searchById = new Map(rows.map((row) => [row.id as string, row]));
   const matchedContactIds = [

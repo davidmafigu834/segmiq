@@ -30,6 +30,7 @@ export type BuyerSearchAccessFact = {
 };
 
 export type BuyerIntroductionAccessFact = {
+  owningAgentId?: string | null;
   clientId: string;
   listingId: string;
   searchId: string;
@@ -86,7 +87,8 @@ function eligibleIntroduction(input: {
       row.searchId === input.search.id &&
       row.listingId === input.listing.id &&
       row.requestingAgentId === input.actor.id &&
-      row.status === "accepted"
+      row.status === "accepted" &&
+      (row.owningAgentId === undefined || row.owningAgentId === input.search.assignedAgentId)
   );
   return canSeeBuyerContact({
     requesterId: input.actor.id,

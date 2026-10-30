@@ -123,6 +123,9 @@ export type SalesAppBootstrapV1 = {
     permissions: Permission[];
     featureFlags: {
       realEstateWorkflow: boolean;
+      realEstatePropertiesRead: boolean;
+      realEstateBuyerSearchRead: boolean;
+      privateListingImageDelivery: boolean;
       solarWorkflow: boolean;
       demoWorkspace: boolean;
     };
@@ -523,6 +526,9 @@ export function buildSalesAppBootstrap(
       permissions: [...permissionsForOrgRole(actor.role, { alsoSells: actor.alsoSells })].sort(),
       featureFlags: {
         realEstateWorkflow: experience.id === "REAL_ESTATE",
+        realEstatePropertiesRead: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
+        realEstateBuyerSearchRead: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
+        privateListingImageDelivery: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED" && Boolean(process.env.CLOUDFLARE_R2_PRIVATE_LISTING_BUCKET_NAME) && process.env.CLOUDFLARE_R2_PRIVATE_LISTING_BUCKET_NAME !== process.env.CLOUDFLARE_R2_BUCKET_NAME,
         solarWorkflow: experience.id === "SOLAR",
         demoWorkspace: experience.workspaceMode === "demo",
       },

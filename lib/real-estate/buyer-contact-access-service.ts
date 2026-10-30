@@ -34,7 +34,7 @@ export async function loadBuyerContactAccessFacts(
       .eq("client_id", clientId)
       .in("contact_id", group);
     if (result.error) {
-      if (missingTable(result.error)) return { ok: true, searches: [], introductions: [] };
+      if (missingTable(result.error)) return { ok: false, error: "Buyer privacy schema unavailable." };
       return { ok: false, error: "Could not check buyer access." };
     }
     for (const row of result.data ?? []) {
@@ -53,7 +53,7 @@ export async function loadBuyerContactAccessFacts(
   for (const group of chunk(searchIds, 200)) {
     const result = await supabase
       .from("real_estate_buyer_introductions")
-      .select("client_id, listing_id, search_id, requesting_agent_id, status")
+      .select("client_id, listing_id, search_id, requesting_agent_id, owning_agent_id, status")
       .eq("client_id", clientId)
       .in("search_id", group);
     if (result.error) {
@@ -62,6 +62,7 @@ export async function loadBuyerContactAccessFacts(
     }
     for (const row of result.data ?? []) {
       introductions.push({
+        owningAgentId: (row.owning_agent_id as string | null) ?? null,
         clientId: String(row.client_id),
         listingId: String(row.listing_id),
         searchId: String(row.search_id),

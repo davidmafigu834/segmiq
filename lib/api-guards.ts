@@ -102,7 +102,7 @@ export async function requireClientAccessFromRequest(
   const g = await requireSessionFromRequest(req);
   if (g.error) return g;
   if (!canAccessClient(g.session.role, g.session.clientId, clientId)) {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+    return { error: NextResponse.json({ error: "Forbidden", code: "CROSS_TENANT_ACCESS" }, { status: 403 }) };
   }
   return g;
 }

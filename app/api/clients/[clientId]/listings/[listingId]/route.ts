@@ -1,6 +1,5 @@
+import { canReadListing, listingReadDto, canAssignListingAgent } from "@/lib/real-estate/listing-access";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -39,6 +38,8 @@ export async function GET(
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  if (!canReadListing(g.session, listing)) return NextResponse.json({ error: "Listing is private", code: "LISTING_PRIVATE" }, { status: 403 });
+  const listingDto = listingReadDto(g.session, listing, req.headers.has("authorization"));
   const { data: contacts } = await supabase
     .from("contacts")
     .select(
@@ -82,18 +83,19 @@ export async function GET(
         introductions: facts.introductions,
       })
     );
-    return NextResponse.json({ listing, matches: visible });
+    return NextResponse.json({ listing: listingDto, matches: visible });
   }
 
-  return NextResponse.json({ listing, matches });
+  return NextResponse.json({ listing: listingDto, matches });
 }
 
 export async function PATCH(
   req: Request,
   { params }: { params: { clientId: string; listingId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireClientAccessFromRequest(req, params.clientId);
+  if (guard.error) return guard.error;
+  const session = guard.session;
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -128,6 +130,12 @@ export async function PATCH(
   }
 
   const body = parsed.data;
+  if (!canAssignListingAgent(session, body.agent_id)) return NextResponse.json({ error: "Cannot assign another agent", code: "FORBIDDEN" }, { status: 403 });
+  if (body.agent_id) {
+    const agent = await supabase.from("users").select("id").eq("id", body.agent_id).eq("client_id", params.clientId).eq("is_active", true).maybeSingle();
+    if (agent.error) return NextResponse.json({ error: "Agent lookup unavailable", code: "SERVICE_UNAVAILABLE" }, { status: 503 });
+    if (!agent.data) return NextResponse.json({ error: "Invalid agent", code: "INVALID_REQUEST" }, { status: 400 });
+  }
   if (!manager && (body.approval_status === "approved" || body.approval_status === "rejected")) {
     return NextResponse.json({ error: "Only managers can approve listings" }, { status: 403 });
   }
@@ -219,8 +227,9 @@ export async function DELETE(
   req: Request,
   { params }: { params: { clientId: string; listingId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireClientAccessFromRequest(req, params.clientId);
+  if (guard.error) return guard.error;
+  const session = guard.session;
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
