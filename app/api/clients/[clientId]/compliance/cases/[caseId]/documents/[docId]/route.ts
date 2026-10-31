@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { canAccessClient } from "@/lib/auth/permissions";
+import { requireClientDataAccess } from "@/lib/security/support-access";
 import { assertRealEstateClient } from "@/lib/real-estate/offer-service";
 import {
   loadComplianceActor,
   signComplianceDocument,
   uploadComplianceDocument,
 } from "@/lib/real-estate/compliance-service";
+import { detectComplianceFileType } from "@/lib/real-estate/compliance";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -22,18 +21,16 @@ const ALLOWED = new Set([
 ]);
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { clientId: string; caseId: string; docId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const access = await requireClientDataAccess({ req, clientId: params.clientId, scope: "COMPLIANCE", resourceType: "compliance_document", resourceId: params.docId });
+  if (access.error) return access.error;
+  const session = access.context.auth;
   if (!(await assertRealEstateClient(params.clientId))) {
     return NextResponse.json({ error: "Not a real-estate workspace." }, { status: 404 });
   }
-  const actor = await loadComplianceActor(session);
+  const actor = await loadComplianceActor(session, access.context.clientId, !access.context.isTenantMember);
   const result = await signComplianceDocument({
     clientId: params.clientId,
     caseId: params.caseId,
@@ -41,23 +38,21 @@ export async function GET(
     actor,
   });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-  return NextResponse.json({ url: result.url });
+  return NextResponse.json({ url: result.url, expiresAt: new Date(Date.now() + 300000).toISOString(), expiresInSeconds: 300 }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(
   req: Request,
   { params }: { params: { clientId: string; caseId: string; docId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const access = await requireClientDataAccess({ req, clientId: params.clientId, scope: "COMPLIANCE", resourceType: "compliance_document", resourceId: params.docId });
+  if (access.error) return access.error;
+  const session = access.context.auth;
   if (!(await assertRealEstateClient(params.clientId))) {
     return NextResponse.json({ error: "Not a real-estate workspace." }, { status: 404 });
   }
 
-  const actor = await loadComplianceActor(session);
+  const actor = await loadComplianceActor(session, access.context.clientId, !access.context.isTenantMember);
   const contentTypeHeader = req.headers.get("content-type") ?? "";
 
   if (contentTypeHeader.includes("application/json")) {
@@ -83,17 +78,21 @@ export async function POST(
     return NextResponse.json({ error: "File is too large (max 20MB)." }, { status: 400 });
   }
   const type = file.type || "application/octet-stream";
-  if (!ALLOWED.has(type) && !file.name.toLowerCase().endsWith(".pdf")) {
+  if (!ALLOWED.has(type)) {
     return NextResponse.json({ error: "Upload a PDF or image." }, { status: 400 });
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
+  const detectedType = detectComplianceFileType(buffer);
+  if (!detectedType || (detectedType !== type && !(detectedType === "image/heic" && (type === "image/heic" || type === "image/heif")))) {
+    return NextResponse.json({ error: "The file contents do not match an allowed PDF or image type." }, { status: 400 });
+  }
   const result = await uploadComplianceDocument({
     clientId: params.clientId,
     caseId: params.caseId,
     documentId: params.docId,
     actor,
-    file: { buffer, filename: file.name, contentType: type },
+    file: { buffer, filename: file.name, contentType: detectedType },
   });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
   return NextResponse.json({ ok: true });

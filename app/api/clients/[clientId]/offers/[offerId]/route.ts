@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { getRealEstateOfferDetail, mutateRealEstateOffer, assertRealEstateClient } from "@/lib/real-estate/offer-service";
 import type { ReOfferAction } from "@/lib/real-estate/offers";
@@ -10,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 const patchSchema = z.object({
   action: z.enum(["submit", "counter", "revise", "accept", "reject", "withdraw", "note", "edit_draft"]),
-  amount: z.number().positive().nullable().optional(),
+  amount: z.number().finite().positive().nullable().optional(),
   note: z.string().max(5000).nullable().optional(),
   conditions: z.string().max(5000).nullable().optional(),
   expiry_date: z.string().nullable().optional(),
@@ -33,11 +32,13 @@ function actorFromSession(session: {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { clientId: string; offerId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireClientAccessFromRequest(req, params.clientId);
+  if (guard.error) return guard.error;
+  const session = guard.session;
+  if (!["SALESPERSON", "CLIENT_MANAGER", "SUPER_ADMIN"].includes(session.role)) return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -58,8 +59,10 @@ export async function PATCH(
   req: Request,
   { params }: { params: { clientId: string; offerId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireClientAccessFromRequest(req, params.clientId);
+  if (guard.error) return guard.error;
+  const session = guard.session;
+  if (!["SALESPERSON", "CLIENT_MANAGER", "SUPER_ADMIN"].includes(session.role)) return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -73,6 +76,7 @@ export async function PATCH(
   }
 
   const body = parsed.data;
+  if (req.headers.has("authorization") && !body.expected_updated_at) return NextResponse.json({ error: "expected_updated_at is required", code: "REVISION_REQUIRED" }, { status: 400 });
   const result = await mutateRealEstateOffer({
     clientId: params.clientId,
     offerId: params.offerId,

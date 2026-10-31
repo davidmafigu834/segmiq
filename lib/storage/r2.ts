@@ -132,7 +132,9 @@ export function generateComplianceDocKey(
   filename: string
 ): string {
   const ext = filename.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
-  return `clients/${clientId}/compliance/${caseId}/${Date.now()}.${ext}`;
+  const safeClient = clientId.replace(/[^a-zA-Z0-9-]/g, "");
+  const safeCase = caseId.replace(/[^a-zA-Z0-9-]/g, "");
+  return `clients/${safeClient}/compliance/${safeCase}/${randomUUID()}.${ext}`;
 }
 
 /** Private company document version storage (SegmiQ Documents module). */

@@ -21,6 +21,7 @@ import {
 import { seedAfterSalesForTransaction } from "@/lib/real-estate/after-sales-service";
 import { canViewDealCommission } from "@/lib/real-estate/deal-access";
 import { callAtomic } from "@/lib/real-estate/atomic-rpc";
+import { assertComplianceProgressAllowed } from "@/lib/real-estate/compliance-service";
 import {
   closeListingForCompletedTransaction,
   completionDecisionFor,
@@ -143,12 +144,12 @@ export async function startOrGetTransactionFromOffer(opts: {
   clientId: string;
   offerId: string;
   actor: Actor;
-  complianceCaseId?: string | null;
 }): Promise<
   | { ok: true; transaction: Record<string, unknown>; created: boolean }
   | { ok: false; error: string; status: number }
 > {
   const supabase = createAdminClient();
+  if (opts.actor.clientId !== opts.clientId) return { ok: false, error: "Forbidden.", status: 403 };
   if (!(await assertRealEstateClient(opts.clientId))) {
     return { ok: false, error: "Not a real-estate workspace.", status: 404 };
   }
@@ -160,12 +161,8 @@ export async function startOrGetTransactionFromOffer(opts: {
     .eq("offer_id", opts.offerId)
     .maybeSingle();
   if (existing) {
-    if (opts.complianceCaseId && !existing.compliance_case_id) {
-      await supabase
-        .from("real_estate_transactions")
-        .update({ compliance_case_id: opts.complianceCaseId })
-        .eq("id", existing.id);
-    }
+    const visible = await getRealEstateTransactionDetail({clientId:opts.clientId,transactionId:String(existing.id),actor:opts.actor});
+    if (!visible.ok) return visible;
     return { ok: true, transaction: existing, created: false };
   }
 
@@ -187,6 +184,8 @@ export async function startOrGetTransactionFromOffer(opts: {
     .eq("client_id", opts.clientId)
     .maybeSingle();
 
+  if (opts.actor.role === "SALESPERSON" && offer.buyer_agent_id !== opts.actor.id && offer.listing_agent_id !== opts.actor.id && listing?.agent_id !== opts.actor.id) return {ok:false,error:"Forbidden.",status:403};
+
   const { data: lead } = offer.lead_id
     ? await supabase
         .from("leads")
@@ -195,6 +194,17 @@ export async function startOrGetTransactionFromOffer(opts: {
         .eq("client_id", opts.clientId)
         .maybeSingle()
     : { data: null };
+
+  // A caller never chooses the compliance case. Only an exact, server-verified
+  // offer/customer/listing relationship may be linked.
+  const { data: complianceCase } = await supabase
+    .from("compliance_cases")
+    .select("id")
+    .eq("client_id", opts.clientId)
+    .eq("offer_id", opts.offerId)
+    .eq("contact_id", offer.contact_id as string)
+    .eq("listing_id", offer.listing_id as string)
+    .maybeSingle();
 
   const otherActive = await countActiveTransactions(opts.clientId, offer.listing_id as string);
   if (otherActive > 0) {
@@ -220,7 +230,7 @@ export async function startOrGetTransactionFromOffer(opts: {
   const insert = {
     client_id: opts.clientId,
     offer_id: opts.offerId,
-    compliance_case_id: opts.complianceCaseId ?? null,
+    compliance_case_id: complianceCase?.id ?? null,
     listing_id: offer.listing_id,
     contact_id: offer.contact_id,
     lead_id: offer.lead_id,
@@ -520,7 +530,7 @@ export async function getRealEstateTransactionDetail(opts: {
 
   return {
     ok: true,
-    transaction: visibleTxn,
+    transaction: { ...visibleTxn, permittedActions: isTransactionTerminal(txn.status as ReTransactionStatus) ? [] : ["update_notes","set_expected_completion","record_deposit","sign_agreement","update_milestone",...(canTransitionTransaction(txn.status as ReTransactionStatus,"in_progress")?["start_progress"]:[]),...(canTransitionTransaction(txn.status as ReTransactionStatus,"completed")?["complete"]:[]),"cancel","fallen_through",...(canViewDealCommission(opts.actor.role)?["update_commission"]:[])], transitionValidation:"SERVER_REQUIRED" },
     milestones: (milestones ?? []).map((m) => ({
       id: m.id as string,
       key: m.milestone_key as ReMilestoneKey,
@@ -530,6 +540,7 @@ export async function getRealEstateTransactionDetail(opts: {
       completedAt: (m.completed_at as string | null) ?? null,
       notes: (m.notes as string | null) ?? null,
       sortOrder: Number(m.sort_order ?? 0),
+      updatedAt: (m.updated_at as string | null) ?? null,
     })),
     events: (events ?? []).map((e) => {
       const user = e.users as { name?: string | null } | null;
@@ -553,8 +564,10 @@ export async function updateTransactionMilestone(opts: {
   actor: Actor;
   status: ReMilestoneStatus;
   notes?: string | null;
+  expectedUpdatedAt?: string | null;
 }): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
   const supabase = createAdminClient();
+  if (opts.actor.clientId !== opts.clientId) return { ok: false, error: "Forbidden.", status: 403 };
   const { data: txn } = await supabase
     .from("real_estate_transactions")
     .select("id, status, listing_id, buyer_agent_id, listing_agent_id")
@@ -572,6 +585,7 @@ export async function updateTransactionMilestone(opts: {
     .eq("transaction_id", opts.transactionId)
     .eq("client_id", opts.clientId)
     .maybeSingle();
+  if (milestone && opts.expectedUpdatedAt && milestone.updated_at !== opts.expectedUpdatedAt) return {ok:false,error:"Milestone changed; refresh before retrying.",status:409};
   if (!milestone) return { ok: false, error: "Milestone not found.", status: 404 };
 
   const manager = opts.actor.role === "CLIENT_MANAGER" || opts.actor.role === "SUPER_ADMIN";
@@ -595,19 +609,32 @@ export async function updateTransactionMilestone(opts: {
     if (!participates) return { ok: false, error: "Forbidden.", status: 403 };
   }
 
+  if (opts.status === "done" || opts.status === "skipped") {
+    const gate = await assertComplianceProgressAllowed({
+      clientId: opts.clientId,
+      transactionId: opts.transactionId,
+      checkpoint: "milestone_completion",
+    });
+    if (!gate.ok) return { ok: false, error: gate.message, status: 409 };
+  }
+
   const patch: Record<string, unknown> = {
     status: opts.status,
     notes: opts.notes ?? null,
+    updated_at:new Date().toISOString(),
   };
   if (opts.status === "done") patch.completed_at = new Date().toISOString();
   if (opts.status === "pending") patch.completed_at = null;
 
-  const { error } = await supabase
+  let saveQuery = supabase
     .from("real_estate_transaction_milestones")
     .update(patch)
     .eq("id", opts.milestoneId)
     .eq("transaction_id", opts.transactionId)
     .eq("client_id", opts.clientId);
+  if (opts.expectedUpdatedAt) saveQuery=saveQuery.eq("updated_at",opts.expectedUpdatedAt);
+  const {data:saved,error}=await saveQuery.select("id").maybeSingle();
+  if(!error&&!saved)return {ok:false,error:"Milestone changed; refresh before retrying.",status:409};
 
   if (error) return { ok: false, error: error.message, status: 500 };
 
@@ -658,12 +685,13 @@ export async function mutateRealEstateTransaction(opts: {
   listingPct?: number | null;
   sellingPct?: number | null;
   expectedCompletionDate?: string | null;
-  complianceApproved?: boolean;
+  expectedUpdatedAt?: string | null;
 }): Promise<
   | { ok: true; transaction: Record<string, unknown> }
   | { ok: false; error: string; status: number }
 > {
   const supabase = createAdminClient();
+  if (opts.actor.clientId !== opts.clientId) return { ok: false, error: "Forbidden.", status: 403 };
   const { data: txn } = await supabase
     .from("real_estate_transactions")
     .select("*")
@@ -699,8 +727,9 @@ export async function mutateRealEstateTransaction(opts: {
     return { ok: true, transaction: txn };
   }
 
+  if (opts.expectedUpdatedAt && txn.updated_at !== opts.expectedUpdatedAt) return {ok:false,error:"This transaction changed. Refresh and try again.",status:409};
   const status = txn.status as ReTransactionStatus;
-  const patch: Record<string, unknown> = {};
+  const patch: Record<string, unknown> = {updated_at:new Date().toISOString()};
   let eventType: ReTxnEventType = "NOTE_ADDED";
   let note: string | null = opts.notes ?? null;
 
@@ -709,26 +738,15 @@ export async function mutateRealEstateTransaction(opts: {
       if (!canTransitionTransaction(status, "in_progress")) {
         return { ok: false, error: "Cannot move this transaction to in progress.", status: 400 };
       }
-      if (status === "pending_compliance" && !opts.complianceApproved) {
-        const { data: cdd } = txn.compliance_case_id
-          ? await supabase
-              .from("compliance_cases")
-              .select("status")
-              .eq("id", txn.compliance_case_id as string)
-              .maybeSingle()
-          : { data: null };
-        if (cdd && cdd.status !== "approved") {
-          return {
-            ok: false,
-            error: "Compliance must be approved before transaction progress.",
-            status: 400,
-          };
-        }
-      }
-      patch.status = "in_progress";
-      eventType = "STATUS_CHANGED";
-      note = "Moved to in progress";
-      break;
+      const atomic = await callAtomic<{ transaction: Record<string, unknown> }>(opts.expectedUpdatedAt ? "re_mobile_transition_transaction" : "re_start_transaction_progress_compliance_safe", {
+        p_client_id: opts.clientId,
+        p_transaction_id: opts.transactionId,
+        p_actor_id: opts.actor.id,
+        ...(opts.expectedUpdatedAt ? {p_action:opts.action,p_expected_updated_at:opts.expectedUpdatedAt,p_reason:null} : {}),
+      });
+      if (atomic.kind === "missing") return { ok: false, error: "Compliance safety controls are not deployed. Transaction progression is blocked.", status: 503 };
+      if (atomic.kind === "error") return { ok: false, error: atomic.error, status: atomic.status };
+      return { ok: true, transaction: atomic.data.transaction };
     }
     case "complete": {
       if (status === "completed") {
@@ -854,17 +872,24 @@ export async function mutateRealEstateTransaction(opts: {
 
   const finishing = opts.action === "complete" || opts.action === "fallen_through" || opts.action === "cancel";
   if (finishing) {
+    const finishFunction = opts.action === "complete"
+      ? "re_complete_transaction_compliance_safe"
+      : "re_finish_transaction";
     const atomic = await callAtomic<{ transaction: Record<string, unknown>; idempotent: boolean }>(
-      "re_finish_transaction",
+      opts.expectedUpdatedAt ? "re_mobile_transition_transaction" : finishFunction,
       {
         p_client_id: opts.clientId,
         p_transaction_id: opts.transactionId,
         p_action: opts.action,
         p_reason: opts.action === "complete" ? null : opts.reason ?? null,
+        ...(opts.expectedUpdatedAt ? {p_expected_updated_at:opts.expectedUpdatedAt} : {}),
         p_actor_id: opts.actor.id,
       }
     );
     if (atomic.kind === "error") return { ok: false, error: atomic.error, status: atomic.status };
+    if (atomic.kind === "missing" && (opts.action === "complete" || opts.expectedUpdatedAt)) {
+      return { ok: false, error: "Compliance safety controls are not deployed. Transaction completion is blocked.", status: 503 };
+    }
     if (atomic.kind === "ok") {
       const finished = atomic.data.transaction;
       if (!atomic.data.idempotent) {
@@ -879,9 +904,10 @@ export async function mutateRealEstateTransaction(opts: {
     .update(patch)
     .eq("id", opts.transactionId)
     .eq("client_id", opts.clientId);
+  if (opts.expectedUpdatedAt) updateQuery = updateQuery.eq("updated_at",opts.expectedUpdatedAt);
   if (patch.status) updateQuery = updateQuery.eq("status", status);
   const { data: updated, error } = await updateQuery.select("*").maybeSingle();
-  if (!updated && patch.status) {
+  if (!updated && (patch.status || opts.expectedUpdatedAt)) {
     const { data: current } = await supabase
       .from("real_estate_transactions")
       .select("*")

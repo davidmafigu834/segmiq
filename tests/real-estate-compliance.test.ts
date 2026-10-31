@@ -8,8 +8,11 @@ import {
   canSeeInternalComplianceNotes,
   canTransitionCompliance,
   checklistCompleteness,
+  complianceCaseMatchesContext,
   COMPLIANCE_STATUS_AGENT_LABEL,
   DEFAULT_COMPLIANCE_SETTINGS,
+  detectComplianceFileType,
+  docCountsAsComplete,
   evaluateComplianceGate,
   operationalComplianceLabel,
   parseComplianceSettings,
@@ -24,9 +27,9 @@ function read(rel: string) {
 }
 
 const settings = DEFAULT_COMPLIANCE_SETTINGS;
-const manager = { role: "CLIENT_MANAGER", userId: "mgr", userClientId: "c1" };
-const agent = { role: "SALESPERSON", userId: "ag", userClientId: "c1" };
-const admin = { role: "SUPER_ADMIN", userId: "adm", userClientId: null };
+const manager = { role: "CLIENT_MANAGER", userId: "mgr", userClientId: "c1", hasComplianceRead: true, hasComplianceReview: true };
+const agent = { role: "SALESPERSON", userId: "ag", userClientId: "c1", hasComplianceRead: true, hasComplianceReview: false };
+const admin = { role: "SUPER_ADMIN", userId: "adm", userClientId: null, hasComplianceRead: false, hasComplianceReview: false };
 
 describe("compliance domain — individual and corporate CDD", () => {
   it("creates structured individual completeness from profile + required docs", () => {
@@ -43,17 +46,25 @@ describe("compliance domain — individual and corporate CDD", () => {
     });
     assert.equal(incomplete.readyForReview, false);
     assert.equal(incomplete.required, 4);
-    assert.equal(incomplete.completed, 3);
+    assert.equal(incomplete.completed, 0);
     assert.ok(incomplete.items.some((i) => i.id === "proof_of_address" && !i.met));
 
     const complete = checklistCompleteness({
       entity: "individual",
       settings,
-      profile: { legal_name: "Tendai Moyo" },
+      profile: {
+        legal_name: "Tendai Moyo",
+        date_of_birth: "1980-01-01",
+        nationality: "Zimbabwean",
+        identification_type: "national_id",
+        identification_reference: "verified-reference",
+        residential_address: "Verified address",
+        source_of_funds_status: "evidenced",
+      },
       docs: [
-        { document_type: "identification", required: true, status: "received" },
+        { document_type: "identification", required: true, status: "accepted" },
         { document_type: "proof_of_address", required: true, status: "accepted" },
-        { document_type: "source_of_funds", required: true, status: "under_review" },
+        { document_type: "source_of_funds", required: true, status: "accepted" },
       ],
       partyCount: { directors: 0, beneficialOwners: 0 },
     });
@@ -69,10 +80,18 @@ describe("compliance domain — individual and corporate CDD", () => {
     assert.equal(missingParties.complete, false);
     const ready = profileComplete(
       "corporate",
-      { registered_name: "ABC Investments" },
+      { registered_name: "ABC Investments", registration_number: "123", jurisdiction: "Zimbabwe", registered_address: "Harare" },
       { directors: 2, beneficialOwners: 1 }
     );
     assert.equal(ready.complete, true);
+  });
+
+  it("only counts accepted, unexpired evidence as verified", () => {
+    assert.equal(docCountsAsComplete("received"), false);
+    assert.equal(docCountsAsComplete("under_review"), false);
+    assert.equal(docCountsAsComplete("rejected"), false);
+    assert.equal(docCountsAsComplete("accepted", "2020-01-01", new Date("2026-10-22T00:00:00Z")), false);
+    assert.equal(docCountsAsComplete("accepted", "2027-01-01", new Date("2026-10-22T00:00:00Z")), true);
   });
 });
 
@@ -89,7 +108,7 @@ describe("compliance permissions", () => {
   it("lets a company manager review; platform admin is not an LJP approver", () => {
     assert.equal(canReviewCompliance(manager, settings), true);
     assert.equal(canReviewCompliance(admin, settings), false);
-    assert.equal(canSeeInternalComplianceNotes(admin, settings), true);
+    assert.equal(canSeeInternalComplianceNotes(admin, settings), false);
   });
 
   it("respects restrict_review_to_flagged_users", () => {
@@ -140,6 +159,7 @@ describe("compliance hard gate", () => {
       caseStatus: null,
     });
     assert.equal(r.ok, true);
+    assert.equal(r.applicable, false);
   });
 
   it("requires approval after an accepted offer when CDD has not started", () => {
@@ -174,6 +194,7 @@ describe("compliance hard gate", () => {
       caseStatus: "approved",
     });
     assert.equal(r.ok, true);
+    assert.equal(r.applicable, true);
   });
 
   it("can be switched off in company settings", () => {
@@ -185,6 +206,23 @@ describe("compliance hard gate", () => {
     });
     assert.equal(r.ok, true);
   });
+
+  it("fails closed for invalid policy and mismatched case context", () => {
+    const invalid = evaluateComplianceGate({ isRealEstate: true, settings, hasAcceptedOffer: true, caseStatus: "approved", policyValid: false });
+    assert.equal(invalid.ok, false);
+    const mismatch = evaluateComplianceGate({ isRealEstate: true, settings, hasAcceptedOffer: true, caseStatus: "approved", contextValid: false });
+    assert.equal(mismatch.ok, false);
+  });
+
+  it("requires exact tenant, buyer, offer, listing and lead relationships", () => {
+    const base = { caseClientId: "c1", caseContactId: "buyer-1", caseOfferId: "offer-1", caseListingId: "listing-1", caseLeadId: "lead-1", clientId: "c1", contactId: "buyer-1", offerId: "offer-1", listingId: "listing-1", leadId: "lead-1" };
+    assert.equal(complianceCaseMatchesContext(base), true);
+    assert.equal(complianceCaseMatchesContext({ ...base, caseClientId: "c2" }), false);
+    assert.equal(complianceCaseMatchesContext({ ...base, caseContactId: "buyer-2" }), false);
+    assert.equal(complianceCaseMatchesContext({ ...base, caseOfferId: "offer-2" }), false);
+    assert.equal(complianceCaseMatchesContext({ ...base, caseListingId: "listing-2" }), false);
+    assert.equal(complianceCaseMatchesContext({ ...base, caseLeadId: null }), false);
+  });
 });
 
 describe("compliance architecture contracts", () => {
@@ -193,13 +231,41 @@ describe("compliance architecture contracts", () => {
     assert.ok(src.includes('.eq("client_id", opts.clientId)'));
     assert.ok(src.includes('.eq("contact_id"') || src.includes("offer.contact_id"));
     assert.ok(src.includes("if (existing) return { ok: true, case: existing, created: false }"));
-    assert.ok(src.includes('if (opts.actor.role === "SALESPERSON") return { ok: false, error: "Forbidden."'));
+    assert.ok(src.includes("Independent review is required"));
     assert.ok(src.includes("approved_at"));
     assert.ok(src.includes("approved_by"));
-    assert.ok(src.includes("internal_notes: seeInternal ? row.internal_notes : null"));
-    assert.ok(src.includes("restriction_reason: seeInternal"));
+    assert.ok(src.includes("projectComplianceCaseRow"));
+    assert.ok(src.includes("safeComplianceEventSummary"));
     assert.ok(src.includes("startsWith(`clients/${opts.clientId}/compliance/`)"));
     assert.ok(src.includes("COMPLIANCE_ALERT"));
+  });
+
+  it("removes client compliance overrides and uses fail-closed atomic transitions", () => {
+    const api = read("app/api/clients/[clientId]/transactions/[transactionId]/route.ts");
+    const service = read("lib/real-estate/transaction-service.ts");
+    assert.equal(api.includes("compliance_approved"), false);
+    assert.equal(service.includes("complianceApproved"), false);
+    assert.ok(service.includes("re_start_transaction_progress_compliance_safe"));
+    assert.ok(service.includes("re_complete_transaction_compliance_safe"));
+    assert.ok(service.includes("Compliance safety controls are not deployed"));
+  });
+
+  it("prepares atomic audit, tenant constraints and restricted function privileges", () => {
+    const sql = read("supabase/migrations/20261022113000_compliance_phase1_safety_baseline.sql");
+    assert.ok(sql.includes("compliance_apply_mutation_atomic"));
+    assert.ok(sql.includes("FOR UPDATE"));
+    assert.ok(sql.includes("compliance_events_append_only"));
+    assert.ok(sql.includes("REVOKE ALL ON TABLE public.compliance_cases FROM PUBLIC, anon, authenticated"));
+    assert.ok(sql.includes("compliance_docs_case_tenant_fk"));
+    assert.ok(sql.includes("GRANT EXECUTE ON FUNCTION public.compliance_apply_mutation_atomic"));
+  });
+
+  it("validates compliance file signatures and uses non-predictable object keys", () => {
+    assert.equal(detectComplianceFileType(Buffer.from("%PDF-1.7")), "application/pdf");
+    assert.equal(detectComplianceFileType(Buffer.from("not a pdf")), null);
+    const first = generateComplianceDocKey("client-a", "case-1", "ID.pdf");
+    const second = generateComplianceDocKey("client-a", "case-1", "ID.pdf");
+    assert.notEqual(first, second);
   });
 
   it("enforces the gate on listing sold/let and lead WON, not on offer accept", () => {

@@ -1,3 +1,5 @@
+import { detectComplianceFileType } from "@/lib/real-estate/compliance";
+import { deletePrivateDocument as deleteObject, signPrivateDocument as generatePresignedDownloadUrl, isPrivateDocumentStorageConfigured as isR2Configured, putPrivateDocument as putObject } from "@/lib/real-estate/private-document-storage";
 import { NextResponse } from "next/server";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import {
@@ -7,12 +9,8 @@ import {
   type AgencyActor,
 } from "@/lib/real-estate/agency-service";
 import {
-  deleteObject,
-  generatePresignedDownloadUrl,
   generateTransactionDocumentKey,
-  isR2Configured,
   isTransactionDocumentKeyForClient,
-  putObject,
 } from "@/lib/storage/r2";
 
 export const runtime = "nodejs";
@@ -45,13 +43,13 @@ export async function GET(req: Request, { params }: { params: { clientId: string
   if (!UUID.test(linkId)) return NextResponse.json({ error: "Choose a document." }, { status: 400 });
   const result = await transactionDocumentForDownload(params.clientId, actorFrom(g.session), linkId);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-  if (!isTransactionDocumentKeyForClient(params.clientId, result.storageKey)) {
+  if (!result.storageKey.startsWith(`clients/${params.clientId}/transactions/${params.transactionId}/`) || !isTransactionDocumentKeyForClient(params.clientId, result.storageKey)) {
     return NextResponse.json({ error: "This file is not stored for this organisation." }, { status: 404 });
   }
   if (!isR2Configured()) return NextResponse.json({ error: "File storage is not configured." }, { status: 503 });
   const ext = result.filename.split(".").pop()?.toLowerCase() ?? "";
   const url = await generatePresignedDownloadUrl(result.storageKey, result.filename, ALLOWED_TYPES.get(ext) ?? "application/octet-stream");
-  return NextResponse.json({ url, expiresInSeconds: 300 });
+  return NextResponse.json({ url, expiresInSeconds: 300, expiresAt:new Date(Date.now()+300000).toISOString() }, {headers:{"Cache-Control":"no-store"}});
 }
 
 /** Stores a private file and links it to the transaction as awaiting review. Upload is not verification. */
@@ -79,9 +77,14 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
   if (!isR2Configured()) return NextResponse.json({ error: "File storage is not configured." }, { status: 503 });
 
+  const buffer = Buffer.from(await file.arrayBuffer());
+  if (req.headers.has("authorization")) {
+    const detected=detectComplianceFileType(buffer);
+    if (!detected || detected !== contentType) return NextResponse.json({error:"Native document uploads require a signature-verified PDF or supported image",code:"INVALID_MEDIA_TYPE"},{status:415});
+  }
   const key = generateTransactionDocumentKey(params.clientId, params.transactionId, file.name);
   try {
-    await putObject(key, Buffer.from(await file.arrayBuffer()), contentType, {
+    await putObject(key, buffer, contentType, {
       contentDisposition: "attachment",
       cacheControl: "private, no-store",
     });

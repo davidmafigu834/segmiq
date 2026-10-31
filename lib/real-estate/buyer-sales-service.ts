@@ -1,3 +1,4 @@
+import { canReadListing } from "@/lib/real-estate/listing-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSubjectActivity } from "@/lib/activities/subject-activity";
 import { phonesMatchLoose } from "@/lib/real-estate/helpers";
@@ -1180,11 +1181,21 @@ export async function scheduleSearchViewing(input: {
 }) {
   const owned = await loadOwnedSearch(input.clientId, input.searchId, input.actor);
   if (!owned.ok) return owned;
+  if (!Number.isFinite(Date.parse(input.scheduledAt)) || Date.parse(input.scheduledAt) <= Date.now()) return { ok: false as const, error: "Choose a future viewing time.", status: 400 };
   const supabase = createAdminClient();
   const search = owned.search;
   const agentId = input.agentId || (search.assigned_agent_id as string | null) || input.actor.id;
   if (!Number.isFinite(new Date(input.scheduledAt).getTime())) {
     return { ok: false as const, error: "Choose a valid viewing time.", status: 400 };
+  }
+  if (input.idempotencyKey) {
+    const previous = await supabase.from("viewings").select("*").eq("client_id",input.clientId).eq("idempotency_key",input.idempotencyKey).maybeSingle();
+    if (previous.error) return {ok:false as const,error:"Idempotency lookup unavailable.",status:503};
+    if (previous.data) {
+      const v=previous.data;
+      if(v.buyer_search_id!==input.searchId || v.listing_id!==input.listingId || Date.parse(v.scheduled_at)!==Date.parse(input.scheduledAt) || v.agent_id!==agentId || (v.instructions ?? null)!==(input.instructions ?? null)) return {ok:false as const,error:"Idempotency key was used for a different booking.",status:409};
+      return {ok:true as const,viewing:v,idempotent:true,warning:null};
+    }
   }
   const { data: existing } = await supabase
     .from("viewings")
@@ -1207,10 +1218,11 @@ export async function scheduleSearchViewing(input: {
   }
   const { data: listingRow } = await supabase
     .from("listings")
-    .select("id")
+    .select("id, client_id, agent_id, approval_status, status")
     .eq("id", input.listingId)
     .eq("client_id", input.clientId)
     .maybeSingle();
+  if (listingRow && (!canReadListing({ userId: input.actor.id, role: input.actor.role, clientId: input.actor.clientId }, listingRow) || !isListingLive(listingRow))) return { ok: false as const, error: "This property is not available for viewing.", status: 403 };
   if (!listingRow) return { ok: false as const, error: "Listing not found.", status: 404 };
   if (agentId !== input.actor.id && agentId !== search.assigned_agent_id && !isManager(input.actor.role)) {
     return { ok: false as const, error: "Only a manager can book a viewing for another agent.", status: 403 };
@@ -1243,7 +1255,7 @@ export async function scheduleSearchViewing(input: {
     instructions: input.instructions,
     idempotencyKey: input.idempotencyKey,
   });
-  if (!created.ok) return { ok: false as const, error: created.error, status: 500 };
+  if (!created.ok) return { ok: false as const, error: created.error, status: 503 };
   await setPropertyInterest({
     clientId: input.clientId,
     actor: input.actor,
@@ -1341,7 +1353,7 @@ export async function completeSearchViewing(input: {
   const searchId = viewing.buyer_search_id as string | null;
   if (searchId) {
     const owned = await loadOwnedSearch(input.clientId, searchId, input.actor);
-    if (!owned.ok && viewing.agent_id !== input.actor.id) return owned;
+    if (!owned.ok) return owned;
   } else if (input.actor.role === "SALESPERSON" && viewing.agent_id !== input.actor.id) {
     return { ok: false as const, error: "Forbidden.", status: 403 };
   }

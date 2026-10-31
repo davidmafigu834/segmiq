@@ -1,3 +1,9 @@
+import { mobileViewingDto } from "@/lib/real-estate/mobile-viewings";
+import { requireClientAccessFromRequest } from "@/lib/api-guards";
+import { resolveClientSalesTimezone } from "@/lib/sales/intelligence/daily-plan-service";
+import { canReadListing } from "@/lib/real-estate/listing-access";
+import { loadBuyerContactAccessFacts } from "@/lib/real-estate/buyer-contact-access-service";
+import { canViewBuyerOnListing } from "@/lib/real-estate/buyer-contact-access";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getServerSession } from "next-auth";
@@ -89,7 +95,7 @@ function accessFor(scope: ViewingScope, actorId: string, role: string, row: Reco
   return viewingAccess({
     actorId,
     role,
-    viewingAgentId: (row.agent_id as string | null) ?? null,
+    viewingAgentId: row.buyer_search_id && scope.searchAgent.get(row.buyer_search_id as string) !== actorId ? null : (row.agent_id as string | null) ?? null,
     searchAgentId: row.buyer_search_id ? scope.searchAgent.get(row.buyer_search_id as string) ?? null : null,
     listingAgentId: scope.listingAgent.get(row.listing_id as string) ?? null,
     isListingCollaborator: scope.collaboratorListings.has(row.listing_id as string),
@@ -132,8 +138,10 @@ async function agentCandidateFilter(clientId: string, actorId: string): Promise<
 }
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireClientAccessFromRequest(req, params.clientId);
+  if (guard.error) return guard.error;
+  const session = guard.session;
+  if (!["SALESPERSON", "CLIENT_MANAGER", "SUPER_ADMIN"].includes(session.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -151,6 +159,7 @@ export async function GET(req: Request, { params }: { params: { clientId: string
   const fetchPage = (columns: string): PageFetcher => (fromRow, toRow) => {
     let q = supabase.from("viewings").select(columns).eq("client_id", params.clientId);
     if (agentFilter) q = q.or(agentFilter);
+    if (url.searchParams.get("id")) q = q.eq("id", url.searchParams.get("id")!);
     if (contactId) q = q.eq("contact_id", contactId);
     if (listingId) q = q.eq("listing_id", listingId);
     if (from) q = q.gte("scheduled_at", from);
@@ -171,10 +180,15 @@ export async function GET(req: Request, { params }: { params: { clientId: string
     .filter((item) => item.access !== "none")
     .map(({ row, access }) => ({ ...maskViewingContact(row as { contact?: { id?: string; name?: string | null; phone?: string | null } | null }, access), access }));
 
-  return NextResponse.json({ viewings, incomplete: result.incomplete });
+  const timezone = await resolveClientSalesTimezone(params.clientId);
+  const projected = viewings.map(item => mobileViewingDto(item as Record<string, unknown>));
+  const limit = Number(url.searchParams.get("limit") ?? "80"), page = Number(url.searchParams.get("page") ?? "1");
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 500 || !Number.isSafeInteger(page) || page < 1) return NextResponse.json({ error: "Invalid pagination", code: "INVALID_REQUEST" }, { status: 400 });
+  return NextResponse.json({ viewings: req.headers.has("authorization") ? projected.slice((page-1)*limit,page*limit) : projected, timezone, page, limit, total: projected.length, incomplete: result.incomplete }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(req: Request, { params }: { params: { clientId: string } }) {
+  if (req.headers.has("authorization")) return NextResponse.json({ error: "Use buyer-sales/actions for mobile bookings", code: "USE_OWNED_SEARCH_ACTION" }, { status: 405 });
   const session = await getServerSession(authOptions);
   if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
@@ -199,12 +213,16 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
 
   const { data: listing } = await supabase
     .from("listings")
-    .select("id, address, suburb, client_id")
+    .select("id, address, suburb, client_id, agent_id, status, approval_status")
     .eq("id", body.listing_id)
     .eq("client_id", params.clientId)
     .maybeSingle();
   if (!listing) return NextResponse.json({ error: "Listing not found" }, { status: 404 });
 
+  if (!canReadListing({ userId:session.userId, role:session.role, clientId:session.clientId }, listing)) return NextResponse.json({error:"Listing is private"},{status:403});
+  const facts = await loadBuyerContactAccessFacts(params.clientId,[body.contact_id]);
+  if (!facts.ok) return NextResponse.json({error:"Buyer privacy unavailable"},{status:503});
+  if (!canViewBuyerOnListing({ actor:{id:session.userId,role:session.role,clientId:session.clientId},recordClientId:params.clientId,contactId:body.contact_id,searches:facts.searches,introductions:facts.introductions,listing:{id:body.listing_id,clientId:params.clientId,status:listing.status,approvalStatus:listing.approval_status} })) return NextResponse.json({error:"Private buyer"},{status:403});
   const agentId = body.agent_id ?? session.userId;
   if (agentId !== session.userId) {
     if (session.role !== "SUPER_ADMIN" && session.role !== "CLIENT_MANAGER") {
@@ -267,6 +285,7 @@ async function logViewingActivity(opts: {
 }
 
 export async function PATCH(req: Request, { params }: { params: { clientId: string } }) {
+  if (req.headers.has("authorization")) return NextResponse.json({ error: "Use buyer-sales/actions for mobile changes", code: "USE_OWNED_SEARCH_ACTION" }, { status: 405 });
   const session = await getServerSession(authOptions);
   if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {

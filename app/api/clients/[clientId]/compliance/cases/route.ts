@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { canAccessClient } from "@/lib/auth/permissions";
+import { requireClientDataAccess } from "@/lib/security/support-access";
 import { assertRealEstateClient } from "@/lib/real-estate/offer-service";
 import {
   listComplianceCases,
@@ -22,18 +20,16 @@ const createSchema = z.object({
 });
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const access = await requireClientDataAccess({ req, clientId: params.clientId, scope: "COMPLIANCE", resourceType: "compliance_case_list" });
+  if (access.error) return access.error;
+  const session = access.context.auth;
   if (!(await assertRealEstateClient(params.clientId))) {
     return NextResponse.json({ error: "Not a real-estate workspace." }, { status: 404 });
   }
 
   const url = new URL(req.url);
   const tab = (url.searchParams.get("tab") ?? "attention") as ComplianceListTab;
-  const actor = await loadComplianceActor(session);
+  const actor = await loadComplianceActor(session, access.context.clientId, !access.context.isTenantMember);
   const result = await listComplianceCases({
     clientId: params.clientId,
     actor,
@@ -54,11 +50,9 @@ export async function GET(req: Request, { params }: { params: { clientId: string
 }
 
 export async function POST(req: Request, { params }: { params: { clientId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const access = await requireClientDataAccess({ req, clientId: params.clientId, scope: "COMPLIANCE", resourceType: "compliance_case" });
+  if (access.error) return access.error;
+  const session = access.context.auth;
   if (!(await assertRealEstateClient(params.clientId))) {
     return NextResponse.json({ error: "Not a real-estate workspace." }, { status: 404 });
   }
@@ -68,7 +62,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const actor = await loadComplianceActor(session);
+  const actor = await loadComplianceActor(session, access.context.clientId, !access.context.isTenantMember);
   const result = await startOrGetComplianceCase({
     clientId: params.clientId,
     actor,

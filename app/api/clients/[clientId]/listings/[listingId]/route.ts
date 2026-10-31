@@ -162,6 +162,7 @@ export async function PATCH(
     const gate = await assertComplianceProgressAllowed({
       clientId: params.clientId,
       listingId: params.listingId,
+      checkpoint: "listing_completion",
     });
     if (!gate.ok) {
       return NextResponse.json({ error: gate.message, code: gate.code }, { status: 409 });

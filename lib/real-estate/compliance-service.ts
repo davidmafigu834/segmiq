@@ -1,11 +1,12 @@
+import { signPrivateDocument as generatePresignedDownloadUrl, isPrivateDocumentStorageConfigured as isR2Configured, putPrivateDocument as putObject } from "@/lib/real-estate/private-document-storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listingLabel } from "@/lib/real-estate/helpers";
 import { isRealEstate } from "@/lib/terminology";
+import { callAtomic } from "@/lib/real-estate/atomic-rpc";
+import { hasPermission, P } from "@/lib/auth/rbac";
+import type { UserRole } from "@/types";
 import {
   generateComplianceDocKey,
-  generatePresignedDownloadUrl,
-  isR2Configured,
-  putObject,
 } from "@/lib/storage/r2";
 import {
   agentNextDocumentAction,
@@ -16,9 +17,11 @@ import {
   canViewComplianceCase,
   checklistCompleteness,
   complianceStatusLabel,
+  complianceCaseMatchesContext,
   deriveComplianceAttention,
   documentTypeLabel,
   evaluateComplianceGate,
+  isComplianceSettingsShapeValid,
   parseComplianceSettings,
   requiredDocsForEntity,
   riskChangeRequiresReason,
@@ -35,9 +38,12 @@ import {
 type Actor = {
   id: string;
   name: string;
-  role: string;
+  role: UserRole;
   clientId: string | null;
   canReviewCompliance: boolean;
+  supportAccess?: boolean;
+  hasComplianceRead: boolean;
+  hasComplianceReview: boolean;
 };
 
 export type ComplianceListTab =
@@ -54,15 +60,18 @@ function toActor(a: Actor): ComplianceActor {
     userId: a.id,
     userClientId: a.clientId,
     canReviewCompliance: a.canReviewCompliance,
+    supportAccess: a.supportAccess,
+    hasComplianceRead: a.hasComplianceRead,
+    hasComplianceReview: a.hasComplianceReview,
   };
 }
 
 export async function loadComplianceActor(session: {
   userId: string;
-  role: string;
+  role: UserRole;
   clientId?: string | null;
   user?: { name?: string | null };
-}): Promise<Actor> {
+}, effectiveClientId?: string | null, supportAccess = false): Promise<Actor> {
   const supabase = createAdminClient();
   const { data: user } = await supabase
     .from("users")
@@ -73,8 +82,11 @@ export async function loadComplianceActor(session: {
     id: session.userId,
     name: user?.name || session.user?.name || "User",
     role: session.role,
-    clientId: session.clientId ?? null,
+    clientId: effectiveClientId ?? session.clientId ?? null,
     canReviewCompliance: Boolean(user?.can_review_compliance),
+    supportAccess,
+    hasComplianceRead: supportAccess || hasPermission({ userId: session.userId, role: session.role, clientId: effectiveClientId ?? session.clientId ?? null }, P.COMPLIANCE_READ),
+    hasComplianceReview: !supportAccess && hasPermission({ userId: session.userId, role: session.role, clientId: effectiveClientId ?? session.clientId ?? null }, P.COMPLIANCE_REVIEW),
   };
 }
 
@@ -98,7 +110,7 @@ async function appendEvent(opts: {
   after?: string | null;
 }) {
   const supabase = createAdminClient();
-  await supabase.from("compliance_case_events").insert({
+  const { error } = await supabase.from("compliance_case_events").insert({
     client_id: opts.clientId,
     compliance_case_id: opts.caseId,
     event_type: opts.type,
@@ -107,6 +119,78 @@ async function appendEvent(opts: {
     after_value: opts.after ?? null,
     created_by: opts.createdBy,
   });
+  if (error) throw new Error(`Compliance audit event failed: ${error.message}`);
+}
+
+const SAFE_EVENT_SUMMARIES: Record<string, string> = {
+  CASE_CREATED: "Compliance case created",
+  INFORMATION_UPDATED: "Customer information updated",
+  DOCUMENT_UPLOADED: "Compliance document received",
+  DOCUMENT_ACCEPTED: "Compliance document accepted",
+  DOCUMENT_REJECTED: "Compliance document needs replacement",
+  DOCUMENT_REQUESTED: "Additional customer documents are needed",
+  DOCUMENT_ACCESSED: "Compliance document accessed",
+  PARTY_ADDED: "Related party added",
+  PARTY_REMOVED: "Related party removed",
+  RISK_CHANGED: "Compliance risk assessment updated",
+  SUBMITTED_FOR_REVIEW: "Compliance case submitted",
+  REVIEW_STARTED: "Compliance review started",
+  MORE_INFO_REQUESTED: "Additional customer information is needed",
+  EDD_REQUIRED: "Additional compliance review required",
+  APPROVED: "Compliance case decision available",
+  RESTRICTED: "Compliance review required before this transaction can proceed",
+  REJECTED: "Compliance review required before this transaction can proceed",
+  CASE_REOPENED: "Compliance case reopened",
+  NOTE_ADDED: "Compliance case note recorded",
+};
+
+export function safeComplianceEventSummary(eventType: string): string {
+  return SAFE_EVENT_SUMMARIES[eventType] ?? "Compliance case updated";
+}
+
+export function projectComplianceCaseRow(
+  row: Record<string, unknown>,
+  opts: { seeInternal: boolean; statusLabel: string; buyerAgentName: string | null; reviewerName: string | null; approvedByName: string | null }
+): Record<string, unknown> {
+  const visible: Record<string, unknown> = {
+    id: row.id,
+    client_id: row.client_id,
+    contact_id: row.contact_id,
+    lead_id: row.lead_id,
+    offer_id: row.offer_id,
+    listing_id: row.listing_id,
+    entity_type: row.entity_type,
+    status: row.status,
+    status_label: opts.statusLabel,
+    risk_level: row.risk_level,
+    cdd_profile: row.cdd_profile,
+    buyer_agent_name: opts.buyerAgentName,
+    reviewer_name: opts.reviewerName,
+    approved_by_name: opts.approvedByName,
+    agent_request_message: row.agent_request_message,
+    submitted_for_review_at: row.submitted_for_review_at,
+    review_started_at: row.review_started_at,
+    approved_at: row.approved_at,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+  if (opts.seeInternal) {
+    Object.assign(visible, {
+      assigned_compliance_user_id: row.assigned_compliance_user_id,
+      approved_by: row.approved_by,
+      risk_factors: row.risk_factors,
+      review_notes: row.review_notes,
+      internal_notes: row.internal_notes,
+      restriction_reason: row.restriction_reason,
+      rejection_reason: row.rejection_reason,
+      edd_reason: row.edd_reason,
+      last_reviewed_at: row.last_reviewed_at,
+      submitted_by: row.submitted_by,
+    });
+  } else if (row.status === "edd_required") {
+    visible.edd_reason = "Additional review is required.";
+  }
+  return visible;
 }
 
 async function notifyUsers(opts: {
@@ -184,6 +268,12 @@ export async function startOrGetComplianceCase(opts: {
     if (offer.contact_id !== opts.contactId) {
       return { ok: false, error: "Contact does not match this offer.", status: 400 };
     }
+    if (opts.listingId && opts.listingId !== offer.listing_id) {
+      return { ok: false, error: "Listing does not match this offer.", status: 400 };
+    }
+    if (opts.leadId && opts.leadId !== offer.lead_id) {
+      return { ok: false, error: "Inquiry does not match this offer.", status: 400 };
+    }
     buyerAgentId = (offer.buyer_agent_id as string | null) ?? null;
     listingId = listingId ?? ((offer.listing_id as string | null) ?? null);
     leadId = leadId ?? ((offer.lead_id as string | null) ?? null);
@@ -210,6 +300,9 @@ export async function startOrGetComplianceCase(opts: {
       : await existingLeadQuery;
     const existingLead = leadCases?.[0];
     if (existingLead) {
+      if (existingLead.contact_id !== opts.contactId || (listingId && existingLead.listing_id && existingLead.listing_id !== listingId)) {
+        return { ok: false, error: "Existing compliance case does not match this customer or property.", status: 409 };
+      }
       if (opts.offerId && !existingLead.offer_id) {
         const { data: linked } = await supabase
           .from("compliance_cases")
@@ -246,6 +339,9 @@ export async function startOrGetComplianceCase(opts: {
       .eq("client_id", opts.clientId)
       .maybeSingle();
     if (!lead) return { ok: false, error: "Inquiry not found.", status: 404 };
+    if (lead.contact_id && lead.contact_id !== opts.contactId) {
+      return { ok: false, error: "Contact does not match this inquiry.", status: 400 };
+    }
     buyerAgentId = buyerAgentId ?? ((lead.assigned_to_id as string | null) ?? null);
   }
 
@@ -550,6 +646,7 @@ export async function getComplianceCaseDetail(opts: {
       document_type: d.document_type as string,
       required: Boolean(d.required),
       status: d.status as string,
+      expiry_date: (d.expiry_date as string | null) ?? null,
     })),
     partyCount: {
       directors: partyRows.filter((p) => p.relationship_type === "director").length,
@@ -586,33 +683,31 @@ export async function getComplianceCaseDetail(opts: {
         document_type: d.document_type as string,
         required: Boolean(d.required),
         status: d.status as string,
+        expiry_date: (d.expiry_date as string | null) ?? null,
       }))
     ),
-    case: {
-      ...row,
-      status_label: complianceStatusLabel(row.status as string, !seeInternal),
-      buyer_agent_name: row.buyer_agent_id ? userById.get(row.buyer_agent_id as string) ?? null : null,
-      reviewer_name: row.assigned_compliance_user_id
-        ? userById.get(row.assigned_compliance_user_id as string) ?? null
-        : null,
-      approved_by_name: row.approved_by ? userById.get(row.approved_by as string) ?? null : null,
-      internal_notes: seeInternal ? row.internal_notes : null,
-      review_notes: seeInternal ? row.review_notes : null,
-      restriction_reason: seeInternal ? row.restriction_reason : null,
-      rejection_reason: seeInternal ? row.rejection_reason : null,
-      edd_reason: seeInternal ? row.edd_reason : (row.status === "edd_required" ? "Additional review is required." : null),
-      agent_request_message: row.agent_request_message,
-    },
+    case: projectComplianceCaseRow(row as Record<string, unknown>, {
+      seeInternal,
+      statusLabel: complianceStatusLabel(row.status as string, !seeInternal),
+      buyerAgentName: row.buyer_agent_id ? userById.get(row.buyer_agent_id as string) ?? null : null,
+      reviewerName: row.assigned_compliance_user_id ? userById.get(row.assigned_compliance_user_id as string) ?? null : null,
+      approvedByName: row.approved_by ? userById.get(row.approved_by as string) ?? null : null,
+    }),
     contact: contact ?? null,
     listing: listing ?? null,
     listingLabel: listing ? listingLabel(listing) : null,
     offer: offer ?? null,
     documents: publicDocs,
-    parties: partyRows,
+    parties: partyRows.map((party) => ({
+      id: party.id as string,
+      full_name: party.full_name as string,
+      relationship_type: party.relationship_type as string,
+      ...(seeInternal ? { contact_id: party.contact_id, notes: party.notes, created_at: party.created_at } : {}),
+    })),
     events: (events ?? []).map((ev) => ({
       id: ev.id as string,
       eventType: ev.event_type as string,
-      summary: ev.summary as string | null,
+      summary: seeInternal ? (ev.summary as string | null) : safeComplianceEventSummary(ev.event_type as string),
       before: seeInternal ? (ev.before_value as string | null) : null,
       after: seeInternal ? (ev.after_value as string | null) : null,
       createdAt: ev.created_at as string,
@@ -658,6 +753,9 @@ export async function mutateComplianceCase(opts: {
   let notifyAgent = false;
   let notifyReviewers = false;
   let notifyMsg = "";
+  let documentId: string | null = null;
+  let documentDecision: "accepted" | "rejected" | null = null;
+  let documentReviewNotes: string | null = null;
 
   async function loadCompleteness() {
     const [{ data: docs }, { data: parties }] = await Promise.all([
@@ -727,19 +825,12 @@ export async function mutateComplianceCase(opts: {
     summary = "Related party removed";
   } else if (opts.action === "submit_review") {
     if (!collect) return { ok: false, error: "Forbidden.", status: 403 };
-    const completeness = await loadCompleteness();
-    if (!completeness.readyForReview) {
-      return {
-        ok: false,
-        error: "All required items must be complete before submitting for review.",
-        status: 409,
-      };
-    }
     if (!canTransitionCompliance(row.status as ComplianceStatus, "ready_for_review")) {
       return { ok: false, error: "This case cannot be submitted for review.", status: 409 };
     }
     patch.status = "ready_for_review";
     patch.submitted_for_review_at = now;
+    patch.submitted_by = opts.actor.id;
     eventType = "SUBMITTED_FOR_REVIEW";
     summary = "Submitted for review";
     notifyReviewers = true;
@@ -766,7 +857,7 @@ export async function mutateComplianceCase(opts: {
     summary = "More information requested";
     after = reason;
     notifyAgent = true;
-    notifyMsg = `Compliance needs additional information. ${reason}`;
+    notifyMsg = "Additional customer documents are needed.";
   } else if (opts.action === "require_edd") {
     if (!review) return { ok: false, error: "Forbidden.", status: 403 };
     const reason = String(payload.reason ?? "").trim();
@@ -797,10 +888,18 @@ export async function mutateComplianceCase(opts: {
     after = reason ? `${to}: ${reason}` : to;
   } else if (opts.action === "approve") {
     if (!review) return { ok: false, error: "Forbidden.", status: 403 };
-    if (opts.actor.role === "SALESPERSON") return { ok: false, error: "Forbidden.", status: 403 };
+    if (row.created_by === opts.actor.id || row.buyer_agent_id === opts.actor.id || row.submitted_by === opts.actor.id) {
+      return { ok: false, error: "Independent review is required. You cannot approve a case you created, own or submitted.", status: 409 };
+    }
     const completeness = await loadCompleteness();
-    if (!completeness.readyForReview && row.status !== "edd_required" && row.status !== "under_review") {
+    if (!completeness.readyForReview) {
       return { ok: false, error: "Required items are not complete.", status: 409 };
+    }
+    if (row.status === "edd_required" || row.edd_reason) {
+      return { ok: false, error: "This case requires enhanced review. Phase 1 does not provide an evidence-backed EDD closure control, so approval is blocked.", status: 409 };
+    }
+    if (row.risk_level === "unclassified") {
+      return { ok: false, error: "Complete the risk assessment before approval.", status: 409 };
     }
     if (!canTransitionCompliance(row.status as ComplianceStatus, "approved")) {
       return { ok: false, error: "This case cannot be approved from the current status.", status: 409 };
@@ -848,17 +947,19 @@ export async function mutateComplianceCase(opts: {
     if (decision !== "accepted" && decision !== "rejected") {
       return { ok: false, error: "Decision must be accepted or rejected.", status: 400 };
     }
-    await supabase
+    const { data: targetDocument } = await supabase
       .from("compliance_document_requirements")
-      .update({
-        status: decision,
-        reviewed_at: now,
-        reviewed_by: opts.actor.id,
-        review_notes: payload.notes ? String(payload.notes) : null,
-      })
+      .select("id, status, storage_key")
       .eq("id", docId)
       .eq("client_id", opts.clientId)
-      .eq("compliance_case_id", opts.caseId);
+      .eq("compliance_case_id", opts.caseId)
+      .maybeSingle();
+    if (!targetDocument?.storage_key || !["received", "under_review", "accepted", "rejected"].includes(String(targetDocument.status))) {
+      return { ok: false, error: "The document is not available for review.", status: 409 };
+    }
+    documentId = docId;
+    documentDecision = decision as "accepted" | "rejected";
+    documentReviewNotes = payload.notes ? String(payload.notes) : null;
     eventType = decision === "accepted" ? "DOCUMENT_ACCEPTED" : "DOCUMENT_REJECTED";
     summary = `Document ${decision}`;
   } else if (opts.action === "reopen") {
@@ -878,9 +979,45 @@ export async function mutateComplianceCase(opts: {
       patch.internal_notes = note;
     }
     eventType = "NOTE_ADDED";
-    summary = note;
+    summary = payload.internal === true ? "Internal compliance note recorded" : "Compliance case note recorded";
+    after = note;
   } else {
     return { ok: false, error: "Unknown action.", status: 400 };
+  }
+
+  const atomicActions = new Set([
+    "submit_review", "start_review", "request_info", "require_edd", "set_risk",
+    "approve", "restrict", "reject", "review_document", "reopen",
+  ]);
+  const useAtomic = atomicActions.has(opts.action) || (opts.action === "note" && payload.internal === true);
+  if (useAtomic) {
+    const atomic = await callAtomic<{ case: Record<string, unknown> }>("compliance_apply_mutation_atomic", {
+      p_client_id: opts.clientId,
+      p_case_id: opts.caseId,
+      p_expected_status: row.status,
+      p_actor_id: opts.actor.id,
+      p_event_type: eventType,
+      p_safe_summary: summary,
+      p_before_value: before,
+      p_after_value: after,
+      p_case_patch: patch,
+      p_document_id: documentId,
+      p_document_status: documentDecision,
+      p_document_review_notes: documentReviewNotes,
+    });
+    if (atomic.kind === "missing") {
+      return { ok: false, error: "Compliance safety controls are not deployed. This change is blocked.", status: 503 };
+    }
+    if (atomic.kind === "error") return { ok: false, error: atomic.error, status: atomic.status };
+
+    if (notifyAgent && row.buyer_agent_id) {
+      await notifyUsers({ userIds: [row.buyer_agent_id as string], message: notifyMsg, leadId: (row.lead_id as string | null) ?? null });
+    }
+    if (notifyReviewers) {
+      const { data: reviewers } = await supabase.from("users").select("id").eq("client_id", opts.clientId).eq("role", "CLIENT_MANAGER").eq("is_active", true);
+      await notifyUsers({ userIds: (reviewers ?? []).map((u) => u.id as string), message: notifyMsg, leadId: (row.lead_id as string | null) ?? null });
+    }
+    return { ok: true, case: atomic.data.case };
   }
 
   if (Object.keys(patch).length > 0) {
@@ -969,22 +1106,51 @@ export async function uploadComplianceDocument(opts: {
   if (!doc) return { ok: false as const, error: "Document requirement not found.", status: 404 };
 
   let storageKey = opts.reuseStorageKey ?? null;
+  let storedFilename = opts.file.filename;
+  let storedContentType = opts.file.contentType;
   if (storageKey) {
     const { data: prior } = await supabase
       .from("compliance_document_requirements")
-      .select("id")
+      .select("id, compliance_case_id, original_filename, content_type")
       .eq("client_id", opts.clientId)
       .eq("storage_key", storageKey)
       .limit(1)
       .maybeSingle();
     if (!prior) return { ok: false as const, error: "Document is not available to reuse.", status: 404 };
+    const { data: sourceCase } = await supabase
+      .from("compliance_cases")
+      .select("buyer_agent_id")
+      .eq("id", prior.compliance_case_id as string)
+      .eq("client_id", opts.clientId)
+      .maybeSingle();
+    if (!sourceCase || !canViewComplianceCase(toActor(opts.actor), {
+      caseClientId: opts.clientId,
+      buyerAgentId: (sourceCase.buyer_agent_id as string | null) ?? null,
+    })) {
+      return { ok: false as const, error: "Document is not available to reuse.", status: 404 };
+    }
+    if (!storageKey.startsWith(`clients/${opts.clientId}/compliance/`) || storageKey.includes("..")) {
+      return { ok: false as const, error: "Document is not available to reuse.", status: 404 };
+    }
+    storedFilename = (prior.original_filename as string | null) ?? "reused-document";
+    storedContentType = (prior.content_type as string | null) ?? "application/octet-stream";
   } else {
     if (!isR2Configured()) {
       return { ok: false as const, error: "Secure document storage is not configured.", status: 503 };
     }
-    storageKey = generateComplianceDocKey(opts.clientId, opts.caseId, opts.file.filename);
+    const canonicalExtension: Record<string, string> = {
+      "application/pdf": "pdf",
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "image/heic": "heic",
+      "image/heif": "heic",
+    };
+    const extension = canonicalExtension[opts.file.contentType];
+    if (!extension) return { ok: false as const, error: "Unsupported document type.", status: 400 };
+    storageKey = generateComplianceDocKey(opts.clientId, opts.caseId, `document.${extension}`);
     await putObject(storageKey, opts.file.buffer, opts.file.contentType, {
-      contentDisposition: `attachment; filename="${opts.file.filename.replace(/["\\]/g, "")}"`,
+      contentDisposition: `attachment; filename="${opts.file.filename.replace(/["\\\r\n\u0000-\u001f\u007f]/g, "").slice(0, 180) || "document"}"`,
       cacheControl: "private, max-age=0",
     });
   }
@@ -993,8 +1159,8 @@ export async function uploadComplianceDocument(opts: {
     .from("compliance_document_requirements")
     .update({
       storage_key: storageKey,
-      original_filename: opts.file.filename,
-      content_type: opts.file.contentType,
+      original_filename: storedFilename,
+      content_type: storedContentType,
       uploaded_at: new Date().toISOString(),
       uploaded_by: opts.actor.id,
       status: "received",
@@ -1052,9 +1218,17 @@ export async function signComplianceDocument(opts: {
     .eq("client_id", opts.clientId)
     .maybeSingle();
   if (!doc?.storage_key) return { ok: false as const, error: "File not found.", status: 404 };
-  if (!String(doc.storage_key).startsWith(`clients/${opts.clientId}/compliance/`)) {
+  if (!String(doc.storage_key).startsWith(`clients/${opts.clientId}/compliance/`) || String(doc.storage_key).includes("..")) {
     return { ok: false as const, error: "Forbidden.", status: 403 };
   }
+  await appendEvent({
+    clientId: opts.clientId,
+    caseId: opts.caseId,
+    type: "DOCUMENT_ACCESSED",
+    summary: "Compliance document accessed",
+    createdBy: opts.actor.id,
+  });
+  if (!isR2Configured()) return {ok:false as const,error:"Private document storage is not configured.",status:503};
   const url = await generatePresignedDownloadUrl(
     doc.storage_key as string,
     (doc.original_filename as string) || "document",
@@ -1067,63 +1241,84 @@ export async function assertComplianceProgressAllowed(opts: {
   clientId: string;
   listingId?: string | null;
   leadId?: string | null;
+  offerId?: string | null;
+  contactId?: string | null;
+  transactionId?: string | null;
+  checkpoint?: import("@/lib/real-estate/compliance").ComplianceCheckpoint;
 }): Promise<ComplianceGateResult> {
   const supabase = createAdminClient();
-  const { data: client } = await supabase
+  const { data: client, error: clientError } = await supabase
     .from("clients")
     .select("business_type, compliance_settings")
     .eq("id", opts.clientId)
     .maybeSingle();
-  if (!isRealEstate(client?.business_type)) return { ok: true };
+  const checkpoint = opts.checkpoint ?? "accepted_offer_progression";
+  if (clientError || !client) {
+    return evaluateComplianceGate({
+      isRealEstate: true,
+      settings: parseComplianceSettings({}),
+      hasAcceptedOffer: true,
+      caseStatus: null,
+      checkpoint,
+      policyValid: false,
+    });
+  }
+  if (!isRealEstate(client.business_type)) {
+    return evaluateComplianceGate({ isRealEstate: false, settings: parseComplianceSettings({}), hasAcceptedOffer: false, caseStatus: null, checkpoint });
+  }
   const settings = parseComplianceSettings(client?.compliance_settings);
+  const policyValid = isComplianceSettingsShapeValid(client.compliance_settings);
 
-  let hasAcceptedOffer = false;
-  let caseStatus: ComplianceStatus | null = null;
-
-  if (opts.listingId) {
-    const { data: offers } = await supabase
-      .from("real_estate_offers")
-      .select("id, status")
-      .eq("client_id", opts.clientId)
-      .eq("listing_id", opts.listingId)
-      .eq("status", "accepted")
-      .limit(5);
-    hasAcceptedOffer = (offers ?? []).length > 0;
-    const { data: cases } = await supabase
-      .from("compliance_cases")
-      .select("status")
-      .eq("client_id", opts.clientId)
-      .eq("listing_id", opts.listingId)
-      .order("updated_at", { ascending: false })
-      .limit(1);
-    caseStatus = (cases?.[0]?.status as ComplianceStatus) ?? null;
+  let transaction: Record<string, unknown> | null = null;
+  if (opts.transactionId) {
+    const result = await supabase.from("real_estate_transactions").select("id, client_id, compliance_case_id, offer_id, contact_id, lead_id, listing_id").eq("id", opts.transactionId).eq("client_id", opts.clientId).maybeSingle();
+    if (result.error || !result.data) {
+      return evaluateComplianceGate({ isRealEstate: true, settings, hasAcceptedOffer: true, caseStatus: null, checkpoint, policyValid: false });
+    }
+    transaction = result.data as Record<string, unknown>;
   }
 
-  if (opts.leadId) {
-    const { data: offers } = await supabase
-      .from("real_estate_offers")
-      .select("id, status")
-      .eq("client_id", opts.clientId)
-      .eq("lead_id", opts.leadId)
-      .eq("status", "accepted")
-      .limit(5);
-    if ((offers ?? []).length > 0) hasAcceptedOffer = true;
-    const { data: cases } = await supabase
-      .from("compliance_cases")
-      .select("status")
-      .eq("client_id", opts.clientId)
-      .eq("lead_id", opts.leadId)
-      .order("updated_at", { ascending: false })
-      .limit(1);
-    if (cases?.[0]) caseStatus = cases[0].status as ComplianceStatus;
+  const offerId = (transaction?.offer_id as string | null) ?? opts.offerId ?? null;
+  let offer: Record<string, unknown> | null = null;
+  if (offerId) {
+    const result = await supabase.from("real_estate_offers").select("id, client_id, contact_id, lead_id, listing_id, status").eq("id", offerId).eq("client_id", opts.clientId).maybeSingle();
+    if (result.error) return evaluateComplianceGate({ isRealEstate: true, settings, hasAcceptedOffer: true, caseStatus: null, checkpoint, policyValid: false });
+    offer = result.data as Record<string, unknown> | null;
+  } else if (opts.listingId || opts.leadId) {
+    let query = supabase.from("real_estate_offers").select("id, client_id, contact_id, lead_id, listing_id, status").eq("client_id", opts.clientId).eq("status", "accepted");
+    if (opts.listingId) query = query.eq("listing_id", opts.listingId);
+    if (opts.leadId) query = query.eq("lead_id", opts.leadId);
+    const result = await query.order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    if (result.error) return evaluateComplianceGate({ isRealEstate: true, settings, hasAcceptedOffer: true, caseStatus: null, checkpoint, policyValid: false });
+    offer = result.data as Record<string, unknown> | null;
   }
 
-  return evaluateComplianceGate({
-    isRealEstate: true,
-    settings,
-    hasAcceptedOffer,
-    caseStatus,
+  const hasAcceptedOffer = offer?.status === "accepted";
+  if (!hasAcceptedOffer) return evaluateComplianceGate({ isRealEstate: true, settings, hasAcceptedOffer: false, caseStatus: null, checkpoint, policyValid });
+
+  const linkedCaseId = (transaction?.compliance_case_id as string | null) ?? null;
+  let caseQuery = supabase.from("compliance_cases").select("id, client_id, contact_id, lead_id, offer_id, listing_id, status").eq("client_id", opts.clientId).eq("offer_id", offer!.id as string);
+  if (linkedCaseId) caseQuery = caseQuery.eq("id", linkedCaseId);
+  const caseResult = await caseQuery.limit(1).maybeSingle();
+  if (caseResult.error) return evaluateComplianceGate({ isRealEstate: true, settings, hasAcceptedOffer: true, caseStatus: null, checkpoint, policyValid: false });
+  const complianceCase = caseResult.data as Record<string, unknown> | null;
+  const expectedContact = (transaction?.contact_id as string | null) ?? opts.contactId ?? (offer?.contact_id as string | null) ?? null;
+  const expectedLead = (transaction?.lead_id as string | null) ?? opts.leadId ?? (offer?.lead_id as string | null) ?? null;
+  const expectedListing = (transaction?.listing_id as string | null) ?? opts.listingId ?? (offer?.listing_id as string | null) ?? null;
+  const contextValid = !complianceCase || complianceCaseMatchesContext({
+    caseClientId: complianceCase.client_id as string,
+    caseContactId: complianceCase.contact_id as string,
+    caseOfferId: complianceCase.offer_id as string | null,
+    caseListingId: complianceCase.listing_id as string | null,
+    caseLeadId: complianceCase.lead_id as string | null,
+    clientId: opts.clientId,
+    contactId: expectedContact,
+    offerId: offer!.id as string,
+    listingId: expectedListing,
+    leadId: expectedLead,
   });
+
+  return evaluateComplianceGate({ isRealEstate: true, settings, hasAcceptedOffer: true, caseStatus: (complianceCase?.status as ComplianceStatus) ?? null, checkpoint, caseId: (complianceCase?.id as string) ?? null, policyValid, contextValid });
 }
 
 export async function listAgentComplianceActions(opts: { clientId: string; userId: string }) {

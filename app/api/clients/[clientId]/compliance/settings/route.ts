@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { canAccessClient } from "@/lib/auth/permissions";
+import { requireClientDataAccess } from "@/lib/security/support-access";
 import { hasPermission, P } from "@/lib/auth/rbac";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertRealEstateClient } from "@/lib/real-estate/offer-service";
@@ -22,12 +22,11 @@ const patchSchema = z.object({
   corporate_required_docs: z.array(z.string()).optional(),
 });
 
-export async function GET(_req: Request, { params }: { params: { clientId: string } }) {
+export async function GET(req: Request, { params }: { params: { clientId: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const access = await requireClientDataAccess({ req, clientId: params.clientId, scope: "COMPLIANCE", resourceType: "compliance_settings" });
+  if (access.error) return access.error;
   if (!(await assertRealEstateClient(params.clientId))) {
     return NextResponse.json({ error: "Not a real-estate workspace." }, { status: 404 });
   }
@@ -46,9 +45,9 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
 export async function PATCH(req: Request, { params }: { params: { clientId: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const access = await requireClientDataAccess({ req, clientId: params.clientId, scope: "COMPLIANCE", resourceType: "compliance_settings" });
+  if (access.error) return access.error;
+  if (!access.context.isTenantMember) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (
     !hasPermission(
       {

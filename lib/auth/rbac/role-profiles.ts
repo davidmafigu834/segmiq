@@ -184,6 +184,7 @@ const SCOPE_PERMISSIONS: Record<string, Permission[]> = {
   DOCUMENTS: [P.DOCUMENTS_READ],
   FILES: [P.DOCUMENTS_READ],
   AGENT_ACTIVITY: [P.AGENT_USE],
+  COMPLIANCE: [P.COMPLIANCE_READ],
 };
 
 /** Read-only elevation. Support Access never grants write or send permissions. */

@@ -1,3 +1,4 @@
+import { offerPermittedActions } from "@/lib/real-estate/mobile-contract";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logReActivity } from "@/lib/lead-events";
 import { listingLabel } from "@/lib/real-estate/helpers";
@@ -498,6 +499,7 @@ export async function mutateRealEstateOffer(opts: {
       p_event_note: result.event?.note ?? null,
     });
     if (atomic.kind === "error") return { ok: false, error: atomic.error, status: atomic.status };
+    if (atomic.kind === "missing") return {ok:false,error:"Atomic offer acceptance is not deployed.",status:503};
     if (atomic.kind === "ok") {
       if (atomic.data.idempotent) {
         return { ok: true, offer: atomic.data.offer, notifyAvailable: false, siblingActiveCount: 0 };
@@ -641,7 +643,7 @@ export async function mutateRealEstateOffer(opts: {
     ok: true,
     offer: updated,
     notifyAvailable,
-    siblingActiveCount: count ?? 0,
+    siblingActiveCount: opts.actor.role !== "SALESPERSON" || listingAgentId === opts.actor.id ? count ?? 0 : 0,
   };
 }
 
@@ -934,10 +936,10 @@ export async function getRealEstateOfferDetail(opts: {
 
   const siblings = await listRealEstateOffers({
     clientId: opts.clientId,
-    actor: { ...opts.actor, role: "CLIENT_MANAGER" },
+    actor: opts.actor,
     listingId: row.listing_id as string,
     tab: "active",
-    scopeOwn: false,
+    scopeOwn: opts.actor.role === "SALESPERSON",
   });
 
   let commission: { listingPct: number | null; sellingPct: number | null } | null = null;
@@ -960,6 +962,7 @@ export async function getRealEstateOfferDetail(opts: {
     ok: true,
     offer: {
       ...row,
+      permittedActions: offerPermittedActions(opts.actor, row, (listingAccess?.agent_id as string | null) ?? null),
       status: effectiveOfferStatus(row.status as ReOfferStatus, row.expiry_date as string | null),
       buyer_agent_name: row.buyer_agent_id ? userById.get(row.buyer_agent_id as string) ?? null : null,
       listing_agent_name: row.listing_agent_id ? userById.get(row.listing_agent_id as string) ?? null : null,

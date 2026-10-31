@@ -194,6 +194,8 @@ export const CLIENT_DATA_PERMISSIONS: Permission[] = [
   P.REPORTS_TEAM_VIEW,
   P.REPORTS_TEAM_DOWNLOAD,
   P.REPORTS_TEAM_GENERATE,
+  P.COMPLIANCE_READ,
+  P.COMPLIANCE_REVIEW,
 ];
 
 export function isClientDataPermission(permission: Permission): boolean {

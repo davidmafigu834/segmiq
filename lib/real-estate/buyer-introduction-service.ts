@@ -175,6 +175,7 @@ export async function reviewBuyerIntroduction(input: {
     return { ok: false as const, error: eligibility.reason, status: 409 };
   }
   const reason = input.decisionReason?.trim() || null;
+  if (input.decision === "declined" && !reason) return { ok:false as const,error:"A decline reason is required.",status:400 };
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("real_estate_buyer_introductions")
@@ -278,17 +279,19 @@ function matchFacts(search: Record<string, unknown> | null, listing: Record<stri
   return { reasons: explanation?.reasons ?? [], strength: explanation?.strength ?? null };
 }
 
-export async function listBuyerIntroductions(clientId: string, actor: IntroductionActor) {
+export async function listBuyerIntroductions(clientId: string, actor: IntroductionActor, introductionId?: string) {
   if (actor.role !== "SUPER_ADMIN" && actor.clientId !== clientId) {
     return { ok: false as const, error: "Forbidden.", status: 403 };
   }
   const supabase = createAdminClient();
-  const { data: rows, error } = await supabase
+  let listQuery = supabase
     .from("real_estate_buyer_introductions")
     .select("*")
     .eq("client_id", clientId)
     .order("created_at", { ascending: false })
     .limit(100);
+  if (introductionId) listQuery = listQuery.eq("id",introductionId);
+  const { data: rows, error } = await listQuery;
   if (error) return { ok: false as const, error: "Could not load introduction requests.", status: 500 };
   const introductions = rows ?? [];
   const searchIds = [...new Set(introductions.map((row) => row.search_id as string))];

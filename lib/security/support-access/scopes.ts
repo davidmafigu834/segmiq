@@ -14,6 +14,7 @@ export const SUPPORT_ACCESS_SCOPES = {
   DOCUMENTS: "DOCUMENTS",
   FILES: "FILES",
   AGENT_ACTIVITY: "AGENT_ACTIVITY",
+  COMPLIANCE: "COMPLIANCE",
 } as const;
 
 export type SupportAccessScope =
@@ -32,6 +33,7 @@ export const SUPPORT_ACCESS_SCOPE_LABELS: Record<SupportAccessScope, string> = {
   DOCUMENTS: "Documents",
   FILES: "Files",
   AGENT_ACTIVITY: "Agent activity",
+  COMPLIANCE: "Compliance records",
 };
 
 export const SUPPORT_ACCESS_SCOPE_DESCRIPTIONS: Record<SupportAccessScope, string> = {
@@ -43,6 +45,7 @@ export const SUPPORT_ACCESS_SCOPE_DESCRIPTIONS: Record<SupportAccessScope, strin
   DOCUMENTS: "Uploaded documents and contracts",
   FILES: "Media, attachments and download links",
   AGENT_ACTIVITY: "Agent runs, prompts, summaries and Company Brain",
+  COMPLIANCE: "Real-estate compliance cases, evidence status and audit activity",
 };
 
 export function isSupportAccessScope(value: unknown): value is SupportAccessScope {

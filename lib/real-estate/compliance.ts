@@ -73,6 +73,18 @@ export const COMPLIANCE_DOC_STATUSES = [
 ] as const;
 export type ComplianceDocStatus = (typeof COMPLIANCE_DOC_STATUSES)[number];
 
+export function detectComplianceFileType(bytes: Uint8Array): string | null {
+  if (bytes.length >= 5 && String.fromCharCode(...bytes.slice(0, 5)) === "%PDF-") return "application/pdf";
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (bytes.length >= 8 && [137, 80, 78, 71, 13, 10, 26, 10].every((v, i) => bytes[i] === v)) return "image/png";
+  if (bytes.length >= 12 && String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP") return "image/webp";
+  if (bytes.length >= 12 && String.fromCharCode(...bytes.slice(4, 8)) === "ftyp") {
+    const brand = String.fromCharCode(...bytes.slice(8, 12)).toLowerCase();
+    if (["heic", "heix", "hevc", "hevx", "mif1", "msf1"].includes(brand)) return "image/heic";
+  }
+  return null;
+}
+
 export const COMPLIANCE_PARTY_TYPES = [
   "director",
   "beneficial_owner",
@@ -88,6 +100,7 @@ export const COMPLIANCE_EVENT_TYPES = [
   "DOCUMENT_ACCEPTED",
   "DOCUMENT_REJECTED",
   "DOCUMENT_REQUESTED",
+  "DOCUMENT_ACCESSED",
   "PARTY_ADDED",
   "PARTY_REMOVED",
   "RISK_CHANGED",
@@ -159,6 +172,27 @@ export const DEFAULT_COMPLIANCE_SETTINGS: ComplianceSettings = {
   corporate_required_docs: [...DEFAULT_CORPORATE_DOC_TYPES],
 };
 
+/** Reject malformed persisted policy values instead of silently treating them as approval. */
+export function isComplianceSettingsShapeValid(raw: unknown): boolean {
+  if (raw == null) return true;
+  if (typeof raw !== "object" || Array.isArray(raw)) return false;
+  const o = raw as Record<string, unknown>;
+  for (const key of [
+    "require_cdd_after_accepted_offer",
+    "require_approval_before_progression",
+    "allow_agents_to_start_cdd",
+    "restrict_review_to_flagged_users",
+  ]) {
+    if (o[key] !== undefined && typeof o[key] !== "boolean") return false;
+  }
+  for (const key of ["individual_required_docs", "corporate_required_docs"]) {
+    if (o[key] !== undefined && (!Array.isArray(o[key]) || !(o[key] as unknown[]).every((v) => typeof v === "string" && v.trim().length > 0))) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function parseComplianceSettings(raw: unknown): ComplianceSettings {
   const o = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   return {
@@ -226,6 +260,10 @@ export type ComplianceActor = {
   userId: string;
   userClientId: string | null | undefined;
   canReviewCompliance?: boolean | null;
+  /** Verified, time-bound Support Access; read-only and never a review authority. */
+  supportAccess?: boolean;
+  hasComplianceRead?: boolean;
+  hasComplianceReview?: boolean;
 };
 
 export function canCollectCompliance(
@@ -233,8 +271,9 @@ export function canCollectCompliance(
   settings: ComplianceSettings,
   opts: { caseClientId: string; buyerAgentId?: string | null }
 ): boolean {
-  if (actor.userClientId !== opts.caseClientId && actor.role !== "SUPER_ADMIN") return false;
-  if (actor.role === "CLIENT_MANAGER" || actor.role === "SUPER_ADMIN") return true;
+  if (actor.userClientId !== opts.caseClientId) return false;
+  if (!actor.hasComplianceRead) return false;
+  if (actor.role === "CLIENT_MANAGER") return true;
   if (actor.role === "SALESPERSON") {
     if (!settings.allow_agents_to_start_cdd) return false;
     return !opts.buyerAgentId || opts.buyerAgentId === actor.userId;
@@ -246,8 +285,9 @@ export function canViewComplianceCase(
   actor: ComplianceActor,
   opts: { caseClientId: string; buyerAgentId?: string | null }
 ): boolean {
-  if (actor.role === "SUPER_ADMIN") return true;
   if (actor.userClientId !== opts.caseClientId) return false;
+  if (actor.role === "SUPER_ADMIN") return actor.supportAccess === true;
+  if (!actor.hasComplianceRead) return false;
   if (actor.role === "CLIENT_MANAGER") return true;
   if (actor.role === "SALESPERSON") {
     return !opts.buyerAgentId || opts.buyerAgentId === actor.userId;
@@ -258,16 +298,27 @@ export function canViewComplianceCase(
 /** Review/approve/restrict/reject. Platform admin is not an LJP compliance officer. */
 export function canReviewCompliance(actor: ComplianceActor, settings: ComplianceSettings): boolean {
   if (actor.role !== "CLIENT_MANAGER") return false;
+  if (!actor.hasComplianceReview) return false;
   if (settings.restrict_review_to_flagged_users) return Boolean(actor.canReviewCompliance);
   return true;
 }
 
 export function canSeeInternalComplianceNotes(actor: ComplianceActor, settings: ComplianceSettings): boolean {
-  return canReviewCompliance(actor, settings) || actor.role === "SUPER_ADMIN";
+  return canReviewCompliance(actor, settings);
 }
 
-export function docCountsAsComplete(status: string | null | undefined): boolean {
-  return status === "received" || status === "under_review" || status === "accepted";
+/** Only independently accepted, current evidence satisfies a verified-evidence checkpoint. */
+export function docCountsAsComplete(
+  status: string | null | undefined,
+  expiryDate?: string | null,
+  now = new Date()
+): boolean {
+  if (status !== "accepted") return false;
+  if (!expiryDate) return true;
+  const expiry = /^\d{4}-\d{2}-\d{2}$/.test(expiryDate)
+    ? new Date(`${expiryDate}T23:59:59.999Z`)
+    : new Date(expiryDate);
+  return Number.isFinite(expiry.getTime()) && expiry.getTime() >= now.getTime();
 }
 
 export type CddProfile = {
@@ -297,8 +348,17 @@ export function profileComplete(
   const missing: string[] = [];
   if (entity === "individual") {
     if (!String(p.legal_name ?? "").trim()) missing.push("Full legal name");
+    if (!String(p.date_of_birth ?? "").trim()) missing.push("Date of birth");
+    if (!String(p.nationality ?? "").trim()) missing.push("Nationality");
+    if (!String(p.identification_type ?? "").trim()) missing.push("Identification type");
+    if (!String(p.identification_reference ?? "").trim()) missing.push("Identification reference");
+    if (!String(p.residential_address ?? "").trim()) missing.push("Residential address");
+    if (!String(p.source_of_funds_status ?? "").trim()) missing.push("Source of funds status");
   } else {
     if (!String(p.registered_name ?? "").trim()) missing.push("Registered company name");
+    if (!String(p.registration_number ?? "").trim()) missing.push("Company registration number");
+    if (!String(p.jurisdiction ?? "").trim()) missing.push("Jurisdiction");
+    if (!String(p.registered_address ?? "").trim()) missing.push("Registered address");
     if (partyCount.directors < 1) missing.push("At least one director");
     if (partyCount.beneficialOwners < 1) missing.push("At least one beneficial owner");
   }
@@ -309,7 +369,7 @@ export function checklistCompleteness(opts: {
   entity: ComplianceEntityType;
   settings: ComplianceSettings;
   profile: CddProfile | null | undefined;
-  docs: Array<{ document_type: string; required: boolean; status: string }>;
+  docs: Array<{ document_type: string; required: boolean; status: string; expiry_date?: string | null }>;
   partyCount: { directors: number; beneficialOwners: number };
 }): {
   completed: number;
@@ -330,7 +390,7 @@ export function checklistCompleteness(opts: {
     items.push({
       id: type,
       label: documentTypeLabel(type),
-      met: Boolean(row && docCountsAsComplete(row.status)),
+      met: Boolean(row && docCountsAsComplete(row.status, row.expiry_date)),
     });
   }
   const required = items.length;
@@ -370,9 +430,64 @@ export function canTransitionCompliance(from: ComplianceStatus, to: ComplianceSt
   return (REVIEW_TRANSITIONS[from] ?? []).includes(to);
 }
 
+export type ComplianceCheckpoint =
+  | "accepted_offer_progression"
+  | "transaction_progression"
+  | "transaction_completion"
+  | "milestone_completion"
+  | "listing_completion"
+  | "lead_won";
+
+export type ComplianceGateReason =
+  | "CHECKPOINT_NOT_APPLICABLE"
+  | "APPROVED"
+  | "CASE_REQUIRED"
+  | "CASE_PENDING"
+  | "CASE_ON_HOLD"
+  | "CASE_CONTEXT_INVALID"
+  | "POLICY_INVALID";
+
+export function complianceCaseMatchesContext(input: {
+  caseClientId: string | null | undefined;
+  caseContactId: string | null | undefined;
+  caseOfferId: string | null | undefined;
+  caseListingId: string | null | undefined;
+  caseLeadId: string | null | undefined;
+  clientId: string;
+  contactId?: string | null;
+  offerId?: string | null;
+  listingId?: string | null;
+  leadId?: string | null;
+}): boolean {
+  return input.caseClientId === input.clientId &&
+    (!input.contactId || input.caseContactId === input.contactId) &&
+    (!input.offerId || input.caseOfferId === input.offerId) &&
+    (!input.listingId || input.caseListingId === input.listingId) &&
+    (!input.leadId || input.caseLeadId === input.leadId);
+}
+
 export type ComplianceGateResult =
-  | { ok: true }
-  | { ok: false; code: "COMPLIANCE_APPROVAL_REQUIRED" | "COMPLIANCE_HOLD"; message: string; status: string | null };
+  | {
+      ok: true;
+      applicable: boolean;
+      allowed: true;
+      checkpoint: ComplianceCheckpoint;
+      caseId: string | null;
+      reason: "CHECKPOINT_NOT_APPLICABLE" | "APPROVED";
+      requiresReview: false;
+    }
+  | {
+      ok: false;
+      applicable: true;
+      allowed: false;
+      checkpoint: ComplianceCheckpoint;
+      caseId: string | null;
+      reason: Exclude<ComplianceGateReason, "CHECKPOINT_NOT_APPLICABLE" | "APPROVED">;
+      requiresReview: boolean;
+      code: "COMPLIANCE_APPROVAL_REQUIRED" | "COMPLIANCE_HOLD" | "COMPLIANCE_POLICY_INVALID";
+      message: string;
+      status: string | null;
+    };
 
 export function evaluateComplianceGate(opts: {
   isRealEstate: boolean;
@@ -380,23 +495,49 @@ export function evaluateComplianceGate(opts: {
   /** True when an accepted offer exists for this listing/lead. */
   hasAcceptedOffer: boolean;
   caseStatus: ComplianceStatus | null;
+  checkpoint?: ComplianceCheckpoint;
+  caseId?: string | null;
+  policyValid?: boolean;
+  contextValid?: boolean;
 }): ComplianceGateResult {
-  if (!opts.isRealEstate) return { ok: true };
-  if (!opts.settings.require_approval_before_progression) return { ok: true };
-  if (!opts.hasAcceptedOffer && !opts.caseStatus) return { ok: true };
+  const checkpoint = opts.checkpoint ?? "accepted_offer_progression";
+  const caseId = opts.caseId ?? null;
+  if (!opts.isRealEstate || !opts.settings.require_approval_before_progression || !opts.settings.require_cdd_after_accepted_offer) {
+    return { ok: true, applicable: false, allowed: true, checkpoint, caseId: null, reason: "CHECKPOINT_NOT_APPLICABLE", requiresReview: false };
+  }
+  if (opts.policyValid === false) {
+    return { ok: false, applicable: true, allowed: false, checkpoint, caseId: null, reason: "POLICY_INVALID", requiresReview: true, code: "COMPLIANCE_POLICY_INVALID", message: "Compliance policy could not be verified. Ask a manager to review the configuration.", status: null };
+  }
+  if (!opts.hasAcceptedOffer) {
+    return { ok: true, applicable: false, allowed: true, checkpoint, caseId: null, reason: "CHECKPOINT_NOT_APPLICABLE", requiresReview: false };
+  }
+  if (opts.contextValid === false) {
+    return { ok: false, applicable: true, allowed: false, checkpoint, caseId, reason: "CASE_CONTEXT_INVALID", requiresReview: true, code: "COMPLIANCE_APPROVAL_REQUIRED", message: "Compliance approval for this transaction could not be verified.", status: opts.caseStatus };
+  }
   if (!opts.caseStatus) {
-    if (!opts.settings.require_cdd_after_accepted_offer || !opts.hasAcceptedOffer) return { ok: true };
     return {
       ok: false,
+      applicable: true,
+      allowed: false,
+      checkpoint,
+      caseId: null,
+      reason: "CASE_REQUIRED",
+      requiresReview: true,
       code: "COMPLIANCE_APPROVAL_REQUIRED",
       message: "Compliance approval is required before this transaction can move forward.",
       status: null,
     };
   }
-  if (opts.caseStatus === "approved") return { ok: true };
+  if (opts.caseStatus === "approved") return { ok: true, applicable: true, allowed: true, checkpoint, caseId, reason: "APPROVED", requiresReview: false };
   if (opts.caseStatus === "restricted" || opts.caseStatus === "rejected") {
     return {
       ok: false,
+      applicable: true,
+      allowed: false,
+      checkpoint,
+      caseId,
+      reason: "CASE_ON_HOLD",
+      requiresReview: true,
       code: "COMPLIANCE_HOLD",
       message: "Compliance review required before this transaction can proceed.",
       status: opts.caseStatus,
@@ -404,6 +545,12 @@ export function evaluateComplianceGate(opts: {
   }
   return {
     ok: false,
+    applicable: true,
+    allowed: false,
+    checkpoint,
+    caseId,
+    reason: "CASE_PENDING",
+    requiresReview: true,
     code: "COMPLIANCE_APPROVAL_REQUIRED",
     message: "Compliance approval is required before this transaction can move forward.",
     status: opts.caseStatus,

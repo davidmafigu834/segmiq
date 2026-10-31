@@ -61,7 +61,7 @@ export async function createScheduledViewing(
   if (input.idempotencyKey) viewingInsert.idempotency_key = input.idempotencyKey;
   let viewingResult = await supabase.from("viewings").insert(viewingInsert).select("*").single();
   if (
-    viewingResult.error &&
+    viewingResult.error && !input.buyerSearchId && !input.idempotencyKey &&
     /client_id|buyer_search_id|confirmation_status|instructions|idempotency_key|schema cache/i.test(viewingResult.error.message)
   ) {
     const legacyInsert = {

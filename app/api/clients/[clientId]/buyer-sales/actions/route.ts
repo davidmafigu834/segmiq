@@ -30,7 +30,7 @@ const bodySchema = z.discriminatedUnion("action", [
     action: z.literal("viewing"),
     searchId: z.string().uuid(),
     listingId: z.string().uuid(),
-    scheduledAt: z.string().min(1),
+    scheduledAt: z.string().datetime({ offset: true }),
     confirmationStatus: z.enum(["tentative", "awaiting_confirmation", "confirmed"]).optional(),
     instructions: z.string().max(2000).nullable().optional(),
     confirmOverlap: z.boolean().optional(),
@@ -38,7 +38,7 @@ const bodySchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("reschedule_viewing"),
     viewingId: z.string().uuid(),
-    scheduledAt: z.string().min(1),
+    scheduledAt: z.string().datetime({ offset: true }),
     confirmOverlap: z.boolean().optional(),
   }),
   z.object({
@@ -88,6 +88,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   const actor = actorFrom(g.session);
   const body = parsed.data;
   const idempotencyKey = req.headers.get("Idempotency-Key");
+  if (body.action === "viewing" && req.headers.has("authorization") && (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 200)) return NextResponse.json({error:"A stable Idempotency-Key (8..200 characters) is required",code:"IDEMPOTENCY_REQUIRED"},{status:400});
 
   if (body.action === "interest") {
     const result = await setPropertyInterest({ clientId: params.clientId, actor, ...body, rejectionReason: body.rejectionReason ?? null });
@@ -102,17 +103,17 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
       idempotencyKey,
     });
     if (!result.ok) return NextResponse.json({ error: result.error, warning: "warning" in result ? result.warning : undefined }, { status: result.status });
-    return NextResponse.json(result, { status: 201 });
+    return NextResponse.json({ ...result, notificationEffects: { customerNotification: "NOT_REQUESTED", provider: null } }, { status: 201 });
   }
   if (body.action === "reschedule_viewing") {
     const result = await rescheduleSearchViewing({ clientId: params.clientId, actor, ...body });
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, notificationEffects: { customerNotification: "NOT_REQUESTED", provider: null } });
   }
   if (body.action === "viewing_outcome") {
     const result = await completeSearchViewing({ clientId: params.clientId, actor, ...body });
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, notificationEffects: { customerNotification: "NOT_REQUESTED", provider: null } });
   }
   if (body.action === "rental_application") {
     const result = await createRentalApplication({ clientId: params.clientId, actor, ...body });

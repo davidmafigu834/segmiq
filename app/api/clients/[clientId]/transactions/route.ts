@@ -1,7 +1,7 @@
+import { transactionMobileDto } from "@/lib/real-estate/mobile-contract";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
 import {
   assertRealEstateClient,
@@ -14,7 +14,6 @@ export const dynamic = "force-dynamic";
 
 const createSchema = z.object({
   offer_id: z.string().uuid(),
-  compliance_case_id: z.string().uuid().nullable().optional(),
 });
 
 const TABS: TransactionListTab[] = [
@@ -42,8 +41,10 @@ function actorFromSession(session: {
 }
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireClientAccessFromRequest(req, params.clientId);
+  if (guard.error) return guard.error;
+  const session = guard.session;
+  if (!["SALESPERSON", "CLIENT_MANAGER", "SUPER_ADMIN"].includes(session.role)) return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -64,12 +65,14 @@ export async function GET(req: Request, { params }: { params: { clientId: string
     scopeOwn: session.role === "SALESPERSON",
   });
 
-  return NextResponse.json(result);
+  return NextResponse.json(transactionMobileDto({ ...result, listCompleteness: { bounded: true, sourceLimit: 500, exhaustive: false } }, session.role), { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(req: Request, { params }: { params: { clientId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireClientAccessFromRequest(req, params.clientId);
+  if (guard.error) return guard.error;
+  const session = guard.session;
+  if (!["SALESPERSON", "CLIENT_MANAGER", "SUPER_ADMIN"].includes(session.role)) return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -86,9 +89,8 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     clientId: params.clientId,
     offerId: parsed.data.offer_id,
     actor: actorFromSession(session),
-    complianceCaseId: parsed.data.compliance_case_id,
   });
 
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-  return NextResponse.json({ transaction: result.transaction, created: result.created });
+  return NextResponse.json(transactionMobileDto({ transaction: result.transaction, created: result.created }, session.role));
 }

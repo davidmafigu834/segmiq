@@ -1,4 +1,4 @@
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 /** Separate private bucket: never sign against the existing public marketing bucket. */
 export async function signPrivateListingImage(key: string, contentType: string): Promise<string> {
@@ -8,5 +8,11 @@ export async function signPrivateListingImage(key: string, contentType: string):
   const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY;
   if (!bucket || bucket === process.env.CLOUDFLARE_R2_BUCKET_NAME || !accountId || !accessKeyId || !secretAccessKey) throw new Error("Private listing image storage is not configured");
   const client = new S3Client({ region: "auto", endpoint: `https://${accountId}.r2.cloudflarestorage.com`, credentials: { accessKeyId, secretAccessKey } });
+  const metadata = await client.send(new HeadObjectCommand({Bucket:bucket,Key:key}));
+  if (!validPrivateImageMetadata(metadata.ContentLength,metadata.ContentType,contentType)) throw new Error("Listing image metadata is invalid");
   return getSignedUrl(client, new GetObjectCommand({ Bucket: bucket, Key: key, ResponseContentType: contentType }), { expiresIn: 300 });
+}
+
+export function validPrivateImageMetadata(size: number | undefined, storedType: string | undefined, expectedType: string): boolean {
+ return typeof size === "number" && size > 0 && size <= 20*1024*1024 && storedType === expectedType && ["image/jpeg","image/png","image/webp","image/avif"].includes(expectedType);
 }

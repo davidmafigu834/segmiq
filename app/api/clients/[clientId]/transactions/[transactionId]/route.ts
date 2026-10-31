@@ -1,7 +1,7 @@
+import { transactionMobileDto } from "@/lib/real-estate/mobile-contract";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
 import {
   assertRealEstateClient,
@@ -32,13 +32,14 @@ const TXN_ACTIONS = [
 
 const patchSchema = z.object({
   action: z.enum(TXN_ACTIONS),
-  deposit_amount: z.number().nullable().optional(),
+  expected_updated_at:z.string().datetime({offset:true}).optional(),
+  expected_milestone_updated_at:z.string().datetime({offset:true}).optional(),
+  deposit_amount: z.number().finite().nonnegative().nullable().optional(),
   reason: z.string().max(2000).nullable().optional(),
   notes: z.string().max(5000).nullable().optional(),
-  listing_pct: z.number().nullable().optional(),
-  selling_pct: z.number().nullable().optional(),
+  listing_pct: z.number().finite().min(0).max(100).nullable().optional(),
+  selling_pct: z.number().finite().min(0).max(100).nullable().optional(),
   expected_completion_date: z.string().nullable().optional(),
-  compliance_approved: z.boolean().optional(),
   milestone_id: z.string().uuid().optional(),
   status: z.enum(RE_MILESTONE_STATUSES).optional(),
 });
@@ -58,11 +59,13 @@ function actorFromSession(session: {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { clientId: string; transactionId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireClientAccessFromRequest(req, params.clientId);
+  if (guard.error) return guard.error;
+  const session = guard.session;
+  if (!["SALESPERSON", "CLIENT_MANAGER", "SUPER_ADMIN"].includes(session.role)) return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -76,15 +79,17 @@ export async function GET(
     actor: actorFromSession(session),
   });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-  return NextResponse.json(result);
+  return NextResponse.json(transactionMobileDto(result, session.role), { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function PATCH(
   req: Request,
   { params }: { params: { clientId: string; transactionId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireClientAccessFromRequest(req, params.clientId);
+  if (guard.error) return guard.error;
+  const session = guard.session;
+  if (!["SALESPERSON", "CLIENT_MANAGER", "SUPER_ADMIN"].includes(session.role)) return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -99,8 +104,10 @@ export async function PATCH(
 
   const body = parsed.data;
   const actor = actorFromSession(session);
+  if (req.headers.has("authorization") && !body.expected_updated_at) return NextResponse.json({error:"expected_updated_at is required",code:"REVISION_REQUIRED"},{status:400});
 
   if (body.action === "update_milestone") {
+    if (req.headers.has("authorization") && !body.expected_milestone_updated_at) return NextResponse.json({error:"expected_milestone_updated_at is required",code:"REVISION_REQUIRED"},{status:400});
     if (!body.milestone_id || !body.status) {
       return NextResponse.json(
         { error: "milestone_id and status required for update_milestone." },
@@ -114,6 +121,7 @@ export async function PATCH(
       actor,
       status: body.status as ReMilestoneStatus,
       notes: body.notes,
+      expectedUpdatedAt: body.expected_milestone_updated_at,
     });
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
     return NextResponse.json({ ok: true });
@@ -130,9 +138,9 @@ export async function PATCH(
     listingPct: body.listing_pct,
     sellingPct: body.selling_pct,
     expectedCompletionDate: body.expected_completion_date,
-    complianceApproved: body.compliance_approved,
+    expectedUpdatedAt: body.expected_updated_at,
   });
 
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-  return NextResponse.json({ transaction: result.transaction });
+  return NextResponse.json(transactionMobileDto({ transaction: result.transaction }, session.role));
 }

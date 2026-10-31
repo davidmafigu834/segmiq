@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { canAccessClient } from "@/lib/auth/permissions";
+import { requireClientDataAccess } from "@/lib/security/support-access";
 import { assertRealEstateClient } from "@/lib/real-estate/offer-service";
 import {
   getComplianceCaseDetail,
@@ -45,19 +43,17 @@ const patchSchema = z.object({
 });
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { clientId: string; caseId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const access = await requireClientDataAccess({ req, clientId: params.clientId, scope: "COMPLIANCE", resourceType: "compliance_case", resourceId: params.caseId });
+  if (access.error) return access.error;
+  const session = access.context.auth;
   if (!(await assertRealEstateClient(params.clientId))) {
     return NextResponse.json({ error: "Not a real-estate workspace." }, { status: 404 });
   }
 
-  const actor = await loadComplianceActor(session);
+  const actor = await loadComplianceActor(session, access.context.clientId, !access.context.isTenantMember);
   const result = await getComplianceCaseDetail({
     clientId: params.clientId,
     caseId: params.caseId,
@@ -71,11 +67,9 @@ export async function PATCH(
   req: Request,
   { params }: { params: { clientId: string; caseId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const access = await requireClientDataAccess({ req, clientId: params.clientId, scope: "COMPLIANCE", resourceType: "compliance_case", resourceId: params.caseId });
+  if (access.error) return access.error;
+  const session = access.context.auth;
   if (!(await assertRealEstateClient(params.clientId))) {
     return NextResponse.json({ error: "Not a real-estate workspace." }, { status: 404 });
   }
@@ -85,7 +79,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const actor = await loadComplianceActor(session);
+  const actor = await loadComplianceActor(session, access.context.clientId, !access.context.isTenantMember);
   const result = await mutateComplianceCase({
     clientId: params.clientId,
     caseId: params.caseId,

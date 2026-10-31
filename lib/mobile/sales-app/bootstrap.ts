@@ -1,3 +1,4 @@
+import { mobileReleaseEvidence } from "@/lib/real-estate/mobile-contract";
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -82,6 +83,7 @@ export type PipelineStageV1 = { id: string; label: string; closed: boolean };
 export type SalesAppBootstrapV1 = {
   schemaVersion: 1;
   generatedAt: string;
+  release: ReturnType<typeof mobileReleaseEvidence>;
   session: {
     sessionId: string | null;
     sessionType: string | null;
@@ -122,6 +124,14 @@ export type SalesAppBootstrapV1 = {
     modules: string[];
     permissions: Permission[];
     featureFlags: {
+      realEstateViewingsRead: boolean;
+      realEstateViewingsWrite: boolean;
+      realEstateOffers: boolean;
+      realEstateTransactionsRead: boolean;
+      realEstateTransactionsWrite: boolean;
+      realEstateIntroductions: boolean;
+      realEstateComplianceRead: boolean;
+      salespersonCalendarRead: boolean;
       realEstateWorkflow: boolean;
       realEstatePropertiesRead: boolean;
       realEstateBuyerSearchRead: boolean;
@@ -489,6 +499,7 @@ export function buildSalesAppBootstrap(
   return {
     schemaVersion: SALES_APP_BOOTSTRAP_SCHEMA_VERSION,
     generatedAt: now.toISOString(),
+    release: mobileReleaseEvidence(),
     session: {
       sessionId: actor.sessionId,
       sessionType: source.session?.sessionType ?? null,
@@ -525,10 +536,18 @@ export function buildSalesAppBootstrap(
       modules: navigation.destinations.map((d) => d.id),
       permissions: [...permissionsForOrgRole(actor.role, { alsoSells: actor.alsoSells })].sort(),
       featureFlags: {
+        realEstateViewingsRead: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
+        realEstateViewingsWrite: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
+        realEstateOffers: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
+        realEstateTransactionsRead: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
+        realEstateTransactionsWrite: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
+        realEstateIntroductions: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
+        realEstateComplianceRead: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED" && permissionsForOrgRole(actor.role, {alsoSells:actor.alsoSells}).includes("compliance.read" as Permission),
+        salespersonCalendarRead: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
         realEstateWorkflow: experience.id === "REAL_ESTATE",
         realEstatePropertiesRead: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
         realEstateBuyerSearchRead: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
-        privateListingImageDelivery: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED" && Boolean(process.env.CLOUDFLARE_R2_PRIVATE_LISTING_BUCKET_NAME) && process.env.CLOUDFLARE_R2_PRIVATE_LISTING_BUCKET_NAME !== process.env.CLOUDFLARE_R2_BUCKET_NAME,
+        privateListingImageDelivery: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED" && Boolean(process.env.CLOUDFLARE_R2_PRIVATE_LISTING_BUCKET_NAME && process.env.CLOUDFLARE_R2_ACCOUNT_ID && process.env.CLOUDFLARE_R2_ACCESS_KEY_ID && process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY) && process.env.CLOUDFLARE_R2_PRIVATE_LISTING_BUCKET_NAME !== process.env.CLOUDFLARE_R2_BUCKET_NAME,
         solarWorkflow: experience.id === "SOLAR",
         demoWorkspace: experience.workspaceMode === "demo",
       },

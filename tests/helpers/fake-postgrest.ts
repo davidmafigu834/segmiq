@@ -83,9 +83,21 @@ function matches(row: Row, column: string, expr: string): boolean {
   return negate ? !result : result;
 }
 
+function splitConditions(value:string):string[] {
+ let depth=0,start=0;const parts:string[]=[];
+ for(let i=0;i<value.length;i++){if(value[i]==="(")depth++;if(value[i]===")")depth--;if(value[i]===","&&depth===0){parts.push(value.slice(start,i));start=i+1;}}
+ parts.push(value.slice(start));return parts;
+}
+function logicalMatch(row:Row,expr:string):boolean {
+ if(expr.startsWith("or("))return splitConditions(expr.slice(3,-1)).some(e=>logicalMatch(row,e));
+ if(expr.startsWith("and("))return splitConditions(expr.slice(4,-1)).every(e=>logicalMatch(row,e));
+ const dot=expr.indexOf(".");return dot<0?false:matches(row,expr.slice(0,dot),expr.slice(dot+1));
+}
+
 function filterRows(rows: Row[], url: URL): Row[] {
   let out = rows;
   url.searchParams.forEach((expr, column) => {
+    if (column === "or" || column === "and") {out=out.filter(row=>logicalMatch(row,`${column}${expr}`));return;}
     if (RESERVED_PARAMS.has(column)) return;
     out = out.filter((row) => matches(row, column, expr));
   });

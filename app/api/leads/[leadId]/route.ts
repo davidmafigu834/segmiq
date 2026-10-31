@@ -148,6 +148,7 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
     const gate = await assertComplianceProgressAllowed({
       clientId: previousLead.client_id as string,
       leadId: params.leadId,
+      checkpoint: "lead_won",
     });
     if (!gate.ok) {
       return NextResponse.json({ error: gate.message, code: gate.code }, { status: 409 });
