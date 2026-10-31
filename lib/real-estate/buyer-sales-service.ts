@@ -1297,7 +1297,7 @@ export async function rescheduleSearchViewing(input: {
   if (blocked) return { ok: false as const, error: blocked, status: 409 };
   if (viewing.scheduled_at === input.scheduledAt) return { ok: true as const, warning: null, unchanged: true };
   const start = new Date(input.scheduledAt).getTime();
-  if (!Number.isFinite(start)) return { ok: false as const, error: "Choose a valid viewing time.", status: 400 };
+  if (!Number.isFinite(start) || start <= Date.now()) return { ok: false as const, error: "Choose a valid viewing time.", status: 400 };
   const { data: agentViewings } = await supabase
     .from("viewings")
     .select("id, agent_id, scheduled_at")
@@ -1312,7 +1312,7 @@ export async function rescheduleSearchViewing(input: {
   );
   if (warning && !input.confirmOverlap) return { ok: false as const, error: warning, status: 409, warning };
   const basePatch = { scheduled_at: input.scheduledAt, confirmation_status: "rescheduled", status: "scheduled", reminder_sent_at: null };
-  let { error } = await supabase
+  const { data: saved, error } = await supabase
     .from("viewings")
     .update({
       ...basePatch,
@@ -1320,11 +1320,13 @@ export async function rescheduleSearchViewing(input: {
       reschedule_count: Number(viewing.reschedule_count ?? 0) + 1,
     })
     .eq("id", input.viewingId)
-    .eq("client_id", input.clientId);
-  if (error && missing(error)) {
-    ({ error } = await supabase.from("viewings").update(basePatch).eq("id", input.viewingId).eq("client_id", input.clientId));
-  }
+    .eq("client_id", input.clientId)
+    .eq("status",String(viewing.status))
+    .eq("scheduled_at",String(viewing.scheduled_at))
+    .select("id").maybeSingle();
+  if (error && missing(error)) return {ok:false as const,error:"Modern viewing schema is unavailable.",status:503};
   if (error) return { ok: false as const, error: error.message, status: 500 };
+  if (!saved) return {ok:false as const,error:"Viewing changed; refresh before retrying.",status:409};
   await recordEvent({
     clientId: input.clientId,
     searchId,
@@ -1342,10 +1344,11 @@ export async function completeSearchViewing(input: {
   outcome: string;
   note?: string | null;
 }) {
+  if (!sameOrg(input.actor,input.clientId)) return {ok:false as const,error:"Forbidden.",status:403};
   const supabase = createAdminClient();
   const { data: viewing } = await supabase
     .from("viewings")
-    .select("id, client_id, listing_id, contact_id, buyer_search_id, agent_id, status, outcome")
+    .select("id, client_id, listing_id, contact_id, buyer_search_id, agent_id, status, outcome, scheduled_at")
     .eq("id", input.viewingId)
     .eq("client_id", input.clientId)
     .maybeSingle();
@@ -1363,11 +1366,15 @@ export async function completeSearchViewing(input: {
   }
   const blocked = viewingTransitionError(String(viewing.status ?? "scheduled"), status);
   if (blocked) return { ok: false as const, error: blocked, status: 409 };
-  const { error } = await supabase
+  const { data:saved,error } = await supabase
     .from("viewings")
     .update({ status, outcome: input.outcome, feedback_text: input.note ?? null })
     .eq("id", input.viewingId)
-    .eq("client_id", input.clientId);
+    .eq("client_id", input.clientId)
+    .eq("status",String(viewing.status))
+    .eq("scheduled_at",String(viewing.scheduled_at))
+    .select("id").maybeSingle();
+  if (!error&&!saved) return {ok:false as const,error:"Viewing changed; refresh before retrying.",status:409};
   if (error) return { ok: false as const, error: error.message, status: 500 };
   const rejectionByOutcome: Record<string, RejectionReason | undefined> = {
     too_expensive: "above_budget",

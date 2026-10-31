@@ -83,6 +83,7 @@ function actorFrom(session: { userId: string; role: string; clientId: string | n
 export async function POST(req: Request, { params }: { params: { clientId: string } }) {
   const g = await requireClientAccessFromRequest(req, params.clientId);
   if ("error" in g) return g.error;
+  if (!["SALESPERSON","CLIENT_MANAGER","SUPER_ADMIN"].includes(g.session.role)) return NextResponse.json({error:"Forbidden",code:"FORBIDDEN"},{status:403});
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   const actor = actorFrom(g.session);

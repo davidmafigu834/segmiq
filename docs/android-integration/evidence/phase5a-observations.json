@@ -1,0 +1,394 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-31 15:08:46 UTC",
+  "sourceRevision": "ebe1a5807fbaa5c2dd125f6fa779751b5031e0c0",
+  "sourceBranch": "main",
+  "backendOrigin": "https://www.segmiq.com",
+  "deployedRevision": null,
+  "contractVersion": 1,
+  "contractVersionProvenance": "SOURCE_AND_PREVIOUS_ANDROID_REPORT_NOT_AUTHENTICATED_LIVE_VERIFICATION",
+  "deployedVerification": "NOT_ATTESTED",
+  "approvedModules": [],
+  "approvedOperations": [],
+  "approvedSignedImageHost": null,
+  "backendDatabaseBinding": "UNVERIFIED",
+  "apiObservations": [
+    {
+      "check": "unauthenticated_bootstrap",
+      "status": 401,
+      "code": "TOKEN_INVALID",
+      "cacheControl": "no-store",
+      "observedAt": "2026-10-31T15:00:05.827Z"
+    },
+    {
+      "check": "invalid_bearer_bootstrap",
+      "status": 401,
+      "code": "TOKEN_INVALID",
+      "cacheControl": "no-store",
+      "observedAt": "2026-10-31T15:00:06.405Z"
+    }
+  ],
+  "databaseObservation": {
+    "projectRef": "gnnqzboaeezzevlwwryp",
+    "provenance": "CONNECTED_PROJECT_MATCHES_LOCAL_SUPABASE_ORIGIN; PRODUCTION_API_BINDING_NOT_PROVEN",
+    "readOnly": true,
+    "metadata": [
+      {
+        "kind": "function",
+        "name": "re_finish_transaction",
+        "details": {
+          "row_lock": true,
+          "arguments": "p_client_id uuid, p_transaction_id uuid, p_action text, p_reason text, p_actor_id uuid",
+          "anon_execute": false,
+          "definition_md5": "91a99dfe1bcffd00527bda19607e647d",
+          "expected_revision": false,
+          "authenticated_execute": false
+        }
+      },
+      {
+        "kind": "function",
+        "name": "re_accept_offer",
+        "details": {
+          "row_lock": true,
+          "arguments": "p_client_id uuid, p_offer_id uuid, p_expected_updated_at timestamp with time zone, p_patch jsonb, p_actor_id uuid, p_event_amount numeric, p_event_note text",
+          "anon_execute": false,
+          "definition_md5": "5d9267ca288ffdf0fb57c90636401524",
+          "expected_revision": true,
+          "authenticated_execute": false
+        }
+      },
+      {
+        "kind": "index",
+        "name": "real_estate_offers_pkey",
+        "details": {
+          "table": "real_estate_offers",
+          "definition": "CREATE UNIQUE INDEX real_estate_offers_pkey ON public.real_estate_offers USING btree (id)"
+        }
+      },
+      {
+        "kind": "index",
+        "name": "idx_re_offers_one_reserving",
+        "details": {
+          "table": "real_estate_offers",
+          "definition": "CREATE UNIQUE INDEX idx_re_offers_one_reserving ON public.real_estate_offers USING btree (listing_id) WHERE (reserves_listing = true)"
+        }
+      },
+      {
+        "kind": "index",
+        "name": "real_estate_transactions_pkey",
+        "details": {
+          "table": "real_estate_transactions",
+          "definition": "CREATE UNIQUE INDEX real_estate_transactions_pkey ON public.real_estate_transactions USING btree (id)"
+        }
+      },
+      {
+        "kind": "index",
+        "name": "real_estate_transactions_offer_id_key",
+        "details": {
+          "table": "real_estate_transactions",
+          "definition": "CREATE UNIQUE INDEX real_estate_transactions_offer_id_key ON public.real_estate_transactions USING btree (offer_id)"
+        }
+      },
+      {
+        "kind": "index",
+        "name": "idx_re_txn_one_active_per_listing",
+        "details": {
+          "table": "real_estate_transactions",
+          "definition": "CREATE UNIQUE INDEX idx_re_txn_one_active_per_listing ON public.real_estate_transactions USING btree (listing_id) WHERE (status = ANY (ARRAY['draft'::text, 'pending_compliance'::text, 'in_progress'::text]))"
+        }
+      },
+      {
+        "kind": "index",
+        "name": "viewings_pkey",
+        "details": {
+          "table": "viewings",
+          "definition": "CREATE UNIQUE INDEX viewings_pkey ON public.viewings USING btree (id)"
+        }
+      },
+      {
+        "kind": "index",
+        "name": "idx_viewings_idempotency",
+        "details": {
+          "table": "viewings",
+          "definition": "CREATE UNIQUE INDEX idx_viewings_idempotency ON public.viewings USING btree (client_id, idempotency_key) WHERE ((idempotency_key IS NOT NULL) AND (client_id IS NOT NULL))"
+        }
+      },
+      {
+        "kind": "table",
+        "name": "compliance_cases",
+        "details": {
+          "rls": true,
+          "force_rls": false
+        }
+      },
+      {
+        "kind": "table",
+        "name": "compliance_document_requirements",
+        "details": {
+          "rls": true,
+          "force_rls": false
+        }
+      },
+      {
+        "kind": "table",
+        "name": "real_estate_offers",
+        "details": {
+          "rls": true,
+          "force_rls": false
+        }
+      },
+      {
+        "kind": "table",
+        "name": "real_estate_transactions",
+        "details": {
+          "rls": true,
+          "force_rls": false
+        }
+      },
+      {
+        "kind": "table",
+        "name": "viewings",
+        "details": {
+          "rls": true,
+          "force_rls": false
+        }
+      }
+    ],
+    "missingRequiredFunctions": [
+      "re_mobile_transition_transaction",
+      "re_start_transaction_progress_compliance_safe",
+      "re_complete_transaction_compliance_safe"
+    ],
+    "complianceSafetyBaselineRecorded": false,
+    "migrationRecords": [
+      {
+        "version": "20260728111902",
+        "name": "contacts_event_name"
+      },
+      {
+        "version": "20260729133532",
+        "name": "real_estate_vertical"
+      },
+      {
+        "version": "20260816223425",
+        "name": "whatsapp_connection_alert_notification"
+      },
+      {
+        "version": "20260817233315",
+        "name": "operating_hours_daily_focus"
+      },
+      {
+        "version": "20260822124427",
+        "name": "quotation_presentation_templates"
+      },
+      {
+        "version": "20260903113848",
+        "name": "quotation_line_items_commercial_package_fk"
+      },
+      {
+        "version": "20260908104927",
+        "name": "whatsapp_contact_profile_picture"
+      },
+      {
+        "version": "20260909190051",
+        "name": "user_sessions_security_events"
+      },
+      {
+        "version": "20260909194417",
+        "name": "account_security_mfa"
+      },
+      {
+        "version": "20260910123122",
+        "name": "org_security_policy"
+      },
+      {
+        "version": "20260910134004",
+        "name": "security_rate_limits"
+      },
+      {
+        "version": "20260910134027",
+        "name": "website_api_key_hash_migrate_comment"
+      },
+      {
+        "version": "20260910134630",
+        "name": "csp_violation_reports"
+      },
+      {
+        "version": "20260911105018",
+        "name": "agency_settings_enable_rls"
+      },
+      {
+        "version": "20260911130220",
+        "name": "security_harden_public_rls_and_reset_tokens"
+      },
+      {
+        "version": "20261003194046",
+        "name": "work_projects"
+      },
+      {
+        "version": "20261003194101",
+        "name": "work_project_field_operations"
+      },
+      {
+        "version": "20261003224515",
+        "name": "work_project_commercial"
+      },
+      {
+        "version": "20261004000511",
+        "name": "work_project_installation"
+      },
+      {
+        "version": "20261004000710",
+        "name": "work_project_installation_tables"
+      },
+      {
+        "version": "20261004000830",
+        "name": "work_project_installation_issue"
+      },
+      {
+        "version": "20261004000840",
+        "name": "work_project_installation_return"
+      },
+      {
+        "version": "20261004000858",
+        "name": "work_project_installation_commissioning"
+      },
+      {
+        "version": "20261004001222",
+        "name": "work_project_installation_qa_order"
+      },
+      {
+        "version": "20261004124011",
+        "name": "customer_portal"
+      },
+      {
+        "version": "20261004133052",
+        "name": "segmiq_intelligence"
+      },
+      {
+        "version": "20261006083024",
+        "name": "marketing_journeys"
+      },
+      {
+        "version": "20261006083029",
+        "name": "solar_sales_workflow"
+      },
+      {
+        "version": "20261006083038",
+        "name": "ai_conversations"
+      },
+      {
+        "version": "20261006083045",
+        "name": "real_estate_offers"
+      },
+      {
+        "version": "20261006083055",
+        "name": "real_estate_marketing"
+      },
+      {
+        "version": "20261006083107",
+        "name": "real_estate_compliance"
+      },
+      {
+        "version": "20261006083126",
+        "name": "real_estate_transactions_after_sales"
+      },
+      {
+        "version": "20261010180948",
+        "name": "sales_copilot"
+      },
+      {
+        "version": "20261011193139",
+        "name": "zoho_books_connection"
+      },
+      {
+        "version": "20261011193150",
+        "name": "zoho_books_import"
+      },
+      {
+        "version": "20261011200416",
+        "name": "zoho_books_drafts"
+      },
+      {
+        "version": "20261012194500",
+        "name": "demo_guest_sessions"
+      },
+      {
+        "version": "20261016142310",
+        "name": "real_estate_phase1_foundation"
+      },
+      {
+        "version": "20261016142357",
+        "name": "real_estate_phase2_acquisition"
+      },
+      {
+        "version": "20261016142425",
+        "name": "real_estate_phase3_buyer_sales"
+      },
+      {
+        "version": "20261016142455",
+        "name": "real_estate_phase4_agency_operations"
+      },
+      {
+        "version": "20261016142637",
+        "name": "real_estate_final_corrections"
+      },
+      {
+        "version": "20261023114812",
+        "name": "segmiq_commercial_foundation_release1"
+      },
+      {
+        "version": "20261024055631",
+        "name": "platform_commercial_atomic_workflows"
+      },
+      {
+        "version": "20261024055657",
+        "name": "platform_sales_quotes_and_agreement_foundation"
+      },
+      {
+        "version": "20261024055726",
+        "name": "platform_ai_usage_shadow_and_topup_foundation"
+      },
+      {
+        "version": "20261024055745",
+        "name": "commercial_launch_controls"
+      },
+      {
+        "version": "20261024055804",
+        "name": "commercial_release5_1_safety_workflows"
+      },
+      {
+        "version": "20261024055820",
+        "name": "commercial_release5_2_controlled_customer_migrations"
+      },
+      {
+        "version": "20261024055835",
+        "name": "commercial_history_privilege_hardening"
+      },
+      {
+        "version": "20261024062423",
+        "name": "commercial_pilot_evidence_policy"
+      }
+    ]
+  },
+  "localConfigurationPresence": {
+    "privateListingBucket": false,
+    "privateDocumentBucket": false,
+    "deploymentReadToken": false,
+    "syntheticActorConfiguration": false
+  },
+  "notVerified": [
+    "authenticated deployed revision",
+    "independent synthetic actors",
+    "tenant/agent API isolation",
+    "revoked real session",
+    "database concurrency execution",
+    "private bucket policies and actual objects",
+    "signed URL expiry and redirects",
+    "retention/revocation of legacy public objects",
+    "production API to database binding"
+  ],
+  "noProductionMutation": true,
+  "noDeployment": true,
+  "noPush": true
+}

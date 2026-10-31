@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "backendOrigin": "https://www.segmiq.com",
+  "originStatus": "REACHABLE_NOT_ACCEPTED",
+  "deployedRevision": null,
+  "sourceRevision": "ebe1a5807fbaa5c2dd125f6fa779751b5031e0c0",
+  "sourceIncludesUncommittedPhase5AFixes": true,
+  "contractVersion": 1,
+  "contractVersionProvenance": "SOURCE_NOT_AUTHENTICATED_LIVE",
+  "deployedVerification": "NOT_ATTESTED",
+  "approvedModules": [],
+  "approvedOperations": [],
+  "approvedSignedImageHost": null,
+  "verificationDate": null,
+  "observationsRecordedAt": "2026-10-31T15:13:58.296266Z",
+  "evidenceReferences": [
+    "evidence/phase5a-observations.json",
+    "evidence/phase5a-operation-matrix.json",
+    "05-real-estate-production-acceptance.md"
+  ],
+  "restrictions": [
+    "Keep all Phase 4 Real Estate production rollout gates disabled.",
+    "Invalid-token denial does not prove a real revoked session is denied.",
+    "Do not execute financial writes until the approved compliance baseline and revision wrapper are installed and tested.",
+    "Do not enable property photographs or document downloads until private policies, object migration, expiry and host behavior pass.",
+    "Local fixture tests are not deployed acceptance.",
+    "Calendar remains bounded; standalone appointments and meetings are not certified."
+  ],
+  "rollbackRequirements": [
+    "Disable affected Android module/operation gates before rollback.",
+    "Remove or expire any operation acceptance packet; never substitute another origin/revision.",
+    "Restore reviewed application artifact, not vulnerable public media access.",
+    "Use approved object/reference manifest to reverse storage changes; do not delete originals without separate approval.",
+    "Obtain a reviewed forward/rollback database plan before any migration; never reset production."
+  ],
+  "operationsRejectedByDefault": true
+}

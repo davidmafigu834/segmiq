@@ -1,3 +1,4 @@
+import { privateImagesAcceptedForCurrentRelease } from "@/lib/real-estate/private-image-acceptance";
 import { mobileReleaseEvidence } from "@/lib/real-estate/mobile-contract";
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -547,7 +548,7 @@ export function buildSalesAppBootstrap(
         realEstateWorkflow: experience.id === "REAL_ESTATE",
         realEstatePropertiesRead: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
         realEstateBuyerSearchRead: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED",
-        privateListingImageDelivery: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED" && Boolean(process.env.CLOUDFLARE_R2_PRIVATE_LISTING_BUCKET_NAME && process.env.CLOUDFLARE_R2_ACCOUNT_ID && process.env.CLOUDFLARE_R2_ACCESS_KEY_ID && process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY) && process.env.CLOUDFLARE_R2_PRIVATE_LISTING_BUCKET_NAME !== process.env.CLOUDFLARE_R2_BUCKET_NAME,
+        privateListingImageDelivery: experience.id === "REAL_ESTATE" && salesAccess === "ALLOWED" && privateImagesAcceptedForCurrentRelease(actor.role) && Boolean(process.env.CLOUDFLARE_R2_PRIVATE_LISTING_BUCKET_NAME && process.env.CLOUDFLARE_R2_ACCOUNT_ID && process.env.CLOUDFLARE_R2_ACCESS_KEY_ID && process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY) && process.env.CLOUDFLARE_R2_PRIVATE_LISTING_BUCKET_NAME !== process.env.CLOUDFLARE_R2_BUCKET_NAME,
         solarWorkflow: experience.id === "SOLAR",
         demoWorkspace: experience.workspaceMode === "demo",
       },
