@@ -1,0 +1,28 @@
+# Phase 4 integration matrix
+
+Follow-up: [Phase 5B workflow polish](phase-5b-real-estate-workflow-polish.md) completes native editors/review interactions and adds guarded transaction discovery. The historical Phase 4 table below is retained; its production rollout gates remain unchanged.
+
+2026-10-31. Backend/deployed bootstrap revision: `ebe1a5807fbaa5c2dd125f6fa779751b5031e0c0`. Server reports **NOT_ATTESTED** and private listing images disabled. “API adapter” means implemented Kotlin calls against known source contracts, not live module acceptance. No new-module production business request was attempted.
+
+| Module | UI | API | Bearer | Privacy | Live read | Live write | Tested | Status |
+|---|---|---|---|---|---|---|---|---|
+| Auth / bootstrap | Existing premium native | Existing reused | Verified deployed | Existing scope/session checks preserved | Bootstrap verified this sprint | Temporary login/logout session only | Existing regression; deployed auth/bootstrap probe | LIVE-VERIFIED for auth/bootstrap only |
+| Shared inquiries / notes / follow-ups | Existing native | Existing reused | Existing | Scoped error/cache safeguards preserved | Existing integration; no fresh customer read this sprint | Existing integration; no business write attempted | Existing regression retained | LIVE-INTEGRATED, not newly live-verified |
+| Shared tasks / Copilot | Existing native | Existing reused | Existing | Organisation/user scope preserved | Existing integration | Existing review actions preserved | Existing regression retained | LIVE-INTEGRATED, not newly live-verified |
+| Shared Inbox | Existing unavailable provider entry; separate fictional thread/drafts | No new provider integration | Existing capability entry | No independent WhatsApp session | No new live messaging read | No live sending | Existing fictional/navigation regression | GATED provider; DEMO-ONLY thread |
+| Properties | New typed server list/detail; existing premium preview | Listing list/detail adapter | Source verified | Deployed ownership/draft/fallback acceptance missing | Blocked | No listing management adapter/UI | Synthetic decimal/paging/scope/HTTP/UI | GATED |
+| Listing photos | Guarded gallery, neutral placeholder, finite fade | Metadata + separate storage client | API only; never storage | Private bucket/migration/host not attested | Blocked; bootstrap media flag false | Unavailable | Host/expiry/redirect/token/MIME/size tests | GATED |
+| Buyers / tenants | Typed directory/detail; existing demo | Search list/detail + requirements PATCH adapter | Source verified | Deployed owner/introduction/redaction acceptance missing | Blocked | Requirements adapter gated; native editor incomplete | Synthetic nullable/privacy/scope/HTTP/UI | GATED |
+| Matching | Buyer context → typed matches → property | Owned-search matching adapter | Source verified | No full private-search bypass; deployment acceptance missing | Blocked | No independent matching writes | Synthetic explanations/context | GATED |
+| Viewings | Typed list/detail; reviewed outcome; full demo | Read + owned-search schedule/reschedule/outcome adapters | Source verified | Deployed visibility/booking/index acceptance missing | Blocked | Gated; booking/reschedule forms incomplete; no cancellation | Synthetic key/overlap/privacy/validation/UI | GATED |
+| Calendar | Existing production task calendar; typed feed/date picker | /api/sales/calendar adapter | Source verified | Deployed projection acceptance missing; source bounded | New feed blocked; task fallback retained | Read-only feed | Date-only/timezone/context/HTTP/UI | GATED new feed; PARTIAL existing calendar |
+| Introductions | Typed received/sent/detail + reviewed decision | List/detail/decision adapter | Source verified | No self-review; status/permissions/server concurrency | Blocked | Blocked | Synthetic self-decision/conflict/no retry/UI | GATED |
+| Offers | Typed list/detail + reviewed decisions | Read + revision PATCH adapter | Source verified | Deployed competitor/event/RPC acceptance missing | Blocked | Blocked; financial create not implemented | Revision/no retry/pending/duplicate-tap/HTTP/UI | GATED |
+| Transactions | Typed list/detail/server milestones + note review | Read + revision note adapter | Source verified | Deployed participant/redaction acceptance missing | Blocked | Notes gated; financial progression omitted | Synthetic DTO/context/UI | GATED |
+| Compliance | Existing labelled fictional example only | No new live adapter enabled | Source contract supports Bearer | Privileged grant, case policy and rollout unverified | Blocked | Blocked | Existing fictional tests only | GATED; no fabricated production menu |
+| Documents | Existing fictional metadata only | No native transfer adapter | Source contract supports Bearer | Private bucket/migration/retention unverified | Blocked | Blocked | No real file transfer verified | GATED |
+| Meeting recorder | Honest unavailable UI | No audio capture | N/A | No covert/fake recording | None | None | Existing unavailable-state tests | UNAVAILABLE |
+| Fictional workflow | Existing connected native demo | No production client | No token | Fixtures isolated | None | Local fictional changes only | Existing end-to-end preview regression | DEMO-ONLY |
+| General / Solar selection | Existing | Existing bootstrap | Preserved | Server-selected experience | Existing | Unchanged | Regression retained; no Solar development | PRESERVED |
+
+Final automated result and screenshot gallery: [Phase 4 report](phase-4-real-estate-live-integration.md). Physical-device verification: none. This matrix intentionally separates source implementation, current production gating and actual deployed verification.

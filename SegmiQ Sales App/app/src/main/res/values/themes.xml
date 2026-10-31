@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- The window paints near-black before Compose draws, so cold start never flashes white. -->
+    <style name="Theme.SegmiQSales" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/segmiq_window</item>
+        <item name="android:colorBackground">@color/segmiq_window</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

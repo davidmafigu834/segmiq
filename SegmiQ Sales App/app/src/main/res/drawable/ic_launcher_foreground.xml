@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 108dp adaptive canvas; the Q (439x453 px) is held inside the 66dp safe zone at its native aspect ratio. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/segmiq_official_q_transparent"
+    android:insetLeft="26.85dp"
+    android:insetRight="26.85dp"
+    android:insetTop="26dp"
+    android:insetBottom="26dp" />
