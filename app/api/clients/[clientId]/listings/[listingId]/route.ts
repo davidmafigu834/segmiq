@@ -1,4 +1,5 @@
 import { canReadListing, listingReadDto, canAssignListingAgent } from "@/lib/real-estate/listing-access";
+import { bearerListingPhotoError } from "@/lib/real-estate/mobile-workflows";
 import { NextResponse } from "next/server";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
@@ -130,6 +131,9 @@ export async function PATCH(
   }
 
   const body = parsed.data;
+  const mobile = req.headers.has("authorization");
+  const photoError = mobile ? bearerListingPhotoError(body.photos, params.clientId, params.listingId) : null;
+  if (photoError) return NextResponse.json(photoError, { status: 400 });
   if (!canAssignListingAgent(session, body.agent_id)) return NextResponse.json({ error: "Cannot assign another agent", code: "FORBIDDEN" }, { status: 403 });
   if (body.agent_id) {
     const agent = await supabase.from("users").select("id").eq("id", body.agent_id).eq("client_id", params.clientId).eq("is_active", true).maybeSingle();
@@ -221,7 +225,8 @@ export async function PATCH(
     const { discoverMatchesForListing } = await import("@/lib/real-estate/buyer-sales-service");
     await discoverMatchesForListing({ clientId: params.clientId, listingId: params.listingId });
   }
-  return NextResponse.json({ listing: data });
+  const actor = { userId: session.userId, role: session.role, clientId: session.clientId };
+  return NextResponse.json({ listing: mobile ? listingReadDto(actor, data, true) : data });
 }
 
 export async function DELETE(

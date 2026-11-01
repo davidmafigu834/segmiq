@@ -53,6 +53,18 @@ export function maskViewingContact<T extends { contact?: { id?: string; name?: s
   return { ...row, contact: { id: row.contact.id, name: masked, phone: null } };
 }
 
+/** A replay is the same booking. A changed payload with the same key is a conflict. */
+export function viewingReplayMatches(
+  existing: { buyer_search_id?: unknown; listing_id?: unknown; scheduled_at?: unknown; agent_id?: unknown; instructions?: unknown },
+  requested: { searchId: string; listingId: string; scheduledAt: string; agentId: string; instructions: string | null }
+): boolean {
+  return existing.buyer_search_id === requested.searchId
+    && existing.listing_id === requested.listingId
+    && Date.parse(String(existing.scheduled_at)) === Date.parse(requested.scheduledAt)
+    && existing.agent_id === requested.agentId
+    && ((existing.instructions ?? null) === requested.instructions);
+}
+
 /** A reminder is due once per scheduled time. Rescheduling makes a new reminder due. */
 export function viewingReminderDue(input: {
   status: string;

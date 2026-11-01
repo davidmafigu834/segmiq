@@ -25,6 +25,7 @@ import {
   isRejectionReset,
   listingCandidateFilter,
   listingFingerprint,
+  matchCompatibility,
   matchListingsForSearch,
   matchSearchesForListing,
   nextDepositStatus,
@@ -45,7 +46,8 @@ import {
   reviewBuyerIntroduction as decideBuyerIntroduction,
 } from "@/lib/real-estate/buyer-introduction-service";
 import { readAllPages, type PageFetcher } from "@/lib/real-estate/paging";
-import { viewingTransitionError } from "@/lib/real-estate/viewing-access";
+import { viewingReplayMatches, viewingTransitionError } from "@/lib/real-estate/viewing-access";
+import { listingBuyerMatchAccess } from "@/lib/real-estate/mobile-workflows";
 
 export type BuyerActor = {
   id: string;
@@ -944,12 +946,23 @@ export async function buyersForListing(clientId: string, listingId: string, acto
       const contact = search ? contactById.get(search.contact_id as string) : null;
       const introductionStatus = introBySearch.get(item.searchId) ?? null;
       const managedBy = ownerId ? agentById.get(ownerId) ?? "Another agent" : "Unassigned";
+      const flags = search ? matchCompatibility(asSearch(search as Record<string, unknown>), candidate) : { budgetCompatible: false, locationCompatible: false, requirementsCompatible: false };
+      const access = listingBuyerMatchAccess({
+        actorId: actor.id,
+        actorRole: actor.role,
+        ownerAgentId: ownerId,
+        visible,
+        introductionStatus,
+        searchStatus: (search?.status as string | null) ?? null,
+        ...flags,
+      });
       return {
         ...item,
+        ...access,
         managedBy,
         contactName: visible ? (contact?.name as string | null) ?? "Customer" : null,
         phone: visible ? (contact?.phone as string | null) ?? null : null,
-        canRequestIntroduction: !visible && !introductionStatus,
+        canRequestIntroduction: access.permittedActions.includes("request_introduction"),
         introductionStatus,
         introductionNote:
           introductionStatus === "requested"
@@ -1193,7 +1206,7 @@ export async function scheduleSearchViewing(input: {
     if (previous.error) return {ok:false as const,error:"Idempotency lookup unavailable.",status:503};
     if (previous.data) {
       const v=previous.data;
-      if(v.buyer_search_id!==input.searchId || v.listing_id!==input.listingId || Date.parse(v.scheduled_at)!==Date.parse(input.scheduledAt) || v.agent_id!==agentId || (v.instructions ?? null)!==(input.instructions ?? null)) return {ok:false as const,error:"Idempotency key was used for a different booking.",status:409};
+      if (!viewingReplayMatches(v, { searchId: input.searchId, listingId: input.listingId, scheduledAt: input.scheduledAt, agentId, instructions: input.instructions ?? null })) return {ok:false as const,error:"Idempotency key was used for a different booking.",status:409};
       return {ok:true as const,viewing:v,idempotent:true,warning:null};
     }
   }

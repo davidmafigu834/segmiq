@@ -6,6 +6,7 @@ import {
   introductionEligibility,
   introductionNotifyUserIds,
   isIntroductionManager,
+  introductionRequirementsSummary,
   reviewerWaitingCopy,
   type IntroductionDecision,
 } from "@/lib/real-estate/buyer-introduction-review";
@@ -423,7 +424,7 @@ export async function listBuyerIntroductions(clientId: string, actor: Introducti
       requestingAgentName: (requester?.name as string | null) || "Former team member",
       responsibleAgentName: assigneeActive ? ((assignee?.name as string | null) ?? "Agent") : null,
       unassigned: !currentAssigneeId || !assigneeActive,
-      requirementsSummary: requirementsLine(search),
+      requirementsSummary: introductionRequirementsSummary({ ownRequest, actorRole: actor.role, summary: requirementsLine(search) }),
       matchReasons: facts.reasons,
       strength: facts.strength,
       eligible: eligibility.eligible,

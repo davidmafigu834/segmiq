@@ -19,7 +19,7 @@ export async function GET(req: Request, { params }: { params: { clientId: string
     const ext = key.split(".").pop()!.toLowerCase();
     const mime = ext === "jpg" || ext === "jpeg" ? "image/jpeg" : `image/${ext}`;
     const url = await signPrivateListingImage(key, mime);
-    return NextResponse.json({ url, expiresAt: new Date(Date.now() + 300000).toISOString() }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ url, expiresAt: new Date(Date.now() + 300000).toISOString(), expiresInSeconds: 300 }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Image service unavailable", code: "SERVICE_UNAVAILABLE" }, { status: 503 });
   }

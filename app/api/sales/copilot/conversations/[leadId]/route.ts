@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { withoutMeetingDuplicateReminders } from "@/lib/sales-copilot/dedupe";
 import { loadAnalysis, listWorkItems, toPublicItem } from "@/lib/sales-copilot/store";
 import { runDueCopilotJobs } from "@/lib/sales-copilot/jobs";
+import { copilotConversationContract } from "@/lib/real-estate/mobile-workflows";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,7 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
       return rank(a.queue, a.executionStatus) - rank(b.queue, b.executionStatus);
     });
     return NextResponse.json({
+      ...copilotConversationContract(params.leadId),
       feature: "Sales Copilot",
       analysis: {
         status,
@@ -80,6 +82,7 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
     const message = err instanceof Error ? err.message : "";
     if (/sales_copilot|does not exist|relation/i.test(message)) {
       return NextResponse.json({
+        ...copilotConversationContract(params.leadId),
         feature: "Sales Copilot",
         analysis: {
           status: "failed",

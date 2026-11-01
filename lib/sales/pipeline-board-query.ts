@@ -43,8 +43,12 @@ export function dealTemperature(item: Pick<DealBoardItem, "leadScore" | "leadMan
 export function nextActionBucket(deal: DealBoardItem["deal"], now: Date): NextActionBucket {
   const next = getDealNextActionState(deal);
   if (!next.hasNextAction || !next.at) return "none";
-  if (next.isOverdue) return "overdue";
-  const due = new Date(next.at);
+  const dueMs = Date.parse(next.at);
+  if (!Number.isFinite(dueMs)) return "none";
+  // Overdue is measured against the supplied clock. getDealNextActionState uses Date.now(),
+  // which makes a filtered board depend on when the test or request happens to run.
+  if (dueMs < now.getTime()) return "overdue";
+  const due = new Date(dueMs);
   const sameDay =
     due.getFullYear() === now.getFullYear() &&
     due.getMonth() === now.getMonth() &&

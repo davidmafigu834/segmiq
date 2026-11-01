@@ -371,6 +371,27 @@ export function explainSearchListing(
 
 const STRENGTH_ORDER: Record<MatchStrength, number> = { strong: 0, alternative: 1, partial: 2 };
 
+/** Compatibility flags for a listing/search pair. Does not return the buyer's private figures. */
+export function matchCompatibility(search: MatchSearch, listing: MatchListing): {
+  budgetCompatible: boolean;
+  locationCompatible: boolean;
+  requirementsCompatible: boolean;
+} {
+  const hasLocation = search.locations.some((location) => norm(location).length > 0);
+  const wanted = wantedCategories(search);
+  const fit = categoryFit(wanted, listing.propertyCategory);
+  const typeOk = fit !== "conflict" && (wanted.length > 0 || !typesConflict(search.propertyType, listing.propertyType));
+  return {
+    budgetCompatible: listing.price == null || search.budgetMax == null || listing.price <= search.budgetMax,
+    locationCompatible: !hasLocation || locationHit(search.locations, listing.suburb),
+    requirementsCompatible:
+      intentAllows(search.intent, listing.transactionType) &&
+      typeOk &&
+      (search.bedrooms == null || listing.bedrooms == null || listing.bedrooms >= search.bedrooms) &&
+      (search.bathrooms == null || listing.bathrooms == null || listing.bathrooms >= search.bathrooms),
+  };
+}
+
 export function matchListingsForSearch(
   search: MatchSearch,
   listings: MatchListing[],

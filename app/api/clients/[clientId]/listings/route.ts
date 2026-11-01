@@ -1,5 +1,6 @@
 import { loadListingPage } from "@/lib/real-estate/listing-read-service";
 import { canReadListing, listingReadDto, canAssignListingAgent } from "@/lib/real-estate/listing-access";
+import { bearerListingPhotoError } from "@/lib/real-estate/mobile-workflows";
 import { NextResponse } from "next/server";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -64,6 +65,9 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   }
 
   const body = parsed.data;
+  const mobile = req.headers.has("authorization");
+  const photoError = mobile ? bearerListingPhotoError(body.photos, params.clientId, null) : null;
+  if (photoError) return NextResponse.json(photoError, { status: 400 });
   if (!canAssignListingAgent(session, body.agent_id)) return NextResponse.json({ error: "Cannot assign another agent", code: "FORBIDDEN" }, { status: 403 });
   if (body.agent_id) {
     const agent = await supabase.from("users").select("id").eq("id", body.agent_id).eq("client_id", params.clientId).eq("is_active", true).maybeSingle();
@@ -96,7 +100,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
       address: body.address?.trim() || null,
       suburb: body.suburb?.trim() || null,
       description: body.description?.trim() || null,
-      photos: body.photos ?? [],
+      photos: mobile ? [] : (body.photos ?? []),
       mandate_type: body.mandate_type ?? null,
       mandate_expiry_date: body.mandate_expiry_date || null,
       lease_term_months: body.lease_term_months ?? null,
@@ -124,5 +128,6 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     });
   }
 
-  return NextResponse.json({ listing: data }, { status: 201 });
+  const actor = { userId: session.userId, role: session.role, clientId: session.clientId };
+  return NextResponse.json({ listing: mobile ? listingReadDto(actor, data, true) : data }, { status: 201 });
 }

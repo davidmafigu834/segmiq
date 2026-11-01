@@ -64,6 +64,12 @@ export function introductionEligibility(input: {
   return { eligible: true };
 }
 
+/** The requesting agent does not receive another agent's budget, area or bedroom requirements. */
+export function introductionRequirementsSummary(input: { ownRequest: boolean; actorRole: string | null | undefined; summary: string }): string {
+  if (input.ownRequest && !isIntroductionManager(input.actorRole)) return "";
+  return input.summary;
+}
+
 export function reviewerWaitingCopy(input: { assigneeName: string | null }): string {
   if (input.assigneeName) return `Awaiting review by ${input.assigneeName}.`;
   return "Awaiting review by agency management.";

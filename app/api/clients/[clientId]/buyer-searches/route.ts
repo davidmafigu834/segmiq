@@ -4,9 +4,11 @@ import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import {
   buyerSearchMetrics,
   createBuyerSearch,
+  getBuyerSearchBundle,
   listBuyerSearches,
   type BuyerActor,
 } from "@/lib/real-estate/buyer-sales-service";
+import { buyerSearchMobileDto } from "@/lib/real-estate/mobile-workflows";
 import { PROPERTY_CATEGORIES } from "@/lib/real-estate/buyer-match";
 
 export const dynamic = "force-dynamic";
@@ -83,5 +85,11 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
       { status: result.status }
     );
   }
-  return NextResponse.json({ search: result.search }, { status: 201 });
+  if (!req.headers.has("authorization")) return NextResponse.json({ search: result.search }, { status: 201 });
+  const actor = actorFrom(g.session);
+  const bundle = await getBuyerSearchBundle(params.clientId, String(result.search.id), actor);
+  const contact = bundle.ok ? bundle.contact : null;
+  return NextResponse.json({
+    search: buyerSearchMobileDto(bundle.ok ? bundle.search : result.search, { id: actor.id, role: actor.role }, contact, g.session.user?.name ?? null),
+  }, { status: 201 });
 }

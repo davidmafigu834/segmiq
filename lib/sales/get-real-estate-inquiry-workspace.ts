@@ -72,6 +72,7 @@ export type ReInquiryWorkspace = {
   primaryAction: { id: string; label: string };
   followUpAt: string | null;
   linkedListing: ReInquiryListingCard | null;
+  buyerSearchId: string | null;
   requirements: RequirementFields & {
     propertyType: string | null;
     notes: string | null;
@@ -122,7 +123,7 @@ export async function getRealEstateInquiryWorkspace(opts: {
   const { data: lead } = await supabase
     .from("leads")
     .select(
-      "id, client_id, contact_id, name, phone, email, source, status, assigned_to_id, follow_up_date, form_data, deal_side, linked_listing_id, offer_status, project_type"
+      "id, client_id, contact_id, name, phone, email, source, status, assigned_to_id, follow_up_date, form_data, deal_side, linked_listing_id, buyer_search_id, offer_status, project_type"
     )
     .eq("id", opts.leadId)
     .eq("client_id", opts.clientId)
@@ -310,6 +311,7 @@ export async function getRealEstateInquiryWorkspace(opts: {
     primaryAction: primaryActionForStage(stage),
     followUpAt: (lead.follow_up_date as string | null) ?? null,
     linkedListing: linkedRes.data ? toListingCard(linkedRes.data as ListingRow) : null,
+    buyerSearchId: ((lead as { buyer_search_id?: string | null }).buyer_search_id) ?? null,
     requirements: {
       ...reqFields,
       propertyType: (typeof reReq.propertyType === "string" ? reReq.propertyType : null) ||

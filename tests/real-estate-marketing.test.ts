@@ -55,11 +55,15 @@ describe("source taxonomy", () => {
       "referral",
       "walk_in",
       "phone",
+      "email",
       "whatsapp",
       "manual",
       "other",
     ]);
     assert.equal(hubSourceToReType("Referral"), "referral");
+    assert.equal(hubSourceToReType("Email"), "email");
+    assert.equal(sourceTypeFromLeadSource("MANUAL", { hubSource: "e-mail" }), "email");
+    assert.equal(leadSourceFromReType("email"), "MANUAL");
     assert.equal(hubSourceToReType("Facebook Ads"), "facebook_ads");
     assert.equal(hubSourceToReType("Property Portal"), "property_portal");
     assert.equal(leadSourceFromReType("website"), "WEBSITE");

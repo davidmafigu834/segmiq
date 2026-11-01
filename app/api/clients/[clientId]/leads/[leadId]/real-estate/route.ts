@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { canAccessClient, canModifyLead, canReadLead } from "@/lib/auth/permissions";
+import { requireClientAccessFromRequest } from "@/lib/api-guards";
+import { canModifyLead, canReadLead } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getRealEstateInquiryWorkspace } from "@/lib/sales/get-real-estate-inquiry-workspace";
 import {
@@ -20,11 +19,8 @@ export async function GET(
   req: Request,
   { params }: { params: { clientId: string; leadId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const guard = await requireClientAccessFromRequest(req, params.clientId);
+  if (guard.error) return guard.error;
   const access = await canReadLead(params.leadId, req);
   if (!access.ok) {
     return NextResponse.json({ error: "Not found" }, { status: access.status === 401 ? 401 : 404 });
@@ -61,11 +57,9 @@ export async function PATCH(
   req: Request,
   { params }: { params: { clientId: string; leadId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const guard = await requireClientAccessFromRequest(req, params.clientId);
+  if (guard.error) return guard.error;
+  const session = guard.session;
   const check = await canModifyLead(params.leadId, req);
   const managerOfCompany =
     session.role === "SUPER_ADMIN" ||

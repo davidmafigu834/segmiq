@@ -19,7 +19,7 @@ export const COMPANY_KPI_GRID = {
   websiteLeads: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
   agentPerformance: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
   marketing: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
-  feedback: "grid w-full grid-cols-2 gap-3 md:grid-cols-3",
+  feedback: "grid w-full grid-cols-2 gap-3 md:grid-cols-4",
   developments: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
   compliance: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
   reports:
@@ -42,7 +42,7 @@ export const COMPANY_KPI_COUNTS = {
   websiteLeads: 5,
   agentPerformance: 5,
   marketing: 5,
-  feedback: 3,
+  feedback: 4,
   developments: 5,
   compliance: 5,
   reports: 6,

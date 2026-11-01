@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { PROPERTY_CATEGORIES, SEARCH_STAGES } from "@/lib/real-estate/buyer-match";
 import { getBuyerSearchBundle, updateBuyerSearch, type BuyerActor } from "@/lib/real-estate/buyer-sales-service";
+import { buyerSearchMobileDto } from "@/lib/real-estate/mobile-workflows";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,11 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
   if ("error" in g) return g.error;
   const result = await getBuyerSearchBundle(params.clientId, params.searchId, actorFrom(g.session));
   if (!result.ok) return NextResponse.json({ error: result.error, code: "code" in result ? result.code : result.status === 404 ? "NOT_FOUND" : result.status === 409 ? "CONFLICT" : result.status === 403 ? "FORBIDDEN" : result.status === 400 ? "INVALID_REQUEST" : "SERVICE_UNAVAILABLE" }, { status: result.status });
-  return NextResponse.json(result);
+  if (!_req.headers.has("authorization")) return NextResponse.json(result);
+  return NextResponse.json({
+    ...result,
+    search: buyerSearchMobileDto(result.search, { id: g.session.userId, role: g.session.role }, result.contact, null),
+  });
 }
 
 export async function PATCH(req: Request, { params }: { params: { clientId: string; searchId: string } }) {
@@ -53,5 +58,9 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     patch: parsed.data,
   });
   if (!result.ok) return NextResponse.json({ error: result.error, code: "code" in result ? result.code : result.status === 404 ? "NOT_FOUND" : result.status === 409 ? "CONFLICT" : result.status === 403 ? "FORBIDDEN" : result.status === 400 ? "INVALID_REQUEST" : "SERVICE_UNAVAILABLE" }, { status: result.status });
-  return NextResponse.json({ search: result.search });
+  if (!req.headers.has("authorization")) return NextResponse.json({ search: result.search });
+  const bundle = await getBuyerSearchBundle(params.clientId, params.searchId, actorFrom(g.session));
+  const source = bundle.ok ? bundle.search : result.search;
+  const contact = bundle.ok ? bundle.contact : null;
+  return NextResponse.json({ search: buyerSearchMobileDto(source, { id: g.session.userId, role: g.session.role }, contact, g.session.user?.name ?? null) });
 }
