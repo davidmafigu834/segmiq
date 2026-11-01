@@ -4,7 +4,7 @@ Decision: **writes, private images, and the new workflow projections are not acc
 
 Contract version remains **1**. `deployedVerification` remains `NOT_ATTESTED`. No `EstateAccess` write set was enabled. No production row, storage object, migration, or deployment was changed.
 
-Candidate revision for the source in this working tree: `PENDING_COMMIT`. It is the commit that contains this activation record, on top of `082ea3cf5198b3cda8639afd870238f6fd79507f`. It is not a deployed revision. Do not copy `7e743eb43fd2995636c8b2f7133d606a1d2c3cb6` onto it.
+Runtime candidate: `420579d3d5cb76e98182d2f092d8eca92e0a7315`, on top of `082ea3cf5198b3cda8639afd870238f6fd79507f`. The commit that writes this hash into the activation documents does not change runtime code. Neither commit is deployed. Pin the SHA that production bootstrap returns after an authorised deploy. Do not copy `7e743eb43fd2995636c8b2f7133d606a1d2c3cb6` onto either SHA.
 
 ## Origin and revision
 
@@ -15,7 +15,7 @@ Candidate revision for the source in this working tree: `PENDING_COMMIT`. It is 
 | Git `origin/main` before this candidate | `082ea3cf5198b3cda8639afd870238f6fd79507f` | The candidate is not that commit |
 | GitHub commit status for `082ea3cf` | Vercel `success` at 2026-10-31T23:45:09Z, description "Deployment has completed" | The live bootstrap did not echo the SHA |
 | Android read pin | `7e743eb43fd2995636c8b2f7133d606a1d2c3cb6` is an ancestor of `082ea3cf` | A descendant does not inherit acceptance |
-| Verified deployed revision of this candidate | none | `PENDING_COMMIT` has not been deployed |
+| Verified deployed revision of this candidate | none | `420579d3d5cb76e98182d2f092d8eca92e0a7315` has not been deployed |
 
 ## Accepted reads
 
@@ -35,7 +35,7 @@ If an authenticated bootstrap on a salesperson account returns a newer SHA, thos
 
 ## Operation acceptance
 
-Prefix `P` is `/api/clients/{clientId}`. Contract version is 1 for every row. Candidate revision is `PENDING_COMMIT`. Verified deployed revision is empty for every row. Acceptance is **FAIL** because the actor, privacy, and concurrency columns were not executed against an isolated database.
+Prefix `P` is `/api/clients/{clientId}`. Contract version is 1 for every row. Candidate revision is `420579d3d5cb76e98182d2f092d8eca92e0a7315`. Verified deployed revision is empty for every row. Acceptance is **FAIL** because the actor, privacy, and concurrency columns were not executed against an isolated database.
 
 | Endpoint | Actor permission in source | Privacy tests | Concurrency tests | Database prerequisites | Storage prerequisites | Acceptance | Android activation requirement |
 |---|---|---|---|---|---|---|---|

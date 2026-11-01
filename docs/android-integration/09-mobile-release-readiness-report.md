@@ -5,14 +5,14 @@ This is the review record for the mobile-first Real Estate candidate. It does no
 ## 1. Final code revision
 
 - Parent on `origin/main`: `082ea3cf5198b3cda8639afd870238f6fd79507f`
-- Candidate revision: `PENDING_COMMIT`
+- Runtime candidate: `420579d3d5cb76e98182d2f092d8eca92e0a7315`
 - Production origin: `https://www.segmiq.com`
 - Deployed verification: `NOT_ATTESTED`
 - Verified deployed revision of this candidate: none
 - Android read pin, unchanged: `7e743eb43fd2995636c8b2f7133d606a1d2c3cb6`
 - Contract version: 1
 
-`PENDING_COMMIT` is the local commit that contains this report. Bootstrap has not returned it. Do not copy the read pin onto this SHA.
+`420579d3d5cb76e98182d2f092d8eca92e0a7315` is the runtime commit. The following commit only records that hash in the activation documents. Bootstrap has not returned either SHA. After an authorised deploy, pin the SHA bootstrap returns. Do not copy the read pin onto the runtime commit or the documentation commit.
 
 ## 2. Files changed
 
@@ -153,7 +153,7 @@ Windows release builds need the Open Graph patch step. `npm run build` runs it. 
 
 Deployment procedure, after explicit approval only:
 
-1. Confirm `git rev-parse HEAD` is `PENDING_COMMIT` and the working tree for these files is clean.
+1. Confirm the deployed git SHA. The runtime commit is `420579d3d5cb76e98182d2f092d8eca92e0a7315`. The documentation stamp, if included, is its child and does not change code. Bootstrap `release.revision` must equal the SHA that was actually deployed.
 2. Deploy that SHA through the existing Vercel project. Do not push `main` merely to trigger the deploy unless that automatic production deploy is the intended approval.
 3. Authenticate a synthetic salesperson and read `GET /api/sales/app/bootstrap`. Continue only if `release.revision` equals the deployed SHA.
 4. Run the safe reads in document 08 blocker 2. Then run the isolated write walk in blocker 3 and the races in blocker 4.
@@ -205,7 +205,7 @@ Not ready for Android.
 
 ## 11. Exact remaining release decisions
 
-1. Approve or withhold deployment of `PENDING_COMMIT`. This record withholds it.
+1. Approve or withhold deployment of `420579d3d5cb76e98182d2f092d8eca92e0a7315`. This record withholds it.
 2. If deployment is approved, decide whether the delivery is a manual Vercel deploy or a `main` push. A `main` push can deploy production immediately. This record does not push.
 3. Choose isolated test identities in organisation A (two salespeople and one manager) and organisation B (one salesperson). Do not use customer records.
 4. After deploy, decide which individual operations pass the walk. Each operation is independent. A passing buyer create does not open photographs or offers.
