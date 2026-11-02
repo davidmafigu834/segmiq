@@ -229,6 +229,7 @@ export async function middleware(req: NextRequest) {
     path.startsWith("/d/") ||
     path.startsWith("/p/") ||
     path.startsWith("/property/") ||
+    path.startsWith("/dev/listing-preview") ||
     path.startsWith("/f/") ||
     path === "/cloud" ||
     path === "/cloud/login" ||

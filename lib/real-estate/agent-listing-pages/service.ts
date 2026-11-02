@@ -510,7 +510,7 @@ async function composePage(
     whatsapp = whatsAppLink(normalizePhoneForWhatsApp(text(agent.phone), text(client.dial_code) ?? "263"), prefill);
   }
   const accent = typeof client.primary_color === "string" && /^#[0-9a-fA-F]{6}$/.test(client.primary_color) ? client.primary_color : null;
-  const related = await relatedListings(db, String(listing.client_id), String(listing.id), catalogue);
+  const related = await relatedListings(db, String(listing.client_id), String(listing.id), money);
   return {
     slug,
     canonicalPath: `/property/${slug}`,
@@ -544,23 +544,32 @@ async function composePage(
   };
 }
 
-async function relatedListings(db: Db, clientId: string, listingId: string, catalogue: string | null) {
+async function relatedListings(db: Db, clientId: string, listingId: string, money: { currency: string | null; configured: boolean }) {
   const { data } = await db
     .from("listings")
-    .select("id, address, suburb, price, bedrooms, bathrooms, status, approval_status, public_slug")
+    .select("id, client_id, address, suburb, price, bedrooms, bathrooms, status, approval_status, public_slug, photos")
     .eq("client_id", clientId)
     .eq("approval_status", "approved")
     .eq("status", "available")
     .neq("id", listingId)
     .limit(4);
-  return ((data ?? []) as Array<Record<string, unknown>>).map((row) => ({
-    heading: text(row.address) || text(row.suburb) || "Property",
-    suburb: text(row.suburb),
-    price: row.price ?? null,
-    bedrooms: row.bedrooms ?? null,
-    bathrooms: row.bathrooms ?? null,
-    href: catalogue,
-  }));
+  return ((data ?? []) as Array<Record<string, unknown>>).map((row) => {
+    const slug = text(row.public_slug);
+    const photos = countPrivatePhotos(row.photos, clientId, String(row.id));
+    const amount = row.price == null || !Number.isFinite(Number(row.price)) ? null : Number(row.price);
+    const priceLabel = money.configured && money.currency && amount != null
+      ? `${money.currency} ${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+      : null;
+    return {
+      heading: text(row.address) || text(row.suburb) || "Property",
+      suburb: text(row.suburb),
+      bedrooms: row.bedrooms == null ? null : Number(row.bedrooms),
+      bathrooms: row.bathrooms == null ? null : Number(row.bathrooms),
+      priceLabel,
+      photoSrc: slug && photos > 0 ? publicMediaPath(slug, 0) : null,
+      href: slug ? `/property/${slug}` : null,
+    };
+  });
 }
 
 export async function recordPublicSignal(

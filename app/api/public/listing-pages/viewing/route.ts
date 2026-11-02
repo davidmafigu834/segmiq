@@ -53,7 +53,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     duplicate: result.duplicate,
-    message: `Thank you. Your viewing request has been sent to ${result.agencyName}. It is not confirmed until the agency schedules it.`,
+    message: `Your viewing request has been received by ${result.agencyName}. It is not booked until the agency confirms a time.`,
     viewingConfirmed: false,
   });
 }

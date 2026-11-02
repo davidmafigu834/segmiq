@@ -264,6 +264,7 @@ export type PublicPropertyProjection = {
   suburb: string | null;
   address: string | null;
   priceLabel: string | null;
+  priceOnRequest: boolean;
   currency: string | null;
   currencyContext: "quotation_currency" | "unconfigured";
   transactionLabel: string | null;
@@ -283,12 +284,9 @@ export function projectPublicProperty(source: PublicListingSource): PublicProper
   const heading = source.address?.trim() || source.suburb?.trim() || "Property";
   const currency = source.currencyConfigured && source.currency && /^[A-Z]{3}$/.test(source.currency) ? source.currency : null;
   const amount = source.price != null && Number.isFinite(Number(source.price)) ? Number(source.price) : null;
-  const priceLabel =
-    amount == null
-      ? null
-      : currency
-        ? `${currency} ${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
-        : amount.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  const priceLabel = amount != null && currency
+    ? `${currency} ${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+    : null;
   const transactionLabel = source.transactionType && source.transactionType in LISTING_TYPE_LABEL
     ? LISTING_TYPE_LABEL[source.transactionType as ListingTransactionType]
     : null;
@@ -298,6 +296,7 @@ export function projectPublicProperty(source: PublicListingSource): PublicProper
     suburb: source.suburb?.trim() || null,
     address: source.address?.trim() || null,
     priceLabel,
+    priceOnRequest: amount != null && !currency,
     currency,
     currencyContext: currency ? "quotation_currency" : "unconfigured",
     transactionLabel,

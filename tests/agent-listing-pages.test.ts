@@ -125,6 +125,8 @@ test("public projection omits restricted fields and does not invent currency or 
   for (const key of RESTRICTED_PUBLIC_KEYS) assert.equal(serialised.includes(`"${key}"`), false);
   assert.equal(projected.currency, null);
   assert.equal(projected.currencyContext, "unconfigured");
+  assert.equal(projected.priceLabel, null);
+  assert.equal(projected.priceOnRequest, true);
   assert.equal(projected.heading, "12 Stonechat Lane");
   assert.equal("amenities" in projected, false);
   const withCurrency = projectPublicProperty({ ...{

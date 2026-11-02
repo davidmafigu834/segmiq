@@ -20,13 +20,13 @@ export default async function PropertyOpenGraphImage({ params }: { params: { slu
   const status = ready?.property.statusLabel || "Unavailable";
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#f4efe6", color: "#1c1915", padding: "64px" }}>
-        <div style={{ display: "flex", fontSize: 28 }}>{agency}</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "flex", fontSize: 22, letterSpacing: 2 }}>{status.toUpperCase()}</div>
-          <div style={{ display: "flex", fontSize: 72, lineHeight: 1, maxWidth: 980 }}>{heading}</div>
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#f7f4ef", color: "#171916", padding: "72px" }}>
+        <div style={{ display: "flex", fontSize: 28, letterSpacing: 1 }}>{agency}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", fontSize: 20, letterSpacing: 3 }}>{status.toUpperCase()}</div>
+          <div style={{ display: "flex", fontSize: 68, lineHeight: 1.02, maxWidth: 980 }}>{heading}</div>
         </div>
-        <div style={{ display: "flex", fontSize: 22, color: "#5e564c" }}>Powered by SegmiQ</div>
+        <div style={{ display: "flex", fontSize: 20, color: "#5c6158" }}>Property information · not a photograph</div>
       </div>
     ),
     size

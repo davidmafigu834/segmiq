@@ -71,7 +71,7 @@ export function ListingPagesSettingsSection({ clientId }: { clientId: string }) 
         <Toggle label="Show agent name" checked={settings.showAgentName} onChange={(showAgentName) => setSettings({ ...settings, showAgentName })} />
         <Toggle label="Show agent photo" checked={settings.showAgentPhoto} onChange={(showAgentPhoto) => setSettings({ ...settings, showAgentPhoto })} />
         <Toggle label="Allow agent phone on the public page" checked={settings.showAgentPhone} onChange={(showAgentPhone) => setSettings({ ...settings, showAgentPhone })} />
-        <p className="text-[12px] text-sales-text-muted">Logo and company profile stay in Branding. Existing customers are not reassigned. Attribution window: {settings.attributionWindowDays} days.</p>
+        <p className="text-[12px] text-sales-text-muted">Logo and company profile stay in Branding. Existing customers are not reassigned. Attribution window: {settings.attributionWindowDays} days. Public prices use the quotation currency. Until that currency is saved, visitors see “Price on request” rather than an amount.</p>
         <button type="submit" className="h-10 rounded-[10px] bg-sales-brand px-4 text-[13px] font-semibold text-sales-brand-text">Save</button>
         {message ? <p className="text-[13px] text-sales-text-secondary">{message}</p> : null}
       </form>

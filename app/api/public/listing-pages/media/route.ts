@@ -43,7 +43,7 @@ export async function GET(req: Request) {
   if (token) {
     const { data: share } = await db.from("re_agent_listing_shares").select("id, listing_id, status, agent_id").eq("token", token).maybeSingle();
     if (!share || share.listing_id !== listing.id) return NextResponse.json({ error: "Not found", code: "NOT_FOUND" }, { status: 404 });
-    const { data: agent } = await db.from("users").select("client_id, role, is_active, is_archived, also_sells").eq("id", share.agent_id).maybeSingle();
+    const { data: agent } = await db.from("users").select("client_id, role, is_active, also_sells").eq("id", share.agent_id).maybeSingle();
     const live = shareAcceptsAttribution({
       shareStatus: share.status,
       listingOrganisationId: String(listing.client_id),
@@ -51,7 +51,7 @@ export async function GET(req: Request) {
         clientId: agent?.client_id ?? null,
         role: agent?.role ?? null,
         active: agent?.is_active !== false,
-        archived: agent?.is_archived === true,
+        archived: false,
         alsoSells: agent?.also_sells === true,
       },
     });
