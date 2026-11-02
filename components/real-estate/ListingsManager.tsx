@@ -158,7 +158,7 @@ export function ListingsManager({
   clientId,
   readOnly = false,
   canApprove = !readOnly,
-  listingHref,
+  listingPath,
   hideAddButton = false,
   headerCreateNonce = 0,
   onSelectionChange,
@@ -166,7 +166,7 @@ export function ListingsManager({
   clientId: string;
   readOnly?: boolean;
   canApprove?: boolean;
-  listingHref?: (id: string) => string;
+  listingPath?: string;
   hideAddButton?: boolean;
   headerCreateNonce?: number;
   onSelectionChange?: (id: string | null) => void;
@@ -197,7 +197,11 @@ export function ListingsManager({
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [uploadTargetId, setUploadTargetId] = useState("");
 
-  const hrefFor = listingHref ?? (canApprove ? (id: string) => `/client/listings/${id}` : undefined);
+  const hrefFor = listingPath
+    ? (id: string) => `${listingPath.replace(/\/$/, "")}/${id}`
+    : canApprove
+      ? (id: string) => `/client/listings/${id}`
+      : undefined;
 
   useEffect(() => {
     if (!toast) return;

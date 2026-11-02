@@ -44,7 +44,7 @@ export default async function SalesListingsPage() {
         description="Manage the property inventory you can work with, including availability and activity."
         searchPlaceholder="Search listings..."
       >
-        <ListingsManager clientId={session.clientId} canApprove={false} listingHref={(id) => `/sales/listings/${id}`} />
+        <ListingsManager clientId={session.clientId} canApprove={false} listingPath="/sales/listings" />
       </SalesAppShell>
     </SalesLayout>
   );
