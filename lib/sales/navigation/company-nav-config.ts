@@ -96,6 +96,9 @@ export type CompanyNavSectionId =
   | "team"
   | "compliance"
   | "operations"
+  | "customers"
+  | "intelligence"
+  | "management"
   | "system";
 
 export type CompanyNavMobileSlot = "primary" | "more";
@@ -174,6 +177,9 @@ export const COMPANY_NAV_SECTION_LABEL: Record<CompanyNavSectionId, string> = {
   team: "Team",
   compliance: "Compliance",
   operations: "Operations",
+  customers: "Customers",
+  intelligence: "Intelligence",
+  management: "Management",
   system: "System",
 };
 
@@ -510,6 +516,15 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     match: (p) => exactOrChild(p, "/client/marketing/sources"),
   },
   {
+    id: "listing-pages",
+    label: "Listing pages",
+    href: "/client/listing-pages",
+    icon: "marketing",
+    section: "more_tools",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/listing-pages"),
+  },
+  {
     id: "website-leads",
     label: "Website Leads",
     href: "/client/marketing/website-leads",
@@ -719,21 +734,119 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
 
 const SOLAR_COMPANY_NAV_IDS = new Set(["projects", "myWork"]);
 
+/** Solar-only groups. General Trades keeps company / products / tools. */
+export const SOLAR_COMPANY_SECTION_ORDER: CompanyNavSectionId[] = [
+  "overview",
+  "sales",
+  "operations",
+  "customers",
+  "products",
+  "intelligence",
+  "management",
+];
+
+const SOLAR_COMPANY_SECTION_LABEL: Partial<Record<CompanyNavSectionId, string>> = {
+  overview: "Overview",
+  sales: "Sales",
+  operations: "Field & delivery",
+  customers: "Customers",
+  products: "Products & stock",
+  intelligence: "Intelligence",
+  management: "Management",
+};
+
+const SOLAR_COMPANY_ITEM_ORDER = [
+  "dashboard",
+  "whatsapp",
+  "pipeline",
+  "socialInbox",
+  "leads",
+  "quotations",
+  "myWork",
+  "projects",
+  "calendar",
+  "customers",
+  "products",
+  "inventory",
+  "packages",
+  "command",
+  "agent",
+  "reports",
+  "team",
+  "documents",
+  "billing",
+  "settings",
+] as const;
+
+const SOLAR_COMPANY_PLACEMENT: Record<
+  string,
+  { section: CompanyNavSectionId; label?: string; mobileSlot: CompanyNavMobileSlot; mobileLabel?: string }
+> = {
+  dashboard: { section: "overview", mobileSlot: "primary", mobileLabel: "Dashboard" },
+  whatsapp: { section: "sales", mobileSlot: "primary", mobileLabel: "WhatsApp" },
+  pipeline: { section: "sales", label: "Solar Pipeline", mobileSlot: "primary", mobileLabel: "Pipeline" },
+  socialInbox: { section: "sales", mobileSlot: "more", mobileLabel: "Social" },
+  leads: { section: "sales", mobileSlot: "more", mobileLabel: "Leads" },
+  quotations: { section: "sales", mobileSlot: "more", mobileLabel: "Quotes" },
+  myWork: { section: "operations", mobileSlot: "more", mobileLabel: "My work" },
+  projects: { section: "operations", mobileSlot: "primary", mobileLabel: "Projects" },
+  calendar: { section: "operations", mobileSlot: "more", mobileLabel: "Calendar" },
+  customers: { section: "customers", mobileSlot: "more", mobileLabel: "Customers" },
+  products: { section: "products", mobileSlot: "more", mobileLabel: "Products" },
+  inventory: { section: "products", mobileSlot: "more", mobileLabel: "Inventory" },
+  packages: { section: "products", mobileSlot: "more", mobileLabel: "Packages" },
+  command: { section: "intelligence", mobileSlot: "more", mobileLabel: "Command" },
+  agent: { section: "intelligence", mobileSlot: "more", mobileLabel: "Agent" },
+  reports: { section: "intelligence", mobileSlot: "more", mobileLabel: "Reports" },
+  team: { section: "management", mobileSlot: "more", mobileLabel: "Team" },
+  documents: { section: "management", mobileSlot: "more", mobileLabel: "Documents" },
+  billing: { section: "management", mobileSlot: "more", mobileLabel: "Billing" },
+  settings: { section: "management", mobileSlot: "more", mobileLabel: "Settings" },
+};
+
+function applySolarCompanyNavigation(items: CompanyNavItemConfig[]): CompanyNavItemConfig[] {
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const ordered = SOLAR_COMPANY_ITEM_ORDER.flatMap((id) => {
+    const item = byId.get(id);
+    const place = SOLAR_COMPANY_PLACEMENT[id];
+    if (!item || !place) return [];
+    return [{ ...item, section: place.section, label: place.label ?? item.label, mobileSlot: place.mobileSlot, mobileLabel: place.mobileLabel ?? item.mobileLabel }];
+  });
+  const seen = new Set(ordered.map((item) => item.id));
+  const extras = items
+    .filter((item) => !seen.has(item.id))
+    .map((item) => ({ ...item, section: "management" as const, mobileSlot: "more" as const }));
+  return [...ordered, ...extras];
+}
+
+export function companySectionLabel(
+  section: CompanyNavSectionId,
+  options?: { solarWorkflow?: boolean }
+): string {
+  if (options?.solarWorkflow && SOLAR_COMPANY_SECTION_LABEL[section]) {
+    return SOLAR_COMPANY_SECTION_LABEL[section]!;
+  }
+  return COMPANY_NAV_SECTION_LABEL[section];
+}
+
 export function getCompanyNavigation(
   businessType?: BusinessType | string | null,
   options?: { solarWorkflow?: boolean }
 ): CompanyNavItemConfig[] {
-  const nav = isRealEstate(businessType) ? REAL_ESTATE_COMPANY_NAVIGATION : COMPANY_NAVIGATION;
-  if (options?.solarWorkflow) return nav;
-  return nav.filter((item) => !SOLAR_COMPANY_NAV_IDS.has(item.id));
+  if (isRealEstate(businessType)) return REAL_ESTATE_COMPANY_NAVIGATION;
+  if (!options?.solarWorkflow) {
+    return COMPANY_NAVIGATION.filter((item) => !SOLAR_COMPANY_NAV_IDS.has(item.id));
+  }
+  return applySolarCompanyNavigation(COMPANY_NAVIGATION);
 }
 
 export function getCompanyNavSectionOrder(
-  businessType?: BusinessType | string | null
+  businessType?: BusinessType | string | null,
+  options?: { solarWorkflow?: boolean }
 ): CompanyNavSectionId[] {
-  return isRealEstate(businessType)
-    ? COMPANY_NAV_SECTION_ORDER.real_estate
-    : COMPANY_NAV_SECTION_ORDER.trades;
+  if (isRealEstate(businessType)) return COMPANY_NAV_SECTION_ORDER.real_estate;
+  if (options?.solarWorkflow) return SOLAR_COMPANY_SECTION_ORDER;
+  return COMPANY_NAV_SECTION_ORDER.trades;
 }
 
 export function companyNavHasTradesCatalog(

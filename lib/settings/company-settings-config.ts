@@ -91,7 +91,10 @@ export function settingsSectionsFor(
 ): SettingsSection[] {
   const base = SETTINGS_SECTIONS[category];
   if (category === "company" && opts?.realEstate) {
-    return base.filter((section) => section.id !== "sales-workflow");
+    return [
+      ...base.filter((section) => section.id !== "sales-workflow"),
+      { id: "listing-pages", label: "Agent listing pages", icon: "share" },
+    ];
   }
   if (category === "integrations" && opts?.realEstate) {
     return [...base, { id: "website", label: "Website API", icon: "plug" }];

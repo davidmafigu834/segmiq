@@ -9,6 +9,7 @@ import { CompanySettingsHeader } from "./CompanySettingsHeader";
 import { SettingsCategoryTabs } from "./SettingsCategoryTabs";
 import { SettingsSectionNav } from "./SettingsSectionNav";
 import { CompanyInformationSection } from "./CompanyInformationViews";
+import { ListingPagesSettingsSection } from "./ListingPagesSettingsSection";
 import {
   CompanyAutomationSection,
   CompanyBrandingSection,
@@ -270,6 +271,9 @@ export function CompanySettingsPage({
               <Suspense fallback={<div className="h-32" />}>
                 <ZohoBooksSettingsSection />
               </Suspense>
+            ) : null}
+            {category === "company" && activeSection === "listing-pages" && realEstate ? (
+              <ListingPagesSettingsSection clientId={data.clientId} />
             ) : null}
             {category === "integrations" && activeSection === "website" && realEstate ? (
               <IntegrationsWebsiteSection clientId={data.clientId} />

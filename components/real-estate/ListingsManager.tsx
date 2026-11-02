@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, ty
 import { Building2, ImagePlus, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 import { ReMetricOverview } from "@/components/real-estate/ui";
+import { MarketThisProperty } from "@/components/real-estate/listing-pages/MarketThisProperty";
 import { useMediaQuery } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
@@ -858,6 +859,9 @@ export function ListingsManager({
           {preview.description ? (
             <p className="mt-3 whitespace-pre-wrap text-[13px] text-sales-text-secondary">{preview.description}</p>
           ) : null}
+          <div className="mt-4">
+            <MarketThisProperty clientId={clientId} listingId={preview.id} analyticsBase={canApprove ? "/client/listing-pages" : "/sales/shared-listings"} />
+          </div>
           <ListingRegisterDetails
             key={preview.id}
             clientId={clientId}

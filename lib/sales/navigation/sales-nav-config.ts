@@ -61,6 +61,9 @@ export type SalesNavMobileSlot = "primary" | "more";
 export type SalesNavSectionId =
   | "sales"
   | "tools"
+  | "overview"
+  | "field"
+  | "intelligence"
   | "main"
   | "acquisition"
   | "buyer_sales"
@@ -301,6 +304,75 @@ function withoutSolarDelivery(items: SalesNavItemConfig[], solarWorkflow?: boole
   return items.filter((item) => item.id !== "projects" && item.id !== "myWork");
 }
 
+/** Salesperson destinations that already exist. Not applied to Real Estate. */
+export const SOLAR_SALES_SECTION_ORDER: SalesNavSectionId[] = [
+  "overview",
+  "sales",
+  "field",
+  "intelligence",
+  "tools",
+];
+
+const SOLAR_SALES_ITEM_ORDER = [
+  "dashboard",
+  "whatsapp",
+  "pipeline",
+  "socialInbox",
+  "leads",
+  "quotes",
+  "tasks",
+  "wonLost",
+  "myWork",
+  "projects",
+  "calendar",
+  "command",
+  "reports",
+  "goals",
+  "toolbox",
+] as const;
+
+const SOLAR_SALES_PLACEMENT: Record<string, { section: SalesNavSectionId; label?: string }> = {
+  dashboard: { section: "overview" },
+  whatsapp: { section: "sales" },
+  pipeline: { section: "sales", label: "Solar Pipeline" },
+  socialInbox: { section: "sales" },
+  leads: { section: "sales" },
+  quotes: { section: "sales" },
+  tasks: { section: "sales" },
+  wonLost: { section: "sales" },
+  myWork: { section: "field" },
+  projects: { section: "field" },
+  calendar: { section: "field" },
+  command: { section: "intelligence" },
+  reports: { section: "intelligence" },
+  goals: { section: "tools" },
+  toolbox: { section: "tools" },
+};
+
+function applySolarSalesNavigation(items: SalesNavItemConfig[]): SalesNavItemConfig[] {
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const ordered = SOLAR_SALES_ITEM_ORDER.flatMap((id) => {
+    const item = byId.get(id);
+    const place = SOLAR_SALES_PLACEMENT[id];
+    if (!item || !place) return [];
+    return [{ ...item, section: place.section, label: place.label ?? item.label }];
+  });
+  const seen = new Set(ordered.map((item) => item.id));
+  const extras = items
+    .filter((item) => !seen.has(item.id))
+    .map((item) => ({ ...item, section: "tools" as const, mobileSlot: item.mobileSlot ?? ("more" as const) }));
+  return [...ordered, ...extras];
+}
+
+export function salesNavSectionOrder(
+  businessType?: BusinessType | string | null,
+  options?: { solarWorkflow?: boolean }
+): SalesNavSectionId[] {
+  if (isRealEstate(businessType)) return REAL_ESTATE_SALES_SECTION_ORDER;
+  if (options?.solarWorkflow) return SOLAR_SALES_SECTION_ORDER;
+  return ["sales", "tools"];
+}
+
 export function resolveSalesNavItems(
   isSolo: boolean,
   businessType?: BusinessType | string | null,
@@ -315,7 +387,10 @@ export function resolveSalesNavItems(
     }
     return item;
   });
-  if (!isRealEstate(businessType)) return withoutSolarDelivery(items, options?.solarWorkflow);
+  if (!isRealEstate(businessType)) {
+    const trades = withoutSolarDelivery(items, options?.solarWorkflow);
+    return options?.solarWorkflow ? applySolarSalesNavigation(trades) : trades;
+  }
   const buyerItems: SalesNavItemConfig[] = [
     {
       id: "buyers",
@@ -430,6 +505,16 @@ export function resolveSalesNavItems(
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/sales/commissions"),
   };
+  const sharedListingsItem: SalesNavItemConfig = {
+    id: "sharedListings",
+    label: "My Shared Listings",
+    href: "/sales/shared-listings",
+    icon: "listings",
+    section: "sales",
+    mobileSlot: "more",
+    mobileLabel: "Shared",
+    match: (p) => exactOrChild(p, "/sales/shared-listings"),
+  };
   return items.flatMap((item) => {
     if (item.id === "quotes") return [];
     if (item.id === "projects" || item.id === "myWork") return [];
@@ -439,6 +524,7 @@ export function resolveSalesNavItems(
         ...buyerItems,
         ...acquisitionItems,
         listingsItem,
+        sharedListingsItem,
         offersItem,
         transactionsItem,
         commissionsItem,
@@ -470,6 +556,7 @@ const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
   viewings: "buyer_sales",
   offers: "buyer_sales",
   listings: "agency",
+  sharedListings: "agency",
   transactions: "agency",
   commissions: "agency",
   pipeline: "more_tools",
@@ -501,6 +588,9 @@ export const REAL_ESTATE_SALES_SECTION_ORDER: SalesNavSectionId[] = [
 export const SALES_NAV_SECTION_LABEL: Record<SalesNavSectionId, string> = {
   sales: "Sales",
   tools: "Tools",
+  overview: "Overview",
+  field: "Field & delivery",
+  intelligence: "Intelligence",
   main: "Main",
   acquisition: "Property acquisition",
   buyer_sales: "Buyer & tenant sales",

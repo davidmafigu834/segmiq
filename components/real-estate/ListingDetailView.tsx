@@ -8,6 +8,7 @@ import type { ListingRow } from "@/types";
 import { CreateOfferSheet, type CreateOfferPrefill } from "@/components/real-estate/offers/CreateOfferSheet";
 import { ListingOffersSection, OfferDetailPanel } from "@/components/real-estate/offers/OfferDetailPanel";
 import { ListingMarketingSection } from "@/components/real-estate/marketing/ListingMarketingSection";
+import { MarketThisProperty } from "@/components/real-estate/listing-pages/MarketThisProperty";
 
 type MatchContact = {
   id: string;
@@ -23,9 +24,11 @@ type MatchContact = {
 export function ListingDetailView({
   clientId,
   listingId,
+  analyticsBase = "/client/listing-pages",
 }: {
   clientId: string;
   listingId: string;
+  analyticsBase?: string;
 }) {
   const [listing, setListing] = useState<ListingRow | null>(null);
   const [matches, setMatches] = useState<MatchContact[]>([]);
@@ -127,6 +130,8 @@ export function ListingDetailView({
           <p className="mt-4 text-[13px] text-sales-text-secondary whitespace-pre-wrap">{listing.description}</p>
         ) : null}
       </div>
+
+      <MarketThisProperty clientId={clientId} listingId={listingId} analyticsBase={analyticsBase} />
 
       <ListingMarketingSection clientId={clientId} listingId={listingId} />
 

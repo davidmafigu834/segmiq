@@ -1,0 +1,309 @@
+.page {
+  --paper: #f4efe6;
+  --ink: #1c1915;
+  --muted: #5e564c;
+  --line: rgba(28, 25, 21, 0.12);
+  --accent: #8c4a32;
+  --card: #fffaf3;
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-dm-sans), "Segoe UI", sans-serif;
+}
+
+.page[data-accent] {
+  --accent: var(--brand-accent);
+}
+
+.wrap {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0 8px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.logo, .mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #ebe3d6;
+}
+
+.mark {
+  display: grid;
+  place-items: center;
+  font-family: var(--font-dm-serif), Georgia, serif;
+  font-size: 18px;
+}
+
+.agency {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.place {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.share {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 999px;
+  min-height: 40px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.hero {
+  margin-top: 12px;
+  display: grid;
+  gap: 18px;
+}
+
+.frame {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 22px;
+  background:
+    linear-gradient(160deg, rgba(140, 74, 50, 0.18), transparent 42%),
+    #e7dfd2;
+}
+
+.frame img, .shot {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.counter, .navBtn {
+  position: absolute;
+  border: 0;
+  background: rgba(255, 250, 243, 0.92);
+  color: var(--ink);
+  border-radius: 999px;
+  min-height: 36px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.counter { left: 12px; bottom: 12px; padding: 0 12px; }
+.navBtn { top: 50%; transform: translateY(-50%); width: 36px; }
+.prev { left: 12px; }
+.next { right: 12px; }
+
+.summary h1 {
+  margin: 0;
+  font-family: var(--font-dm-serif), Georgia, serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: clamp(34px, 6vw, 64px);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+
+.price {
+  margin: 14px 0 0;
+  font-size: 22px;
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+}
+
+.currencyNote, .statusNote, .prose, .quiet {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.facts li {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 13px;
+}
+
+.status {
+  display: inline-flex;
+  margin-top: 14px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #efe4d4;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.agent, .related article, .sheet, .unavailable {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.agent {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-top: 22px;
+  padding: 14px;
+}
+
+.avatar, .avatar img {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #efe4d4;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.section { margin: 28px 0 0; }
+.section h2 {
+  margin: 0 0 12px;
+  font-family: var(--font-dm-serif), Georgia, serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 28px;
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+}
+
+.related a, .related div {
+  padding: 14px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+.related strong { display: block; overflow-wrap: anywhere; }
+
+.sticky {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(244, 239, 230, 0.94);
+  border-top: 1px solid var(--line);
+  backdrop-filter: blur(10px);
+}
+
+.sticky a, .sticky button, .primary, .ghost {
+  min-height: 44px;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  padding: 0 12px;
+  flex: 1;
+}
+
+.primary { background: var(--accent); color: #fffaf3; border: 0; }
+.ghost, .sticky a { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+
+.pad { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  max-height: min(88vh, 760px);
+  overflow: auto;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  border-radius: 20px 20px 0 0;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  background: rgba(28, 25, 21, 0.35);
+  border: 0;
+}
+
+.sheet form { display: grid; gap: 10px; }
+.sheet label { display: grid; gap: 4px; font-size: 13px; font-weight: 650; }
+.sheet input, .sheet textarea, .sheet select {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 12px;
+  min-height: 44px;
+  padding: 10px 12px;
+  font: inherit;
+}
+.sheet textarea { min-height: 96px; resize: vertical; }
+.honeypot { position: absolute; left: -9999px; height: 0; overflow: hidden; }
+.error { color: #8c2f24; font-size: 13px; }
+.footer { margin: 28px 0 12px; font-size: 12px; color: var(--muted); }
+.footer a { color: inherit; }
+.unavailable { margin: 48px auto; padding: 28px 20px; max-width: 520px; }
+.dialog {
+  width: min(100vw, 1100px);
+  height: min(100vh, 900px);
+  border: 0;
+  padding: 0;
+  background: #111;
+}
+.dialog img { width: 100%; height: 100%; object-fit: contain; }
+.bars { display: flex; align-items: flex-end; gap: 4px; height: 120px; }
+.bars span { flex: 1; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; }
+
+@media (min-width: 800px) {
+  .hero { grid-template-columns: 1.15fr 0.85fr; align-items: end; }
+  .frame { aspect-ratio: 5 / 4; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sticky { position: static; background: transparent; border: 0; padding: 18px 0 0; backdrop-filter: none; }
+  .pad { padding-bottom: 28px; }
+  .sheet { left: auto; right: 24px; bottom: 24px; width: min(420px, calc(100% - 32px)); border-radius: 18px; }
+}

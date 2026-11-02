@@ -228,6 +228,7 @@ export async function middleware(req: NextRequest) {
     path.startsWith("/l/") ||
     path.startsWith("/d/") ||
     path.startsWith("/p/") ||
+    path.startsWith("/property/") ||
     path.startsWith("/f/") ||
     path === "/cloud" ||
     path === "/cloud/login" ||
@@ -247,7 +248,7 @@ export async function middleware(req: NextRequest) {
       const { releaseDemoSession } = await import("@/lib/demo/guest-gate");
       return releaseDemoSession(req);
     }
-    return NextResponse.next();
+    return withListingVisitor(req);
   }
 
   const { enforceDemoGuestPage } = await import("@/lib/demo/guest-gate");
@@ -583,6 +584,34 @@ async function redirectIfAuthenticatedCloudEntry(
   }
 
   return NextResponse.redirect(url);
+}
+
+function withListingVisitor(req: NextRequest): NextResponse {
+  if (!req.nextUrl.pathname.startsWith("/property/")) return NextResponse.next();
+  const existing = req.cookies.get("sq_lp")?.value;
+  const valid = existing && /^[A-Za-z0-9_-]{16,80}$/.test(existing) ? existing : null;
+  const visitor = valid ?? randomVisitorId();
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-sq-visitor", visitor);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  if (!valid) {
+    response.cookies.set("sq_lp", visitor, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/property",
+      maxAge: 60 * 60 * 24 * 30,
+    });
+  }
+  return response;
+}
+
+function randomVisitorId(): string {
+  const bytes = new Uint8Array(18);
+  crypto.getRandomValues(bytes);
+  let text = "";
+  for (const byte of bytes) text += String.fromCharCode(byte);
+  return btoa(text).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 function isCloudPublicPath(resolved: string): boolean {

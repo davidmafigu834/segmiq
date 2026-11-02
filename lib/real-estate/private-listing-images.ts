@@ -65,3 +65,37 @@ export async function signPrivateListingImage(key: string, contentType: string):
 export function validPrivateImageMetadata(size: number | undefined, storedType: string | undefined, expectedType: string): boolean {
  return typeof size === "number" && size > 0 && size <= 20*1024*1024 && storedType === expectedType && ["image/jpeg","image/png","image/webp","image/avif"].includes(expectedType);
 }
+
+export function privateImageContentType(key: string): "image/jpeg" | "image/png" | "image/webp" | "image/avif" | null {
+  const ext = key.split(".").pop()?.toLowerCase();
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  if (ext === "png") return "image/png";
+  if (ext === "webp") return "image/webp";
+  if (ext === "avif") return "image/avif";
+  return null;
+}
+
+/**
+ * Read a private listing photograph for an already-authorised public marketing response.
+ * Returns bytes. Never returns a signed storage URL.
+ */
+export async function readPrivateListingImage(key: string): Promise<{ bytes: Uint8Array; contentType: string } | null> {
+  const contentType = privateImageContentType(key);
+  if (!contentType || !PRIVATE_PHOTO_KEY.test(key) || !isPrivateListingImageStorageConfigured()) return null;
+  const bucket = process.env.CLOUDFLARE_R2_PRIVATE_LISTING_BUCKET_NAME;
+  const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID;
+  const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY;
+  if (!bucket || bucket === process.env.CLOUDFLARE_R2_BUCKET_NAME || !accountId || !accessKeyId || !secretAccessKey) return null;
+  try {
+    const client = new S3Client({ region: "auto", endpoint: `https://${accountId}.r2.cloudflarestorage.com`, credentials: { accessKeyId, secretAccessKey } });
+    const metadata = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    if (!validPrivateImageMetadata(metadata.ContentLength, metadata.ContentType, contentType)) return null;
+    const object = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    const bytes = await object.Body?.transformToByteArray();
+    if (!bytes || bytes.byteLength === 0 || bytes.byteLength > PRIVATE_LISTING_IMAGE_MAX_BYTES) return null;
+    return { bytes, contentType };
+  } catch {
+    return null;
+  }
+}
