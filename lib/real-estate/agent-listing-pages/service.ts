@@ -212,11 +212,11 @@ export async function generateShareLink(
   if (!settings.enabled || !settings.agentsMayGenerate) return fail(403, "Agent listing pages are switched off", "FEATURE_DISABLED");
   const { data: user, error: userError } = await db
     .from("users")
-    .select("id, name, client_id, role, is_active, is_archived, also_sells")
+    .select("id, name, client_id, role, is_active, also_sells")
     .eq("id", actor.userId)
     .maybeSingle();
   if (userError) return fail(503, "Account lookup failed", "SERVICE_UNAVAILABLE");
-  const active = Boolean(user) && user?.is_active !== false && user?.is_archived !== true && user?.client_id === clientId;
+  const active = Boolean(user) && user?.is_active !== false && user?.client_id === clientId;
   if (!canGenerateOwnShare({ ...actor, alsoSells: actor.alsoSells || user?.also_sells === true }, active)) {
     return fail(403, "You cannot create a marketing link", "FORBIDDEN");
   }
@@ -435,7 +435,7 @@ export async function loadPublicListingPage(db: Db, slug: string, token: string 
     if (!shareRow || shareRow.listing_id !== row.id || shareRow.client_id !== clientId) {
       return { state: "unavailable", reason: "invalid_link", indexable: false };
     }
-    const agent = await db.from("users").select("id, name, phone, avatar_url, role, is_active, is_archived, client_id, also_sells").eq("id", shareRow.agent_id as string).maybeSingle();
+    const agent = await db.from("users").select("id, name, phone, avatar_url, role, is_active, client_id, also_sells").eq("id", shareRow.agent_id as string).maybeSingle();
     const agentRow = (agent.data ?? {}) as Record<string, unknown>;
     const live = shareAcceptsAttribution({
       shareStatus: String(shareRow.status),
@@ -605,7 +605,7 @@ async function resolvePublicTarget(db: Db, slug: string, token: string | null, r
     const found = await db.from("re_agent_listing_shares").select("*").eq("token", token).maybeSingle();
     share = (found.data as Record<string, unknown> | null) ?? null;
     if (!share || share.listing_id !== row.id) return fail(404, "This page is unavailable", "UNAVAILABLE");
-    const agent = await db.from("users").select("id, client_id, role, is_active, is_archived, also_sells").eq("id", share.agent_id as string).maybeSingle();
+    const agent = await db.from("users").select("id, client_id, role, is_active, also_sells").eq("id", share.agent_id as string).maybeSingle();
     const agentRow = (agent.data ?? {}) as Record<string, unknown>;
     const live = shareAcceptsAttribution({
       shareStatus: String(share.status),
@@ -817,7 +817,7 @@ export async function submitPublicForm(
 }
 
 async function agentMembership(db: Db, userId: string) {
-  const { data } = await db.from("users").select("client_id, role, is_active, is_archived, also_sells").eq("id", userId).maybeSingle();
+  const { data } = await db.from("users").select("client_id, role, is_active, also_sells").eq("id", userId).maybeSingle();
   const row = (data ?? {}) as Record<string, unknown>;
   return {
     clientId: text(row.client_id),
