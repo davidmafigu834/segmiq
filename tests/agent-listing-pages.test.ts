@@ -18,6 +18,8 @@ import {
   newShareToken,
   normaliseCampaignLabel,
   projectPublicProperty,
+  authorisedMarketingPhotoUrl,
+  publicListingPhotoSources,
   publicMediaPath,
   rangeForPreset,
   RESTRICTED_PUBLIC_KEYS,
@@ -214,6 +216,23 @@ test("insights are omitted when there is no supporting count", () => {
 test("deal notes do not claim a sale the link did not own", () => {
   assert.equal(dealOutcomeNote({ leadWon: false, transactionLinked: false, marketingAgentId: "a", operationalOwnerId: "b" }), null);
   assert.match(dealOutcomeNote({ leadWon: true, transactionLinked: true, marketingAgentId: "a", operationalOwnerId: "b" }) ?? "", /differ/);
+});
+
+test("public pages show this listing's published photographs and reject other addresses", () => {
+  const clientId = "29c76746-f1d2-45fd-b15c-a47e65894569";
+  const listingId = "e0ee7f8c-1291-4d97-98bc-ea197bb073ce";
+  const base = "https://media.example.test";
+  const own = `${base}/clients/${clientId}/projects/real-estate-listing-${listingId}/originals/front.jpg`;
+  const otherListing = `${base}/clients/${clientId}/projects/real-estate-listing-other/originals/front.jpg`;
+  const otherHost = `https://files.example.test/clients/${clientId}/projects/real-estate-listing-${listingId}/originals/front.jpg`;
+  const privateKey = `clients/${clientId}/listings/${listingId}/photos/room.jpg`;
+  assert.equal(authorisedMarketingPhotoUrl(own, clientId, listingId, base), own);
+  assert.equal(authorisedMarketingPhotoUrl(`${own}?download=1`, clientId, listingId, base), null);
+  assert.equal(authorisedMarketingPhotoUrl(otherListing, clientId, listingId, base), null);
+  assert.equal(authorisedMarketingPhotoUrl(otherHost, clientId, listingId, base), null);
+  assert.equal(authorisedMarketingPhotoUrl("http://media.example.test/front.jpg", clientId, listingId, base), null);
+  const sources = publicListingPhotoSources([privateKey, own, otherHost, "not-a-photo"], clientId, listingId, "hillside-5e95f1db", null, base);
+  assert.deepEqual(sources, [publicMediaPath("hillside-5e95f1db", 0), own]);
 });
 
 test("public media paths are same-origin and not expiring storage URLs", () => {

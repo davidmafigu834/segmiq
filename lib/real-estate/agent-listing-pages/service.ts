@@ -14,7 +14,8 @@ import {
   canReadShareAnalytics,
   canRevokeShare,
   classifyUserAgent,
-  countPrivatePhotos,
+  listingHasMarketingPhoto,
+  publicListingPhotoSources,
   dealSideForListing,
   DEFAULT_LISTING_PAGE_SETTINGS,
   enquiryAssigneeOverride,
@@ -25,7 +26,6 @@ import {
   normaliseCampaignLabel,
   phoneHash,
   projectPublicProperty,
-  publicMediaPath,
   safeAgencyHttpUrl,
   shareAcceptsAttribution,
   shareCaption,
@@ -343,7 +343,7 @@ export async function getShareLink(db: Db, actor: ShareActor, clientId: string, 
         status: listing.status ?? null,
         approvalStatus: listing.approval_status ?? null,
         price: listing.price ?? null,
-        hasAuthorisedPhoto: countPrivatePhotos(listing.photos, clientId, String(row.listing_id)) > 0,
+        hasAuthorisedPhoto: listingHasMarketingPhoto(listing.photos, clientId, String(row.listing_id), process.env.CLOUDFLARE_R2_PUBLIC_URL),
       },
     },
   };
@@ -393,7 +393,7 @@ export async function listShareLinks(
           status: listing.status ?? null,
           approvalStatus: listing.approval_status ?? null,
           price: listing.price ?? null,
-          hasAuthorisedPhoto: countPrivatePhotos(listing.photos, clientId, String(row.listing_id)) > 0,
+          hasAuthorisedPhoto: listingHasMarketingPhoto(listing.photos, clientId, String(row.listing_id), process.env.CLOUDFLARE_R2_PUBLIC_URL),
         },
       };
     }),
@@ -486,6 +486,15 @@ async function composePage(
   token: string | null
 ) {
   const money = await currencyFor(db, String(listing.client_id));
+  const slug = String(listing.public_slug);
+  const photoSources = publicListingPhotoSources(
+    listing.photos,
+    String(listing.client_id),
+    String(listing.id),
+    slug,
+    token,
+    process.env.CLOUDFLARE_R2_PUBLIC_URL
+  );
   const property = projectPublicProperty({
     address: text(listing.address),
     suburb: text(listing.suburb),
@@ -499,9 +508,8 @@ async function composePage(
     sizeSqm: listing.size_sqm == null ? null : Number(listing.size_sqm),
     description: text(listing.description),
     status: gate.publicStatus,
-    photoCount: countPrivatePhotos(listing.photos, String(listing.client_id), String(listing.id)),
+    photoCount: photoSources.length,
   });
-  const slug = String(listing.public_slug);
   const agencyName = settings.publicAgencyName || text(client.name) || "Agency";
   const website = safeAgencyHttpUrl(settings.verifiedWebsite, settings.verifiedWebsite);
   const catalogue = safeAgencyHttpUrl(settings.verifiedWebsite, settings.catalogueUrl);
@@ -538,10 +546,7 @@ async function composePage(
       viewing: acceptsNewEnquiry({ ok: true, advertiseAsAvailable: gate.advertiseAsAvailable, publicStatus: gate.publicStatus }),
       whatsapp,
     },
-    photos: Array.from({ length: property.photoCount }, (_, index) => ({
-      index,
-      src: publicMediaPath(slug, index, token),
-    })),
+    photos: photoSources.map((src, index) => ({ index, src })),
     related,
     token: token ? true : false,
   };
@@ -558,7 +563,9 @@ async function relatedListings(db: Db, clientId: string, listingId: string, mone
     .limit(4);
   return ((data ?? []) as Array<Record<string, unknown>>).map((row) => {
     const slug = text(row.public_slug);
-    const photos = countPrivatePhotos(row.photos, clientId, String(row.id));
+    const photos = slug
+      ? publicListingPhotoSources(row.photos, clientId, String(row.id), slug, null, process.env.CLOUDFLARE_R2_PUBLIC_URL)
+      : [];
     const amount = row.price == null || !Number.isFinite(Number(row.price)) ? null : Number(row.price);
     const priceLabel = money.configured && money.currency && amount != null
       ? `${money.currency} ${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
@@ -569,7 +576,7 @@ async function relatedListings(db: Db, clientId: string, listingId: string, mone
       bedrooms: row.bedrooms == null ? null : Number(row.bedrooms),
       bathrooms: row.bathrooms == null ? null : Number(row.bathrooms),
       priceLabel,
-      photoSrc: slug && photos > 0 ? publicMediaPath(slug, 0) : null,
+      photoSrc: photos[0] ?? null,
       href: slug ? `/property/${slug}` : null,
     };
   });

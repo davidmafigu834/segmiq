@@ -531,15 +531,64 @@ export function mediaPathIsDurableMarketingAsset(path: string): boolean {
   return path.startsWith("/api/public/listing-pages/media?") && !/X-Amz-Signature|r2\.cloudflarestorage|Expires=/i.test(path);
 }
 
+const MARKETING_IMAGE_NAME = /^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp|avif)$/i;
+
+function isPrivatePhotoKey(value: unknown, clientId: string, listingId: string): value is string {
+  if (typeof value !== "string") return false;
+  const prefix = `clients/${clientId}/listings/${listingId}/photos/`;
+  return value.startsWith(prefix) && MARKETING_IMAGE_NAME.test(value.slice(prefix.length));
+}
+
 export function countPrivatePhotos(photos: unknown, clientId: string, listingId: string): number {
   if (!Array.isArray(photos)) return 0;
-  const prefix = `clients/${clientId}/listings/${listingId}/photos/`;
-  return photos.filter((value) => typeof value === "string" && value.startsWith(prefix) && /^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp|avif)$/i.test(value.slice(prefix.length))).length;
+  return photos.filter((value) => isPrivatePhotoKey(value, clientId, listingId)).length;
+}
+
+/** A photograph already published for this listing on the agency's public media host. */
+export function authorisedMarketingPhotoUrl(value: unknown, clientId: string, listingId: string, publicBase: string | null | undefined): string | null {
+  if (typeof value !== "string" || typeof publicBase !== "string" || !publicBase.trim()) return null;
+  let image: URL;
+  let base: URL;
+  try {
+    image = new URL(value);
+    base = new URL(publicBase);
+  } catch {
+    return null;
+  }
+  if (image.protocol !== "https:" || base.protocol !== "https:" || image.host !== base.host) return null;
+  if (image.username || image.password || image.search || image.hash) return null;
+  const root = base.pathname.replace(/\/$/, "");
+  const folder = `${root}/clients/${clientId}/projects/real-estate-listing-${listingId}/originals/`;
+  if (!image.pathname.startsWith(folder)) return null;
+  const name = image.pathname.slice(folder.length);
+  if (name.includes("/") || !MARKETING_IMAGE_NAME.test(name)) return null;
+  return image.toString();
+}
+
+export function publicListingPhotoSources(photos: unknown, clientId: string, listingId: string, slug: string, token: string | null, publicBase: string | null | undefined): string[] {
+  if (!Array.isArray(photos)) return [];
+  let privateIndex = 0;
+  const sources: string[] = [];
+  for (const value of photos) {
+    if (sources.length >= 50) break;
+    if (isPrivatePhotoKey(value, clientId, listingId)) {
+      sources.push(publicMediaPath(slug, privateIndex, token));
+      privateIndex += 1;
+      continue;
+    }
+    const url = authorisedMarketingPhotoUrl(value, clientId, listingId, publicBase);
+    if (url) sources.push(url);
+  }
+  return sources;
+}
+
+export function listingHasMarketingPhoto(photos: unknown, clientId: string, listingId: string, publicBase: string | null | undefined): boolean {
+  if (!Array.isArray(photos)) return false;
+  return photos.some((value) => isPrivatePhotoKey(value, clientId, listingId) || authorisedMarketingPhotoUrl(value, clientId, listingId, publicBase) != null);
 }
 
 export function privatePhotoKeyAt(photos: unknown, clientId: string, listingId: string, index: number): string | null {
   if (!Array.isArray(photos) || !Number.isInteger(index) || index < 0) return null;
-  const prefix = `clients/${clientId}/listings/${listingId}/photos/`;
-  const keys = photos.filter((value): value is string => typeof value === "string" && value.startsWith(prefix) && /^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp|avif)$/i.test(value.slice(prefix.length)));
+  const keys = photos.filter((value): value is string => isPrivatePhotoKey(value, clientId, listingId));
   return keys[index] ?? null;
 }
