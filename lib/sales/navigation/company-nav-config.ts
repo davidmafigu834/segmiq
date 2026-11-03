@@ -637,6 +637,15 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     match: (p) => exactOrChild(p, "/client/agents/performance"),
   },
   {
+    id: "compliance-centre",
+    label: "Compliance Centre",
+    href: "/client/compliance/centre",
+    icon: "compliance",
+    section: "more_tools",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/compliance/centre"),
+  },
+  {
     id: "compliance",
     label: "Compliance Cases",
     href: "/client/compliance",

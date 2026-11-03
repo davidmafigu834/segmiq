@@ -4,6 +4,7 @@ import { listingLabel } from "@/lib/real-estate/helpers";
 import { isRealEstate } from "@/lib/terminology";
 import { callAtomic } from "@/lib/real-estate/atomic-rpc";
 import { hasPermission, P } from "@/lib/auth/rbac";
+import { maskProfileForAgent } from "@/lib/real-estate/compliance-management/engine";
 import type { UserRole } from "@/types";
 import {
   generateComplianceDocKey,
@@ -44,6 +45,7 @@ type Actor = {
   supportAccess?: boolean;
   hasComplianceRead: boolean;
   hasComplianceReview: boolean;
+  hasComplianceEscalate?: boolean;
 };
 
 export type ComplianceListTab =
@@ -87,6 +89,7 @@ export async function loadComplianceActor(session: {
     supportAccess,
     hasComplianceRead: supportAccess || hasPermission({ userId: session.userId, role: session.role, clientId: effectiveClientId ?? session.clientId ?? null }, P.COMPLIANCE_READ),
     hasComplianceReview: !supportAccess && hasPermission({ userId: session.userId, role: session.role, clientId: effectiveClientId ?? session.clientId ?? null }, P.COMPLIANCE_REVIEW),
+    hasComplianceEscalate: !supportAccess && hasPermission({ userId: session.userId, role: session.role, clientId: effectiveClientId ?? session.clientId ?? null }, P.COMPLIANCE_ESCALATE),
   };
 }
 
@@ -142,6 +145,14 @@ const SAFE_EVENT_SUMMARIES: Record<string, string> = {
   REJECTED: "Compliance review required before this transaction can proceed",
   CASE_REOPENED: "Compliance case reopened",
   NOTE_ADDED: "Compliance case note recorded",
+  REQUIREMENT_DECIDED: "A requirement decision was recorded.",
+  INVITATION_CREATED: "A document request was created.",
+  INVITATION_SENT: "A document request was sent.",
+  INVITATION_SUBMITTED: "A customer submission was received.",
+  INVITATION_REVOKED: "A document request was revoked.",
+  PAYMENT_EVIDENCE: "Payment evidence status changed.",
+  LEGAL_MILESTONE: "A legal-transfer milestone was recorded.",
+  ESCALATED: "A restricted review was recorded.",
 };
 
 export function safeComplianceEventSummary(eventType: string): string {
@@ -163,7 +174,7 @@ export function projectComplianceCaseRow(
     status: row.status,
     status_label: opts.statusLabel,
     risk_level: row.risk_level,
-    cdd_profile: row.cdd_profile,
+    cdd_profile: opts.seeInternal ? row.cdd_profile : maskProfileForAgent((row.cdd_profile as Record<string, unknown>) ?? {}),
     buyer_agent_name: opts.buyerAgentName,
     reviewer_name: opts.reviewerName,
     approved_by_name: opts.approvedByName,
@@ -704,7 +715,9 @@ export async function getComplianceCaseDetail(opts: {
       relationship_type: party.relationship_type as string,
       ...(seeInternal ? { contact_id: party.contact_id, notes: party.notes, created_at: party.created_at } : {}),
     })),
-    events: (events ?? []).map((ev) => ({
+    events: (events ?? [])
+      .filter((ev) => opts.actor.hasComplianceEscalate || ev.confidential !== true)
+      .map((ev) => ({
       id: ev.id as string,
       eventType: ev.event_type as string,
       summary: seeInternal ? (ev.summary as string | null) : safeComplianceEventSummary(ev.event_type as string),

@@ -3,6 +3,7 @@
 import { useMediaQuery } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
 import { CompanyRePageFrame } from "@/components/real-estate/company/CompanyRePageFrame";
 import { ComplianceWorkspace } from "@/components/real-estate/compliance/ComplianceWorkspace";
+import { ComplianceCentre } from "@/components/real-estate/compliance/ComplianceCentre";
 import type { CompanyPageChrome } from "@/lib/real-estate/company-page-chrome";
 import { useState } from "react";
 
@@ -10,6 +11,7 @@ export function CompanyCompliancePage({
   chrome,
   clientId,
   initialTab,
+  mode = "cases",
   title = "Compliance",
   description = "Review client due diligence and transaction compliance.",
   breadcrumb = "Company / Compliance",
@@ -17,6 +19,7 @@ export function CompanyCompliancePage({
   chrome: CompanyPageChrome;
   clientId: string;
   initialTab?: "attention" | "under_review" | "edd" | "approved" | "restricted" | "all";
+  mode?: "cases" | "centre";
   title?: string;
   description?: string;
   breadcrumb?: string;
@@ -33,11 +36,15 @@ export function CompanyCompliancePage({
       hideMobileChrome={stackedSplit && Boolean(selectedId)}
       primaryAction={null}
     >
+      {mode === "centre" ? (
+        <ComplianceCentre clientId={clientId} manager />
+      ) : (
       <ComplianceWorkspace
         clientId={clientId}
         initialTab={initialTab}
         onSelectionChange={setSelectedId}
       />
+      )}
     </CompanyRePageFrame>
   );
 }

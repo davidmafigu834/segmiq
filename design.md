@@ -7,7 +7,7 @@ Do not invent a second palette. Marketing pages keep the existing SegmiQ site.
 modern-minimal
 
 ## Macrostructure family
-- App pages: Workbench. One primary fact, then the next action, then the record.
+- App pages: Workbench. One primary fact, then the next action, then the record. Compliance uses the same order: what needs attention, the next authorised action, then the record.
 - Portal pages: same type and accent, larger type, no internal controls.
 - Marketing pages: unchanged.
 

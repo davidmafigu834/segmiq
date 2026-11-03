@@ -17,6 +17,7 @@ import {
   ListTodo,
   MessageSquare,
   Search,
+  Shield,
   Target,
   Trophy,
   UserRound,
@@ -47,6 +48,7 @@ export type SalesNavIconId =
   | "listings"
   | "offers"
   | "transactions"
+  | "compliance"
   | "opportunities"
   | "owners"
   | "inspections"
@@ -118,6 +120,7 @@ export const SALES_NAV_LUCIDE: Record<Exclude<SalesNavIconId, "whatsapp">, Lucid
   commissions: Wallet,
   offers: Handshake,
   transactions: Landmark,
+  compliance: Shield,
 };
 
 function exactOrChild(pathname: string, href: string): boolean {
@@ -515,6 +518,15 @@ export function resolveSalesNavItems(
     mobileLabel: "Shared",
     match: (p) => exactOrChild(p, "/sales/shared-listings"),
   };
+  const complianceItem: SalesNavItemConfig = {
+    id: "compliance",
+    label: "Compliance",
+    href: "/sales/compliance",
+    icon: "compliance",
+    section: "agency",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/sales/compliance"),
+  };
   return items.flatMap((item) => {
     if (item.id === "quotes") return [];
     if (item.id === "projects" || item.id === "myWork") return [];
@@ -527,6 +539,7 @@ export function resolveSalesNavItems(
         sharedListingsItem,
         offersItem,
         transactionsItem,
+        complianceItem,
         commissionsItem,
       ];
     }
@@ -558,6 +571,7 @@ const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
   listings: "agency",
   sharedListings: "agency",
   transactions: "agency",
+  compliance: "agency",
   commissions: "agency",
   pipeline: "more_tools",
   socialInbox: "more_tools",

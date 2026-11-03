@@ -59,7 +59,7 @@ function StatusPill({ status, label }: { status: string; label: string }) {
         : status === "edd_required" || status === "more_information_required"
           ? "warning"
           : status === "ready_for_review" || status === "under_review"
-            ? "brand"
+            ? "info"
             : "neutral";
   return (
     <Badge tone={tone} appearance="soft">
@@ -173,7 +173,7 @@ export function ComplianceCasePanel({
       ) : null}
       <aside
         className={cn(
-          "flex h-full min-h-[660px] flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none",
+          "flex h-full min-h-0 flex-col overflow-hidden bg-sales-surface",
           overlay &&
             "fixed inset-y-0 right-0 z-[70] w-full max-w-[640px] rounded-none border-y-0 border-r-0 sm:rounded-l-[14px] sm:border-y sm:border-r",
           stacked && overlay && "inset-0 max-w-none rounded-none"
@@ -224,7 +224,7 @@ export function ComplianceCasePanel({
               }`}
             >
               {label}
-              {section === id ? <span className="absolute inset-x-1 -bottom-px h-[2px] bg-sales-brand" /> : null}
+              {section === id ? <span className="absolute inset-x-1 -bottom-px h-[2px] bg-sales-text-primary" /> : null}
             </button>
           ))}
         </nav>
@@ -320,13 +320,13 @@ export function ComplianceCasePanel({
           ) : null}
 
           {data && section === "documents" ? (
-            <ul className="space-y-2">
+            <ul className="divide-y divide-sales-border">
               {data.documents.map((d) => (
-                <li key={d.id} className="rounded-[12px] border border-sales-border p-3">
+                <li key={d.id} className="py-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-[13px] font-medium">{d.label}</p>
-                      <p className="text-[12px] capitalize text-sales-text-secondary">{d.status.replace(/_/g, " ")}</p>
+                      <p className="text-[12px] text-sales-text-secondary">{d.status.replace(/_/g, " ")}</p>
                       {d.originalFilename ? (
                         <p className="mt-1 text-[12px] text-sales-text-muted">
                           {d.originalFilename}
@@ -430,10 +430,17 @@ export function ComplianceCasePanel({
 
           {data && section === "review" ? (
             <div className="space-y-3">
-              {data.canCollect && data.completeness.readyForReview && ["in_progress", "awaiting_documents", "more_information_required"].includes(status) ? (
-                <Button variant="primary" disabled={busy} onClick={() => void mutate("submit_review")}>
-                  Submit for review
-                </Button>
+              {data.canCollect && ["in_progress", "awaiting_documents", "more_information_required"].includes(status) ? (
+                <div className="space-y-2">
+                  {!data.completeness.readyForReview ? (
+                    <p className="text-[12px] text-sales-text-secondary">
+                      You can submit now for guidance; only accepted, current evidence can support final approval.
+                    </p>
+                  ) : null}
+                  <Button variant="primary" disabled={busy} onClick={() => void mutate("submit_review")}>
+                    Submit for review
+                  </Button>
+                </div>
               ) : null}
               {data.canReview && status === "ready_for_review" ? (
                 <Button variant="primary" disabled={busy} onClick={() => void mutate("start_review")}>

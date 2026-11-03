@@ -9,6 +9,7 @@ import { CreateOfferSheet, type CreateOfferPrefill } from "@/components/real-est
 import { ListingOffersSection, OfferDetailPanel } from "@/components/real-estate/offers/OfferDetailPanel";
 import { ListingMarketingSection } from "@/components/real-estate/marketing/ListingMarketingSection";
 import { MarketThisProperty } from "@/components/real-estate/listing-pages/MarketThisProperty";
+import { ContextCompliancePanel } from "@/components/real-estate/compliance/ContextCompliancePanel";
 
 type MatchContact = {
   id: string;
@@ -100,6 +101,9 @@ export function ListingDetailView({
           {listing.bathrooms != null ? ` · ${listing.bathrooms} bath` : ""}
           {listing.size_sqm != null ? ` · ${listing.size_sqm} m²` : ""}
         </p>
+        <div className="mt-4">
+          <ContextCompliancePanel clientId={clientId} context="property" title="Listing compliance" listingId={listingId} />
+        </div>
         {listing.status === "under_offer" ? (
           <p className="mt-2 text-sm font-medium text-amber-800">Under offer</p>
         ) : null}

@@ -1,5 +1,14 @@
 [
   {
+    "date": "2026-11-03",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "SegmiQ operations",
+    "design_system": "design.md",
+    "enrichment": "none",
+    "brief": "Compliance workbench: one outstanding fact, the next authorised action, then the record. Lime stays on the primary action."
+  },
+  {
     "date": "2026-10-24",
     "scope": "app",
     "macrostructure": "Workbench",

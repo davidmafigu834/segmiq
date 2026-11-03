@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClipboardCheck, Phone, ScrollText, UserRound } from "lucide-react";
 import { MandateActions, type MandateRow } from "./MandateActions";
+import { ContextCompliancePanel } from "@/components/real-estate/compliance/ContextCompliancePanel";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
@@ -169,9 +170,12 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
               </a>
             </div>
           ) : <p className="mb-3 text-[13px] text-sales-text-muted">No phone on these opportunities.</p>}
-          <ul className="space-y-2">
+          {selectedOwner.contactId.startsWith("unlinked:") ? null : (
+            <ContextCompliancePanel clientId={clientId} context="seller" title="Seller verification" contactId={selectedOwner.contactId} />
+          )}
+          <ul className="mt-4 divide-y divide-sales-border">
             {linked.map((row) => (
-              <li key={row.id} className="rounded-[10px] border border-sales-border-subtle px-3 py-2.5">
+              <li key={row.id} className="py-2.5">
                 <p className="text-[14px] font-semibold">{[row.suburb, row.city].filter(Boolean).join(", ") || "Location pending"}</p>
                 <p className="mt-0.5 text-[12px] text-sales-text-muted">
                   {row.property_intent === "sale" ? "For sale" : row.property_intent === "rent" ? "To rent" : "Intent not set"} · {row.status.replaceAll("_", " ")}

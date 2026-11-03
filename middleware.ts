@@ -229,7 +229,10 @@ export async function middleware(req: NextRequest) {
     path.startsWith("/d/") ||
     path.startsWith("/p/") ||
     path.startsWith("/property/") ||
+    path.startsWith("/verify/") ||
+    path.startsWith("/api/public/compliance") ||
     path.startsWith("/dev/listing-preview") ||
+    path.startsWith("/dev/compliance-preview") ||
     path.startsWith("/f/") ||
     path === "/cloud" ||
     path === "/cloud/login" ||
@@ -249,7 +252,13 @@ export async function middleware(req: NextRequest) {
       const { releaseDemoSession } = await import("@/lib/demo/guest-gate");
       return releaseDemoSession(req);
     }
-    return withListingVisitor(req);
+    const response = withListingVisitor(req);
+    if (path.startsWith("/verify/") || path.startsWith("/api/public/compliance")) {
+      response.headers.set("Referrer-Policy", "no-referrer");
+      response.headers.set("Cache-Control", "no-store");
+      response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    }
+    return response;
   }
 
   const { enforceDemoGuestPage } = await import("@/lib/demo/guest-gate");

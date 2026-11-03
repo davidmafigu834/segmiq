@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Badge, Button } from "@/components/sales/ui";
+import { ContextCompliancePanel } from "@/components/real-estate/compliance/ContextCompliancePanel";
 
 export type OperationsTab = "milestones" | "documents" | "people" | "activities" | "commission";
 
@@ -171,6 +172,7 @@ export function TransactionOperations({
 
   return (
     <div className="space-y-3">
+      <ContextCompliancePanel clientId={clientId} context="transaction" title="Transaction compliance" transactionId={transactionId} />
       {error ? <p className="text-[12px] text-sales-danger-fg" role="alert">{error}</p> : null}
       {notice ? <p className="text-[12px] text-sales-text-secondary" role="status">{notice}</p> : null}
       {tab === "milestones" ? (

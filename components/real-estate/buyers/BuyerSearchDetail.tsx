@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import Link from "next/link";
+import { ContextCompliancePanel } from "@/components/real-estate/compliance/ContextCompliancePanel";
 import {
   PROPERTY_CATEGORIES,
   PROPERTY_CATEGORY_LABEL,
@@ -584,6 +585,10 @@ export function BuyerSearchDetail({
               </div>
             ) : null}
           </ReSection>
+
+          {bundle.contact?.id ? (
+            <ContextCompliancePanel clientId={clientId} context="buyer" title="Buyer verification" contactId={bundle.contact.id} />
+          ) : null}
 
           <ReSection id="activity" title="Activity" count={bundle.events.length}>
             {bundle.events.length === 0 ? <ReEmptyState compact title="No activity yet" /> : (

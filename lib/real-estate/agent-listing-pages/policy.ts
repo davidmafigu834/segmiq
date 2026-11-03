@@ -70,11 +70,13 @@ export type ListingGateInput = {
   status: string | null;
   featureEnabled: boolean;
   organisationActive: boolean;
+  /** Omitted or inactive keeps the historical approval gate. */
+  compliancePublication?: "inactive" | "clear" | "blocked";
 };
 
 export type ListingGate =
   | { ok: true; advertiseAsAvailable: boolean; publicStatus: string }
-  | { ok: false; reason: "cross_tenant" | "disabled" | "organisation_inactive" | "unapproved" | "unknown_status" };
+  | { ok: false; reason: "cross_tenant" | "disabled" | "organisation_inactive" | "unapproved" | "unknown_status" | "compliance_blocked" };
 
 /** Whether a listing may be marketed. Sold and rented listings can still render their real status. */
 export function listingMarketingGate(input: ListingGateInput): ListingGate {
@@ -83,6 +85,7 @@ export function listingMarketingGate(input: ListingGateInput): ListingGate {
   if (!input.featureEnabled) return { ok: false, reason: "disabled" };
   const approval = input.approvalStatus ?? "approved";
   if (approval !== "approved") return { ok: false, reason: "unapproved" };
+  if (input.compliancePublication === "blocked") return { ok: false, reason: "compliance_blocked" };
   const status = input.status ?? "";
   if (!PUBLIC_STATUSES.has(status)) return { ok: false, reason: "unknown_status" };
   return {

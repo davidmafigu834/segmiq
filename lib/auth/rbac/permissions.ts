@@ -108,6 +108,12 @@ export const P = {
   REPORTS_TEAM_GENERATE: "reports.team.generate",
   COMPLIANCE_READ: "compliance.read",
   COMPLIANCE_REVIEW: "compliance.review",
+  COMPLIANCE_INVITE: "compliance.invite",
+  COMPLIANCE_POLICY: "compliance.policy",
+  COMPLIANCE_AUDIT: "compliance.audit",
+  COMPLIANCE_ESCALATE: "compliance.escalate",
+  COMPLIANCE_FINANCE: "compliance.finance",
+  COMPLIANCE_CONVEYANCING: "compliance.conveyancing",
 
   // Organisation security (Phase 6)
   SECURITY_AUDIT_READ: "security.audit.read",
@@ -196,6 +202,12 @@ export const CLIENT_DATA_PERMISSIONS: Permission[] = [
   P.REPORTS_TEAM_GENERATE,
   P.COMPLIANCE_READ,
   P.COMPLIANCE_REVIEW,
+  P.COMPLIANCE_INVITE,
+  P.COMPLIANCE_POLICY,
+  P.COMPLIANCE_AUDIT,
+  P.COMPLIANCE_ESCALATE,
+  P.COMPLIANCE_FINANCE,
+  P.COMPLIANCE_CONVEYANCING,
 ];
 
 export function isClientDataPermission(permission: Permission): boolean {

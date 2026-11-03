@@ -6,6 +6,7 @@ import { appendInterestedListingIds } from "@/lib/real-estate/helpers";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { checkDbRateLimit } from "@/lib/auth/db-rate-limit";
 import { getPublicBaseUrl } from "@/lib/constants";
+import { listingCompliancePublication } from "@/lib/real-estate/compliance-management/publication";
 import {
   absoluteListingUrl,
   acceptsNewEnquiry,
@@ -227,6 +228,7 @@ export async function generateShareLink(
     listingOrganisationId: String(listing.client_id),
     approvalStatus: (listing.approval_status as string | null) ?? null,
     status: (listing.status as string | null) ?? null,
+    compliancePublication: await listingCompliancePublication(db, clientId, String(listing.id)),
     featureEnabled: settings.enabled,
     organisationActive: clientIsActive(org.client),
   });
@@ -426,6 +428,7 @@ export async function loadPublicListingPage(db: Db, slug: string, token: string 
     listingOrganisationId: clientId,
     approvalStatus: (row.approval_status as string | null) ?? null,
     status: (row.status as string | null) ?? null,
+    compliancePublication: await listingCompliancePublication(db, clientId, String(row.id)),
     featureEnabled: settings.enabled,
     organisationActive: clientIsActive(org.client),
   });
@@ -604,6 +607,7 @@ async function resolvePublicTarget(db: Db, slug: string, token: string | null, r
     listingOrganisationId: String(row.client_id),
     approvalStatus: (row.approval_status as string | null) ?? null,
     status: (row.status as string | null) ?? null,
+    compliancePublication: await listingCompliancePublication(db, String(row.client_id), String(row.id)),
     featureEnabled: settings.enabled,
     organisationActive: clientIsActive(org.client),
   });
