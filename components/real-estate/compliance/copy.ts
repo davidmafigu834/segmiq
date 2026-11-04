@@ -30,6 +30,14 @@ export function requirementTone(state: string): "success" | "warning" | "danger"
   return "info";
 }
 
+export function scanStatusLabel(status: string | null | undefined): string {
+  if (status === "clean") return "Safe to open";
+  if (status === "infected" || status === "quarantined") return "Blocked";
+  if (status === "scan_failed") return "Scan failed";
+  if (status === "scanning" || status === "unscanned") return "Awaiting scan";
+  return "Awaiting scan";
+}
+
 export function invitationStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     created: "Created",

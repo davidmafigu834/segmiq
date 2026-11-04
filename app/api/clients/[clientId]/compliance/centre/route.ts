@@ -22,6 +22,8 @@ const decision = z.object({
   expectedState: z.enum(["not_started", "awaiting_information", "submitted", "under_review", "more_information_required", "verified", "rejected", "waived", "not_applicable"]),
   decision: z.enum(["verify", "request_changes", "reject", "waive", "start_review", "mark_not_applicable"]),
   reason: z.string().max(1000).optional(),
+  customerInstruction: z.string().max(1000).optional(),
+  internalNote: z.string().max(1000).optional(),
 });
 
 const invite = z.object({
@@ -76,12 +78,15 @@ async function guard(req: Request, clientId: string) {
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
   const guarded = await guard(req, params.clientId);
   if ("error" in guarded && guarded.error) return guarded.error;
-  const section = new URL(req.url).searchParams.get("section") ?? "overview";
+  const url = new URL(req.url);
+  const section = url.searchParams.get("section") ?? "overview";
+  const page = Number(url.searchParams.get("page") ?? "1");
   const result = await complianceCentre({
     clientId: params.clientId,
     session: guarded.access!.context.auth,
     supportAccess: !guarded.access!.context.isTenantMember,
     section,
+    page: Number.isFinite(page) ? page : 1,
   });
   if ("ok" in result && result.ok === false) return NextResponse.json({ error: result.error, code: result.code }, { status: result.status });
   return NextResponse.json(result);
@@ -95,7 +100,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   const session = guarded.access!.context.auth;
   const data = parsed.data;
   const result = data.action === "decide"
-    ? await decideRequirement({ clientId: params.clientId, session, requirementId: data.requirementId, expectedState: data.expectedState, decision: data.decision, reason: data.reason })
+    ? await decideRequirement({ clientId: params.clientId, session, requirementId: data.requirementId, expectedState: data.expectedState, decision: data.decision, reason: data.reason, customerInstruction: data.customerInstruction, internalNote: data.internalNote })
     : data.action === "invite"
       ? await createDocumentInvitation({ clientId: params.clientId, session, caseId: data.caseId, requirementKeys: data.requirementKeys, purpose: data.purpose })
       : data.action === "save_policy"

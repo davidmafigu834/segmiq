@@ -10,12 +10,23 @@ import {
   mutateComplianceCase,
   startOrGetComplianceCase,
 } from "@/lib/real-estate/compliance-service";
-import { putPrivateDocument } from "@/lib/real-estate/private-document-storage";
+import { putPrivateDocument, readPrivateDocument, signPrivateDocument } from "@/lib/real-estate/private-document-storage";
+import { scannerConfigured, scanWithClamAv, storedScanStatus, verdictFromScan } from "@/lib/real-estate/compliance-management/scanner";
+import {
+  correctionMessages,
+  evidenceAccessDecision,
+  invitationDeliveryPrecheck,
+  partyRequirementSatisfied,
+  paymentStatusChange,
+  relatedPartiesFromFields,
+  replaceOpenInvitation,
+  salespersonMaySeeCase,
+  submissionDecision,
+} from "@/lib/real-estate/compliance-management/remediation";
 import {
   agentStatusLabel,
   ALLOWED_PROFILE_KEYS,
   complianceCapabilities,
-  confirmPayment,
   defaultTemplateKey,
   deriveReadiness,
   evaluateDecision,
@@ -29,7 +40,6 @@ import {
   newOtpCode,
   nextActionLabel,
   otpAccess,
-  paymentStateAfterProof,
   pickProfileFields,
   POLICY_TEMPLATES,
   safeAuditSummary,
@@ -89,10 +99,13 @@ export async function loadManagementAccess(session: SessionUser, clientId: strin
 
 function canSeeCase(capabilities: ComplianceCapabilities, actorId: string, role: string, row: { buyer_agent_id?: string | null; listing_agent_id?: string | null }): boolean {
   if (!capabilities.viewSummary) return false;
-  if (role === "CLIENT_MANAGER") return true;
-  if (role !== "SALESPERSON") return false;
-  const owner = row.buyer_agent_id ?? row.listing_agent_id ?? null;
-  return !owner || owner === actorId;
+  return salespersonMaySeeCase({
+    role,
+    actorId,
+    buyerAgentId: row.buyer_agent_id,
+    listingAgentId: row.listing_agent_id,
+    organisationWide: role === "CLIENT_MANAGER" || capabilities.review || (capabilities.viewAudit && role !== "SALESPERSON"),
+  });
 }
 
 async function seedRequirements(clientId: string, caseId: string, context: ComplianceContext, customerType: "individual" | "company", legalRoute: LegalRoute | null, transactionType: string | null) {
@@ -338,7 +351,7 @@ async function projectCase(clientId: string, caseId: string, access: Awaited<Ret
   };
 }
 
-export async function complianceCentre(opts: { clientId: string; session: SessionUser; supportAccess?: boolean; section: string }) {
+export async function complianceCentre(opts: { clientId: string; session: SessionUser; supportAccess?: boolean; section: string; page?: number }) {
   const access = await loadManagementAccess(opts.session, opts.clientId, opts.supportAccess);
   if (!access.capabilities.viewSummary) return fail(403, "You cannot view compliance.");
   const supabase = createAdminClient();
@@ -385,14 +398,20 @@ export async function complianceCentre(opts: { clientId: string; session: Sessio
         .map((event) => ({ id: event.id, caseId: event.compliance_case_id, summary: safeAuditSummary(String(event.event_type)), at: event.created_at })),
     };
   }
-  const queue = await supabase.from("compliance_case_requirements").select("id, label, state, compliance_case_id, updated_at").eq("client_id", opts.clientId).in("state", ["submitted", "under_review", "more_information_required"]).order("updated_at", { ascending: false }).limit(50);
+  const page = Number.isInteger(opts.page) && (opts.page ?? 0) > 0 ? (opts.page as number) : 1;
+  const pageSize = 25;
+  const start = (page - 1) * pageSize;
+  const queue = await supabase.from("compliance_case_requirements").select("id, label, state, compliance_case_id, updated_at").eq("client_id", opts.clientId).in("state", ["submitted", "under_review", "more_information_required"]).order("updated_at", { ascending: false }).range(start, start + pageSize);
   if (queue.error && unavailable(queue.error)) return fail(503, "Compliance foundation migration is not applied.", "COMPLIANCE_FOUNDATION_UNAVAILABLE");
-  const caseIds = [...new Set((queue.data ?? []).map((row) => row.compliance_case_id as string))];
+  const rawQueue = queue.data ?? [];
+  const hasMore = rawQueue.length > pageSize;
+  const pageRows = rawQueue.slice(0, pageSize);
+  const caseIds = [...new Set(pageRows.map((row) => row.compliance_case_id as string))];
   const cases = caseIds.length
-    ? await supabase.from("compliance_cases").select("id, context, status, contact_id, listing_id, assigned_compliance_user_id, buyer_agent_id").eq("client_id", opts.clientId).in("id", caseIds)
+    ? await supabase.from("compliance_cases").select("id, context, status, contact_id, listing_id, assigned_compliance_user_id, buyer_agent_id, listing_agent_id").eq("client_id", opts.clientId).in("id", caseIds)
     : { data: [] as Array<Record<string, unknown>> };
   const caseById = new Map((cases.data ?? []).map((row) => [row.id as string, row]));
-  const visible = (queue.data ?? []).filter((row) => {
+  const visible = pageRows.filter((row) => {
     const parent = caseById.get(row.compliance_case_id as string);
     if (!parent) return false;
     return canSeeCase(access.capabilities, access.actor.id, access.actor.role, parent as { buyer_agent_id?: string | null });
@@ -420,6 +439,9 @@ export async function complianceCentre(opts: { clientId: string; session: Sessio
       };
     }),
     canReview: access.capabilities.review,
+    page,
+    pageSize,
+    hasMore,
   };
 }
 
@@ -430,18 +452,28 @@ export async function decideRequirement(opts: {
   expectedState: RequirementState;
   decision: RequirementDecision;
   reason?: string | null;
+  customerInstruction?: string | null;
+  internalNote?: string | null;
 }) {
   const access = await loadManagementAccess(opts.session, opts.clientId);
   const supabase = createAdminClient();
-  const { data: requirement } = await supabase.from("compliance_case_requirements").select("id, state, waiver_permitted, compliance_case_id").eq("id", opts.requirementId).eq("client_id", opts.clientId).maybeSingle();
+  const { data: requirement } = await supabase.from("compliance_case_requirements").select("id, state, waiver_permitted, compliance_case_id, requirement_key").eq("id", opts.requirementId).eq("client_id", opts.clientId).maybeSingle();
   if (!requirement) return fail(404, "Requirement not found.");
   const { data: row } = await supabase.from("compliance_cases").select("created_by, buyer_agent_id, submitted_by").eq("id", requirement.compliance_case_id as string).eq("client_id", opts.clientId).maybeSingle();
   if (!row) return fail(404, "Case not found.");
+  let recordedReason = opts.reason ?? null;
+  let internalNote: string | null = null;
+  if (opts.decision === "request_changes") {
+    const messages = correctionMessages({ customerInstruction: opts.customerInstruction, internalNote: opts.internalNote });
+    if (!messages.ok) return fail(400, messages.error);
+    recordedReason = messages.customerInstruction;
+    internalNote = messages.internalNote;
+  }
   const decision = evaluateDecision({
     decision: opts.decision,
     from: requirement.state as RequirementState,
     waiverPermitted: Boolean(requirement.waiver_permitted),
-    reason: opts.reason,
+    reason: recordedReason,
     actorIsIndependent: independentReviewer(access.actor.id, { createdBy: row.created_by as string | null, buyerAgentId: row.buyer_agent_id as string | null, submittedBy: row.submitted_by as string | null }),
     actorMayReview: access.capabilities.approveEvidence,
   });
@@ -452,7 +484,7 @@ export async function decideRequirement(opts: {
     p_expected_state: opts.expectedState,
     p_actor_id: access.actor.id,
     p_next_state: decision.to,
-    p_reason: opts.reason ?? null,
+    p_reason: recordedReason,
   });
   if (rpc.error && unavailable(rpc.error)) return fail(503, "The compliance decision function is not available. Apply the foundation migration before recording decisions.", "COMPLIANCE_FOUNDATION_UNAVAILABLE");
   if (rpc.error) {
@@ -460,6 +492,8 @@ export async function decideRequirement(opts: {
     const status = message.includes("RE409") ? 409 : message.includes("RE404") ? 404 : 400;
     return fail(status, message.replace(/^RE\d+:\s*/, ""));
   }
+  let delivery: { delivered: boolean; reason: string | null; status: string } | null = null;
+  let deliveryError: string | null = null;
   if (opts.decision === "request_changes") {
     await supabase.from("compliance_work_items").insert({
       client_id: opts.clientId,
@@ -468,8 +502,30 @@ export async function decideRequirement(opts: {
       title: "Follow up on the requested correction",
       created_by: access.actor.id,
     });
+    const invited = await createDocumentInvitation({
+      clientId: opts.clientId,
+      session: opts.session,
+      caseId: requirement.compliance_case_id as string,
+      requirementKeys: [requirement.requirement_key as string],
+      purpose: "correction",
+      customerMessage: recordedReason,
+    });
+    if (invited.ok) delivery = invited.delivery;
+    else deliveryError = invited.error;
+    if (internalNote) {
+      const saved = await supabase.from("compliance_case_requirements").update({ internal_note: internalNote }).eq("id", requirement.id).eq("client_id", opts.clientId);
+      await supabase.from("compliance_case_events").insert({
+        client_id: opts.clientId,
+        compliance_case_id: requirement.compliance_case_id,
+        event_type: "REVIEW_NOTE_RECORDED",
+        summary: "An internal review note was recorded.",
+        after_value: saved.error ? internalNote : null,
+        confidential: true,
+        created_by: access.actor.id,
+      });
+    }
   }
-  return { ok: true as const, result: rpc.data };
+  return { ok: true as const, result: rpc.data, delivery, deliveryError };
 }
 
 export async function createDocumentInvitation(opts: {
@@ -479,6 +535,7 @@ export async function createDocumentInvitation(opts: {
   requirementKeys: string[];
   purpose: "submission" | "correction";
   hours?: number;
+  customerMessage?: string | null;
 }) {
   const access = await loadManagementAccess(opts.session, opts.clientId);
   if (!access.capabilities.invite) return fail(403, "You cannot request documents.");
@@ -492,9 +549,24 @@ export async function createDocumentInvitation(opts: {
   const keys = [...new Set(opts.requirementKeys)].filter((key) => allowed.has(key));
   if (keys.length === 0) return fail(400, "Choose at least one requirement on this case.");
   const { data: contact } = await supabase.from("contacts").select("email, phone").eq("id", row.contact_id as string).eq("client_id", opts.clientId).maybeSingle();
+  const precheck = invitationDeliveryPrecheck({
+    email: (contact?.email as string | null) ?? null,
+    providerConfigured: Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL),
+  });
+  if (!precheck.ok) return fail(precheck.status, precheck.error);
   const token = newInvitationToken();
   const hours = Math.min(Math.max(opts.hours ?? INVITE_HOURS, 1), 24 * 14);
-  const inserted = await supabase.from("compliance_invitations").insert({
+  const openInvites = await supabase.from("compliance_invitations").select("id, status, expires_at, requirement_keys").eq("client_id", opts.clientId).eq("compliance_case_id", opts.caseId).eq("purpose", opts.purpose).in("status", ["created", "sent", "opened", "in_progress", "changes_requested"]);
+  const now = new Date();
+  for (const item of openInvites.data ?? []) {
+    const itemKeys = (item.requirement_keys as string[]) ?? [];
+    const sameScope = keys.length === itemKeys.length && keys.every((key) => itemKeys.includes(key));
+    if (sameScope && replaceOpenInvitation({ status: item.status as string, expiresAt: item.expires_at as string, now }) === "replace") {
+      await supabase.from("compliance_invitations").update({ status: "revoked", revoked_at: now.toISOString() }).eq("id", item.id as string).eq("client_id", opts.clientId);
+    }
+  }
+  const customerMessage = opts.customerMessage?.trim().slice(0, 1000) || null;
+  const baseRow = {
     client_id: opts.clientId,
     compliance_case_id: opts.caseId,
     token_hash: hashSecret(token, secret),
@@ -502,10 +574,14 @@ export async function createDocumentInvitation(opts: {
     requirement_keys: keys,
     status: "created",
     expires_at: new Date(Date.now() + hours * 3600_000).toISOString(),
-    recipient_email: contact?.email ?? null,
+    recipient_email: precheck.email,
     recipient_phone: contact?.phone ?? null,
     created_by: access.actor.id,
-  }).select("id").maybeSingle();
+  };
+  let inserted = await supabase.from("compliance_invitations").insert({ ...baseRow, customer_message: customerMessage }).select("id").maybeSingle();
+  if (inserted.error && /customer_message/i.test(inserted.error.message ?? "")) {
+    inserted = await supabase.from("compliance_invitations").insert(baseRow).select("id").maybeSingle();
+  }
   if (inserted.error && unavailable(inserted.error)) return fail(503, "Compliance foundation migration is not applied.", "COMPLIANCE_FOUNDATION_UNAVAILABLE");
   if (inserted.error || !inserted.data) return fail(500, "Could not create the document request.");
   await supabase.from("compliance_case_events").insert({
@@ -518,20 +594,22 @@ export async function createDocumentInvitation(opts: {
   const delivery = await deliverInvitationCode({
     clientId: opts.clientId,
     invitationId: inserted.data.id as string,
-    email: (contact?.email as string | null) ?? null,
+    email: precheck.email,
     actorId: access.actor.id,
     secret,
     includeLink: `${getPublicBaseUrl()}/verify/c/${token}`,
+    customerMessage,
   });
   return { ok: true as const, invitationId: inserted.data.id, path: `/verify/c/${token}`, delivery };
 }
 
-async function deliverInvitationCode(opts: { clientId: string; invitationId: string; email: string | null; actorId: string | null; secret: string; includeLink: string }) {
+async function deliverInvitationCode(opts: { clientId: string; invitationId: string; email: string | null; actorId: string | null; secret: string; includeLink: string; customerMessage?: string | null }) {
   if (!opts.email || !process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) {
     return { status: "created" as const, delivered: false, reason: "OTP_DELIVERY_UNAVAILABLE" };
   }
   const supabase = createAdminClient();
   const code = newOtpCode();
+  await supabase.from("compliance_invitation_sessions").update({ otp_expires_at: new Date().toISOString() }).eq("invitation_id", opts.invitationId).is("verified_at", null);
   await supabase.from("compliance_invitation_sessions").insert({
     client_id: opts.clientId,
     invitation_id: opts.invitationId,
@@ -545,7 +623,7 @@ async function deliverInvitationCode(opts: { clientId: string; invitationId: str
       to: opts.email,
       from: process.env.RESEND_FROM_EMAIL,
       subject: "Your secure document request",
-      text: `Use this code to open your document request: ${code}\n\nOpen ${opts.includeLink}\n\nThe code expires in 10 minutes. SegmiQ will not ask you to send identity documents by chat.`,
+      text: `${opts.customerMessage ? `What to correct: ${opts.customerMessage}\n\n` : ""}Use this code to open your document request: ${code}\n\nOpen ${opts.includeLink}\n\nThe code expires in 10 minutes. This code does not verify your legal identity. SegmiQ will not ask you to send identity documents by chat.`,
     },
     context: { userId: opts.actorId, clientId: opts.clientId, leadId: null, notificationType: "COMPLIANCE_ALERT" },
     payloadPreview: "Compliance verification code sent",
@@ -585,11 +663,14 @@ export async function publicInvitationAction(opts: {
     if (invitation.status === "created" || invitation.status === "sent") {
       await supabase.from("compliance_invitations").update({ status: invitation.status === "created" ? "opened" : "opened", opened_at: new Date().toISOString() }).eq("id", invitation.id);
     }
+    const note = await supabase.from("compliance_invitations").select("customer_message").eq("id", invitation.id as string).maybeSingle();
+    const customerMessage = note.error ? null : (note.data?.customer_message as string | null) ?? null;
     return {
       ok: true as const,
       agencyName: client?.name ?? "Your agency",
       purpose: invitation.purpose === "correction" ? "Correct the requested information" : "Provide the requested information",
-      notice: "The agency requested this information for customer due diligence. Uploading a document does not mean it has been accepted.",
+      customerMessage,
+      notice: customerMessage ?? "The agency requested this information for customer due diligence. Uploading a document does not mean it has been accepted.",
       deliveryConfigured: Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL && invitation.recipient_email),
       expired: !access.ok,
     };
@@ -626,7 +707,7 @@ export async function publicInvitationAction(opts: {
     return fail(401, "Verify your code before continuing.");
   }
   const keys = new Set((invitation.requirement_keys as string[]) ?? []);
-  const { data: requirements } = await supabase.from("compliance_case_requirements").select("id, requirement_key, state, field_keys, document_type").eq("client_id", invitation.client_id as string).eq("compliance_case_id", invitation.compliance_case_id as string);
+  const { data: requirements } = await supabase.from("compliance_case_requirements").select("id, requirement_key, label, state, field_keys, document_type, mandatory, evidence_kind").eq("client_id", invitation.client_id as string).eq("compliance_case_id", invitation.compliance_case_id as string);
   const inScope = (requirements ?? []).filter((item) => keys.has(item.requirement_key as string));
   if (opts.action === "save" || opts.action === "submit") {
     const allowedFields = inScope.flatMap((item) => (Array.isArray(item.field_keys) ? item.field_keys : []) as string[]).filter((key) => (ALLOWED_PROFILE_KEYS as readonly string[]).includes(key));
@@ -641,7 +722,6 @@ export async function publicInvitationAction(opts: {
       if (!detected || file.bytes.length > MAX_BYTES) return fail(400, "Upload a PDF or image under 8 MB.");
       const requirement = inScope.find((item) => item.requirement_key === file.requirementKey);
       if (!requirement) continue;
-      const next = stateAfterUpload(requirement.state as RequirementState);
       const version = await supabase.from("compliance_evidence_versions").select("id", { count: "exact", head: true }).eq("requirement_id", requirement.id as string);
       const storageKey = `clients/${invitation.client_id}/compliance/${invitation.compliance_case_id}/${randomUUID()}`;
       await putPrivateDocument(storageKey, file.bytes, detected);
@@ -658,13 +738,46 @@ export async function publicInvitationAction(opts: {
         version_number: (version.count ?? 0) + 1,
         scan_status: "unscanned",
       });
-      if (next) {
-        await supabase.from("compliance_case_requirements").update({ state: next }).eq("id", requirement.id as string).eq("client_id", invitation.client_id as string).in("state", ["not_started", "awaiting_information", "more_information_required", "rejected", "submitted"]);
+    }
+    const parties = relatedPartiesFromFields(opts.fields ?? {});
+    for (const party of parties) {
+      const prior = await supabase.from("compliance_related_parties").select("id").eq("client_id", invitation.client_id as string).eq("compliance_case_id", invitation.compliance_case_id as string).eq("relationship_type", party.relationshipType).eq("full_name", party.fullName).maybeSingle();
+      if (!prior.data) {
+        await supabase.from("compliance_related_parties").insert({
+          client_id: invitation.client_id,
+          compliance_case_id: invitation.compliance_case_id,
+          full_name: party.fullName,
+          relationship_type: party.relationshipType,
+        });
       }
     }
+    const stored = await supabase.from("compliance_evidence_versions").select("requirement_id").eq("client_id", invitation.client_id as string).eq("compliance_case_id", invitation.compliance_case_id as string);
+    const storedIds = new Set((stored.data ?? []).map((item) => item.requirement_id as string));
+    const providedKeys = inScope.filter((item) => storedIds.has(item.id as string) || partyRequirementSatisfied(item.requirement_key as string, parties)).map((item) => item.requirement_key as string);
+    const decision = submissionDecision({
+      action: opts.action,
+      requirements: inScope.map((item) => ({
+        key: item.requirement_key as string,
+        label: (item.label as string) || "Requested information",
+        mandatory: Boolean(item.mandatory),
+        evidence: (item.evidence_kind as string) || "document",
+        state: item.state as string,
+        fieldKeys: Array.isArray(item.field_keys) ? item.field_keys as string[] : [],
+      })),
+      fields: picked,
+      providedKeys,
+    });
+    if (!decision.ok) return fail(400, decision.error);
     if (opts.action === "save") {
       await supabase.from("compliance_invitations").update({ status: "in_progress" }).eq("id", invitation.id);
       return { ok: true as const, saved: true };
+    }
+    for (const key of decision.updates) {
+      const requirement = inScope.find((item) => item.requirement_key === key);
+      if (!requirement) continue;
+      const next = stateAfterUpload(requirement.state as RequirementState);
+      if (!next) continue;
+      await supabase.from("compliance_case_requirements").update({ state: next }).eq("id", requirement.id as string).eq("client_id", invitation.client_id as string).in("state", ["not_started", "awaiting_information", "more_information_required", "rejected"]);
     }
     await supabase.from("compliance_invitations").update({ status: "submitted", submitted_at: new Date().toISOString() }).eq("id", invitation.id);
     await supabase.from("compliance_case_events").insert({
@@ -674,8 +787,14 @@ export async function publicInvitationAction(opts: {
       summary: safeAuditSummary("INVITATION_SUBMITTED"),
       created_by: null,
     });
-    await supabase.from("compliance_cases").update({ status: "in_progress" }).eq("id", invitation.compliance_case_id as string).eq("client_id", invitation.client_id as string).eq("status", "not_started");
-    await supabase.from("compliance_cases").update({ status: "ready_for_review", readiness: "under_review", submitted_for_review_at: new Date().toISOString() }).eq("id", invitation.compliance_case_id as string).eq("client_id", invitation.client_id as string).in("status", ["in_progress", "awaiting_documents", "more_information_required"]);
+    if (decision.advance) {
+      await supabase.from("compliance_cases").update({ status: "ready_for_review", readiness: "under_review", submitted_for_review_at: new Date().toISOString() }).eq("id", invitation.compliance_case_id as string).eq("client_id", invitation.client_id as string).in("status", ["not_started", "in_progress", "awaiting_documents", "more_information_required"]);
+      const reviewers = await supabase.from("users").select("id").eq("client_id", invitation.client_id as string).eq("can_review_compliance", true).limit(20);
+      const ids = (reviewers.data ?? []).map((user) => user.id as string);
+      if (ids.length) {
+        await supabase.from("notifications").insert(ids.map((user_id) => ({ user_id, type: "COMPLIANCE_ALERT", message: "A compliance submission is ready for review.", read: false })));
+      }
+    }
     return { ok: true as const, submitted: true };
   }
   return fail(400, "Unsupported action.");
@@ -684,18 +803,29 @@ export async function publicInvitationAction(opts: {
 export async function recordPaymentEvidence(opts: { clientId: string; session: SessionUser; transactionId: string; next: PaymentEvidenceState }) {
   const access = await loadManagementAccess(opts.session, opts.clientId);
   const supabase = createAdminClient();
-  const { data: txn } = await supabase.from("real_estate_transactions").select("id, payment_evidence_status, buyer_agent_id").eq("id", opts.transactionId).eq("client_id", opts.clientId).maybeSingle();
+  const { data: txn } = await supabase.from("real_estate_transactions").select("id, payment_evidence_status, buyer_agent_id, listing_agent_id, compliance_case_id, offer_id").eq("id", opts.transactionId).eq("client_id", opts.clientId).maybeSingle();
   if (!txn || !canSeeCase(access.capabilities, access.actor.id, access.actor.role, txn)) return fail(404, "Transaction not found.");
   const current = (txn.payment_evidence_status as PaymentEvidenceState | null) ?? "reported";
-  if (opts.next === "independently_confirmed") {
-    const confirmed = confirmPayment({ from: current, actorMayRecordFinance: access.capabilities.recordFinance });
-    if (!confirmed.ok) return fail(403, confirmed.error);
-  } else if (opts.next === "proof_uploaded") {
-    const uploaded = paymentStateAfterProof(current);
-    if (!uploaded || !access.capabilities.collect) return fail(409, "Upload payment evidence before marking it received. A screenshot is not confirmation.");
-  } else if (!access.capabilities.recordFinance) {
-    return fail(403, "Only an authorised reviewer can change payment verification.");
+  let caseId = (txn.compliance_case_id as string | null) ?? null;
+  if (!caseId && txn.offer_id) {
+    const linked = await supabase.from("compliance_cases").select("id").eq("client_id", opts.clientId).eq("offer_id", txn.offer_id as string).maybeSingle();
+    caseId = (linked.data?.id as string | undefined) ?? null;
   }
+  const paymentRequirements = caseId
+    ? await supabase.from("compliance_case_requirements").select("id").eq("client_id", opts.clientId).eq("compliance_case_id", caseId).eq("requirement_key", "payment_evidence")
+    : { data: [] as Array<{ id: string }> };
+  const paymentRequirementIds = (paymentRequirements.data ?? []).map((item) => item.id as string);
+  const evidence = paymentRequirementIds.length
+    ? await supabase.from("compliance_evidence_versions").select("id", { count: "exact", head: true }).eq("client_id", opts.clientId).in("requirement_id", paymentRequirementIds)
+    : { count: 0 };
+  const change = paymentStatusChange({
+    from: current,
+    to: opts.next,
+    hasStoredFile: (evidence.count ?? 0) > 0,
+    actorMayRecordFinance: access.capabilities.recordFinance,
+    actorMayCollect: access.capabilities.collect,
+  });
+  if (!change.ok) return fail(change.status, change.error);
   const updated = await supabase.from("real_estate_transactions").update({ payment_evidence_status: opts.next }).eq("id", opts.transactionId).eq("client_id", opts.clientId).eq("payment_evidence_status", current).select("payment_evidence_status").maybeSingle();
   if (updated.error && unavailable(updated.error)) return fail(503, "Payment evidence tracking is not available until the foundation migration is applied.", "COMPLIANCE_FOUNDATION_UNAVAILABLE");
   if (!updated.data) return fail(409, "Payment status changed. Refresh and try again.");
@@ -830,6 +960,171 @@ export async function revokeInvitation(opts: { clientId: string; session: Sessio
     created_by: access.actor.id,
   });
   return { ok: true as const };
+}
+
+export async function listCaseEvidence(opts: { clientId: string; session: SessionUser; caseId: string }) {
+  const access = await loadManagementAccess(opts.session, opts.clientId);
+  if (!access.capabilities.review) return fail(403, "You cannot open submitted evidence.");
+  const supabase = createAdminClient();
+  const { data: row } = await supabase.from("compliance_cases").select("id, buyer_agent_id, listing_agent_id").eq("id", opts.caseId).eq("client_id", opts.clientId).maybeSingle();
+  if (!row || !canSeeCase(access.capabilities, access.actor.id, access.actor.role, row)) return fail(404, "Case not found.");
+  const evidence = await supabase.from("compliance_evidence_versions").select("id, requirement_id, original_filename, created_at, version_number, scan_status, byte_size").eq("client_id", opts.clientId).eq("compliance_case_id", opts.caseId).order("created_at", { ascending: false }).limit(50);
+  const requirementIds = [...new Set((evidence.data ?? []).map((item) => item.requirement_id as string).filter(Boolean))];
+  const requirements = requirementIds.length
+    ? await supabase.from("compliance_case_requirements").select("id, label, state").eq("client_id", opts.clientId).in("id", requirementIds)
+    : { data: [] as Array<Record<string, unknown>> };
+  const byId = new Map((requirements.data ?? []).map((item) => [item.id as string, item]));
+  return {
+    ok: true as const,
+    evidence: (evidence.data ?? []).map((item) => {
+      const requirement = byId.get(item.requirement_id as string);
+      return {
+        id: item.id,
+        label: (requirement?.label as string) ?? "Submitted file",
+        state: (requirement?.state as string) ?? "submitted",
+        filename: item.original_filename,
+        uploadedAt: item.created_at,
+        version: item.version_number,
+        scanStatus: item.scan_status,
+        byteSize: item.byte_size,
+        canOpen: item.scan_status === "clean",
+      };
+    }),
+  };
+}
+
+export async function openCaseEvidence(opts: { clientId: string; session: SessionUser; caseId: string; evidenceId: string }) {
+  const access = await loadManagementAccess(opts.session, opts.clientId);
+  if (!access.capabilities.review) return fail(403, "You cannot open submitted evidence.");
+  const supabase = createAdminClient();
+  const { data: row } = await supabase.from("compliance_cases").select("id, buyer_agent_id, listing_agent_id").eq("id", opts.caseId).eq("client_id", opts.clientId).maybeSingle();
+  if (!row || !canSeeCase(access.capabilities, access.actor.id, access.actor.role, row)) return fail(404, "Case not found.");
+  const { data: evidence } = await supabase.from("compliance_evidence_versions").select("id, storage_key, original_filename, content_type, scan_status, compliance_case_id").eq("id", opts.evidenceId).eq("client_id", opts.clientId).eq("compliance_case_id", opts.caseId).maybeSingle();
+  if (!evidence) return fail(404, "File not found.");
+  const key = String(evidence.storage_key ?? "");
+  const prefix = `clients/${opts.clientId}/compliance/${opts.caseId}/`;
+  if (!key.startsWith(prefix) || key.includes("..")) return fail(403, "File not found.");
+  const decision = evidenceAccessDecision(evidence.scan_status as string);
+  await supabase.from("compliance_case_events").insert({
+    client_id: opts.clientId,
+    compliance_case_id: opts.caseId,
+    event_type: decision.allowBytes ? "DOCUMENT_ACCESSED" : "DOCUMENT_ACCESS_DENIED",
+    summary: decision.allowBytes ? "A scanned compliance file was opened." : "A compliance file was withheld because it is not cleared by a scanner.",
+    created_by: access.actor.id,
+  });
+  if (!decision.allowBytes) return fail(403, decision.error, decision.code);
+  const url = await signPrivateDocument(key, (evidence.original_filename as string) || "document", (evidence.content_type as string) || "application/octet-stream");
+  return { ok: true as const, url, expiresInSeconds: 300 };
+}
+
+export async function storePaymentProof(opts: { clientId: string; session: SessionUser; transactionId: string; filename: string; contentType: string; bytes: Buffer }) {
+  const detected = detectComplianceFileType(opts.bytes);
+  if (!detected || opts.bytes.length > MAX_BYTES) return fail(400, "Upload a PDF or image under 8 MB.");
+  const access = await loadManagementAccess(opts.session, opts.clientId);
+  if (!access.capabilities.collect && !access.capabilities.recordFinance) return fail(403, "You cannot record payment evidence.");
+  const supabase = createAdminClient();
+  const { data: txn } = await supabase.from("real_estate_transactions").select("id, buyer_agent_id, listing_agent_id, compliance_case_id, offer_id, payment_evidence_status").eq("id", opts.transactionId).eq("client_id", opts.clientId).maybeSingle();
+  if (!txn || !canSeeCase(access.capabilities, access.actor.id, access.actor.role, txn)) return fail(404, "Transaction not found.");
+  let caseId = (txn.compliance_case_id as string | null) ?? null;
+  if (!caseId && txn.offer_id) {
+    const linked = await supabase.from("compliance_cases").select("id").eq("client_id", opts.clientId).eq("offer_id", txn.offer_id as string).maybeSingle();
+    caseId = (linked.data?.id as string | undefined) ?? null;
+  }
+  if (!caseId) return fail(400, "Open the transaction checklist before storing payment evidence.");
+  const requirement = await supabase.from("compliance_case_requirements").select("id").eq("client_id", opts.clientId).eq("compliance_case_id", caseId).eq("requirement_key", "payment_evidence").maybeSingle();
+  let requirementId = (requirement.data?.id as string | undefined) ?? null;
+  if (!requirementId) {
+    const created = await supabase.from("compliance_case_requirements").insert({
+      client_id: opts.clientId,
+      compliance_case_id: caseId,
+      requirement_key: "payment_evidence",
+      label: "Payment evidence",
+      state: "not_started",
+      mandatory: true,
+      waiver_permitted: false,
+      evidence_kind: "payment",
+      sort_order: 80,
+    }).select("id").maybeSingle();
+    requirementId = (created.data?.id as string | undefined) ?? null;
+  }
+  if (!requirementId) return fail(500, "Could not store the payment file.");
+  const version = await supabase.from("compliance_evidence_versions").select("id", { count: "exact", head: true }).eq("requirement_id", requirementId);
+  const storageKey = `clients/${opts.clientId}/compliance/${caseId}/${randomUUID()}`;
+  await putPrivateDocument(storageKey, opts.bytes, detected);
+  await supabase.from("compliance_evidence_versions").insert({
+    client_id: opts.clientId,
+    compliance_case_id: caseId,
+    requirement_id: requirementId,
+    storage_key: storageKey,
+    checksum_sha256: createHash("sha256").update(opts.bytes).digest("hex"),
+    content_type: detected,
+    byte_size: opts.bytes.length,
+    original_filename: opts.filename.slice(0, 180),
+    version_number: (version.count ?? 0) + 1,
+    scan_status: "unscanned",
+  });
+  if (txn.payment_evidence_status === "proof_uploaded") return { ok: true as const, paymentEvidenceStatus: "proof_uploaded" };
+  return recordPaymentEvidence({ clientId: opts.clientId, session: opts.session, transactionId: opts.transactionId, next: "proof_uploaded" });
+}
+
+export async function scanStoredEvidence(opts: { clientId: string; evidenceId: string; claimedStatus?: string | null }) {
+  if (opts.claimedStatus) return fail(400, "Scan status cannot be set by a request.", "SCAN_STATUS_REJECTED");
+  if (!scannerConfigured()) return fail(503, "The compliance scanner is not configured. The file stays blocked.", "SCANNER_NOT_CONFIGURED");
+  const supabase = createAdminClient();
+  const { data: evidence } = await supabase.from("compliance_evidence_versions").select("id, storage_key, checksum_sha256, scan_status, compliance_case_id").eq("id", opts.evidenceId).eq("client_id", opts.clientId).maybeSingle();
+  if (!evidence) return fail(404, "File not found.");
+  const caseId = String(evidence.compliance_case_id ?? "");
+  const key = String(evidence.storage_key ?? "");
+  const prefix = `clients/${opts.clientId}/compliance/${caseId}/`;
+  if (!key.startsWith(prefix) || key.includes("..")) return fail(403, "File not found.");
+  if (evidence.scan_status === "clean" || evidence.scan_status === "infected" || evidence.scan_status === "quarantined") {
+    return { ok: true as const, scanStatus: evidence.scan_status as string, unchanged: true };
+  }
+  let bytes: Buffer;
+  try {
+    bytes = await readPrivateDocument(key);
+  } catch {
+    await persistScanStatus(supabase, opts.clientId, evidence.id as string, caseId, "scan_failed");
+    return fail(503, "The stored file could not be read. It stays blocked.", "SCAN_FAILED");
+  }
+  const checksum = createHash("sha256").update(bytes).digest("hex");
+  const verdict = verdictFromScan({ response: null, checksumMatches: checksum === evidence.checksum_sha256 });
+  const scanned = checksum === evidence.checksum_sha256 ? await scanWithClamAv(bytes) : verdict;
+  const status = await persistScanStatus(supabase, opts.clientId, evidence.id as string, caseId, storedScanStatus(scanned));
+  if (!status) return fail(503, "The scan result could not be stored. The file stays blocked.", "SCAN_FAILED");
+  console.info("[compliance-scan]", { evidenceId: evidence.id, outcome: status });
+  return { ok: true as const, scanStatus: status, unchanged: false };
+}
+
+export async function scanPendingEvidence(limit = 5) {
+  if (!scannerConfigured()) return { ok: false as const, code: "SCANNER_NOT_CONFIGURED", scanned: 0 };
+  const supabase = createAdminClient();
+  const pending = await supabase.from("compliance_evidence_versions").select("id, client_id").in("scan_status", ["unscanned", "scanning", "scan_failed"]).order("created_at", { ascending: true }).limit(Math.min(limit, 10));
+  const results = [];
+  for (const row of pending.data ?? []) {
+    results.push(await scanStoredEvidence({ clientId: row.client_id as string, evidenceId: row.id as string }));
+  }
+  return { ok: true as const, scanned: results.filter((item) => item.ok).length, results };
+}
+
+async function persistScanStatus(supabase: ReturnType<typeof createAdminClient>, clientId: string, evidenceId: string, caseId: string, status: "clean" | "infected" | "scan_failed" | "quarantined") {
+  const updated = await supabase.from("compliance_evidence_versions").update({ scan_status: status }).eq("id", evidenceId).eq("client_id", clientId).eq("compliance_case_id", caseId);
+  let recorded: string = status;
+  if (updated.error) {
+    const message = updated.error.message ?? "";
+    if (status === "clean" || !/scan_status|check constraint/i.test(message)) return null;
+    const fallback = await supabase.from("compliance_evidence_versions").update({ scan_status: "quarantined" }).eq("id", evidenceId).eq("client_id", clientId).eq("compliance_case_id", caseId);
+    if (fallback.error) return null;
+    recorded = "quarantined";
+  }
+  await supabase.from("compliance_case_events").insert({
+    client_id: clientId,
+    compliance_case_id: caseId,
+    event_type: "DOCUMENT_SCANNED",
+    summary: `Scanner recorded ${recorded}.`,
+    created_by: null,
+  });
+  return recorded;
 }
 
 export function mobileComplianceDto(summary: { statusLabel?: string; readiness?: string; nextAction?: string; missing?: string[] } | null) {

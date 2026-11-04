@@ -11,6 +11,13 @@ function storage(key:string) {
 export async function putPrivateDocument(key:string,body:Buffer,contentType:string,options?:{contentDisposition?:string;cacheControl?:string}) {
  const {Bucket,client}=storage(key);await client.send(new PutObjectCommand({Bucket,Key:key,Body:body,ContentType:contentType,ContentDisposition:options?.contentDisposition??"attachment",CacheControl:"private, no-store"}));
 }
+export async function readPrivateDocument(key: string): Promise<Buffer> {
+  const { Bucket, client } = storage(key);
+  const response = await client.send(new GetObjectCommand({ Bucket, Key: key }));
+  const body = response.Body;
+  if (!body || typeof body.transformToByteArray !== "function") throw new Error("Private document storage unavailable");
+  return Buffer.from(await body.transformToByteArray());
+}
 export async function signPrivateDocument(key:string,filename:string,contentType="application/octet-stream") {
  const {Bucket,client}=storage(key);const safeName=filename.replace(/["\\\r\n\u0000-\u001f]/g,"").slice(0,180)||"document";
  return getSignedUrl(client,new GetObjectCommand({Bucket,Key:key,ResponseContentType:contentType,ResponseContentDisposition:`attachment; filename="${safeName}"`}),{expiresIn:300});

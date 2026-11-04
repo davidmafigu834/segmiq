@@ -154,7 +154,8 @@ export function PublicSubmissionPortal({ token, sample = null }: { token: string
     }
   }
 
-  const fieldItems = requirements.filter((item) => item.evidence_kind !== "document");
+  const partyItems = requirements.filter((item) => item.evidence_kind === "party");
+  const fieldItems = requirements.filter((item) => item.evidence_kind !== "document" && item.evidence_kind !== "party");
   const documentItems = requirements.filter((item) => item.evidence_kind === "document");
   const stages = documentItems.length ? (["details", "documents", "review"] as const) : (["details", "review"] as const);
   const stageLabel: Record<typeof formStage, string> = { details: "Your details", documents: "Documents", review: "Review" };
@@ -212,6 +213,12 @@ export function PublicSubmissionPortal({ token, sample = null }: { token: string
                   ))}
                 </fieldset>
               ))}
+              {partyItems.map((item) => (
+                <label key={item.requirement_key} className="block text-[13px] font-medium">
+                  {item.label}
+                  <textarea className="mt-1 min-h-24 w-full rounded-[8px] border border-sales-border bg-sales-surface p-3 font-normal" value={fields[item.requirement_key] ?? ""} placeholder="One name on each line" onChange={(event) => setFields((current) => ({ ...current, [item.requirement_key]: event.target.value }))} />
+                </label>
+              ))}
             </div>
           ) : null}
           {formStage === "documents" ? (
@@ -244,7 +251,9 @@ export function PublicSubmissionPortal({ token, sample = null }: { token: string
                     <p className="text-[13px] text-sales-text-muted">
                       {item.evidence_kind === "document"
                         ? (files[item.requirement_key]?.name ?? "No file selected")
-                        : (item.field_keys ?? []).map((key) => fields[key]?.trim() || "Not entered").join(" · ")}
+                        : item.evidence_kind === "party"
+                          ? (fields[item.requirement_key]?.trim() || "No names entered")
+                          : (item.field_keys ?? []).map((key) => fields[key]?.trim() || "Not entered").join(" · ")}
                     </p>
                   </li>
                 ))}

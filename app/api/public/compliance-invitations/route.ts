@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { detectComplianceFileType } from "@/lib/real-estate/compliance";
 import { publicInvitationAction } from "@/lib/real-estate/compliance-management/service";
+import { INVITATION_SESSION_COOKIE, invitationSessionCookieOptions } from "@/lib/real-estate/compliance-management/remediation";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +12,8 @@ function clientIp(req: Request): string {
 
 function sessionCookie(req: Request): string | null {
   const raw = req.headers.get("cookie") ?? "";
-  const part = raw.split(";").map((item) => item.trim()).find((item) => item.startsWith("sq_cv="));
-  return part ? decodeURIComponent(part.slice("sq_cv=".length)) : null;
+  const part = raw.split(";").map((item) => item.trim()).find((item) => item.startsWith(`${INVITATION_SESSION_COOKIE}=`));
+  return part ? decodeURIComponent(part.slice(`${INVITATION_SESSION_COOKIE}=`.length)) : null;
 }
 
 type PublicInviteAction = "preview" | "send_code" | "verify" | "save" | "submit";
@@ -64,13 +65,7 @@ export async function POST(req: Request) {
   const responseBody = sessionId ? { ...record, sessionId: undefined } : result;
   const response = NextResponse.json(responseBody, { headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
   if (sessionId) {
-    response.cookies.set("sq_cv", sessionId, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/verify",
-      maxAge: 60 * 30,
-    });
+    response.cookies.set(INVITATION_SESSION_COOKIE, sessionId, invitationSessionCookieOptions());
   }
   return response;
 }

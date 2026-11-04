@@ -23,6 +23,11 @@ const centre = {
   policies: [{ id: "syn-policy", template_key: "individual_purchaser", version: 1, status: "draft", enforcement: { listing_publication: false }, review_note: "Sample starting point. Not a legal determination." }],
   templates: [{ key: "individual_purchaser", label: "Individual purchaser", disclaimer: "A reviewable starting point. It is not legal advice and it is not mandatory until a reviewer activates it." }],
   events: [{ id: "syn-event", summary: "Identity document submitted for review.", at: minutesAgo(12) }],
+  evidence: [
+    { id: "syn-file-1", caseId: "syn-case-1", label: "Identity document", filename: "identity.pdf", uploadedAt: minutesAgo(12), version: 1, scanStatus: "unscanned", canOpen: false },
+    { id: "syn-file-2", caseId: "syn-case-1", label: "Identity document", filename: "identity-clear.pdf", uploadedAt: minutesAgo(8), version: 2, scanStatus: "clean", canOpen: true },
+    { id: "syn-file-3", caseId: "syn-case-3", label: "Agency mandate", filename: "mandate.pdf", uploadedAt: minutesAgo(50), version: 1, scanStatus: "infected", canOpen: false },
+  ],
   requests: [{ id: "syn-request", caseType: "buyer", purpose: "submission", status: "sent", expiresAt: minutesAgo(-1440), sentAt: minutesAgo(30), submittedAt: null }],
 };
 

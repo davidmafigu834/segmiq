@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ReEmptyState, ReErrorState, RePageHeader, ReSkeletonRows, ReStatusBadge } from "@/components/real-estate/ui";
-import { caseTypeLabel, invitationStatusLabel, requirementStateLabel, requirementTone, waitingLabel, words } from "@/components/real-estate/compliance/copy";
+import { caseTypeLabel, invitationStatusLabel, requirementStateLabel, requirementTone, scanStatusLabel, waitingLabel, words } from "@/components/real-estate/compliance/copy";
 
 type QueueRow = {
   id: string;
@@ -24,10 +24,13 @@ type CentrePayload = {
   policies?: Array<{ id: string; template_key: string; version: number; status: string; enforcement: { listing_publication?: boolean }; review_note?: string | null }>;
   templates?: Array<{ key: string; label: string; disclaimer: string }>;
   events?: Array<{ id: string; summary: string; at: string }>;
+  evidence?: Array<{ id: string; caseId?: string; label: string; filename: string | null; uploadedAt: string; version: number; scanStatus: string; canOpen: boolean }>;
   requests?: Array<{ id: string; caseType: string; purpose: string; status: string; expiresAt: string; sentAt: string | null; submittedAt: string | null }>;
   canManage?: boolean;
   error?: string;
   code?: string;
+  page?: number;
+  hasMore?: boolean;
 };
 
 type Section = "overview" | "queue" | "buyers" | "sellers" | "properties" | "transactions" | "requests" | "policies" | "audit";
@@ -84,11 +87,15 @@ export function ComplianceCentre({
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [customerInstruction, setCustomerInstruction] = useState("");
+  const [internalNote, setInternalNote] = useState("");
   const [selected, setSelected] = useState<QueueRow | null>(null);
   const [policyKey, setPolicyKey] = useState("individual_purchaser");
   const [reviewNote, setReviewNote] = useState("");
   const [listingGate, setListingGate] = useState(false);
   const [changesOpen, setChangesOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [evidence, setEvidence] = useState<Array<{ id: string; label: string; filename: string | null; uploadedAt: string; version: number; scanStatus: string; canOpen: boolean }>>([]);
 
   const apiSection = section === "requests" || section === "policies" || section === "audit" ? section : "overview";
 
@@ -99,7 +106,7 @@ export function ComplianceCentre({
       return;
     }
     setLoading(true);
-    const res = await fetch(`/api/clients/${clientId}/compliance/centre?section=${apiSection}`);
+    const res = await fetch(`/api/clients/${clientId}/compliance/centre?section=${apiSection}&page=${page}`);
     const json = (await res.json().catch(() => ({}))) as CentrePayload;
     setLoading(false);
     if (res.status === 403) {
@@ -115,7 +122,7 @@ export function ComplianceCentre({
     setDenied(false);
     setError(null);
     setData(json);
-  }, [apiSection, clientId, synthetic]);
+  }, [apiSection, clientId, page, synthetic]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -135,16 +142,31 @@ export function ComplianceCentre({
     setReason("");
     setConfirming(null);
     setChangesOpen(false);
+    setEvidence([]);
+    if (synthetic) {
+      setEvidence((data?.evidence ?? []).filter((item) => !item.caseId || item.caseId === row.caseId));
+      return;
+    }
+    void fetch(`/api/clients/${clientId}/compliance/cases/${row.caseId}/evidence`).then(async (res) => {
+      if (!res.ok) return;
+      const json = (await res.json()) as { evidence?: typeof evidence };
+      setEvidence(json.evidence ?? []);
+    });
   }
 
   async function decide(decision: "verify" | "request_changes" | "reject" | "start_review") {
     if (!selected) return;
-    if (synthetic) {
-      setNotice("Synthetic preview. Nothing was saved.");
+    if (decision === "request_changes" && customerInstruction.trim().length < 8) {
+      setNotice("Write what the customer should correct. Internal notes are not sent.");
       return;
     }
-    if ((decision === "request_changes" || decision === "reject") && reason.trim().length < 3) {
+    if (decision === "reject" && reason.trim().length < 3) {
       setNotice("Record what needs to change.");
+      return;
+    }
+    if (synthetic) {
+      setNotice("Synthetic preview. Nothing was saved.");
+      setChangesOpen(false);
       return;
     }
     if ((decision === "verify" || decision === "reject") && confirming !== decision) {
@@ -158,7 +180,7 @@ export function ComplianceCentre({
     const res = await fetch(`/api/clients/${clientId}/compliance/centre`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "decide", requirementId: selected.id, expectedState: selected.state === "escalated" ? "submitted" : selected.state, decision, reason }),
+      body: JSON.stringify({ action: "decide", requirementId: selected.id, expectedState: selected.state === "escalated" ? "submitted" : selected.state, decision, reason: decision === "request_changes" ? customerInstruction : reason, customerInstruction: decision === "request_changes" ? customerInstruction : undefined, internalNote: decision === "request_changes" ? internalNote : undefined }),
     });
     const json = (await res.json().catch(() => ({}))) as { error?: string };
     setBusy(null);
@@ -166,9 +188,14 @@ export function ComplianceCentre({
       setNotice(json.error ?? "The decision was not saved.");
       return;
     }
-    setNotice(decision === "verify" ? "Requirement verified." : "Decision recorded.");
+    const delivery = json as { delivery?: { delivered?: boolean }; deliveryError?: string | null };
+    setNotice(decision === "request_changes"
+      ? (delivery.delivery?.delivered ? "Changes requested. A correction link was emailed. The code does not verify legal identity." : delivery.deliveryError ?? "The decision was saved. A correction email was not sent.")
+      : decision === "verify" ? "Requirement verified." : "Decision recorded.");
     setSelected(null);
     setReason("");
+    setCustomerInstruction("");
+    setInternalNote("");
     setChangesOpen(false);
     await load();
   }
@@ -249,7 +276,7 @@ export function ComplianceCentre({
             type="button"
             aria-current={section === item.id ? "page" : undefined}
             className={`re-focus min-h-11 shrink-0 border-b-2 px-0.5 text-[13px] font-medium ${section === item.id ? "border-sales-text-primary text-sales-text-primary" : "border-transparent text-sales-text-muted"}`}
-            onClick={() => { setSection(item.id); setSelected(null); setFilter("all"); }}
+            onClick={() => { setSection(item.id); setSelected(null); setFilter("all"); setPage(1); }}
           >
             {item.label}
           </button>
@@ -338,13 +365,46 @@ export function ComplianceCentre({
             )}
           </div>
 
+          {data?.hasMore || page > 1 ? (
+            <div className="mt-3 flex gap-3 text-[13px]">
+              <button type="button" className="re-focus min-h-11 font-semibold disabled:text-sales-text-muted" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button>
+              <button type="button" className="re-focus min-h-11 font-semibold disabled:text-sales-text-muted" disabled={!data?.hasMore} onClick={() => setPage((value) => value + 1)}>Next</button>
+            </div>
+          ) : null}
           <aside className="border-t border-sales-border pt-4 lg:sticky lg:top-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
             {selected ? (
               <div>
                 <p className="text-[12px] text-sales-text-muted">{caseTypeLabel(selected.caseType)}</p>
                 <h2 className="font-display text-[17px] font-semibold tracking-[-0.02em]">{selected.requirement}</h2>
                 <p className="mt-1 text-[13px] text-sales-text-secondary">{requirementStateLabel(selected.state)}. {selected.nextAction}</p>
-                <p className="mt-3 text-[12px] leading-5 text-sales-text-muted">Private files stay on the buyer, seller or property record. This panel records the decision. It does not preview identity documents.</p>
+                <p className="mt-3 text-[12px] leading-5 text-sales-text-muted">Files stay private. An unscanned file is quarantined and cannot be opened. Opening a cleared file does not verify the requirement.</p>
+                {evidence.length > 0 ? (
+                  <ul className="mt-3 divide-y divide-sales-border text-[13px]">
+                    {evidence.map((item) => (
+                      <li key={item.id} className="flex items-center justify-between gap-3 py-2">
+                        <span>
+                          <span className="font-medium">{item.label}</span>
+                          <span className="block text-[12px] text-sales-text-muted">{item.filename ?? "File"} · version {item.version} · {scanStatusLabel(item.scanStatus)}</span>
+                        </span>
+                        <button type="button" className="re-focus min-h-11 shrink-0 font-semibold disabled:text-sales-text-muted" disabled={!item.canOpen} onClick={() => {
+                          if (!selected) return;
+                          if (synthetic) {
+                            setNotice("Synthetic preview. No file is opened.");
+                            return;
+                          }
+                          void fetch(`/api/clients/${clientId}/compliance/cases/${selected.caseId}/evidence/${item.id}`).then(async (res) => {
+                            const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+                            if (!res.ok || !body.url) {
+                              setNotice(body.error ?? "The file cannot be opened.");
+                              return;
+                            }
+                            window.open(body.url, "_blank", "noopener,noreferrer");
+                          });
+                        }}>Open</button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p className="mt-3 text-[13px] text-sales-text-muted">No submitted file is attached to this case yet.</p>}
                 <label className="mt-4 block text-[13px] font-medium" htmlFor="decision-reason">Note for the customer, when you request a change or reject</label>
                 <textarea id="decision-reason" className="mt-1 min-h-24 w-full rounded-[8px] border border-sales-border bg-sales-surface p-3 text-[14px]" value={reason} onChange={(event) => setReason(event.target.value)} />
                 <div className="mt-3 flex flex-col gap-2">
@@ -372,9 +432,11 @@ export function ComplianceCentre({
             onSubmit={(event) => { event.preventDefault(); void decide("request_changes"); }}
           >
             <h2 id="changes-title" className="font-display text-[17px] font-semibold">Request changes</h2>
-            <p className="mt-1 text-[13px] text-sales-text-secondary">Tell the customer what to correct for {selected.requirement}. Do not include internal review notes.</p>
-            <label className="mt-3 block text-[13px] font-medium" htmlFor="changes-reason">What needs to change</label>
-            <textarea id="changes-reason" required minLength={3} className="mt-1 min-h-24 w-full rounded-[8px] border border-sales-border p-3 text-[14px]" value={reason} onChange={(event) => setReason(event.target.value)} />
+            <p className="mt-1 text-[13px] text-sales-text-secondary">The customer sees only the correction instruction. The internal note stays with the review team.</p>
+            <label className="mt-3 block text-[13px] font-medium" htmlFor="changes-customer">What the customer should correct</label>
+            <textarea id="changes-customer" required minLength={8} className="mt-1 min-h-24 w-full rounded-[8px] border border-sales-border p-3 text-[14px]" value={customerInstruction} onChange={(event) => setCustomerInstruction(event.target.value)} />
+            <label className="mt-3 block text-[13px] font-medium" htmlFor="changes-internal">Internal note</label>
+            <textarea id="changes-internal" className="mt-1 min-h-20 w-full rounded-[8px] border border-sales-border p-3 text-[14px]" value={internalNote} onChange={(event) => setInternalNote(event.target.value)} />
             <div className="mt-3 flex justify-end gap-2">
               <button type="button" className="re-focus min-h-11 px-3 text-[13px]" onClick={() => setChangesOpen(false)}>Cancel</button>
               <button type="submit" className="re-focus min-h-11 rounded-[8px] bg-sales-brand px-3 text-[13px] font-semibold text-sales-brand-text" disabled={busy !== null}>{busy === "request_changes" ? "Saving…" : "Send request"}</button>

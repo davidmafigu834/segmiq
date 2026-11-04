@@ -138,7 +138,7 @@ export function ContextCompliancePanel({
       setNotice(json.error ?? "The request was not created.");
       return;
     }
-    setNotice(json.delivery?.delivered ? "The secure request was emailed with a verification code." : `Request created. Email delivery is not active (${json.delivery?.reason ?? "not sent"}). The customer still needs a verification code before the form opens.`);
+    setNotice(json.delivery?.delivered ? "The secure request was emailed with a verification code. The code does not verify legal identity." : "The request was saved, but the email was not accepted. Request documents again to send a new code. Nothing was marked verified.");
     await load();
   }
 
@@ -283,9 +283,24 @@ export function ContextCompliancePanel({
         <div className="mt-6">
           <h3 className="font-display text-[15px] font-semibold">Payments</h3>
           <p className="mt-1 text-[13px] text-sales-text-secondary">{paymentEvidenceLabel(data.transaction.paymentEvidenceStatus)}. An uploaded receipt is not confirmed money.</p>
-          <div className="mt-2 flex flex-wrap gap-4">
-            <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" disabled={busy} onClick={() => void payment("proof_uploaded")}>Record evidence submitted</button>
-            <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" disabled={busy} onClick={() => void payment("independently_confirmed")}>Record independent confirmation</button>
+          <div className="mt-2 flex flex-col gap-3">
+            <label className="text-[13px] font-medium">
+              Payment file
+              <input className="mt-1 block w-full text-[13px] font-normal" type="file" accept="application/pdf,image/*" onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file || !transactionId) return;
+                const body = new FormData();
+                body.set("file", file);
+                setBusy(true);
+                void fetch(`/api/clients/${clientId}/compliance/transactions/${transactionId}/payment-evidence`, { method: "POST", body }).then(async (res) => {
+                  const json = (await res.json().catch(() => ({}))) as { error?: string };
+                  setBusy(false);
+                  setNotice(res.ok ? "The payment file is stored and not scanned. It is not confirmation that money was received." : json.error ?? "The payment file was not stored.");
+                  if (res.ok) await load();
+                });
+              }} />
+            </label>
+            <button type="button" className="re-focus min-h-11 self-start text-[13px] font-semibold" disabled={busy} onClick={() => void payment("independently_confirmed")}>Record independent confirmation</button>
           </div>
           <h3 className="mt-5 font-display text-[15px] font-semibold">Conveyancing</h3>
           <p className="mt-1 text-[13px] text-sales-text-muted">Record a milestone only when that step applies. Handover does not register the transfer.</p>
