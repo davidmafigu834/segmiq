@@ -12,7 +12,6 @@ import {
   answersFromClient,
   exclusivityNote,
   fieldsForKind,
-  isCompanyOwner,
   mergeCorrection,
   missingInformation,
   personName,
