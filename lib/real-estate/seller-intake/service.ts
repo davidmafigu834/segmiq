@@ -513,6 +513,8 @@ export async function publicSellerIntake(input: { token: string; sessionToken: s
   const sessionMatches = await sessionMatchesRequest(request, input.sessionToken, loaded.pepper);
   const canRead = canReadSavedAnswers({ purpose, sessionMatches });
   const kind = template.kind as IntakeKind;
+  const { data: client } = await db().from("clients").select("name, logo_url, website, meta_whatsapp_display_number").eq("id", request.client_id).maybeSingle();
+  const organisationName = (template.organisation_name as string | null)?.trim() || (client?.name as string | null)?.trim() || null;
   return {
     ok: true as const,
     version: Number(submission?.version ?? 0),
@@ -531,6 +533,10 @@ export async function publicSellerIntake(input: { token: string; sessionToken: s
         minimumMonths: (template.exclusivity_minimum_months as number | null) ?? null,
         continuesUntilVaried: Boolean(template.exclusivity_continues_until_varied),
       }),
+      agencyName: organisationName,
+      logoUrl: (client?.logo_url as string | null) ?? null,
+      websiteUrl: (client?.website as string | null) ?? null,
+      phone: (client?.meta_whatsapp_display_number as string | null) ?? null,
     }),
   };
 }

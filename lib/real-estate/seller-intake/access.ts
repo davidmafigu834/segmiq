@@ -90,21 +90,35 @@ export function publicFormProjection(input: {
   templateTitle: string;
   clauses: readonly string[];
   exclusivityNote: string | null;
+  agencyName?: string | null;
+  logoUrl?: string | null;
+  websiteUrl?: string | null;
+  phone?: string | null;
 }): {
   title: string;
   kind: IntakeKind;
   clauses: string[];
   exclusivityNote: string | null;
+  agencyName: string;
+  logoUrl: string | null;
+  websiteUrl: string | null;
+  phone: string | null;
   fields: Array<IntakeField & { value: string; locked: boolean; instruction: string | null }>;
   draftExists: boolean;
 } {
   const rejected = new Map(input.rejected.map((item) => [item.group, item.instruction]));
   const showSaved = input.canRead;
+  const logo = input.logoUrl?.startsWith("https://") ? input.logoUrl : null;
+  const website = input.websiteUrl && /^https?:\/\//.test(input.websiteUrl) ? input.websiteUrl : null;
   return {
     title: input.templateTitle,
     kind: input.kind,
     clauses: [...input.clauses],
     exclusivityNote: input.exclusivityNote,
+    agencyName: input.agencyName?.trim() || "your agency",
+    logoUrl: logo,
+    websiteUrl: website,
+    phone: input.phone?.trim() || null,
     draftExists: Object.values(input.answers).some(Boolean) && !showSaved,
     fields: fieldsForKind(input.kind).map((field) => {
       const locked = input.purpose === "correction" && input.acceptedGroups.includes(field.group);
