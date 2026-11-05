@@ -22,6 +22,7 @@ import {
   ReStatusBadge,
 } from "@/components/real-estate/ui";
 import { MandateActions, uploadEvidence } from "./MandateActions";
+import { SellerIntakePanel } from "@/components/real-estate/seller-intake/SellerIntakePanel";
 import {
   acqFieldClass,
   acqLabelClass,
@@ -48,6 +49,7 @@ type Bundle = {
   photos: Array<Record<string, unknown>>;
   prices: Array<Record<string, unknown>>;
   mandates: Array<Record<string, unknown>>;
+  parties?: Array<{ role: string; party_kind: string; display_name: string; contact_id: string | null }>;
 };
 
 const shellClass = reSalesShell;
@@ -159,7 +161,10 @@ export function AcquisitionDetail({
     city: opp.city as string | null,
     address: opp.address as string | null,
   });
-  const ownerName = bundle.contact?.name || (opp.owner_name as string) || "Owner not recorded";
+  const companyParty = (bundle.parties ?? []).find((party) => party.role === "registered_owner" && party.party_kind === "company");
+  const representativeParty = (bundle.parties ?? []).find((party) => party.role === "representative");
+  const ownerName = companyParty?.display_name || (opp.owner_name as string) || bundle.contact?.name || "Owner not recorded";
+  const representativeName = companyParty ? (representativeParty?.display_name || bundle.contact?.name || null) : null;
   const listingId = (opp.converted_listing_id as string | null) ?? null;
   const listingHref = listingId ? (basePath.includes("/sales") ? "/sales/listings" : `/client/listings/${listingId}`) : null;
   const listingDecision = conversionDecision({
@@ -248,7 +253,7 @@ export function AcquisitionDetail({
             </p>
           </ReSection>
 
-          <OwnerBlock ownerName={ownerName} phone={phone} email={bundle.contact?.email ?? null} ownersPath={ownersPath} contactId={bundle.contact?.id ?? null} />
+          <OwnerBlock ownerName={ownerName} representativeName={representativeName} phone={phone} email={bundle.contact?.email ?? null} ownersPath={ownersPath} contactId={bundle.contact?.id ?? null} />
 
           <ReSection id="acq-followup" title="Next step" action={<button type="button" className="re-focus min-h-11 text-[13px] font-semibold underline-offset-2 hover:underline sm:min-h-0" onClick={() => setContactOpen(true)}>Record contact</button>}>
             {opp.next_action_at ? (
@@ -283,6 +288,8 @@ export function AcquisitionDetail({
             setError={setError}
             act={act}
           />
+
+          <SellerIntakePanel clientId={clientId} opportunityId={opportunityId} contactId={bundle.contact?.id ?? null} />
 
           <MandateForm busy={busy} clientId={clientId} setError={setError} act={act} />
 
@@ -465,25 +472,28 @@ function Field({ label, name, children, className }: { label: string; name: stri
 
 function OwnerBlock({
   ownerName,
+  representativeName,
   phone,
   email,
   ownersPath,
   contactId,
 }: {
   ownerName: string;
+  representativeName?: string | null;
   phone: string | null;
   email: string | null;
   ownersPath: string;
   contactId: string | null;
 }) {
   return (
-    <ReSection id="acq-owner" title="Owner" action={contactId ? <Link href={`${ownersPath}?contactId=${contactId}`} className="re-focus text-[13px] font-semibold underline-offset-2 hover:underline">Owner record</Link> : undefined}>
+    <ReSection id="acq-owner" title="Owner" action={contactId ? <Link href={`${ownersPath}?contactId=${contactId}`} className="re-focus text-[13px] font-semibold underline-offset-2 hover:underline">{representativeName ? "Representative record" : "Owner record"}</Link> : undefined}>
       <div className="flex items-start gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-sales-surface-subtle text-sales-text-secondary" aria-hidden>
           <UserRound size={16} strokeWidth={1.8} />
         </span>
         <div className="min-w-0">
           <p className="text-[15px] font-semibold text-sales-text-primary">{ownerName}</p>
+          {representativeName ? <p className="text-[13px] text-sales-text-secondary">Representative: {representativeName}</p> : null}
           {phone ? <p className="text-[13px] text-sales-text-secondary">{phone}</p> : <p className="text-[13px] text-sales-text-muted">No phone yet</p>}
           {email ? <p className="text-[13px] text-sales-text-muted">{email}</p> : null}
         </div>

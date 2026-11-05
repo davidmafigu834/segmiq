@@ -34,10 +34,20 @@ import {
   mandateTone,
   mandateTypeLabel,
 } from "./acquisition-ui";
+import { SellerIntakePanel } from "@/components/real-estate/seller-intake/SellerIntakePanel";
 
 const shellClass = reSalesShell;
 
-type Owner = { contactId: string; name: string | null; properties: number; active: number };
+type Owner = {
+  contactId: string;
+  name: string | null;
+  kind?: "individual" | "company" | "unknown";
+  representatives?: string[];
+  properties: number;
+  active: number;
+  opportunityIds?: string[];
+  limit?: string | null;
+};
 type OpportunityRow = {
   id: string;
   contact_id: string | null;
@@ -90,9 +100,11 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
   const selectedOwner = owners.find((owner) => owner.contactId === selected) ?? null;
   const linked = useMemo(() => {
     if (!selected) return [];
+    const owner = owners.find((item) => item.contactId === selected);
+    if (owner?.opportunityIds?.length) return opportunities.filter((row) => owner.opportunityIds?.includes(row.id));
     if (selected.startsWith("unlinked:")) return opportunities.filter((row) => `unlinked:${row.id}` === selected);
     return opportunities.filter((row) => row.contact_id === selected);
-  }, [opportunities, selected]);
+  }, [opportunities, owners, selected]);
   const phone = linked.find((row) => row.owner_phone)?.owner_phone ?? null;
   const acquisitionsPath = basePath.replace(/\/owners$/, "/acquisitions");
 
@@ -102,6 +114,7 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
         title="Property owners"
         description="Manage owner relationships and the properties they bring to your agency."
       />
+      <SellerIntakePanel clientId={clientId} mode="queue" />
       <label>
         <span className="sr-only">Search owners</span>
         <input className={acqFieldClass} placeholder="Search by name" value={q} onChange={(event) => setQ(event.target.value)} />
@@ -121,9 +134,12 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
           <ul className="divide-y divide-sales-border-subtle">
             {visible.map((owner) => {
               const name = owner.name || "Unnamed owner";
-              const ownerPhone = opportunities.find((row) => (owner.contactId.startsWith("unlinked:") ? `unlinked:${row.id}` === owner.contactId : row.contact_id === owner.contactId) && row.owner_phone)?.owner_phone;
+              const owned = (row: { id: string; contact_id: string | null }) => owner.opportunityIds?.length
+                ? owner.opportunityIds.includes(row.id)
+                : (owner.contactId.startsWith("unlinked:") ? `unlinked:${row.id}` === owner.contactId : row.contact_id === owner.contactId);
+              const ownerPhone = opportunities.find((row) => owned(row) && row.owner_phone)?.owner_phone;
               const places = opportunities
-                .filter((row) => (owner.contactId.startsWith("unlinked:") ? `unlinked:${row.id}` === owner.contactId : row.contact_id === owner.contactId))
+                .filter((row) => owned(row))
                 .map((row) => row.suburb || row.city)
                 .filter((value): value is string => Boolean(value))
                 .slice(0, 3);
@@ -132,7 +148,12 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
                   key={owner.contactId}
                   icon={<UserRound />}
                   title={name}
-                  reason={places.length ? places.join(" · ") : "Location not recorded"}
+                  reason={[
+                    owner.kind === "company" ? "Company" : null,
+                    owner.representatives?.length ? `Representatives: ${owner.representatives.join(", ")}` : null,
+                    places.length ? places.join(" · ") : "Location not recorded",
+                    owner.limit,
+                  ].filter(Boolean).join(" · ")}
                   meta={<span>{owner.properties} {owner.properties === 1 ? "property" : "properties"} · {owner.active} active</span>}
                   action={<ReRowAction label="View" srContext={name} onClick={() => setSelected(owner.contactId)} />}
                   menu={

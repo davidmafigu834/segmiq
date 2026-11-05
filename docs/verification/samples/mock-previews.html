@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOCK PREVIEW — seller intake</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; background: #f5f5f4; color: #1c1917; font-family: "Segoe UI", sans-serif; }
+  .banner { background: #44403c; color: #fafaf9; padding: 8px 16px; font-size: 12px; letter-spacing: .04em; }
+  main { max-width: 32rem; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  h2 { font-size: 16px; margin: 24px 0 8px; }
+  p, label, li { font-size: 15px; line-height: 1.5; }
+  .muted { color: #57534e; }
+  label { display: block; margin-top: 16px; font-size: 13px; font-weight: 600; }
+  input, select, textarea { display: block; width: 100%; box-sizing: border-box; min-height: 44px; margin-top: 4px; border: 1px solid #d6d3d1; border-radius: 8px; padding: 8px 12px; font-size: 16px; background: #fff; }
+  textarea { min-height: 72px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  button { min-height: 44px; border-radius: 8px; padding: 0 16px; font-size: 15px; font-weight: 600; }
+  .ghost { background: #fff; border: 1px solid #d6d3d1; }
+  .solid { background: #1c1917; color: #fff; border: 0; }
+  .sheet { margin-top: 24px; background: #fff; border: 1px solid #e7e5e4; border-radius: 12px; padding: 16px; }
+  .break { overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+  <div class="banner">MOCK PREVIEW — synthetic data — not the live application</div>
+  <main id="client">
+    <h1>Synthetic open mandate</h1>
+    <p class="muted">Open mandate details. Save as you go. Photographs, bedrooms and size are not required.</p>
+    <form>
+      <label>Property address (needed to submit)
+        <textarea>12 Cork Road, Avondale, Harare</textarea>
+      </label>
+      <label>Registered owner (needed to submit)
+        <input value="Rudo Moyo">
+      </label>
+      <label>Property category
+        <select><option>House</option></select>
+      </label>
+      <label>Mandate price (needed to submit)
+        <input value="80000">
+      </label>
+      <label>Asking price before commission (needed to submit)
+        <input value="90000">
+      </label>
+      <label>Mandate start date
+        <input value="2026-11-01">
+      </label>
+      <label>Representative name
+        <input class="break" value="Tatenda Moyo-Chikwanha Representative of the Very Long Registered Trading Name">
+      </label>
+      <div class="row">
+        <button class="ghost" type="button">Save</button>
+        <button class="solid" type="button">Submit</button>
+      </div>
+    </form>
+    <section class="sheet" id="review">
+      <h2>Review seller intake</h2>
+      <p class="muted">This accepts the capture. It does not approve the mandate, the listing, or the evidence.</p>
+      <h2>Parties</h2>
+      <p>registered owner · company · Moyo Holdings (Private) Limited</p>
+      <p class="break">representative · individual · Tatenda Moyo-Chikwanha Representative of the Very Long Registered Trading Name</p>
+      <h2>Details</h2>
+      <p>Asking price before commission: 275000</p>
+      <p>Mandate price: 250000</p>
+      <p>Identity, source of funds and PEP answers are waiting for a permitted reviewer.</p>
+      <p class="muted">Mandate approval stays a separate manager action. Listing approval is unchanged.</p>
+      <div class="row">
+        <button class="ghost" type="button">Copy a resume link</button>
+        <button class="ghost" type="button">Revoke</button>
+        <button class="solid" type="button">Accept intake</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

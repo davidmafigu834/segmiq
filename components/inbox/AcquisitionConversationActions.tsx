@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { InboxConversation } from "@/lib/inbox/types";
+import { SellerIntakePanel } from "@/components/real-estate/seller-intake/SellerIntakePanel";
 
 export function AcquisitionConversationActions({
   clientId,
@@ -79,6 +80,7 @@ export function AcquisitionConversationActions({
         </button>
       )}
       {error ? <p className="text-[12px] text-sales-danger">{error}</p> : null}
+      <SellerIntakePanel clientId={clientId} contactId={conversation.contactId} leadId={conversation.id} mode="send" />
     </div>
   );
 }

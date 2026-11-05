@@ -30,6 +30,8 @@ import {
   ReWorkItem,
 } from "@/components/real-estate/ui";
 import { acqFieldClass, acqLabelClass, asIsoTimestamp, composeOwnerPhone, formatWhen, intentLabel, isOverdue, placeLabel, stageLabel } from "./acquisition-ui";
+import { SellerIntakePanel } from "@/components/real-estate/seller-intake/SellerIntakePanel";
+import { SellerTemplateSetup } from "@/components/real-estate/seller-intake/SellerTemplateSetup";
 
 type Opportunity = {
   id: string;
@@ -61,10 +63,12 @@ export function AcquisitionWorkspace({
   clientId,
   basePath,
   framed = false,
+  canManageTemplates = false,
 }: {
   clientId: string;
   basePath: string;
   framed?: boolean;
+  canManageTemplates?: boolean;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<Opportunity[]>([]);
@@ -278,6 +282,8 @@ export function AcquisitionWorkspace({
         }
       />
 
+      {canManageTemplates ? <SellerTemplateSetup clientId={clientId} /> : null}
+      <SellerIntakePanel clientId={clientId} />
       {overviewIncomplete ? <RePartialNotice>Some opportunities could not be counted. Totals may be short.</RePartialNotice> : null}
       <div className="order-last md:order-none">
       <ReMetricOverview label="Opportunity overview">

@@ -21,6 +21,7 @@ import {
   type AcquisitionStage,
   type PriceType,
 } from "@/lib/real-estate/acquisition-plan";
+import { listingPartyPlan, portfolioGroups, type AcquisitionParty } from "@/lib/real-estate/seller-intake/parties";
 
 export type AcquisitionActor = {
   id: string;
@@ -303,6 +304,7 @@ export async function getAcquisitionBundle(clientId: string, opportunityId: stri
   const photos = inspectionIds.length
     ? await supabase.from("real_estate_inspection_photos").select("*").eq("client_id", clientId).in("inspection_id", inspectionIds)
     : { data: [] };
+  const parties = await supabase.from("re_acquisition_parties").select("role, party_kind, display_name, contact_id").eq("client_id", clientId).eq("opportunity_id", opportunityId);
   return {
     ok: true as const,
     opportunity: row,
@@ -312,6 +314,7 @@ export async function getAcquisitionBundle(clientId: string, opportunityId: stri
     photos: photos.data ?? [],
     prices: prices.data ?? [],
     mandates: mandates.data ?? [],
+    parties: parties.error ? [] : (parties.data ?? []),
   };
 }
 
@@ -1252,12 +1255,29 @@ export async function prepareListingFromAcquisition(input: {
       .maybeSingle();
     return { ok: true as const, listingId: (winner?.converted_listing_id as string) ?? listingId, alreadyConverted: true };
   }
-  if (row.contact_id) {
+  const partyRows = await supabase
+    .from("re_acquisition_parties")
+    .select("role, party_kind, contact_id, display_name")
+    .eq("client_id", input.clientId)
+    .eq("opportunity_id", input.opportunityId);
+  const parties: AcquisitionParty[] = partyRows.error
+    ? []
+    : (partyRows.data ?? []).map((party) => ({
+        role: String(party.role),
+        partyKind: String(party.party_kind),
+        contactId: (party.contact_id as string | null) ?? null,
+        displayName: String(party.display_name ?? ""),
+      }));
+  const copies = listingPartyPlan({
+    contactId: (row.contact_id as string | null) ?? null,
+    parties: partyRows.error ? [] : parties,
+  });
+  for (const copy of copies) {
     await supabase.from("real_estate_listing_parties").upsert({
       client_id: input.clientId,
       listing_id: listingId,
-      contact_id: row.contact_id,
-      party_role: "owner",
+      contact_id: copy.contactId,
+      party_role: copy.partyRole,
       verification_status: "reported",
       source: "acquisition",
     }, { onConflict: "listing_id,contact_id,party_role" });
@@ -1339,14 +1359,30 @@ export async function acquisitionOverview(clientId: string, actor: AcquisitionAc
 export async function listOwnerPortfolio(clientId: string, actor: AcquisitionActor, contactId?: string | null) {
   const listed = await listAcquisitionOpportunities({ clientId, actor });
   if (!listed.ok) return listed;
-  const scoped = contactId ? listed.opportunities.filter((row) => row.contact_id === contactId) : listed.opportunities;
-  const byContact = new Map<string, { contactId: string; name: string | null; properties: number; active: number }>();
-  for (const row of scoped) {
-    const id = (row.contact_id as string | null) ?? `unlinked:${row.id}`;
-    const current = byContact.get(id) ?? { contactId: id, name: (row.owner_name as string | null) ?? null, properties: 0, active: 0 };
-    current.properties += 1;
-    if (row.status === "active" || row.status === "nurturing") current.active += 1;
-    byContact.set(id, current);
-  }
-  return { ok: true as const, owners: [...byContact.values()], opportunities: scoped };
+  const scoped = contactId
+    ? listed.opportunities.filter((row) => row.contact_id === contactId || row.id === contactId)
+    : listed.opportunities;
+  const ids = scoped.map((row) => row.id as string);
+  const partyQuery = ids.length
+    ? await createAdminClient().from("re_acquisition_parties").select("opportunity_id, role, party_kind, contact_id, display_name").eq("client_id", clientId).in("opportunity_id", ids)
+    : { data: [], error: null };
+  const parties = partyQuery.error
+    ? []
+    : (partyQuery.data ?? []).map((party) => ({
+        opportunityId: String(party.opportunity_id),
+        role: String(party.role),
+        partyKind: String(party.party_kind),
+        contactId: (party.contact_id as string | null) ?? null,
+        displayName: String(party.display_name ?? ""),
+      }));
+  const owners = portfolioGroups({
+    opportunities: scoped.map((row) => ({
+      id: String(row.id),
+      contactId: (row.contact_id as string | null) ?? null,
+      ownerName: (row.owner_name as string | null) ?? null,
+      status: String(row.status ?? ""),
+    })),
+    parties,
+  });
+  return { ok: true as const, owners, opportunities: scoped };
 }

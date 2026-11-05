@@ -27,7 +27,7 @@ export default async function Page() {
         description="Track potential properties from first contact to approved listing."
       >
         <Suspense fallback={null}>
-          <AcquisitionWorkspace clientId={session.clientId} basePath="/client/acquisitions" framed />
+          <AcquisitionWorkspace clientId={session.clientId} basePath="/client/acquisitions" framed canManageTemplates />
         </Suspense>
       </CompanyReShell>
     </ClientManagerLayout>
