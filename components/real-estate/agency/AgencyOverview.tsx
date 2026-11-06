@@ -47,6 +47,7 @@ import {
   type ReFetchState,
 } from "@/components/real-estate/ui";
 import { AgencyAttentionPanel, useAgencyAttention, type AgencyAttentionPayload } from "./AgencyAttention";
+import { SaleJourney } from "@/components/real-estate/workflow/SaleJourney";
 
 type AcquisitionOverview = {
   incomplete: boolean;
@@ -237,6 +238,8 @@ export function AgencyOverview({
           ) : null
         }
       />
+
+      <SaleJourney surface="client" />
 
       {data.reAgentOvernight ? <ReAgentOvernightBanner summary={data.reAgentOvernight} /> : null}
 

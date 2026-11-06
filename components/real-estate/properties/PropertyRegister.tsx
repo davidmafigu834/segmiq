@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { SellerIntakePanel } from "@/components/real-estate/seller-intake/SellerIntakePanel";
+import { SaleJourney } from "@/components/real-estate/workflow/SaleJourney";
 import { ReStatusBadge } from "@/components/real-estate/ui";
 import type { PropertyGroup, PropertyRegisterEntry } from "@/lib/real-estate/property-register";
 
@@ -78,6 +79,7 @@ export function PropertyRegister({
 
   return (
     <section className="space-y-3" aria-label="Properties">
+      <SaleJourney surface={surface} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap gap-2" role="group" aria-label="Property grouping">
           {GROUPS.map((item) => (

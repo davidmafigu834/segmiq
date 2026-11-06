@@ -4,6 +4,7 @@
 /* Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V4 */
 
 import { useMemo, useState, type ReactNode } from "react";
+import { SaleJourney } from "@/components/real-estate/workflow/SaleJourney";
 import { useRouter } from "next/navigation";
 import {
   Building2,
@@ -514,6 +515,8 @@ export function AgentDailyWorkspace({
         }
         actions={<ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />}
       />
+
+      <SaleJourney surface="sales" />
 
       <div className="grid grid-cols-1 items-start gap-3 layout:grid-cols-12 layout:gap-[var(--re-section-gap,16px)]">
         <ReSection

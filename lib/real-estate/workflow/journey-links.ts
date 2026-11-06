@@ -8,7 +8,7 @@ import { createScheduledViewing } from "@/lib/real-estate/viewing-service";
 import { viewingOverlapWarning } from "@/lib/real-estate/buyer-match";
 import { createRealEstateOffer, mutateRealEstateOffer } from "@/lib/real-estate/offer-service";
 import { buyerRecordIsOpenable } from "@/lib/real-estate/viewing-calendar";
-import { offerExpiryInstant, offerRevisionAfterTermChange, secureLinkAccess, claimViewingSubmission, issuanceTemplateDecision, transactionStartRecovery, type SecureLinkScope } from "@/lib/real-estate/workflow/journey";
+import { offerExpiryInstant, offerRevisionAfterTermChange, secureLinkAccess, claimViewingSubmission, issuanceTemplateDecision, transactionStartRecovery, SYNTHETIC_OFFER_TEMPLATE, SYNTHETIC_VIEWING_TEMPLATE, type SecureLinkScope } from "@/lib/real-estate/workflow/journey";
 
 const LINK_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -25,6 +25,10 @@ function pepper() {
 
 function syntheticEnabled() {
   return process.env.RE_WORKFLOW_SYNTHETIC === "1";
+}
+
+function builtInForm(templateKey: string) {
+  return templateKey === SYNTHETIC_VIEWING_TEMPLATE || templateKey === SYNTHETIC_OFFER_TEMPLATE;
 }
 
 async function agencyCard(clientId: string, agentId: string | null) {
@@ -54,7 +58,7 @@ export async function issueViewingLink(input: {
   if (!secret.ok) return secret;
   const template = issuanceTemplateDecision({
     templateKey: input.templateKey,
-    approvedAgencyTemplate: false,
+    approvedAgencyTemplate: builtInForm(input.templateKey),
     syntheticIssuanceEnabled: syntheticEnabled(),
   });
   if (!template.ok) return fail(409, template.error);
@@ -272,7 +276,7 @@ export async function issueOfferLink(input: {
 }) {
   const template = issuanceTemplateDecision({
     templateKey: input.templateKey,
-    approvedAgencyTemplate: false,
+    approvedAgencyTemplate: builtInForm(input.templateKey),
     syntheticIssuanceEnabled: syntheticEnabled(),
   });
   if (!template.ok) return fail(409, template.error);
