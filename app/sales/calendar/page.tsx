@@ -11,6 +11,17 @@ import { locationFromFormData } from "@/lib/sales/calendar/location";
 import type { CalendarDealOption, CalendarLeadRow } from "@/lib/sales/calendar/types";
 import { SalesCalendarPage } from "@/components/sales/calendar/SalesCalendarPage";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
+import { headers } from "next/headers";
+import { isRealEstate } from "@/lib/terminology";
+import { resolveClientSalesTimezone } from "@/lib/sales/intelligence/daily-plan-service";
+import { planDateInTimezone } from "@/lib/sales/intelligence/timezone";
+import { parseISO } from "date-fns";
+import {
+  appendViewingEvents,
+  calendarViewingBounds,
+  salesCalendarViewingWindow,
+} from "@/lib/real-estate/viewing-calendar";
+import { loadRealEstateCalendarViewings } from "@/lib/real-estate/viewing-calendar-load";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -90,7 +101,7 @@ export default async function SalesCalendarRoutePage({
 
   const supabase = createAdminClient();
 
-  const [scheduledRes, allLeadsRes, dealsRes, navBadges] = await Promise.all([
+  const [scheduledRes, allLeadsRes, dealsRes, navBadges, clientRes, timezone] = await Promise.all([
     supabase
       .from("leads")
       .select(LEAD_SELECT)
@@ -114,6 +125,10 @@ export default async function SalesCalendarRoutePage({
       .order("updated_at", { ascending: false })
       .limit(200),
     fetchSalesNavBadges(session.userId, session.clientId ?? null),
+    session.clientId
+      ? supabase.from("clients").select("business_type").eq("id", session.clientId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    session.clientId ? resolveClientSalesTimezone(session.clientId) : Promise.resolve("UTC"),
   ]);
 
   let scheduledLeads = (scheduledRes.data ?? []) as DbLead[];
@@ -268,8 +283,31 @@ export default async function SalesCalendarRoutePage({
   const dealEvents = scheduleableDeals
     .map((deal) => adaptDealToCalendarEvent(deal))
     .filter((event): event is NonNullable<typeof event> => Boolean(event));
-  const initialEvents = [...initialLeadEvents.filter((event) => !dealLeadIdsWithAction.has(event.leadId)), ...dealEvents]
+  const leadAndDealEvents = [...initialLeadEvents.filter((event) => !dealLeadIdsWithAction.has(event.leadId)), ...dealEvents]
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+  const realEstateCalendar = Boolean(session.clientId) && isRealEstate((clientRes.data as { business_type?: string | null } | null)?.business_type);
+  const viewingWindow = salesCalendarViewingWindow(parseISO(`${planDateInTimezone(new Date(), timezone)}T12:00:00`));
+  const viewingBounds = calendarViewingBounds(viewingWindow.startKey, viewingWindow.endKeyExclusive, timezone);
+  const viewingLoad = realEstateCalendar && session.clientId && viewingBounds
+    ? await loadRealEstateCalendarViewings({
+        requestHeaders: headers(),
+        clientId: session.clientId,
+        actor: { userId: session.userId, role: session.role, clientId: session.clientId },
+        surface: "sales",
+        timezone,
+        fromIso: viewingBounds.fromIso,
+        toIsoExclusive: viewingBounds.toIsoExclusive,
+      })
+    : null;
+  const viewingMerge = !realEstateCalendar
+    ? { events: leadAndDealEvents, partial: false }
+    : viewingLoad
+      ? appendViewingEvents(leadAndDealEvents, viewingLoad.failed
+          ? { ok: false }
+          : { ok: true, events: viewingLoad.salesEvents, incomplete: viewingLoad.incomplete })
+      : { events: leadAndDealEvents, partial: true };
+  const initialEvents = viewingMerge.events;
+  const viewingsPartial = viewingMerge.partial;
 
   const scheduleableLeads: PriorityLead[] = allLeads.map((lead) => ({
     id: lead.id,
@@ -334,7 +372,7 @@ export default async function SalesCalendarRoutePage({
         isSolo={session.clientMode === "solo"}
         breadcrumb="Sales / Calendar"
         title="Calendar"
-        description="Plan follow-ups, site visits, calls, and quote meetings."
+        description={realEstateCalendar ? "Plan follow-ups, viewings, calls, and quote meetings." : "Plan follow-ups, site visits, calls, and quote meetings."}
         dense
       >
         <SalesCalendarPage
@@ -343,6 +381,11 @@ export default async function SalesCalendarRoutePage({
           scheduleableDeals={scheduleableDeals}
           presetDealId={presetDealId}
           presetLeadId={presetLeadId}
+          includeViewings={realEstateCalendar}
+          viewingsPartial={viewingsPartial}
+          clientId={session.clientId}
+          timezone={timezone}
+          viewingWindow={viewingWindow}
         />
       </PipelinePageShell>
     </SalesLayout>

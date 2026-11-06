@@ -19,6 +19,7 @@ import {
   resolveSalesNavItems,
   SALES_NAV_SECTION_LABEL,
   salesMobileMoreItems,
+  salesNavIsActive,
   salesNavItemsBySection,
   SALES_NAV_LUCIDE,
   type SalesNavIconId,
@@ -98,7 +99,7 @@ export function SalesMoreSheet({
       label: item.label,
       href: item.href,
       icon: <RowIcon icon={item.icon} />,
-      active: item.match(pathname),
+      active: salesNavIsActive(item, pathname),
       courseTarget: `sales-mobile-more-${item.id}`,
     });
     const groups: ReMenuGroup[] = REAL_ESTATE_SALES_SECTION_ORDER.filter((id) => id !== "main").map((id) => ({
@@ -138,8 +139,12 @@ export function SalesMoreSheet({
   }
 
   const more = salesMobileMoreItems(items);
-  const salesMore = salesNavItemsBySection(more, "sales");
-  const toolsMore = salesNavItemsBySection(more, "tools");
+  const solarGrouped = Boolean(solarWorkflow) && !isRealEstate(businessType);
+  const moreGroups = (solarGrouped ? (["field", "sales", "intelligence", "tools"] as const) : (["sales", "tools"] as const)).map((id) => ({
+    id,
+    label: SALES_NAV_SECTION_LABEL[id],
+    items: salesNavItemsBySection(more, id),
+  })).filter((group) => group.items.length > 0);
 
   function close() {
     setMoreOpen(false);
@@ -165,33 +170,41 @@ export function SalesMoreSheet({
           Quick actions
         </button>
 
-        <section>
-          <p className="mb-1.5 px-3 text-[11px] font-medium text-sales-text-muted">
-            Sales
-          </p>
-          <NavRows items={salesMore} pathname={pathname} onNavigate={close} />
-        </section>
-
-        <section>
-          <p className="mb-1.5 px-3 text-[11px] font-medium text-sales-text-muted">
-            Tools
-          </p>
-          <NavRows items={toolsMore} pathname={pathname} onNavigate={close} />
-          <Link
-            href="/sales/training"
-            onClick={close}
-            data-course-target="sales-mobile-more-training"
-            className="mt-0.5 flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-[14px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
-          >
-            <CircleHelp size={18} strokeWidth={1.75} className="text-sales-text-secondary" aria-hidden />
-            Training
-          </Link>
-        </section>
+        {moreGroups.map((group) => (
+          <section key={group.id}>
+            <p className="mb-1.5 px-3 text-[11px] font-medium text-sales-text-muted">
+              {group.label}
+            </p>
+            <NavRows items={group.items} pathname={pathname} onNavigate={close} />
+            {!solarGrouped && group.id === "tools" ? (
+              <Link
+                href="/sales/training"
+                onClick={close}
+                data-course-target="sales-mobile-more-training"
+                className="mt-0.5 flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-[14px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+              >
+                <CircleHelp size={18} strokeWidth={1.75} className="text-sales-text-secondary" aria-hidden />
+                Training
+              </Link>
+            ) : null}
+          </section>
+        ))}
 
         <section>
           <p className="mb-1.5 px-3 text-[11px] font-medium text-sales-text-muted">
             Account
           </p>
+          {solarGrouped ? (
+            <Link
+              href="/sales/training"
+              onClick={close}
+              data-course-target="sales-mobile-more-training"
+              className="flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-[14px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+            >
+              <CircleHelp size={18} strokeWidth={1.75} className="text-sales-text-secondary" aria-hidden />
+              Training
+            </Link>
+          ) : null}
           <Link
             href="/sales/profile"
             onClick={close}

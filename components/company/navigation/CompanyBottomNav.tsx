@@ -7,10 +7,13 @@ import { CircleHelp, Ellipsis, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import {
   COMPANY_NAV_LUCIDE,
+  type CompanyNavItemConfig,
   COMPANY_NAV_SECTION_LABEL,
   companyMobileMoreItems,
   companyMobilePrimaryItems,
   companyNavBySection,
+  companyNavIsActive,
+  companySectionLabel,
   getCompanyNavigation,
   getCompanyNavSectionOrder,
   type CompanyNavBadgeKey,
@@ -63,6 +66,37 @@ function NavIcon({
   );
 }
 
+function MoreLink({
+  item,
+  pathname,
+  onNavigate,
+}: {
+  item: CompanyNavItemConfig;
+  pathname: string;
+  onNavigate: () => void;
+}) {
+  const active = item.match(pathname);
+  const Icon = item.icon === "whatsapp" ? null : COMPANY_NAV_LUCIDE[item.icon];
+  return (
+    <Link
+      href={item.href}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-[14px] font-medium",
+        active ? "bg-[var(--sales-sidebar-active)] text-sales-text-primary" : "text-sales-text-primary hover:bg-sales-surface-hover"
+      )}
+      onClick={onNavigate}
+    >
+      {item.icon === "whatsapp" ? (
+        <SiWhatsapp size={18} className="shrink-0 text-sales-whatsapp" aria-hidden />
+      ) : Icon ? (
+        <Icon size={18} strokeWidth={1.75} className="shrink-0 text-sales-text-secondary" aria-hidden />
+      ) : null}
+      <span className="min-w-0 truncate">{item.label}</span>
+    </Link>
+  );
+}
+
 function MenuIcon({ icon }: { icon: CompanyNavIconId }) {
   if (icon === "whatsapp") return <SiWhatsapp size={18} color="currentColor" aria-hidden />;
   const Icon = COMPANY_NAV_LUCIDE[icon];
@@ -77,6 +111,7 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
   const items = companyMobilePrimaryItems(navigation);
   const moreItems = companyMobileMoreItems(navigation);
   const realEstate = isRealEstate(businessType);
+  const solarGrouped = solarWorkflow && !realEstate;
   const badges: Partial<Record<CompanyNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
   };
@@ -88,9 +123,12 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
         aria-label="Company mobile navigation"
         style={{ height: "calc(var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px))" }}
       >
-        <div className="mx-auto grid h-[var(--sales-mobile-nav-height)] max-w-lg grid-cols-5 items-stretch px-1">
+        <div
+          className="mx-auto grid h-[var(--sales-mobile-nav-height)] max-w-lg items-stretch px-1"
+          style={{ gridTemplateColumns: `repeat(${items.length + 1}, minmax(0, 1fr))` }}
+        >
           {items.map((item) => {
-            const active = item.match(pathname);
+            const active = companyNavIsActive(item, pathname);
             const badge = item.badgeKey ? badges[item.badgeKey] : undefined;
             const showBadge = badge != null && badge > 0;
             const isWa = item.id === "whatsapp" && !realEstate;
@@ -101,9 +139,10 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 font-medium transition-colors",
-                  realEstate ? "gap-1 text-[11px]" : "text-[10px]",
+                  items.length > 4 ? "gap-1 text-[10px]" : realEstate ? "gap-1 text-[11px]" : "text-[10px]",
                   active ? "text-sales-text-primary" : "text-sales-text-secondary"
                 )}
+                title={item.label}
               >
                 <span
                   className={cn(
@@ -130,7 +169,7 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
             type="button"
             className={cn(
               "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 font-medium transition-colors",
-              realEstate ? "gap-1 text-[11px]" : "text-[10px]",
+              items.length > 4 ? "gap-1 text-[10px]" : realEstate ? "gap-1 text-[11px]" : "text-[10px]",
               moreOpen ? "text-sales-text-primary" : "text-sales-text-secondary"
             )}
             aria-label={realEstate ? "Menu" : "More"}
@@ -163,6 +202,21 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
           onClose={() => setMoreOpen(false)}
           description="Property, buyer and agency work."
           groups={[
+            ...(navigation.some((item) => item.id === "review")
+              ? [{
+                  id: "review",
+                  label: "Review",
+                  items: navigation
+                    .filter((item) => item.id === "review")
+                    .map((item) => ({
+                      id: item.id,
+                      label: item.label,
+                      href: item.href,
+                      icon: <MenuIcon icon={item.icon} />,
+                      active: companyNavIsActive(item, pathname),
+                    })),
+                }]
+              : []),
             ...getCompanyNavSectionOrder(businessType)
               .filter((id) => id !== "main")
               .map((id) => ({
@@ -173,7 +227,7 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
                   label: item.label,
                   href: item.href,
                   icon: <MenuIcon icon={item.icon} />,
-                  active: item.match(pathname),
+                  active: companyNavIsActive(item, pathname),
                 })),
               }))
               .map((group) =>
@@ -187,12 +241,25 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
                           label: "Help & Support",
                           href: "/client/settings/profile",
                           icon: <CircleHelp size={18} strokeWidth={1.75} aria-hidden />,
-                          active: false,
+                          active: pathname.startsWith("/client/settings/profile"),
                         },
                       ],
                     }
                   : group
               ),
+            ...(!getCompanyNavSectionOrder(businessType).includes("system")
+              ? [{
+                  id: "system",
+                  label: COMPANY_NAV_SECTION_LABEL.system,
+                  items: [{
+                    id: "help",
+                    label: "Help & Support",
+                    href: "/client/settings/profile",
+                    icon: <CircleHelp size={18} strokeWidth={1.75} aria-hidden />,
+                    active: pathname.startsWith("/client/settings/profile"),
+                  }],
+                }]
+              : []),
           ]}
         />
       ) : null}
@@ -217,28 +284,36 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
                 <X size={18} strokeWidth={1.8} />
               </button>
             </div>
-            <ul className="max-h-[60vh] overflow-y-auto py-2">
-              {moreItems.map((item) => {
-                const Icon =
-                  item.icon === "whatsapp" ? null : COMPANY_NAV_LUCIDE[item.icon];
-                return (
-                  <li key={item.id}>
-                    <Link
-                      href={item.href}
-                      className="flex items-center gap-3 px-4 py-3 text-[14px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
-                      onClick={() => setMoreOpen(false)}
-                    >
-                      {item.icon === "whatsapp" ? (
-                        <SiWhatsapp size={18} className="text-sales-whatsapp" aria-hidden />
-                      ) : Icon ? (
-                        <Icon size={18} strokeWidth={1.75} className="text-sales-text-secondary" />
-                      ) : null}
-                      {item.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="max-h-[min(70vh,32rem)] overflow-y-auto overscroll-y-contain px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+              {solarGrouped
+                ? (["operations", "sales", "customers", "products", "intelligence", "management"] as const).map((sectionId) => {
+                    const sectionItems = companyNavBySection(moreItems, sectionId);
+                    if (sectionItems.length === 0) return null;
+                    return (
+                      <section key={sectionId} className="mb-3">
+                        <p className="px-2 pb-1 pt-2 text-[11px] font-medium text-sales-text-muted">
+                          {companySectionLabel(sectionId, { solarWorkflow: true })}
+                        </p>
+                        <ul>
+                          {sectionItems.map((item) => (
+                            <li key={item.id}>
+                              <MoreLink item={item} pathname={pathname} onNavigate={() => setMoreOpen(false)} />
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    );
+                  })
+                : (
+                  <ul>
+                    {moreItems.map((item) => (
+                      <li key={item.id}>
+                        <MoreLink item={item} pathname={pathname} onNavigate={() => setMoreOpen(false)} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+            </div>
           </div>
         </>
       ) : null}

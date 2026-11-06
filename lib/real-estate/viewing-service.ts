@@ -31,6 +31,16 @@ export async function createScheduledViewing(
 ): Promise<{ ok: true; viewing: Record<string, unknown> } | { ok: false; error: string }> {
   const supabase = createAdminClient();
 
+  if (input.idempotencyKey) {
+    const existing = await supabase
+      .from("viewings")
+      .select("*")
+      .eq("client_id", input.clientId)
+      .eq("idempotency_key", input.idempotencyKey)
+      .maybeSingle();
+    if (!existing.error && existing.data) return { ok: true, viewing: existing.data };
+  }
+
   const { data: contact } = await supabase
     .from("contacts")
     .select("id, name, phone, client_id, interested_listing_ids")
@@ -76,6 +86,15 @@ export async function createScheduledViewing(
   const viewing = viewingResult.data;
   const error = viewingResult.error;
   if (error || !viewing) {
+    if (input.idempotencyKey && error && (error.code === "23505" || /idempotency/i.test(error.message))) {
+      const winner = await supabase
+        .from("viewings")
+        .select("*")
+        .eq("client_id", input.clientId)
+        .eq("idempotency_key", input.idempotencyKey)
+        .maybeSingle();
+      if (winner.data) return { ok: true, viewing: winner.data };
+    }
     return { ok: false, error: error?.message ?? "Could not create viewing" };
   }
 

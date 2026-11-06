@@ -46,7 +46,10 @@ function relationLabel(event: CompanyCalendarEvent): string {
 function statusLabel(event: CompanyCalendarEvent): string {
   if (event.status === "overdue") return "Overdue";
   if (event.status === "completed") return "Completed";
+  if (event.status === "cancelled" && event.sourceStatus === "no_show") return "No show";
   if (event.status === "cancelled") return "Cancelled";
+  if (event.sourceType === "viewing" && event.sourceStatus === "tentative") return "Tentative";
+  if (event.sourceType === "viewing" && event.sourceStatus === "awaiting_confirmation") return "Pending confirmation";
   return "Scheduled";
 }
 
@@ -220,7 +223,23 @@ function EventDetail({
       </div>
       <div className="divide-y divide-sales-border-subtle">
         <div className="flex gap-3 py-3.5"><CalendarDays size={15} className="mt-0.5 shrink-0 text-sales-text-muted" /><div><p className="text-[11px] font-medium text-sales-text-muted">Date and time</p><p className="mt-1 text-[12px] text-sales-text-primary">{formatCalendarEventRange(event, timezone)}</p><p className="mt-0.5 text-[10px] text-sales-text-muted">{timezone}</p></div></div>
-        <div className="py-3.5"><p className="text-[11px] font-medium text-sales-text-muted">Related {relationLabel(event)}</p><Link href={event.relatedHref} className="mt-2 flex items-center justify-between rounded-[9px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5 hover:border-sales-border-strong"><span className="min-w-0"><span className="block truncate text-[12px] font-semibold text-sales-text-primary">{event.relatedLabel}</span>{event.relatedSecondary ? <span className="mt-0.5 block truncate text-[11px] text-sales-text-muted">{event.relatedSecondary}</span> : null}</span><ExternalLink size={13} className="shrink-0 text-sales-text-muted" /></Link></div>
+        {event.sourceType === "viewing" ? (
+          <div className="py-3.5">
+            <p className="text-[11px] font-medium text-sales-text-muted">Property</p>
+            <p className="mt-1 text-[12px] text-sales-text-primary">{event.relatedLabel}</p>
+            {event.relatedSecondary ? <p className="mt-1 text-[12px] text-sales-text-secondary">{event.relatedSecondary}</p> : null}
+            <div className="mt-2 flex flex-col gap-2">
+              {(event.actions ?? []).map((action) => (
+                <Link key={action.href + action.label} href={action.href} className="inline-flex min-h-10 items-center justify-between rounded-[9px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5 text-[12px] font-semibold text-sales-text-primary hover:border-sales-border-strong">
+                  <span className="truncate">{action.label}</span>
+                  <ExternalLink size={13} className="shrink-0 text-sales-text-muted" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="py-3.5"><p className="text-[11px] font-medium text-sales-text-muted">Related {relationLabel(event)}</p><Link href={event.relatedHref} className="mt-2 flex items-center justify-between rounded-[9px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5 hover:border-sales-border-strong"><span className="min-w-0"><span className="block truncate text-[12px] font-semibold text-sales-text-primary">{event.relatedLabel}</span>{event.relatedSecondary ? <span className="mt-0.5 block truncate text-[11px] text-sales-text-muted">{event.relatedSecondary}</span> : null}</span><ExternalLink size={13} className="shrink-0 text-sales-text-muted" /></Link></div>
+        )}
         <div className="flex gap-3 py-3.5"><UserRound size={15} className="mt-0.5 shrink-0 text-sales-text-muted" /><div><p className="text-[11px] font-medium text-sales-text-muted">Owner</p><div className="mt-1.5 flex items-center gap-2"><Avatar name={event.ownerName ?? "Unassigned"} src={event.ownerAvatarUrl} size="sm" alt="" /><span><span className="block text-[12px] text-sales-text-primary">{event.ownerName ?? "Unassigned"}</span>{event.ownerRoleLabel ? <span className="mt-0.5 block text-[10px] text-sales-text-muted">{event.ownerRoleLabel}</span> : null}</span></div></div></div>
         {event.attentionReason ? <div className="rounded-[9px] border border-sales-warning/25 bg-sales-warning-soft px-3 py-2.5 text-[11px] leading-relaxed text-sales-warning-fg"><span className="font-semibold">Needs attention:</span> {event.attentionReason}</div> : null}
         {event.location ? <div className="flex gap-3 py-3.5"><MapPin size={15} className="mt-0.5 shrink-0 text-sales-text-muted" /><div><p className="text-[11px] font-medium text-sales-text-muted">Location</p><p className="mt-1 text-[12px] text-sales-text-primary">{event.location}</p></div></div> : null}
@@ -229,7 +248,7 @@ function EventDetail({
       <div className="mt-4 grid grid-cols-2 gap-2">
         {event.phone ? <a href={`tel:${event.phone}`} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[9px] border border-sales-border text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"><Phone size={13} /> Call</a> : null}
         {event.leadId ? <Link href={`/client/inbox?lead=${encodeURIComponent(event.leadId)}`} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[9px] border border-sales-border text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"><SiWhatsapp size={13} color="#25D366" /> WhatsApp</Link> : null}
-        <Link href={event.relatedHref} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[9px] border border-sales-border text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"><ExternalLink size={13} /> Open {relationLabel(event)}</Link>
+        {event.sourceType === "viewing" ? null : <Link href={event.relatedHref} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[9px] border border-sales-border text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"><ExternalLink size={13} /> Open {relationLabel(event)}</Link>}
         {event.canComplete ? <button type="button" disabled={busy} onClick={onComplete} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[9px] border border-sales-border text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover disabled:opacity-50"><Check size={13} /> Mark complete</button> : null}
       </div>
       {event.canEdit ? <Button variant="primary" className="mt-3 w-full" onClick={onEdit}>Edit / reschedule</Button> : null}

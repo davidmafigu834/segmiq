@@ -38,6 +38,7 @@ import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
 import { cn } from "@/lib/ui/cn";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { RealEstateWorkspaceLinks } from "@/components/real-estate/navigation/RealEstateWorkspaceLinks";
 import type { UserRole } from "@/types";
 
 export function SalesPageHeader({
@@ -338,6 +339,7 @@ function SalesAppShellInner({
                 titleActions={titleActions}
               />
             ) : null}
+            {realEstateWorkspace ? <RealEstateWorkspaceLinks scope="agent" /> : null}
             {children}
           </div>
         </main>

@@ -32,28 +32,60 @@ export function formatCalendarDate(date: Date): string {
   return format(date, "EEE, d MMM yyyy");
 }
 
-export function formatEventTime(iso: string, hasTimedCallback: boolean): string {
+export function formatEventTime(iso: string, hasTimedCallback: boolean, timeZone?: string | null): string {
   try {
-    const d = parseISO(iso);
     if (!hasTimedCallback) return "All day";
-    return format(d, "HH:mm");
+    if (timeZone) {
+      return new Intl.DateTimeFormat("en-GB", {
+        timeZone,
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      }).format(new Date(iso));
+    }
+    return format(parseISO(iso), "HH:mm");
   } catch {
     return "";
   }
 }
 
+export function eventDateKey(event: CalendarEvent): string {
+  if (event.calendarDateKey && /^\d{4}-\d{2}-\d{2}$/.test(event.calendarDateKey)) return event.calendarDateKey;
+  return toDateKey(parseISO(event.startAt));
+}
+
+export function eventHour(event: CalendarEvent): number {
+  if (event.timeZone) {
+    const hour = new Intl.DateTimeFormat("en-GB", {
+      timeZone: event.timeZone,
+      hour: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(new Date(event.startAt))
+      .find((part) => part.type === "hour")?.value;
+    const parsed = Number(hour);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return parseISO(event.startAt).getHours();
+}
+
 export function formatEventRange(event: CalendarEvent): string {
   try {
     const start = parseISO(event.startAt);
-    const datePart = format(start, "EEE, d MMM yyyy");
+    const datePart = event.timeZone
+      ? new Intl.DateTimeFormat("en-GB", {
+          timeZone: event.timeZone,
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }).format(start)
+      : format(start, "EEE, d MMM yyyy");
     if (!event.hasTimedCallback) return `${datePart} · All day`;
-    const time = format(start, "HH:mm");
+    const time = formatEventTime(event.startAt, true, event.timeZone);
     if (event.endAt) {
-      try {
-        return `${datePart} · ${time}–${format(parseISO(event.endAt), "HH:mm")}`;
-      } catch {
-        /* fall through */
-      }
+      const end = formatEventTime(event.endAt, true, event.timeZone);
+      if (end) return `${datePart} · ${time}–${end}`;
     }
     return `${datePart} · ${time}`;
   } catch {
@@ -95,7 +127,7 @@ export function eventsForDateKey(
   events: CalendarEvent[],
   dateKey: string
 ): CalendarEvent[] {
-  return events.filter((e) => toDateKey(parseISO(e.startAt)) === dateKey);
+  return events.filter((e) => eventDateKey(e) === dateKey);
 }
 
 export function groupEventsByDate(
@@ -103,7 +135,7 @@ export function groupEventsByDate(
 ): Array<{ dateKey: string; label: string; events: CalendarEvent[] }> {
   const map = new Map<string, CalendarEvent[]>();
   for (const event of events) {
-    const key = toDateKey(parseISO(event.startAt));
+    const key = eventDateKey(event);
     const list = map.get(key) ?? [];
     list.push(event);
     map.set(key, list);

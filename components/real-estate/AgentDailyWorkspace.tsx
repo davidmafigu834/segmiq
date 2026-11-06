@@ -494,7 +494,7 @@ export function AgentDailyWorkspace({
       <header className="layout:hidden">
         <p className="text-[12px] font-medium leading-4 text-sales-text-muted">{todayLabel()}</p>
         <div className="mt-1 flex items-center justify-between gap-3">
-          <h1 className="min-w-0 font-display text-[24px] font-semibold leading-none tracking-[-0.02em] text-sales-text-primary">My Day</h1>
+          <h1 className="min-w-0 font-display text-[24px] font-semibold leading-none tracking-[-0.02em] text-sales-text-primary">Today</h1>
           <div className="shrink-0">
             <ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />
           </div>
@@ -504,7 +504,7 @@ export function AgentDailyWorkspace({
       <RePageHeader
         className="hidden layout:flex"
         context={todayLabel()}
-        title="Today's work"
+        title="Today"
         description={
           attentionCount > 0
             ? `${attentionCount} ${attentionCount === 1 ? "item needs" : "items need"} your next action.`

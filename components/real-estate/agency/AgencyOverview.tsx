@@ -227,8 +227,8 @@ export function AgencyOverview({
         avatarUrl={avatarUrl}
         canAddLead={live}
         fictional={fictional}
-        breadcrumb="Agency / Overview"
-        title="Agency overview"
+        breadcrumb="Agency / Today"
+        title="Today"
         description={`${data.clientName} · ${todayLabel()}`}
         primaryAction={null}
         titleActions={

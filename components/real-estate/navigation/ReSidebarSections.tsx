@@ -8,7 +8,7 @@ import { cn } from "@/lib/ui/cn";
 
 type Group<T> = { id: string; label: string; items: T[] };
 
-const DEFAULT_COLLAPSED = ["more_tools", "system"];
+const DEFAULT_COLLAPSED = ["more_tools", "system", "agency"];
 
 function readCollapsed(storageKey: string): Set<string> | null {
   try {

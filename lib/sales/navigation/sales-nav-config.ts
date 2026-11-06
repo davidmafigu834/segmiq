@@ -71,6 +71,7 @@ export type SalesNavSectionId =
   | "buyer_sales"
   | "agency"
   | "more_tools"
+  | "follow_up"
   | "system";
 
 export type SalesNavItemConfig = {
@@ -87,7 +88,16 @@ export type SalesNavItemConfig = {
   mobileLabel?: string;
   /** Return true when this item should be active for the given pathname */
   match: (pathname: string) => boolean;
+  /**
+   * Highlights a primary destination while a related compatibility route is open.
+   * `match` stays specific so the mobile title keeps the page name.
+   */
+  activeOn?: (pathname: string) => boolean;
 };
+
+export function salesNavIsActive(item: SalesNavItemConfig, pathname: string): boolean {
+  return (item.activeOn ?? item.match)(pathname);
+}
 
 export const SALES_SIDEBAR_WIDTH_EXPANDED = 228;
 export const SALES_SIDEBAR_WIDTH_COLLAPSED = 68;
@@ -291,7 +301,7 @@ export function salesMobilePrimaryItems(
   businessType?: BusinessType | string | null
 ): SalesNavItemConfig[] {
   const order = isRealEstate(businessType)
-    ? (["dashboard", "whatsapp", "listings", "tasks"] as const)
+    ? (["dashboard", "listings", "calendar", "people", "transactions"] as const)
     : SALES_MOBILE_PRIMARY_IDS;
   return order
     .map((id) => items.find((i) => i.id === id))
@@ -473,13 +483,23 @@ export function resolveSalesNavItems(
   ];
   const listingsItem: SalesNavItemConfig = {
     id: "listings",
-    label: "Property Listings",
+    label: "Properties",
     href: "/sales/listings",
     icon: "listings",
     section: "sales",
     mobileSlot: "primary",
     mobileLabel: "Properties",
     match: (p) => exactOrChild(p, "/sales/listings"),
+  };
+  const peopleItem: SalesNavItemConfig = {
+    id: "people",
+    label: "People",
+    href: "/sales/people",
+    icon: "buyers",
+    section: "sales",
+    mobileSlot: "primary",
+    mobileLabel: "People",
+    match: (p) => p === "/sales/people" || p.startsWith("/sales/people/"),
   };
   const offersItem: SalesNavItemConfig = {
     id: "offers",
@@ -492,11 +512,12 @@ export function resolveSalesNavItems(
   };
   const transactionsItem: SalesNavItemConfig = {
     id: "transactions",
-      label: "My Transactions",
+    label: "Transactions",
     href: "/sales/transactions",
     icon: "transactions",
     section: "sales",
-    mobileSlot: "more",
+    mobileSlot: "primary",
+    mobileLabel: "Transactions",
     match: (p) => exactOrChild(p, "/sales/transactions"),
   };
   const commissionsItem: SalesNavItemConfig = {
@@ -527,7 +548,7 @@ export function resolveSalesNavItems(
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/sales/compliance"),
   };
-  return items.flatMap((item) => {
+  const mapped = items.flatMap((item) => {
     if (item.id === "quotes") return [];
     if (item.id === "projects" || item.id === "myWork") return [];
     if (item.id === "leads") {
@@ -536,6 +557,7 @@ export function resolveSalesNavItems(
         ...buyerItems,
         ...acquisitionItems,
         listingsItem,
+        peopleItem,
         sharedListingsItem,
         offersItem,
         transactionsItem,
@@ -547,18 +569,60 @@ export function resolveSalesNavItems(
   }).map((item) => {
     const section = REAL_ESTATE_AGENT_SECTIONS[item.id] ?? item.section;
     const label = REAL_ESTATE_AGENT_LABELS[item.id];
+    const activeOn = REAL_ESTATE_ACTIVE_ON[item.id];
     return {
       ...item,
       section,
       ...(label ? { label: label.label, mobileLabel: label.mobileLabel } : {}),
+      ...(activeOn ? { activeOn } : {}),
     };
+  });
+  return orderRealEstateSalesItems(mapped);
+}
+
+function orderRealEstateSalesItems(items: SalesNavItemConfig[]): SalesNavItemConfig[] {
+  const sectionRank = new Map(REAL_ESTATE_SALES_SECTION_ORDER.map((id, index) => [id, index]));
+  const itemRank = new Map<string, number>();
+  REAL_ESTATE_SALES_SECTION_ORDER.forEach((section) => {
+    (REAL_ESTATE_ITEM_ORDER[section] ?? []).forEach((id, index) => itemRank.set(id, index));
+  });
+  return [...items].sort((a, b) => {
+    const sectionDelta = (sectionRank.get(a.section) ?? 50) - (sectionRank.get(b.section) ?? 50);
+    if (sectionDelta !== 0) return sectionDelta;
+    return (itemRank.get(a.id) ?? 50) - (itemRank.get(b.id) ?? 50);
   });
 }
 
+function covers(pathname: string, hrefs: readonly string[]): boolean {
+  return hrefs.some((href) => pathname === href || pathname.startsWith(`${href}/`));
+}
+
+const REAL_ESTATE_ACTIVE_ON: Partial<Record<string, (pathname: string) => boolean>> = {
+  listings: (pathname) =>
+    covers(pathname, [
+      "/sales/listings",
+      "/sales/acquisitions",
+      "/sales/mandates",
+      "/sales/inspections",
+      "/sales/offers",
+      "/sales/shared-listings",
+      "/sales/matching",
+    ]),
+  calendar: (pathname) => covers(pathname, ["/sales/calendar", "/sales/viewings"]),
+  people: (pathname) => covers(pathname, ["/sales/people", "/sales/owners", "/sales/buyers"]),
+  transactions: (pathname) => covers(pathname, ["/sales/transactions", "/sales/compliance"]),
+};
+
 const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
   dashboard: "main",
-  whatsapp: "main",
-  tasks: "main",
+  listings: "main",
+  calendar: "main",
+  people: "main",
+  transactions: "main",
+  whatsapp: "follow_up",
+  tasks: "follow_up",
+  leads: "follow_up",
+  socialInbox: "follow_up",
   opportunities: "acquisition",
   owners: "acquisition",
   inspections: "acquisition",
@@ -568,15 +632,10 @@ const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
   matching: "buyer_sales",
   viewings: "buyer_sales",
   offers: "buyer_sales",
-  listings: "agency",
   sharedListings: "agency",
-  transactions: "agency",
   compliance: "agency",
   commissions: "agency",
   pipeline: "more_tools",
-  socialInbox: "more_tools",
-  leads: "more_tools",
-  calendar: "more_tools",
   command: "more_tools",
   reports: "more_tools",
   wonLost: "more_tools",
@@ -585,19 +644,19 @@ const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
 };
 
 const REAL_ESTATE_AGENT_LABELS: Record<string, { label: string; mobileLabel: string }> = {
-  dashboard: { label: "Dashboard", mobileLabel: "Home" },
+  dashboard: { label: "Today", mobileLabel: "Today" },
+  calendar: { label: "Calendar", mobileLabel: "Calendar" },
   whatsapp: { label: "Sales Inbox", mobileLabel: "Inbox" },
   tasks: { label: "My Activities", mobileLabel: "Activities" },
 };
 
-export const REAL_ESTATE_SALES_SECTION_ORDER: SalesNavSectionId[] = [
-  "main",
-  "acquisition",
-  "buyer_sales",
-  "agency",
-  "more_tools",
-  "system",
-];
+const REAL_ESTATE_ITEM_ORDER: Partial<Record<SalesNavSectionId, string[]>> = {
+  main: ["dashboard", "listings", "calendar", "people", "transactions"],
+  follow_up: ["whatsapp", "tasks", "leads", "socialInbox"],
+};
+
+/** Sections drawn in the Real Estate web menu. Other sections stay in the item list for direct URLs and the Android destination contract. */
+export const REAL_ESTATE_SALES_SECTION_ORDER: SalesNavSectionId[] = ["main", "follow_up"];
 
 export const SALES_NAV_SECTION_LABEL: Record<SalesNavSectionId, string> = {
   sales: "Sales",
@@ -610,6 +669,7 @@ export const SALES_NAV_SECTION_LABEL: Record<SalesNavSectionId, string> = {
   buyer_sales: "Buyer & tenant sales",
   agency: "Agency operations",
   more_tools: "More tools",
+  follow_up: "Follow-up",
   system: "System",
 };
 

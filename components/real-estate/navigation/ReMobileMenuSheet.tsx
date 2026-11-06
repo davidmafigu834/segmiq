@@ -21,7 +21,7 @@ export type ReMenuItem = {
 
 export type ReMenuGroup = { id: string; label: string; items: ReMenuItem[] };
 
-const START_COLLAPSED = new Set(["more_tools"]);
+const START_COLLAPSED = new Set(["more_tools", "agency"]);
 
 /**
  * Full-height Real Estate menu for phones. Same groups as the desktop sidebar;

@@ -14,6 +14,9 @@ import { listOperationalCalendar } from "@/lib/work-projects/field-service";
 import type { CompanyCalendarEvent } from "@/lib/sales/company-calendar/types";
 import { CompanyCalendarPage } from "@/components/dashboard/company/calendar/CompanyCalendarPage";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
+import { headers } from "next/headers";
+import { calendarViewingBounds } from "@/lib/real-estate/viewing-calendar";
+import { loadRealEstateCalendarViewings } from "@/lib/real-estate/viewing-calendar-load";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -85,7 +88,31 @@ export default async function CompanyCalendarRoute({
   const queryRange = companyCalendarQueryRange(anchorKey);
   const salespersonCapability = canActAsSalesperson(session);
 
-  const [data, unreadRes, userRes, clientRes, navBadges] = await Promise.all([
+  const clientRes = await supabase.from("clients").select("logo_url, business_type, name").eq("id", clientId).maybeSingle();
+  const companyEarly = clientRes.data as { logo_url?: string | null; business_type?: string | null; name?: string | null } | null;
+  const realEstateCalendar = isRealEstate(companyEarly?.business_type);
+  const managerViewingBounds = realEstateCalendar
+    ? calendarViewingBounds(queryRange.startKey, queryRange.endKey, timezone)
+    : null;
+  const loadedViewings = realEstateCalendar && managerViewingBounds
+    ? await loadRealEstateCalendarViewings({
+        requestHeaders: headers(),
+        clientId,
+        actor: { userId: session.userId, role: session.role, clientId: session.clientId },
+        surface: "client",
+        timezone,
+        fromIso: managerViewingBounds.fromIso,
+        toIsoExclusive: managerViewingBounds.toIsoExclusive,
+      })
+    : null;
+  const realEstateViewings = realEstateCalendar
+    ? {
+        failed: loadedViewings?.failed ?? true,
+        incomplete: loadedViewings?.incomplete ?? false,
+        events: loadedViewings?.companyEvents ?? [],
+      }
+    : undefined;
+  const [data, unreadRes, userRes, navBadges] = await Promise.all([
     getCompanyCalendarData({
       clientId,
       rangeStartKey: queryRange.startKey,
@@ -94,6 +121,7 @@ export default async function CompanyCalendarRoute({
       timezone,
       canManageAny: true,
       canActAsSalesperson: salespersonCapability,
+      realEstateViewings,
     }),
     supabase
       .from("notifications")
@@ -101,7 +129,6 @@ export default async function CompanyCalendarRoute({
       .eq("user_id", session.userId)
       .eq("read", false),
     supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
-    supabase.from("clients").select("logo_url, business_type, name").eq("id", clientId).maybeSingle(),
     fetchSalesNavBadges(session.userId, clientId),
   ]);
   const whatsappBadge =
@@ -109,7 +136,7 @@ export default async function CompanyCalendarRoute({
     (navBadges.needsReply || 0) +
     (navBadges.followUpDue || 0);
 
-  const company = clientRes.data as { logo_url?: string | null; business_type?: string | null; name?: string | null } | null;
+  const company = companyEarly;
   let calendarData = data;
   if (!isRealEstate(company?.business_type) && (await companyUsesSolarWorkflow(clientId))) {
     const operational = await listOperationalCalendar(clientId, `${queryRange.startKey}T00:00:00.000Z`, `${queryRange.endKey}T00:00:00.000Z`);

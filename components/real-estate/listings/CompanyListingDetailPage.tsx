@@ -20,7 +20,7 @@ export function CompanyListingDetailPage({
       title="Listing"
       description="Property details, marketing, offers, and buyer matches."
     >
-      <ListingDetailView clientId={clientId} listingId={listingId} />
+      <ListingDetailView clientId={clientId} listingId={listingId} surface="client" />
     </CompanyRePageFrame>
   );
 }

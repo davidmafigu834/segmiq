@@ -10,6 +10,7 @@ import { useCompanySidebarCollapsed } from "@/lib/sales/navigation/use-company-s
 import { PresenceHeartbeat } from "@/components/sales/PresenceHeartbeat";
 import { ImportantMessagesProvider, ImportantMessagesTrigger } from "@/components/important-messages/ImportantMessagesDock";
 import { CompanyWorkspaceProvider, useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { RealEstateWorkspaceLinks } from "@/components/real-estate/navigation/RealEstateWorkspaceLinks";
 import { isRealEstate, normalizeBusinessType, type BusinessType } from "@/lib/terminology";
 import type { UserRole } from "@/types";
 
@@ -102,6 +103,9 @@ export function CompanyWorkspaceShell({
             </div>
           </div>
           <div className={immersive ? "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden" : "relative space-y-3 layout:space-y-3"}>
+            {isRealEstate(businessType ?? parentWorkspace.businessType) && !immersive ? (
+              <RealEstateWorkspaceLinks scope="manager" />
+            ) : null}
             {children}
           </div>
         </div>

@@ -11,6 +11,7 @@ import {
 import type { CalendarEvent } from "@/lib/sales/calendar/types";
 
 function eventTitle(event: CalendarEvent): string {
+  if (event.kind === "VIEWING") return "Viewing";
   if (event.kind === "CALL") return "Callback";
   if (event.kind === "QUOTE_REVIEW") return "Quote review";
   return "Follow-up call";
@@ -94,7 +95,7 @@ export function TodayAgenda({
                     aria-pressed={selected}
                   >
                     <span className="text-[12px] font-semibold tabular-nums leading-none text-sales-text-secondary">
-                      {formatEventTime(event.startAt, event.hasTimedCallback)}
+                      {formatEventTime(event.startAt, event.hasTimedCallback, event.timeZone)}
                     </span>
 
                     <span className="flex min-w-0 items-start gap-2">
@@ -114,7 +115,12 @@ export function TodayAgenda({
                             </span>
                           ) : null}
                         </span>
-                        {event.customerName ? (
+                        {event.kind === "VIEWING" && event.location ? (
+                          <span className="mt-0.5 block truncate text-[12px] leading-tight text-sales-text-secondary">
+                            {event.location}
+                            {event.pipelineStage === "Pending confirmation" || event.pipelineStage === "Tentative" ? ` · ${event.pipelineStage}` : ""}
+                          </span>
+                        ) : event.customerName ? (
                           <span className="mt-0.5 block truncate text-[12px] leading-tight text-sales-text-secondary">
                             {event.customerName}
                           </span>

@@ -29,11 +29,11 @@ import type { CalendarEvent, CalendarEventKind } from "@/lib/sales/calendar/type
 import {
   COMPANY_CALENDAR_KIND_META,
   calendarDateKey,
+  companyCalendarKindOptions,
   companyCalendarRangeKeys,
   matchesCompanyCalendarFilters,
 } from "@/lib/sales/company-calendar/format";
 import {
-  COMPANY_CALENDAR_EVENT_KINDS,
   DEFAULT_COMPANY_CALENDAR_FILTERS,
   type CompanyCalendarEvent,
   type CompanyCalendarEventKind,
@@ -112,11 +112,13 @@ function toLegacyEvent(event: CompanyCalendarEvent): CalendarEvent {
 function FiltersPopover({
   filters,
   owners,
+  kindOptions,
   onChange,
   onClose,
 }: {
   filters: CompanyCalendarFilters;
   owners: CompanyCalendarPageData["owners"];
+  kindOptions: CompanyCalendarEventKind[];
   onChange: (filters: CompanyCalendarFilters) => void;
   onClose: () => void;
 }) {
@@ -138,7 +140,7 @@ function FiltersPopover({
         </select>
         <p className="mt-3 text-[11px] font-semibold text-sales-text-muted">Activity type</p>
         <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-          {COMPANY_CALENDAR_EVENT_KINDS.map((kind) => {
+          {kindOptions.map((kind) => {
             const active = filters.kinds.includes(kind);
             return <button key={kind} type="button" onClick={() => toggleKind(kind)} className={cn("flex min-h-9 items-center gap-2 rounded-[8px] border px-2.5 text-left text-[11px] font-medium", active ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary" : "border-sales-border text-sales-text-secondary")}><span className={cn("flex h-4 w-4 items-center justify-center rounded-[4px] border", active ? "border-sales-brand bg-sales-brand text-sales-brand-text" : "border-sales-border")}>{active ? <Check size={10} /> : null}</span>{COMPANY_CALENDAR_KIND_META[kind].shortLabel}</button>;
           })}
@@ -202,8 +204,10 @@ export function CompanyCalendarPage({
   const [view, setView] = useState<CompanyCalendarView>(() => parseView(initialView) ?? "week");
   const [selectedEventId, setSelectedEventId] = useState<string | null>(initialEventId);
   const [miniMonth, setMiniMonth] = useState(() => startOfMonth(parseISO(`${initialDateKey}T12:00:00`)));
+  const kindOptions = companyCalendarKindOptions(Boolean(data.includeViewings));
   const [filters, setFilters] = useState<CompanyCalendarFilters>(() => ({
     ...DEFAULT_COMPANY_CALENDAR_FILTERS,
+    kinds: companyCalendarKindOptions(Boolean(data.includeViewings)),
     ownerId: data.owners.some((owner) => owner.id === initialOwnerId) ? initialOwnerId : "all",
   }));
   const [summaryAction, setSummaryAction] = useState<CompanyCalendarSummaryAction | null>(null);
@@ -308,7 +312,7 @@ export function CompanyCalendarPage({
     : data.owners.find((owner) => owner.id === filters.ownerId)?.name ?? "Selected owner";
   const activeFilterCount =
     (filters.ownerId !== "all" ? 1 : 0) +
-    (filters.kinds.length !== COMPANY_CALENDAR_EVENT_KINDS.length ? 1 : 0) +
+    (filters.kinds.length !== kindOptions.length ? 1 : 0) +
     (filters.status !== "all" ? 1 : 0) +
     (filters.relationType !== "all" ? 1 : 0) +
     (summaryAction ? 1 : 0);
@@ -381,7 +385,7 @@ export function CompanyCalendarPage({
     setSummaryAction(next);
     setFilters((current) => ({
       ...current,
-      kinds: [...COMPANY_CALENDAR_EVENT_KINDS],
+      kinds: [...kindOptions],
       status: "all",
       relationType: "all",
       includeCompleted: true,
@@ -518,7 +522,14 @@ export function CompanyCalendarPage({
 
   return (
     <CompanyWorkspaceShell companyName={data.clientName} companyLogoUrl={companyLogoUrl} userName={userName} avatarUrl={avatarUrl} unreadNotifications={unreadNotifications} notificationRole={notificationRole} whatsappBadge={whatsappBadge}>
-      <CompanyDashboardHeader unreadNotifications={unreadNotifications} notificationRole={notificationRole} userName={userName} avatarUrl={avatarUrl} canAddLead={false} breadcrumb="Company / Calendar" title="Company Calendar" description="Team activities, follow-ups, meetings and tasks in one place." primaryAction={<Button variant="primary" size="md" disabled={!canCreateActivities} leftIcon={<Plus size={16} />} rightIcon={<ChevronDown size={14} />} onClick={() => openAdd()} data-course-target="calendar-new-activity">New Activity</Button>} />
+      <CompanyDashboardHeader unreadNotifications={unreadNotifications} notificationRole={notificationRole} userName={userName} avatarUrl={avatarUrl} canAddLead={false} breadcrumb="Company / Calendar" title="Company Calendar" description={data.includeViewings ? "Team activities, follow-ups, viewings and tasks in one place." : "Team activities, follow-ups, meetings and tasks in one place."} primaryAction={<Button variant="primary" size="md" disabled={!canCreateActivities} leftIcon={<Plus size={16} />} rightIcon={<ChevronDown size={14} />} onClick={() => openAdd()} data-course-target="calendar-new-activity">New Activity</Button>} />
+
+      {data.viewingsPartial ? (
+        <div className="mb-3 flex min-h-[48px] items-center justify-between gap-3 rounded-[12px] border border-sales-warning/30 bg-sales-warning-soft px-3.5 py-2.5 text-[13px] text-sales-warning-fg">
+          <p>Viewings could not all be loaded. Other calendar events are still shown.</p>
+          <button type="button" className="shrink-0 font-semibold underline-offset-2 hover:underline" onClick={() => router.refresh()}>Retry</button>
+        </div>
+      ) : null}
 
       <CompanyCalendarSummary metrics={metrics} activeAction={summaryAction} scopeLabel={metricScopeLabel} onAction={handleSummaryAction} />
 
@@ -537,7 +548,7 @@ export function CompanyCalendarPage({
               </div>
               <div className="relative">
                 <button type="button" onClick={() => setFiltersOpen((open) => !open)} className={cn("inline-flex h-10 items-center gap-1.5 rounded-[9px] border px-3 text-[12px] font-semibold", filtersOpen || activeFilterCount ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary" : "border-sales-border bg-sales-surface text-sales-text-primary hover:bg-sales-surface-hover")}><SlidersHorizontal size={14} />Filters{activeFilterCount ? <span className="rounded-full bg-sales-brand px-1.5 py-0.5 text-[10px] text-sales-brand-text">{activeFilterCount}</span> : null}</button>
-                {filtersOpen ? <FiltersPopover filters={filters} owners={data.owners} onChange={(next) => {
+                {filtersOpen ? <FiltersPopover filters={filters} owners={data.owners} kindOptions={kindOptions} onChange={(next) => {
                   if (next.ownerId !== filters.ownerId) updateUrl({ owner: next.ownerId });
                   setSummaryAction(null);
                   setFilters(next);
@@ -572,7 +583,7 @@ export function CompanyCalendarPage({
           <div className="hidden min-h-[52px] items-center justify-between gap-3 border-t border-sales-border-subtle px-4 py-2.5 md:flex">
             <div className="flex flex-wrap items-center gap-2" aria-label="Activity Types">
               <span className="mr-1 text-[12px] font-semibold text-sales-text-primary">Activity Types</span>
-              {COMPANY_CALENDAR_EVENT_KINDS.map((kind) => {
+              {kindOptions.map((kind) => {
                 const active = filters.kinds.includes(kind);
                 return <button key={kind} type="button" onClick={() => { setSummaryAction(null); setFilters((current) => ({ ...current, kinds: active ? current.kinds.filter((value) => value !== kind) : [...current.kinds, kind] })); }} aria-pressed={active} className={cn("inline-flex h-8 items-center gap-1.5 rounded-[7px] border px-2 text-[10px] font-medium transition-opacity", active ? "border-sales-border bg-sales-surface-subtle text-sales-text-secondary" : "border-sales-border opacity-40")}><CompanyCalendarEventIcon kind={kind} size={12} />{COMPANY_CALENDAR_KIND_META[kind].shortLabel}</button>;
               })}

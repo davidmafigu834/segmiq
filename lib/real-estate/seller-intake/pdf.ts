@@ -159,6 +159,11 @@ export function layoutMandatePages(snapshot: IntakeSnapshot, options?: { include
   ]);
 }
 
+export function renderPlainPdf(pages: string[][]): { bytes: Buffer; sha256: string } {
+  const bytes = buildPdf(pages.length ? pages : [[""]]);
+  return { bytes, sha256: createHash("sha256").update(bytes).digest("hex") };
+}
+
 export function renderMandatePdf(snapshot: IntakeSnapshot, options?: { includeRestricted?: boolean }): { bytes: Buffer; sha256: string; pageCount: number; pages: string[][] } {
   const pages = layoutMandatePages(snapshot, options);
   const bytes = buildPdf(pages.length ? pages : [[""]]);

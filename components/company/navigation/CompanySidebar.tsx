@@ -13,6 +13,8 @@ import {
   COMPANY_NAV_LUCIDE,
   COMPANY_NAV_SECTION_LABEL,
   companyNavBySection,
+  companyNavIsActive,
+  companySectionLabel,
   getCompanyNavigation,
   getCompanyNavSectionOrder,
   type CompanyNavBadgeKey,
@@ -150,9 +152,10 @@ export function CompanySidebar({
   const { businessType, solarWorkflow } = useCompanyWorkspace();
   const wordmarkSrc =
     crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
-  const navigation = getCompanyNavigation(businessType, { solarWorkflow });
-  const sectionOrder = getCompanyNavSectionOrder(businessType);
   const realEstate = isRealEstate(businessType);
+  const navigation = getCompanyNavigation(businessType, { solarWorkflow });
+  const sectionOrder = getCompanyNavSectionOrder(businessType, { solarWorkflow });
+  const solarGrouped = solarWorkflow && !realEstate;
 
   const badges: Partial<Record<CompanyNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
@@ -239,7 +242,7 @@ export function CompanySidebar({
                 label: COMPANY_NAV_SECTION_LABEL[sectionId],
                 items: companyNavBySection(navigation, sectionId),
               }))}
-              isActive={(item) => item.match(pathname)}
+              isActive={(item) => companyNavIsActive(item, pathname)}
               collapsedMode={collapsedMode}
               storageKey={drawer ? "segmiq-re-nav-groups-company-drawer" : "segmiq-re-nav-groups-company"}
               ariaLabel="Company navigation"
@@ -247,7 +250,7 @@ export function CompanySidebar({
                 <CompanyNavItem
                   key={item.id}
                   item={item}
-                  active={item.match(pathname)}
+                  active={companyNavIsActive(item, pathname)}
                   badge={item.badgeKey ? badges[item.badgeKey] : undefined}
                   collapsed={collapsedMode}
                   onNavigate={onCloseMobile}
@@ -288,8 +291,17 @@ export function CompanySidebar({
             if (items.length === 0) return null;
             const isLast = index === sectionOrder.length - 1;
             return (
-              <div key={sectionId} className={index === 0 ? undefined : collapsedMode ? "mt-3" : "mt-3.5"}>
-                <SalesNavSection label={COMPANY_NAV_SECTION_LABEL[sectionId]} collapsed={collapsedMode}>
+              <div
+                key={sectionId}
+                className={cn(
+                  index === 0 ? undefined : collapsedMode ? "mt-3" : "mt-3.5",
+                  solarGrouped && index > 0 && !collapsedMode && "border-t border-[var(--sales-sidebar-border)] pt-3"
+                )}
+              >
+                {solarGrouped && collapsedMode && index > 0 ? (
+                  <div className="mx-auto mb-1 h-px w-4 bg-[var(--sales-sidebar-border)]" aria-hidden />
+                ) : null}
+                <SalesNavSection label={companySectionLabel(sectionId, { solarWorkflow: solarGrouped })} collapsed={collapsedMode}>
                   {items.map((item) => (
                     <CompanyNavItem
                       key={item.id}

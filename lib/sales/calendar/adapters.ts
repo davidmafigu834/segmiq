@@ -17,6 +17,7 @@ const KIND_META: Record<
     tint: "rgba(82,82,91,0.10)",
   },
   PERSONAL: { label: "Personal", color: "#98A2B3", tint: "rgba(152,162,179,0.10)" },
+  VIEWING: { label: "Viewing", color: "#0369A1", tint: "rgba(3,105,161,0.10)" },
 };
 
 export function getEventTypeLabel(kind: CalendarEventKind): string {
@@ -103,7 +104,7 @@ export function adaptLeadToCalendarEvent(
 /** Compact CRM context line for calendar cards — only real fields. */
 export function getEventSalesContext(event: CalendarEvent): string | null {
   const parts: string[] = [];
-  if (event.overdue) parts.push("Follow-up overdue");
+  if (event.overdue) parts.push(event.kind === "VIEWING" ? "Viewing overdue" : "Follow-up overdue");
   if (event.pipelineStage) parts.push(event.pipelineStage);
   if (event.projectType) parts.push(event.projectType);
   if (event.quoteTotal != null && event.quoteTotal > 0) {

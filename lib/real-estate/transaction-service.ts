@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logReActivity } from "@/lib/lead-events";
 import { listingLabel } from "@/lib/real-estate/helpers";
 import { assertRealEstateClient } from "@/lib/real-estate/offer-service";
+import { canCloseTransaction, outstandingClosureChecks, type ClosureEvidence } from "@/lib/real-estate/workflow/journey";
 import { formatOfferMoney } from "@/lib/real-estate/offers";
 import {
   canTransitionTransaction,
@@ -763,6 +764,43 @@ export async function mutateRealEstateTransaction(opts: {
       }
       if (!canTransitionTransaction(status, "completed")) {
         return { ok: false, error: "Cannot complete this transaction.", status: 400 };
+      }
+      if (!canCloseTransaction(opts.actor.role)) {
+        return { ok: false, error: "A manager completes the transaction and marks the property sold.", status: 403 };
+      }
+      const { data: milestoneRows, error: milestoneError } = await supabase
+        .from("real_estate_transaction_milestones")
+        .select("milestone_key, status")
+        .eq("client_id", opts.clientId)
+        .eq("transaction_id", opts.transactionId);
+      if (milestoneError) {
+        return { ok: false, error: "The completion checks could not be read. Retry.", status: 503 };
+      }
+      let evidence: ClosureEvidence[] = [];
+      if (txn.compliance_case_id) {
+        const { data: requirements, error: requirementError } = await supabase
+          .from("compliance_case_requirements")
+          .select("label, state, mandatory")
+          .eq("client_id", opts.clientId)
+          .eq("compliance_case_id", txn.compliance_case_id as string);
+        if (requirementError) {
+          return { ok: false, error: "The evidence checks could not be read. Retry.", status: 503 };
+        }
+        evidence = (requirements ?? [])
+          .filter((row) => row.mandatory)
+          .map((row) => ({
+            label: String(row.label ?? "Evidence"),
+            state: row.state === "verified" ? "verified" as const : row.state === "waived" ? "waived" as const : row.state === "submitted" || row.state === "uploaded" ? "uploaded" as const : "missing" as const,
+            exceptionRecorded: row.state === "waived",
+          }));
+      }
+      const outstanding = outstandingClosureChecks({
+        transactionType: txn.transaction_type as string,
+        milestones: (milestoneRows ?? []).map((row) => ({ key: String(row.milestone_key), status: String(row.status) })),
+        evidence,
+      });
+      if (outstanding.length) {
+        return { ok: false, error: `Complete the required checks before closing: ${outstanding.join(", ")}.`, status: 409 };
       }
       const { data: listingRow } = await supabase
         .from("listings")

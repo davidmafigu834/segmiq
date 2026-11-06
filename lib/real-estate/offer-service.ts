@@ -27,6 +27,7 @@ import {
   type ReOfferStatus,
 } from "@/lib/real-estate/offers";
 import { decideOfferAcceptance } from "@/lib/real-estate/listing-availability";
+import { offerAcceptGate } from "@/lib/real-estate/workflow/journey";
 import { canCreateOfferForPrivateBuyer } from "@/lib/real-estate/buyer-contact-access";
 import { loadBuyerContactAccessFacts } from "@/lib/real-estate/buyer-contact-access-service";
 import { callAtomic } from "@/lib/real-estate/atomic-rpc";
@@ -226,6 +227,7 @@ export async function createRealEstateOffer(opts: {
   expiryDate?: string | null;
   notes?: string | null;
   submit?: boolean;
+  acceptanceChannel?: "manual" | "seller_link";
 }): Promise<{ ok: true; offer: Record<string, unknown> } | { ok: false; error: string; status: number }> {
   if (!Number.isFinite(opts.amount) || opts.amount <= 0) {
     return { ok: false, error: "Offer amount must be greater than 0.", status: 400 };
@@ -341,6 +343,21 @@ export async function createRealEstateOffer(opts: {
     if (!linked.error) offer.buyer_search_id = opts.buyerSearchId;
   }
 
+  if (opts.acceptanceChannel === "seller_link") {
+    const channel = await supabase
+      .from("real_estate_offers")
+      .update({ acceptance_channel: "seller_link", revision: 1, revision_status: "draft" })
+      .eq("id", offer.id as string)
+      .eq("client_id", opts.clientId);
+    if (channel.error) {
+      await supabase.from("real_estate_offers").delete().eq("id", offer.id as string).eq("client_id", opts.clientId).eq("status", "draft");
+      return { ok: false, error: "Seller-link offers need the journey migration before they can be issued.", status: 503 };
+    }
+    offer.acceptance_channel = "seller_link";
+    offer.revision = 1;
+    offer.revision_status = "draft";
+  }
+
   await appendEvent({
     offerId: offer.id as string,
     clientId: opts.clientId,
@@ -392,6 +409,7 @@ export async function mutateRealEstateOffer(opts: {
   expiryDate?: string | null;
   reason?: string | null;
   expectedUpdatedAt?: string | null;
+  acceptanceChannel?: "staff" | "seller_link";
 }): Promise<
   | { ok: true; offer: Record<string, unknown>; notifyAvailable: boolean; siblingActiveCount: number }
   | { ok: false; error: string; status: number }
@@ -430,6 +448,27 @@ export async function mutateRealEstateOffer(opts: {
 
   if (opts.action === "accept" && row.status === "accepted" && row.reserves_listing === true) {
     return { ok: true, offer: row, notifyAvailable: false, siblingActiveCount: 0 };
+  }
+
+  if (opts.action === "accept" && row.acceptance_channel === "seller_link" && row.status !== "accepted") {
+    if (row.revision_status !== "buyer_signed" && row.revision_status !== "superseded" && row.revision_status !== "revoked" && row.revision_status !== "declined") {
+      return { ok: false, error: "The buyer signs this revision before the seller can accept it.", status: 409 };
+    }
+    const revisionStatus = row.revision_status === "superseded" || row.revision_status === "revoked" || row.revision_status === "declined" || row.revision_status === "accepted"
+      ? row.revision_status
+      : "buyer_signed";
+    const gate = offerAcceptGate({
+      issuance: "seller_link",
+      actor: opts.acceptanceChannel ?? "staff",
+      revisionStatus,
+      expiresAt: typeof row.expires_at === "string"
+        ? row.expires_at
+        : typeof row.expiry_date === "string"
+          ? new Date(`${row.expiry_date}T23:59:59.999Z`).toISOString()
+          : new Date(0).toISOString(),
+      nowMs: Date.now(),
+    });
+    if (!gate.ok) return { ok: false, error: gate.error, status: gate.status };
   }
 
   if (opts.action === "accept") {

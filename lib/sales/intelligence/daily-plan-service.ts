@@ -3,7 +3,6 @@
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAgencySettings } from "@/lib/agency-settings";
 import { fetchLatestScheduledCallbacksByLeadId } from "@/lib/convert-later-picks";
 import { leadCardDisplayName } from "@/lib/leads/whatsapp-lead-display";
 import { SCORE_HOT_MIN } from "@/lib/inbox/scoring";
@@ -49,7 +48,7 @@ import {
 } from "./operating-hours";
 import { calcPipelineCoverage, sumActivePipelineValue } from "./pipeline-coverage";
 import { rankSalesActions, shouldResolveRecommendation } from "./priority-engine";
-import { planDayBoundsUtc, resolveSalesTimezone } from "./timezone";
+import { organisationTimeZone, planDayBoundsUtc, resolveSalesTimezone } from "./timezone";
 import { countValidProspects, type ProspectCandidate } from "./valid-prospect";
 import type {
   ActionStateRow,
@@ -247,17 +246,12 @@ export async function upsertExecutionSettings(opts: {
 
 export async function resolveClientSalesTimezone(clientId: string): Promise<string> {
   const supabase = createAdminClient();
-  const [marketingRes, agency] = await Promise.all([
-    supabase
-      .from("client_marketing_settings")
-      .select("timezone")
-      .eq("client_id", clientId)
-      .maybeSingle(),
-    getAgencySettings(),
-  ]);
-  return resolveSalesTimezone(
-    (marketingRes.data?.timezone as string | null) ?? agency.default_timezone
-  );
+  const marketingRes = await supabase
+    .from("client_marketing_settings")
+    .select("timezone")
+    .eq("client_id", clientId)
+    .maybeSingle();
+  return organisationTimeZone(marketingRes.data?.timezone as string | null);
 }
 
 export async function fetchClientBaselineSettings(

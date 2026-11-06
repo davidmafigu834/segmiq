@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { uploadCompanyDocument } from "@/lib/documents/client-upload";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
@@ -43,6 +44,8 @@ export function MandateActions({
   canReview: boolean;
   onChanged: () => void;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [mode, setMode] = useState<Mode>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,9 +64,19 @@ export function MandateActions({
       setError((json.error as string) ?? "Could not save the change.");
       return false;
     }
+    const draft = json.draftListing as { ok?: boolean; listingId?: string; error?: string } | null | undefined;
+    if (draft && draft.ok === false) {
+      setError(draft.error ?? "The mandate is approved. The draft listing did not finish. Approve again to retry it.");
+      onChanged();
+      return false;
+    }
     setError(null);
     setMode(null);
     onChanged();
+    if (draft?.ok && draft.listingId) {
+      const root = pathname.startsWith("/client") ? "/client" : "/sales";
+      router.push(`${root}/listings/${draft.listingId}`);
+    }
     return true;
   }
 
@@ -117,6 +130,11 @@ export function MandateActions({
         {reviewable ? (
           <button type="button" className="re-focus inline-flex min-h-11 items-center rounded-[var(--re-radius-control,8px)] border border-sales-danger px-3 text-[13px] font-semibold text-sales-danger-fg disabled:opacity-50" disabled={busy} onClick={() => setMode(mode === "reject" ? null : "reject")}>
             Reject
+          </button>
+        ) : null}
+        {canReview && rawStatus === "approved" ? (
+          <button type="button" className={quiet} disabled={busy} onClick={() => void run({ action: "review", mandateId: mandate.id, decision: "approved" })}>
+            Retry draft creation
           </button>
         ) : null}
         {renewable ? <button type="button" className={quiet} onClick={() => setMode(mode === "renew" ? null : "renew")}>Renew</button> : null}

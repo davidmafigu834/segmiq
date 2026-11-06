@@ -13,6 +13,16 @@ export function resolveSalesTimezone(preferred?: string | null): string {
   return DEFAULT_SALES_EXECUTION.timezoneFallback;
 }
 
+/**
+ * Timezone shown in company settings and sent to the sales app.
+ * A saved organisation timezone wins. Otherwise the company-settings default is used.
+ * The agency platform default is not a substitute for an organisation timezone.
+ */
+export function organisationTimeZone(configured?: string | null): string {
+  const tz = configured?.trim();
+  return tz || DEFAULT_SALES_EXECUTION.timezoneFallback;
+}
+
 /** Calendar date YYYY-MM-DD in the given IANA timezone. */
 export function planDateInTimezone(now: Date, timezone: string): string {
   try {

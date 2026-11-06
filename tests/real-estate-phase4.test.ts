@@ -154,18 +154,19 @@ describe("final real estate navigation", () => {
     );
     const manager = getCompanyNavigation("real_estate");
     const main = companyNavBySection(manager, "main").map((item) => item.id);
-    assert.deepEqual(main, ["overview", "whatsapp", "calendar"]);
+    assert.deepEqual(main, ["overview", "listings", "calendar", "people", "transactions", "review"]);
     const agency = companyNavBySection(manager, "agency").map((item) => item.id);
-    for (const id of ["listings", "transactions", "agents", "commissions", "reports"]) {
+    for (const id of ["agents", "commissions", "reports", "developments"]) {
       assert.equal(agency.includes(id), true);
     }
-    assert.equal(companyNavBySection(manager, "more_tools").some((item) => item.id === "developments"), true);
+    assert.equal(companyNavBySection(manager, "main").some((item) => item.id === "listings"), true);
+    assert.equal(companyNavBySection(manager, "main").some((item) => item.id === "transactions"), true);
     assert.equal(getCompanyNavigation("trades").some((item) => item.id === "commissions"), false);
     const agent = resolveSalesNavItems(false, "real_estate");
     assert.equal(agent.some((item) => item.href === "/sales/commissions"), true);
     assert.deepEqual(
       salesMobilePrimaryItems(agent, "real_estate").map((item) => item.id),
-      ["dashboard", "whatsapp", "listings", "tasks"]
+      ["dashboard", "listings", "calendar", "people", "transactions"]
     );
     assert.deepEqual(
       salesMobilePrimaryItems(trades).map((item) => item.id),

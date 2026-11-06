@@ -8,6 +8,7 @@ import { useSalesMobileChrome } from "@/components/sales/navigation/SalesMobileC
 import {
   resolveSalesNavItems,
   salesMobilePrimaryItems,
+  salesNavIsActive,
   SALES_NAV_LUCIDE,
   type SalesNavBadgeKey,
   type SalesNavIconId,
@@ -83,9 +84,12 @@ export function SalesBottomNav({
       aria-label="Sales mobile navigation"
       style={{ height: "calc(var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px))" }}
     >
-      <div className="mx-auto grid h-[var(--sales-mobile-nav-height)] max-w-lg grid-cols-5 items-stretch px-1">
+      <div
+        className="mx-auto grid h-[var(--sales-mobile-nav-height)] max-w-lg items-stretch px-1"
+        style={{ gridTemplateColumns: `repeat(${items.length + 1}, minmax(0, 1fr))` }}
+      >
         {items.map((item) => {
-          const active = item.match(pathname);
+          const active = salesNavIsActive(item, pathname);
           const badge = item.badgeKey ? badges[item.badgeKey] : undefined;
           const showBadge = badge != null && badge > 0;
           const isWa = item.id === "whatsapp" && !realEstate;
@@ -97,9 +101,10 @@ export function SalesBottomNav({
               data-course-target={`sales-mobile-nav-${item.id}`}
               className={cn(
                 "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 font-medium transition-colors",
-                realEstate ? "gap-1 text-[11px]" : "text-[10px]",
+                items.length > 4 ? "gap-1 text-[10px]" : realEstate ? "gap-1 text-[11px]" : "text-[10px]",
                 active ? "text-sales-text-primary" : "text-sales-text-secondary"
               )}
+              title={item.label}
             >
               <span
                 className={cn(
@@ -130,7 +135,7 @@ export function SalesBottomNav({
           type="button"
           className={cn(
             "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 font-medium transition-colors",
-            realEstate ? "gap-1 text-[11px]" : "text-[10px]",
+            items.length > 4 ? "gap-1 text-[10px]" : realEstate ? "gap-1 text-[11px]" : "text-[10px]",
             moreOpen ? "text-sales-text-primary" : "text-sales-text-secondary"
           )}
           aria-label={realEstate ? "Menu" : "More"}
