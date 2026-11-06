@@ -48,7 +48,7 @@ import {
 } from "./operating-hours";
 import { calcPipelineCoverage, sumActivePipelineValue } from "./pipeline-coverage";
 import { rankSalesActions, shouldResolveRecommendation } from "./priority-engine";
-import { organisationTimeZone, planDayBoundsUtc, resolveSalesTimezone } from "./timezone";
+import { organisationTimeZone, planDayBoundsUtc } from "./timezone";
 import { countValidProspects, type ProspectCandidate } from "./valid-prospect";
 import type {
   ActionStateRow,
