@@ -57,12 +57,9 @@ export function agentWorkspaceShortcuts(pathname: string): WorkspaceShortcut[] {
   if (within(pathname, AGENT_PROPERTIES)) {
     return exceptCurrent(pathname, [
       { href: "/sales/listings", label: "Properties" },
-      { href: "/sales/acquisitions", label: "Drafts" },
       { href: "/sales/mandates", label: "Mandates" },
       { href: "/sales/inspections", label: "Inspections" },
       { href: "/sales/offers", label: "Offers" },
-      { href: "/sales/shared-listings", label: "Sharing" },
-      { href: "/sales/matching", label: "Matching" },
     ]);
   }
   if (within(pathname, ["/sales/calendar", "/sales/viewings"])) {
@@ -76,7 +73,6 @@ export function agentWorkspaceShortcuts(pathname: string): WorkspaceShortcut[] {
       { href: "/sales/people", label: "People" },
       { href: "/sales/owners", label: "Sellers" },
       { href: "/sales/buyers", label: "Buyers & Tenants" },
-      { href: "/sales/buyers/introductions", label: "Introductions" },
     ]);
   }
   if (within(pathname, ["/sales/transactions", "/sales/compliance"])) {
@@ -104,10 +100,9 @@ export function managerWorkspaceShortcuts(pathname: string): WorkspaceShortcut[]
   if (within(pathname, MANAGER_PROPERTIES)) {
     return exceptCurrent(pathname, [
       { href: "/client/listings", label: "Properties" },
-      { href: "/client/acquisitions", label: "Drafts" },
+      { href: "/client/mandates", label: "Mandates" },
       { href: "/client/inspections", label: "Inspections" },
       { href: "/client/offers", label: "Offers" },
-      { href: "/client/matching", label: "Matching" },
     ]);
   }
   if (within(pathname, ["/client/calendar", "/client/viewings"])) {
@@ -121,7 +116,6 @@ export function managerWorkspaceShortcuts(pathname: string): WorkspaceShortcut[]
       { href: "/client/people", label: "People" },
       { href: "/client/owners", label: "Sellers" },
       { href: "/client/buyers", label: "Buyers & Tenants" },
-      { href: "/client/buyers/introductions", label: "Introductions" },
       { href: "/client/contacts", label: "Contacts" },
       { href: "/client/customers", label: "Customers" },
     ]);
@@ -142,13 +136,11 @@ export function managerWorkspaceShortcuts(pathname: string): WorkspaceShortcut[]
 export const AGENT_PEOPLE_LINKS: WorkspaceShortcut[] = [
   { href: "/sales/owners", label: "Sellers" },
   { href: "/sales/buyers", label: "Buyers & Tenants" },
-  { href: "/sales/buyers/introductions", label: "Introductions" },
 ];
 
 export const MANAGER_PEOPLE_LINKS: WorkspaceShortcut[] = [
   { href: "/client/owners", label: "Sellers" },
   { href: "/client/buyers", label: "Buyers & Tenants" },
-  { href: "/client/buyers/introductions", label: "Introductions" },
   { href: "/client/contacts", label: "Contacts" },
   { href: "/client/customers", label: "Customers" },
 ];

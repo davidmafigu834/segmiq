@@ -30,7 +30,7 @@ export default async function Page() {
       >
         <RealEstateLinkDirectory
           title="People"
-          description="Sellers, buyers and tenants, introductions, contacts, and customers."
+          description="Sellers from mandates, buyers from viewing forms, plus contacts and customers."
           links={MANAGER_PEOPLE_LINKS}
         />
       </CompanyReShell>

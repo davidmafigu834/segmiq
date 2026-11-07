@@ -107,12 +107,13 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
   }, [opportunities, owners, selected]);
   const phone = linked.find((row) => row.owner_phone)?.owner_phone ?? null;
   const acquisitionsPath = basePath.replace(/\/owners$/, "/acquisitions");
+  const listingsPath = basePath.replace(/\/owners$/, "/listings");
 
   return (
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
-        title="Property owners"
-        description="Manage owner relationships and the properties they bring to your agency."
+        title="Sellers"
+        description="Seller profiles. A completed mandate opens the seller and the property they are listing."
       />
       <SellerIntakePanel clientId={clientId} mode="queue" />
       <label>
@@ -124,9 +125,9 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
       {!loading && !error && visible.length === 0 ? (
         <ReEmptyState
           framed
-          title="No property owners yet"
-          description="Owner relationships appear when you record a property opportunity."
-          action={<Link href={`${acquisitionsPath}?new=1`} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>New opportunity</Link>}
+          title="No sellers yet"
+          description="A seller profile is created when a mandate form is completed."
+          action={<Link href={`${listingsPath}#seller-intake`} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>Send seller form</Link>}
         />
       ) : null}
       {!loading && !error && visible.length > 0 ? (
@@ -161,8 +162,8 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
                       label={`Actions for ${name}`}
                       sheetTitle={name}
                       actions={[
-                        { id: "view", label: "View owner", onSelect: () => setSelected(owner.contactId) },
-                        { id: "new", label: "New opportunity", description: "Opens a blank opportunity. It does not attach this owner automatically.", onSelect: () => router.push(`${acquisitionsPath}?new=1`) },
+                        { id: "view", label: "View seller", onSelect: () => setSelected(owner.contactId) },
+                        { id: "form", label: "Send seller form", description: "Opens the mandate form on Properties.", onSelect: () => router.push(`${listingsPath}#seller-intake`) },
                         ...(ownerPhone
                           ? [
                               { id: "call", label: "Call", onSelect: () => { window.location.href = `tel:${ownerPhone}`; } },

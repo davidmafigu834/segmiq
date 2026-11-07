@@ -193,7 +193,7 @@ export const COMPANY_NAV_SECTION_LABEL: Record<CompanyNavSectionId, string> = {
 
 export const COMPANY_NAV_SECTION_ORDER: Record<BusinessType, CompanyNavSectionId[]> = {
   trades: ["company", "products", "tools"],
-  real_estate: ["main", "follow_up", "agency"],
+  real_estate: ["main", "acquisition", "buyer_sales", "follow_up", "agency"],
 };
 
 function exactOrChild(pathname: string, href: string): boolean {
@@ -205,22 +205,16 @@ function covers(pathname: string, hrefs: readonly string[]): boolean {
 }
 
 const REAL_ESTATE_COMPANY_ACTIVE_ON: Partial<Record<string, (pathname: string) => boolean>> = {
-  listings: (pathname) =>
-    covers(pathname, [
-      "/client/listings",
-      "/client/acquisitions",
-      "/client/inspections",
-      "/client/offers",
-      "/client/matching",
-    ]),
-  calendar: (pathname) => covers(pathname, ["/client/calendar", "/client/viewings"]),
-  people: (pathname) => covers(pathname, ["/client/people", "/client/owners", "/client/buyers"]),
-  review: (pathname) => covers(pathname, ["/client/review", "/client/mandates", "/client/compliance"]),
+  listings: (pathname) => covers(pathname, ["/client/listings", "/client/acquisitions", "/client/matching"]),
+  people: (pathname) => covers(pathname, ["/client/people", "/client/buyers/introductions"]),
+  review: (pathname) => covers(pathname, ["/client/review", "/client/compliance"]),
   transactions: (pathname) => covers(pathname, ["/client/transactions"]),
 };
 
 const REAL_ESTATE_COMPANY_ITEM_ORDER: Partial<Record<CompanyNavSectionId, string[]>> = {
   main: ["overview", "listings", "calendar", "people", "transactions", "review"],
+  acquisition: ["mandates", "owners", "inspections"],
+  buyer_sales: ["buyers", "viewings", "offers"],
   follow_up: ["whatsapp", "inquiries", "socialInbox"],
   agency: [
     "agents",
@@ -505,7 +499,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
   },
   {
     id: "offers",
-    label: "Offers & Deals",
+    label: "Offers",
     href: "/client/offers",
     icon: "offers",
     section: "buyer_sales",
@@ -608,7 +602,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Introductions",
     href: "/client/buyers/introductions",
     icon: "buyers",
-    section: "buyer_sales",
+    section: "more_tools",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/buyers/introductions"),
   },
@@ -617,7 +611,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Property Matching",
     href: "/client/matching",
     icon: "matching",
-    section: "buyer_sales",
+    section: "more_tools",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/matching"),
   },
@@ -626,13 +620,13 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Property Opportunities",
     href: "/client/acquisitions",
     icon: "opportunities",
-    section: "acquisition",
+    section: "more_tools",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/acquisitions"),
   },
   {
     id: "owners",
-    label: "Property Owners",
+    label: "Sellers",
     href: "/client/owners",
     icon: "owners",
     section: "acquisition",

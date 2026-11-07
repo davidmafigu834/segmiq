@@ -42,8 +42,6 @@ export function PropertyRegister({
   const [payload, setPayload] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
-  const opportunityHref = surface === "sales" ? "/sales/acquisitions?new=1" : "/client/acquisitions?new=1";
-
   const load = useCallback(async () => {
     setLoading(true);
     setFailed(false);
@@ -94,12 +92,6 @@ export function PropertyRegister({
             </button>
           ))}
         </div>
-        <Link
-          href={opportunityHref}
-          className="inline-flex min-h-11 items-center rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
-        >
-          New opportunity
-        </Link>
       </div>
       <label className="block">
         <span className="sr-only">Search properties</span>

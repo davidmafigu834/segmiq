@@ -23,7 +23,7 @@ export default async function Page() {
         role={session.role}
         breadcrumb="Company / Mandates"
         title="Mandates"
-        description="See which opportunities have authority to market, and which still need it."
+        description="Mandates waiting for review. Approval opens the seller and a draft listing."
       >
         <MandateList clientId={session.clientId} opportunityBase="/client/acquisitions" framed />
       </CompanyReShell>

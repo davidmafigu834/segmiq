@@ -599,17 +599,8 @@ function covers(pathname: string, hrefs: readonly string[]): boolean {
 
 const REAL_ESTATE_ACTIVE_ON: Partial<Record<string, (pathname: string) => boolean>> = {
   listings: (pathname) =>
-    covers(pathname, [
-      "/sales/listings",
-      "/sales/acquisitions",
-      "/sales/mandates",
-      "/sales/inspections",
-      "/sales/offers",
-      "/sales/shared-listings",
-      "/sales/matching",
-    ]),
-  calendar: (pathname) => covers(pathname, ["/sales/calendar", "/sales/viewings"]),
-  people: (pathname) => covers(pathname, ["/sales/people", "/sales/owners", "/sales/buyers"]),
+    covers(pathname, ["/sales/listings", "/sales/acquisitions", "/sales/shared-listings", "/sales/matching"]),
+  people: (pathname) => covers(pathname, ["/sales/people", "/sales/buyers/introductions"]),
   transactions: (pathname) => covers(pathname, ["/sales/transactions", "/sales/compliance"]),
 };
 
@@ -623,13 +614,13 @@ const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
   tasks: "follow_up",
   leads: "follow_up",
   socialInbox: "follow_up",
-  opportunities: "acquisition",
+  opportunities: "more_tools",
   owners: "acquisition",
   inspections: "acquisition",
   mandates: "acquisition",
   buyers: "buyer_sales",
-  introductions: "buyer_sales",
-  matching: "buyer_sales",
+  introductions: "more_tools",
+  matching: "more_tools",
   viewings: "buyer_sales",
   offers: "buyer_sales",
   sharedListings: "agency",
@@ -648,15 +639,19 @@ const REAL_ESTATE_AGENT_LABELS: Record<string, { label: string; mobileLabel: str
   calendar: { label: "Calendar", mobileLabel: "Calendar" },
   whatsapp: { label: "Sales Inbox", mobileLabel: "Inbox" },
   tasks: { label: "My Activities", mobileLabel: "Activities" },
+  owners: { label: "Sellers", mobileLabel: "Sellers" },
+  offers: { label: "Offers", mobileLabel: "Offers" },
 };
 
 const REAL_ESTATE_ITEM_ORDER: Partial<Record<SalesNavSectionId, string[]>> = {
   main: ["dashboard", "listings", "calendar", "people", "transactions"],
+  acquisition: ["mandates", "owners", "inspections"],
+  buyer_sales: ["buyers", "viewings", "offers"],
   follow_up: ["whatsapp", "tasks", "leads", "socialInbox"],
 };
 
-/** Sections drawn in the Real Estate web menu. Other sections stay in the item list for direct URLs and the Android destination contract. */
-export const REAL_ESTATE_SALES_SECTION_ORDER: SalesNavSectionId[] = ["main", "follow_up"];
+/** Sections drawn in the Real Estate web menu. Other sections stay in the item list for direct URLs. */
+export const REAL_ESTATE_SALES_SECTION_ORDER: SalesNavSectionId[] = ["main", "acquisition", "buyer_sales", "follow_up"];
 
 export const SALES_NAV_SECTION_LABEL: Record<SalesNavSectionId, string> = {
   sales: "Sales",

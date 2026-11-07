@@ -68,7 +68,7 @@ describe("company navigation — real_estate", () => {
     assert.equal(nav.find((item) => item.id === "agents")?.href, "/client/team");
     assert.equal(nav.find((item) => item.id === "commissions")?.href, "/client/commissions");
     assert.equal(nav.find((item) => item.id === "whatsapp")?.section, "follow_up");
-    assert.deepEqual(getCompanyNavSectionOrder("real_estate"), ["main", "follow_up", "agency"]);
+    assert.deepEqual(getCompanyNavSectionOrder("real_estate"), ["main", "acquisition", "buyer_sales", "follow_up", "agency"]);
   });
 
   it("does not change trades navigation when business_type is omitted", () => {

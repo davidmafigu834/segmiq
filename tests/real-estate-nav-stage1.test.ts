@@ -26,14 +26,8 @@ import {
 
 const HIDDEN_AGENT_IDS = [
   "opportunities",
-  "owners",
-  "inspections",
-  "mandates",
-  "buyers",
   "introductions",
   "matching",
-  "viewings",
-  "offers",
   "sharedListings",
   "compliance",
   "commissions",
@@ -48,11 +42,21 @@ const HIDDEN_AGENT_IDS = [
 describe("real estate stage 1 navigation", () => {
   it("shows five agent destinations and keeps the older entries reachable by id", () => {
     const agent = resolveSalesNavItems(false, "real_estate");
-    assert.deepEqual(salesNavSectionOrder("real_estate"), ["main", "follow_up"]);
+    assert.deepEqual(salesNavSectionOrder("real_estate"), ["main", "acquisition", "buyer_sales", "follow_up"]);
     assert.deepEqual(
       salesNavItemsBySection(agent, "main").map((item) => item.id),
       ["dashboard", "listings", "calendar", "people", "transactions"]
     );
+    assert.deepEqual(
+      salesNavItemsBySection(agent, "acquisition").map((item) => item.id),
+      ["mandates", "owners", "inspections"]
+    );
+    assert.deepEqual(
+      salesNavItemsBySection(agent, "buyer_sales").map((item) => item.id),
+      ["buyers", "viewings", "offers"]
+    );
+    assert.equal(agent.find((item) => item.id === "owners")?.label, "Sellers");
+    assert.equal(agent.find((item) => item.id === "offers")?.label, "Offers");
     assert.deepEqual(
       salesNavItemsBySection(agent, "follow_up").map((item) => item.id),
       ["whatsapp", "tasks", "leads", "socialInbox"]
@@ -71,9 +75,12 @@ describe("real estate stage 1 navigation", () => {
       assert.equal(REAL_ESTATE_SALES_SECTION_ORDER.includes(item.section), false);
     }
     assert.equal(salesNavIsActive(agent.find((item) => item.id === "listings")!, "/sales/acquisitions"), true);
-    assert.equal(salesNavIsActive(agent.find((item) => item.id === "listings")!, "/sales/offers/abc"), true);
-    assert.equal(salesNavIsActive(agent.find((item) => item.id === "calendar")!, "/sales/viewings"), true);
-    assert.equal(salesNavIsActive(agent.find((item) => item.id === "people")!, "/sales/owners"), true);
+    assert.equal(salesNavIsActive(agent.find((item) => item.id === "offers")!, "/sales/offers/abc"), true);
+    assert.equal(salesNavIsActive(agent.find((item) => item.id === "listings")!, "/sales/offers/abc"), false);
+    assert.equal(salesNavIsActive(agent.find((item) => item.id === "viewings")!, "/sales/viewings"), true);
+    assert.equal(salesNavIsActive(agent.find((item) => item.id === "calendar")!, "/sales/viewings"), false);
+    assert.equal(salesNavIsActive(agent.find((item) => item.id === "owners")!, "/sales/owners"), true);
+    assert.equal(salesNavIsActive(agent.find((item) => item.id === "people")!, "/sales/owners"), false);
     assert.equal(salesNavIsActive(agent.find((item) => item.id === "people")!, "/sales/buyers/introductions"), true);
     assert.equal(salesNavIsActive(agent.find((item) => item.id === "transactions")!, "/sales/compliance"), true);
     assert.equal(salesNavIsActive(agent.find((item) => item.id === "dashboard")!, "/sales/inbox"), false);
@@ -83,7 +90,17 @@ describe("real estate stage 1 navigation", () => {
 
   it("gives the manager the same five names plus Review, without taking Review onto the phone bar", () => {
     const manager = getCompanyNavigation("real_estate");
-    assert.deepEqual(getCompanyNavSectionOrder("real_estate"), ["main", "follow_up", "agency"]);
+    assert.deepEqual(getCompanyNavSectionOrder("real_estate"), ["main", "acquisition", "buyer_sales", "follow_up", "agency"]);
+    assert.deepEqual(
+      companyNavBySection(manager, "acquisition").map((item) => item.id),
+      ["mandates", "owners", "inspections"]
+    );
+    assert.deepEqual(
+      companyNavBySection(manager, "buyer_sales").map((item) => item.id),
+      ["buyers", "viewings", "offers"]
+    );
+    assert.equal(manager.find((item) => item.id === "owners")?.label, "Sellers");
+    assert.equal(manager.find((item) => item.id === "offers")?.label, "Offers");
     assert.deepEqual(
       companyNavBySection(manager, "main").map((item) => item.id),
       ["overview", "listings", "calendar", "people", "transactions", "review"]
@@ -98,16 +115,19 @@ describe("real estate stage 1 navigation", () => {
     for (const id of ["agents", "commissions", "reports", "marketing", "settings", "billing", "developments"]) {
       assert.equal(manager.find((item) => item.id === id)?.section, "agency");
     }
-    for (const id of ["viewings", "offers", "mandates", "opportunities", "owners", "buyers", "compliance", "reviews"]) {
+    for (const id of ["opportunities", "introductions", "matching", "compliance", "reviews"]) {
       assert.ok(manager.some((item) => item.id === id), `missing compatibility entry ${id}`);
-      assert.equal(["main", "follow_up", "agency"].includes(manager.find((item) => item.id === id)!.section), false);
+      assert.equal(["main", "acquisition", "buyer_sales", "follow_up", "agency"].includes(manager.find((item) => item.id === id)!.section), false);
     }
     const review = manager.find((item) => item.id === "review")!;
-    assert.equal(companyNavIsActive(review, "/client/mandates"), true);
+    assert.equal(companyNavIsActive(review, "/client/mandates"), false);
+    assert.equal(companyNavIsActive(manager.find((item) => item.id === "mandates")!, "/client/mandates"), true);
     assert.equal(companyNavIsActive(review, "/client/compliance/reviews"), true);
     assert.equal(companyNavIsActive(manager.find((item) => item.id === "listings")!, "/client/mandates"), false);
-    assert.equal(companyNavIsActive(manager.find((item) => item.id === "calendar")!, "/client/viewings"), true);
-    assert.equal(companyNavIsActive(manager.find((item) => item.id === "people")!, "/client/buyers"), true);
+    assert.equal(companyNavIsActive(manager.find((item) => item.id === "viewings")!, "/client/viewings"), true);
+    assert.equal(companyNavIsActive(manager.find((item) => item.id === "calendar")!, "/client/viewings"), false);
+    assert.equal(companyNavIsActive(manager.find((item) => item.id === "buyers")!, "/client/buyers"), true);
+    assert.equal(companyNavIsActive(manager.find((item) => item.id === "people")!, "/client/buyers"), false);
     assert.equal(companyNavIsActive(manager.find((item) => item.id === "people")!, "/client/customers"), false);
   });
 
@@ -139,14 +159,15 @@ describe("real estate stage 1 navigation", () => {
       ["/sales/inbox", "/sales/tasks", "/sales/leads", "/sales/social-inbox"]
     );
     assert.ok(agentWorkspaceShortcuts("/sales/calendar").some((link) => link.href === "/sales/viewings" && link.label === "Viewings"));
-    assert.ok(agentWorkspaceShortcuts("/sales/listings").some((link) => link.href === "/sales/acquisitions"));
+    assert.equal(agentWorkspaceShortcuts("/sales/listings").some((link) => link.href === "/sales/acquisitions"), false);
+    assert.equal(agentWorkspaceShortcuts("/sales/listings").some((link) => link.href === "/sales/matching"), false);
+    assert.ok(agentWorkspaceShortcuts("/sales/listings").some((link) => link.href === "/sales/mandates"));
     assert.ok(agentWorkspaceShortcuts("/sales/offers").some((link) => link.href === "/sales/mandates"));
     assert.deepEqual(agentWorkspaceShortcuts("/sales/people"), []);
     assert.deepEqual(agentWorkspaceShortcuts("/sales/inbox"), []);
     assert.deepEqual(AGENT_PEOPLE_LINKS.map((link) => link.href), [
       "/sales/owners",
       "/sales/buyers",
-      "/sales/buyers/introductions",
     ]);
     assert.ok(managerWorkspaceShortcuts("/client/dashboard").some((link) => link.href === "/client/review"));
     assert.ok(managerWorkspaceShortcuts("/client/dashboard").some((link) => link.href === "/client/inbox"));
@@ -156,7 +177,6 @@ describe("real estate stage 1 navigation", () => {
     assert.deepEqual(MANAGER_PEOPLE_LINKS.map((link) => link.href), [
       "/client/owners",
       "/client/buyers",
-      "/client/buyers/introductions",
       "/client/contacts",
       "/client/customers",
     ]);
