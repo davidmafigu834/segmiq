@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClipboardCheck, ScrollText, UserRound } from "lucide-react";
-import { MandateActions, type MandateRow } from "./MandateActions";
+import { mandateFormVisible, mandateKindLabel, type MandateFormFilter } from "@/lib/real-estate/mandate-form";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
@@ -29,9 +29,6 @@ import {
   formatWhen,
   inspectionStatusLabel,
   inspectionTone,
-  mandateStatusLabel,
-  mandateTone,
-  mandateTypeLabel,
 } from "./acquisition-ui";
 import { SellerIntakePanel } from "@/components/real-estate/seller-intake/SellerIntakePanel";
 
@@ -111,7 +108,6 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
         title="Sellers"
         description="Each completed mandate opens a seller here, with the property they are listing underneath."
       />
-      <SellerIntakePanel clientId={clientId} mode="queue" />
       <label>
         <span className="sr-only">Search owners</span>
         <input className={acqFieldClass} placeholder="Search by name" value={q} onChange={(event) => setQ(event.target.value)} />
@@ -307,63 +303,104 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
   );
 }
 
-const MANDATE_FILTERS = [
-  { id: "attention", label: "Pending review" },
-  { id: "approved", label: "Active" },
-  { id: "expiring", label: "Expiring" },
-  { id: "expired", label: "Expired" },
-  { id: "revoked", label: "Rejected or revoked" },
-  { id: "legacy", label: "Legacy unverified" },
+const MANDATE_FILTERS: Array<{ id: MandateFormFilter; label: string }> = [
   { id: "all", label: "All" },
-] as const;
+  { id: "with_seller", label: "With the seller" },
+  { id: "complete", label: "Complete" },
+  { id: "expiring", label: "Expiring" },
+];
+
+type MandateFormRow = {
+  id: string;
+  phase: "with_seller" | "complete";
+  kind: string | null;
+  sellerName: string;
+  property: string;
+  expiryDate: string | null;
+  contactId: string | null;
+  opportunityId: string | null;
+};
+
+type MandateSheet = MandateFormRow & {
+  listingId: string | null;
+  busy: boolean;
+  error: string | null;
+};
+
+function mandateWhen(kind: string | null, expiryDate: string | null) {
+  if (expiryDate) return `Ends ${expiryDate}`;
+  if (kind === "sole") return "No end date";
+  return "End date not set";
+}
 
 export function MandateList({ clientId, opportunityBase, framed = false }: { clientId: string; opportunityBase: string; framed?: boolean }) {
-  const [rows, setRows] = useState<MandateRow[]>([]);
-  const [canReview, setCanReview] = useState(false);
-  const [incomplete, setIncomplete] = useState(false);
+  const [rows, setRows] = useState<MandateFormRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<(typeof MANDATE_FILTERS)[number]["id"]>("attention");
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<MandateFormFilter>("all");
+  const [query, setQuery] = useState("");
+  const [sheet, setSheet] = useState<MandateSheet | null>(null);
+  const root = opportunityBase.replace(/\/acquisitions$/, "");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch(`/api/clients/${clientId}/mandates`, { cache: "no-store" });
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true);
+    const res = await fetch(`/api/clients/${clientId}/mandate-forms`, { cache: "no-store" });
     const json = await res.json().catch(() => ({}));
-    setLoading(false);
+    if (!quiet) setLoading(false);
     if (!res.ok) {
-      setError(json.error ?? "Could not load mandates.");
+      if (!quiet) setError(json.error ?? "Could not load mandates.");
       return;
     }
     setError(null);
-    setRows(json.mandates ?? []);
-    setCanReview(Boolean(json.canReview));
-    setIncomplete(Boolean(json.incomplete));
+    setRows(json.forms ?? []);
   }, [clientId]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const visible = rows.filter((row) => {
-    const status = String(row.displayStatus ?? row.status);
-    if (filter === "all") return true;
-    if (filter === "approved") return status === "approved" || status === "expiring_soon";
-    if (filter === "expiring") return status === "expiring_soon";
-    if (filter === "expired") return status === "expired";
-    if (filter === "revoked") return status === "rejected" || status === "revoked";
-    if (filter === "legacy") return status === "legacy_unverified";
-    return ["submitted", "awaiting_evidence", "expiring_soon", "expired"].includes(status) && !row.superseded_by_id;
+  const needle = query.trim().toLowerCase();
+  const matched = rows.filter((row) => {
+    if (!needle) return true;
+    return `${row.sellerName} ${row.property}`.toLowerCase().includes(needle);
   });
-  const open = rows.find((row) => row.id === openId) ?? null;
+  const visible = matched.filter((row) => mandateFormVisible(row, filter));
+
+  const openForm = async (row: MandateFormRow) => {
+    setSheet({ ...row, listingId: null, busy: row.phase === "complete", error: null });
+    if (row.phase !== "complete") return;
+    const res = await fetch(`/api/clients/${clientId}/mandate-forms/${row.id}/open`, { method: "POST" });
+    const json = await res.json().catch(() => ({}));
+    setSheet((current) => {
+      if (!current || current.id !== row.id) return current;
+      if (!res.ok) return { ...current, busy: false, error: json.error ?? "Could not open this mandate." };
+      return {
+        ...current,
+        busy: false,
+        error: null,
+        sellerName: json.sellerName ?? current.sellerName,
+        property: json.property ?? current.property,
+        kind: json.kind ?? current.kind,
+        expiryDate: json.expiryDate ?? current.expiryDate,
+        contactId: json.contactId ?? null,
+        opportunityId: json.opportunityId ?? null,
+        listingId: json.listingId ?? null,
+      };
+    });
+    if (res.ok) void load(true);
+  };
 
   return (
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
         title="Mandates"
-        description="Send the seller form. When it is approved, SegmiQ opens the seller profile and a draft listing."
+        description="Send the seller form. Opening a completed form goes to that seller and that draft listing."
       />
       <SellerIntakePanel clientId={clientId} mode="send" />
+      <label>
+        <span className="sr-only">Search mandates</span>
+        <input className={acqFieldClass} placeholder="Search seller or property" value={query} onChange={(event) => setQuery(event.target.value)} />
+      </label>
       <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Mandate filter">
         {MANDATE_FILTERS.map((item) => (
           <button
@@ -378,93 +415,97 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
           </button>
         ))}
       </div>
-      {incomplete ? <RePartialNotice>Some mandates could not be loaded. This list is not complete, so a filter is not the full agency picture.</RePartialNotice> : null}
       {error ? <ReErrorState title="Mandates didn't load" description={error} onRetry={() => void load()} /> : null}
       {loading ? <ReSkeletonRows rows={4} label="Loading mandates" /> : null}
       {!loading && !error && visible.length === 0 ? (
         <ReEmptyState
           framed
-          title={filter === "attention" ? "No mandates awaiting review" : "No mandates in this view"}
-          description={filter === "attention" ? "Send the form above. Submitted mandates show here for review." : "Nothing matches this status in the mandates that loaded."}
+          title={rows.length === 0 ? "No seller forms yet" : "Nothing in this view"}
+          description={rows.length === 0 ? "Send the form above. It stays here until the seller finishes it." : "Try another filter or a different seller or property."}
         />
       ) : null}
       {!loading && !error && visible.length > 0 ? (
-        <ReSection id="mandates" title="Mandates" count={visible.length} flush>
+        <ReSection id="mandates" title="Seller forms" count={visible.length} flush>
           <div className="hidden md:block">
             <table className="w-full table-fixed text-left text-[13px]">
-              <caption className="sr-only">Property mandates</caption>
+              <caption className="sr-only">Seller forms</caption>
               <thead>
                 <tr className="border-y border-sales-border-subtle bg-sales-surface-subtle text-[12px] text-sales-text-secondary">
-                  <th className="w-[28%] px-[var(--re-card-pad,16px)] py-2 font-medium">Property</th>
-                  <th className="px-3 py-2 font-medium">Type</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium">Expiry</th>
-                  <th className="w-[120px] px-3 py-2 font-medium"><span className="sr-only">Actions</span></th>
+                  <th className="w-[24%] px-[var(--re-card-pad,16px)] py-2 font-medium">Seller</th>
+                  <th className="px-3 py-2 font-medium">Property</th>
+                  <th className="w-[90px] px-3 py-2 font-medium">Type</th>
+                  <th className="w-[150px] px-3 py-2 font-medium">Status</th>
+                  <th className="w-[150px] px-3 py-2 font-medium">End</th>
+                  <th className="w-[90px] px-3 py-2 font-medium"><span className="sr-only">Open</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-sales-border-subtle">
-                {visible.map((row) => {
-                  const status = String(row.displayStatus ?? row.status);
-                  const label = String(row.propertyLabel ?? "Property");
-                  return (
-                    <tr key={row.id} className="cursor-pointer hover:bg-sales-surface-hover" onClick={() => setOpenId(row.id)}>
-                      <td className="truncate px-[var(--re-card-pad,16px)] py-3 font-semibold">{label}</td>
-                      <td className="px-3 py-3 text-sales-text-secondary">{mandateTypeLabel(row.mandate_type as string)}</td>
-                      <td className="px-3 py-3"><ReStatusBadge label={mandateStatusLabel(status)} tone={mandateTone(status)} /></td>
-                      <td className="px-3 py-3 text-sales-text-secondary">{row.expiry_date ? String(row.expiry_date) : "No expiry"}</td>
-                      <td className="px-3 py-3" onClick={(event) => event.stopPropagation()}>
-                        <ReRowAction label="Review" srContext={label} onClick={() => setOpenId(row.id)} />
-                      </td>
-                    </tr>
-                  );
-                })}
+                {visible.map((row) => (
+                  <tr key={row.id} className="cursor-pointer hover:bg-sales-surface-hover" onClick={() => void openForm(row)}>
+                    <td className="truncate px-[var(--re-card-pad,16px)] py-3 font-semibold">{row.sellerName}</td>
+                    <td className="truncate px-3 py-3">{row.property}</td>
+                    <td className="px-3 py-3 text-sales-text-secondary">{mandateKindLabel(row.kind)}</td>
+                    <td className="px-3 py-3"><ReStatusBadge label={row.phase === "complete" ? "Complete" : "With the seller"} tone={row.phase === "complete" ? "success" : "warning"} /></td>
+                    <td className="px-3 py-3 text-sales-text-secondary">{mandateWhen(row.kind, row.expiryDate)}</td>
+                    <td className="px-3 py-3" onClick={(event) => event.stopPropagation()}>
+                      <ReRowAction label="Open" srContext={row.property} onClick={() => void openForm(row)} />
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
           <ul className="divide-y divide-sales-border-subtle md:hidden">
-            {visible.map((row) => {
-              const status = String(row.displayStatus ?? row.status);
-              const label = String(row.propertyLabel ?? "Property");
-              return (
-                <ReWorkItem
-                  key={row.id}
-                  icon={<ScrollText />}
-                  title={label}
-                  reason={`${mandateTypeLabel(row.mandate_type as string)} · ${row.expiry_date ? `expires ${String(row.expiry_date)}` : "no expiry"}`}
-                  status={<ReStatusBadge label={mandateStatusLabel(status)} tone={mandateTone(status)} />}
-                  action={<ReRowAction label="Review" srContext={label} onClick={() => setOpenId(row.id)} />}
-                  menu={
-                    <ReActionMenu
-                      label={`Actions for ${label}`}
-                      sheetTitle={label}
-                      actions={[
-                        { id: "view", label: "Review mandate", onSelect: () => setOpenId(row.id) },
-                        { id: "seller", label: "Open sellers", onSelect: () => { window.location.href = opportunityBase.replace("/acquisitions", "/owners"); } },
-                      ]}
-                    />
-                  }
-                />
-              );
-            })}
+            {visible.map((row) => (
+              <ReWorkItem
+                key={row.id}
+                icon={<ScrollText />}
+                title={row.sellerName}
+                reason={`${row.property} · ${mandateKindLabel(row.kind)} · ${mandateWhen(row.kind, row.expiryDate)}`}
+                status={<ReStatusBadge label={row.phase === "complete" ? "Complete" : "With the seller"} tone={row.phase === "complete" ? "success" : "warning"} />}
+                action={<ReRowAction label="Open" srContext={row.property} onClick={() => void openForm(row)} />}
+                menu={
+                  <ReActionMenu
+                    label={`Actions for ${row.sellerName}`}
+                    sheetTitle={row.property}
+                    actions={[{ id: "open", label: "Open mandate", onSelect: () => void openForm(row) }]}
+                  />
+                }
+              />
+            ))}
           </ul>
         </ReSection>
       ) : null}
 
-      {open ? (
+      {sheet ? (
         <ReSheet
-          title={String(open.propertyLabel ?? "Mandate")}
-          description={mandateStatusLabel(String(open.displayStatus ?? open.status))}
-          onClose={() => setOpenId(null)}
-          headerAside={<Link href={opportunityBase.replace("/acquisitions", "/owners")} className="text-[13px] font-semibold underline-offset-2 hover:underline">Sellers</Link>}
+          title={sheet.property}
+          description={sheet.phase === "complete" ? "Complete" : "With the seller"}
+          onClose={() => setSheet(null)}
         >
           <dl className="mb-4 space-y-2 text-[13px]">
-            <div className="flex justify-between gap-3"><dt className="text-sales-text-muted">Type</dt><dd>{mandateTypeLabel(open.mandate_type as string)}</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-sales-text-muted">Start</dt><dd>{open.start_date ? String(open.start_date) : "Not set"}</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-sales-text-muted">Expiry</dt><dd>{open.expiry_date ? String(open.expiry_date) : "No expiry"}</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-sales-text-muted">Evidence</dt><dd className="text-right">{String(open.evidence_status ?? "not provided").replaceAll("_", " ")}</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-sales-text-muted">Seller</dt><dd className="text-right">{sheet.sellerName}</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-sales-text-muted">Type</dt><dd>{mandateKindLabel(sheet.kind)}</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-sales-text-muted">End</dt><dd>{mandateWhen(sheet.kind, sheet.expiryDate)}</dd></div>
           </dl>
-          <p className="mb-3 text-[12px] leading-snug text-sales-text-muted">Evidence on file is not described here as legally valid. Approval is a separate decision.</p>
-          <MandateActions clientId={clientId} mandate={open} canReview={canReview} onChanged={() => void load()} />
+          {sheet.busy ? <p className="text-[13px] text-sales-text-secondary">Opening the seller and the draft listing.</p> : null}
+          {sheet.error ? <p className="text-[13px] text-sales-text-secondary">{sheet.error}</p> : null}
+          {!sheet.busy && sheet.phase !== "complete" ? (
+            <p className="text-[13px] leading-5 text-sales-text-secondary">This form is still with the seller. When they finish it, open it again. That creates their seller profile and a draft listing.</p>
+          ) : null}
+          {!sheet.busy && sheet.phase === "complete" && !sheet.error ? (
+            <div className="space-y-3">
+              <p className="text-[13px] leading-5 text-sales-text-secondary">The seller and the draft listing are ready. The answers, the PDF, and the compliance check stay on the seller. Photos and the rest of the house are added on the listing.</p>
+              <div className="flex flex-wrap gap-2">
+                {sheet.contactId || sheet.opportunityId ? (
+                  <Link href={`${root}/owners/${sheet.contactId || sheet.opportunityId}`} className="inline-flex min-h-11 items-center rounded-[8px] bg-sales-text-primary px-3 text-[13px] font-semibold text-sales-surface">Open seller</Link>
+                ) : null}
+                {sheet.listingId ? (
+                  <Link href={`${root}/listings/${sheet.listingId}`} className="inline-flex min-h-11 items-center rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold">Open listing</Link>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </ReSheet>
       ) : null}
     </div>

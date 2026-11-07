@@ -153,12 +153,12 @@ export function SellerIntakePanel({
     }
   }
 
-  const outstanding = requests.filter((row) => row.nextAction);
+  const outstanding = mode === "send" ? [] : requests.filter((row) => row.nextAction);
   return (
     <ReSection id="seller-intake" title="Seller form" count={outstanding.length || undefined}>
       {mode !== "queue" ? (
         <div className="space-y-3">
-          <p className="text-[13px] leading-5 text-sales-text-secondary">Share this link with the seller. When they submit, review the form here. Approving it opens their seller profile and a draft listing. Photos and the rest of the listing are added after the inspection.</p>
+          <p className="text-[13px] leading-5 text-sales-text-secondary">Share this link with the seller. When they finish it, open the form in the list below. That opens their seller profile and a draft listing. Photos and the rest of the house are added on the listing, after the inspection.</p>
           {templates.length === 0 ? <p className="text-[13px] text-sales-text-secondary">No approved template yet. A manager approves the organisation&apos;s mandate wording first. Agents then choose that version here.</p> : (
             <div className="flex flex-wrap gap-2">
               <select className="min-h-11 rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[14px]" value={templateId} onChange={(event) => setTemplateId(event.target.value)} aria-label="Seller form template">

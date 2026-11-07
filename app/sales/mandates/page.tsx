@@ -20,7 +20,7 @@ export default async function Page() {
   const shell = await loadSalesShellProps(session);
   return (
     <SalesLayout breadcrumb="Sales / MANDATES" pageTitle="Mandates" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Mandates" title="Mandates" description="Send the seller form. Approval opens the seller and a draft listing." showDefaultHeader={false}>
+        <SalesAppShell {...shell} breadcrumb="Sales / Mandates" title="Mandates" description="Send the seller form. Opening a completed form goes to that seller and that draft listing." showDefaultHeader={false}>
         <MandateList clientId={session.clientId} opportunityBase="/sales/acquisitions" />
       </SalesAppShell>
     </SalesLayout>

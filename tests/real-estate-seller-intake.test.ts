@@ -872,6 +872,74 @@ test("company conversion copies the representative as representative, not owner"
   assert.ok(redacted.pages[redacted.pages.length - 1]?.some((line) => line.includes("Signature date: not recorded")));
 });
 
+test("opening a completed form creates the seller and one draft listing", async () => {
+  const db = useDb();
+  const api = await service();
+  const template = await api.createIntakeTemplate({
+    clientId: ORG,
+    actor: manager,
+    kind: "open",
+    title: "Open mandate",
+    clauses: ["Organisation clause for this version."],
+  });
+  assert.equal(template.ok, true);
+  if (!template.ok) return;
+  const created = await api.createSellerIntake({
+    clientId: ORG,
+    actor: agent,
+    templateId: template.template.id as string,
+  });
+  assert.equal(created.ok, true);
+  if (!created.ok) return;
+  const started = await api.savePublicSellerIntake({
+    token: created.token,
+    sessionToken: null,
+    answers: openAnswers,
+    version: null,
+    submit: false,
+  });
+  assert.equal(started.ok, true);
+  if (!started.ok) return;
+  const waiting = await api.openMandateForm({ clientId: ORG, requestId: created.request.id as string, actor: agent });
+  assert.equal(waiting.ok, true);
+  if (!waiting.ok) return;
+  assert.equal(waiting.phase, "with_seller");
+  assert.equal(db.tables.listings.length, 0);
+  assert.equal(db.tables.real_estate_acquisition_opportunities.length, 0);
+  const submitted = await api.savePublicSellerIntake({
+    token: created.token,
+    sessionToken: started.sessionToken,
+    answers: openAnswers,
+    version: started.version,
+    submit: true,
+  });
+  assert.equal(submitted.ok, true);
+  const opened = await api.openMandateForm({ clientId: ORG, requestId: created.request.id as string, actor: agent });
+  assert.equal(opened.ok, true, JSON.stringify(opened));
+  if (!opened.ok) return;
+  assert.equal(opened.phase, "complete");
+  assert.equal(opened.contactId, "contact-moyo");
+  assert.equal(db.tables.contacts.length, 1);
+  assert.equal(db.tables.real_estate_acquisition_opportunities.length, 1);
+  assert.equal(db.tables.listings.length, 1);
+  assert.equal(db.tables.listings[0].approval_status, "draft");
+  assert.equal(db.tables.listings[0].address, "12 Cork Road, Avondale, Harare");
+  assert.equal(db.tables.listings[0].suburb, "Avondale");
+  assert.equal(Number(db.tables.listings[0].price), 125000);
+  const again = await api.openMandateForm({ clientId: ORG, requestId: created.request.id as string, actor: agent });
+  assert.equal(again.ok, true);
+  if (!again.ok) return;
+  assert.equal(again.listingId, opened.listingId);
+  assert.equal(db.tables.listings.length, 1);
+  assert.equal(db.tables.real_estate_acquisition_opportunities.length, 1);
+  const listed = await api.listMandateForms({ clientId: ORG, actor: agent });
+  assert.equal(listed.ok, true);
+  if (!listed.ok) return;
+  assert.equal(listed.forms.length, 1);
+  assert.equal(listed.forms[0].phase, "complete");
+  assert.equal(listed.forms[0].sellerName, "Rudo Moyo");
+});
+
 function memoryStore() {
   const files = new Map<string, Buffer>();
   return { files, put: async (key: string, body: Buffer) => { files.set(key, body); } };

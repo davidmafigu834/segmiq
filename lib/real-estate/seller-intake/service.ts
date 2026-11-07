@@ -10,14 +10,19 @@ import { isPrivateDocumentStorageConfigured, putPrivateDocument, signPrivateDocu
 import { intakePepper, sellerIntakeEnabled } from "@/lib/real-estate/seller-intake/flag";
 import {
   answersFromClient,
+  categoryMapping,
   exclusivityNote,
   fieldsForKind,
+  mandateDates,
   mergeCorrection,
   missingInformation,
+  moneyAmount,
   personName,
   submissionGaps,
   type IntakeKind,
 } from "@/lib/real-estate/seller-intake/fields";
+import { mandateFormLabels, mandateFormPhase, mandateFormPlace } from "@/lib/real-estate/mandate-form";
+import { listingPartyPlan } from "@/lib/real-estate/seller-intake/parties";
 import {
   INTAKE_LINK_TTL_MS,
   canReadSavedAnswers,
@@ -266,6 +271,202 @@ export async function listSellerIntakes(input: {
     requests.push(agentView(row, template));
   }
   return { ok: true as const, requests };
+}
+
+export async function listMandateForms(input: { clientId: string; actor: IntakeActor }) {
+  const listed = await listSellerIntakes(input);
+  if (!listed.ok) return listed;
+  const forms = [];
+  for (const request of listed.requests) {
+    const submission = await latestSubmission(String(request.id));
+    const answers = asRecord(submission?.answers);
+    const labels = mandateFormLabels(answers);
+    const kind = (request.kind as IntakeKind | null) ?? null;
+    forms.push({
+      id: request.id,
+      phase: mandateFormPhase(String(request.status)),
+      status: request.status,
+      kind,
+      sellerName: labels.sellerName,
+      property: labels.property,
+      expiryDate: kind ? mandateDates(kind, answers).expiryDate : null,
+      contactId: request.contactId,
+      opportunityId: request.opportunityId,
+      publicReference: request.publicReference,
+      updatedAt: request.updatedAt,
+    });
+  }
+  forms.sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")));
+  return { ok: true as const, forms };
+}
+
+export async function openMandateForm(input: { clientId: string; requestId: string; actor: IntakeActor }) {
+  const off = disabled();
+  if (off) return off;
+  const loaded = await loadOwnedRequest(input.clientId, input.requestId, input.actor);
+  if (!loaded.ok) return loaded;
+  const request = loaded.request;
+  const template = await loadTemplate(input.clientId, String(request.template_id));
+  const submission = await latestSubmission(String(request.id));
+  const answers = asRecord(submission?.answers);
+  const kind = (template?.kind as IntakeKind | null) ?? null;
+  const labels = mandateFormLabels(answers);
+  const expiryDate = kind ? mandateDates(kind, answers).expiryDate : null;
+  const phase = mandateFormPhase(String(request.status));
+  const base = {
+    phase,
+    sellerName: labels.sellerName,
+    property: labels.property,
+    kind,
+    expiryDate,
+    contactId: (request.contact_id as string | null) ?? null,
+    opportunityId: (request.opportunity_id as string | null) ?? null,
+    listingId: null as string | null,
+  };
+  if (phase !== "complete") return { ok: true as const, ...base };
+
+  let contactId = base.contactId;
+  let opportunityId = base.opportunityId;
+  if (!contactId) {
+    const phone = answers.cell || answers.representativePhone || null;
+    const { data: contacts } = await db().from("contacts").select("id, name, phone").eq("client_id", input.clientId).limit(200);
+    const matches = duplicateContactCandidates(contacts ?? [], phone, personName(answers));
+    if (matches.length === 1) contactId = matches[0].id as string;
+  }
+  if (!opportunityId) {
+    const place = mandateFormPlace(answers.propertyAddress || null);
+    const created = await createAcquisitionOpportunity({
+      clientId: input.clientId,
+      actor: input.actor,
+      contactId,
+      ownerName: labels.sellerName === "Seller" ? personName(answers) : labels.sellerName,
+      ownerPhone: answers.cell || answers.representativePhone || null,
+      address: answers.propertyAddress?.slice(0, 500) || null,
+      suburb: place.suburb,
+      city: place.city,
+      intent: "sale",
+      source: "other",
+      propertyCategory: categoryMapping(answers.propertyCategory).platform,
+      notes: answers.propertyDescription?.slice(0, 2000) || null,
+      confirmNewContact: !contactId,
+      idempotencyKey: `seller-intake:${request.id}`,
+    });
+    if (!created.ok) return fail(created.status, created.error);
+    opportunityId = created.opportunity.id as string;
+    contactId = (created.opportunity.contact_id as string | null) ?? contactId;
+    await db().from("re_seller_intake_requests").update({
+      contact_id: contactId,
+      opportunity_id: opportunityId,
+      updated_at: new Date().toISOString(),
+    }).eq("id", request.id as string).eq("client_id", input.clientId);
+  }
+  const price = moneyAmount(answers.askingPrice);
+  if (opportunityId) {
+    const { data: existingParties } = await db().from("re_acquisition_parties").select("id").eq("request_id", request.id as string).limit(1);
+    if (!existingParties?.length) {
+      for (const party of partyDrafts({ answers, personContactId: contactId, negotiatorName: input.actor.name })) {
+        await db().from("re_acquisition_parties").insert({
+          client_id: input.clientId,
+          opportunity_id: opportunityId,
+          request_id: request.id,
+          role: party.role,
+          party_kind: party.partyKind,
+          contact_id: party.contactId,
+          display_name: party.displayName,
+          details: { registered_owner_is_contact: party.role === "registered_owner" && party.partyKind === "individual" },
+        });
+      }
+    }
+    if (price != null) {
+      await db().from("real_estate_acquisition_opportunities").update({ expected_price: price }).eq("id", opportunityId).eq("client_id", input.clientId);
+      const note = `seller-intake:${request.id}:asking`;
+      const { data: priceRow } = await db().from("real_estate_price_discussions").select("id").eq("opportunity_id", opportunityId).eq("notes", note).maybeSingle();
+      if (!priceRow) {
+        await db().from("real_estate_price_discussions").insert({
+          client_id: input.clientId,
+          opportunity_id: opportunityId,
+          amount: price,
+          currency: "USD",
+          price_type: "owner_asking",
+          notes: note,
+          recorded_by: input.actor.id,
+        });
+      }
+    }
+  }
+  const { data: opportunity } = await db()
+    .from("real_estate_acquisition_opportunities")
+    .select("converted_listing_id, assigned_agent_id, address, suburb, property_category")
+    .eq("id", opportunityId as string)
+    .eq("client_id", input.clientId)
+    .maybeSingle();
+  let listingId = (opportunity?.converted_listing_id as string | null) ?? null;
+  if (!listingId && opportunityId) {
+    const now = new Date().toISOString();
+    const category = categoryMapping(answers.propertyCategory).platform ?? (opportunity?.property_category as string | null) ?? null;
+    const { data: listing, error } = await db().from("listings").insert({
+      client_id: input.clientId,
+      agent_id: (opportunity?.assigned_agent_id as string | null) ?? input.actor.id,
+      acquisition_opportunity_id: opportunityId,
+      transaction_type: "sale",
+      status: "reserved",
+      approval_status: "draft",
+      price,
+      address: answers.propertyAddress?.slice(0, 500) || (opportunity?.address as string | null) || null,
+      suburb: (opportunity?.suburb as string | null) ?? mandateFormPlace(answers.propertyAddress || null).suburb,
+      description: answers.propertyDescription?.slice(0, 4000) || null,
+      ...(category ? { property_category: category } : {}),
+      photos: [],
+      created_at: now,
+      updated_at: now,
+    }).select("id").single();
+    if (error || !listing) return fail(500, error?.message ?? "The seller is open. The draft listing did not finish.");
+    listingId = listing.id as string;
+    const { data: winner } = await db()
+      .from("real_estate_acquisition_opportunities")
+      .select("converted_listing_id")
+      .eq("id", opportunityId)
+      .eq("client_id", input.clientId)
+      .maybeSingle();
+    if (winner?.converted_listing_id) {
+      await db().from("listings").delete().eq("id", listingId).eq("client_id", input.clientId).eq("approval_status", "draft");
+      listingId = winner.converted_listing_id as string;
+    } else {
+      await db().from("real_estate_acquisition_opportunities").update({
+        converted_listing_id: listingId,
+        stage: "listing_preparation",
+        updated_at: now,
+      }).eq("id", opportunityId).eq("client_id", input.clientId);
+    }
+    const copies = listingPartyPlan({
+      contactId,
+      parties: partyDrafts({ answers, personContactId: contactId, negotiatorName: input.actor.name }).map((party) => ({
+        role: party.role,
+        partyKind: party.partyKind,
+        contactId: party.contactId,
+        displayName: party.displayName,
+      })),
+    });
+    for (const copy of copies) {
+      const { data: existingParty } = await db()
+        .from("real_estate_listing_parties")
+        .select("id")
+        .eq("listing_id", listingId)
+        .eq("contact_id", copy.contactId)
+        .eq("party_role", copy.partyRole)
+        .maybeSingle();
+      if (existingParty) continue;
+      await db().from("real_estate_listing_parties").insert({
+        client_id: input.clientId,
+        listing_id: listingId,
+        contact_id: copy.contactId,
+        party_role: copy.partyRole,
+        verification_status: "reported",
+        source: "acquisition",
+      });
+    }
+  }
+  return { ok: true as const, ...base, contactId, opportunityId, listingId };
 }
 
 async function loadOwnedRequest(clientId: string, requestId: string, actor: IntakeActor) {
