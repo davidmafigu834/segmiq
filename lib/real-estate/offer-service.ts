@@ -2,6 +2,7 @@ import { offerPermittedActions } from "@/lib/real-estate/mobile-contract";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logReActivity } from "@/lib/lead-events";
 import { listingLabel } from "@/lib/real-estate/helpers";
+import { sellerLetterLabel } from "@/lib/real-estate/listing-house";
 import { operationalComplianceLabel, type ComplianceStatus } from "@/lib/real-estate/compliance";
 import {
   applyOfferMutation,
@@ -67,6 +68,8 @@ export type OfferListRow = {
   listingPriceLabel: string | null;
   listingStatus: string;
   buyerName: string | null;
+  buyerSearchId: string | null;
+  sellerLetter: string;
   contactId: string;
   leadId: string | null;
   currentAmount: number;
@@ -814,6 +817,12 @@ export async function listRealEstateOffers(opts: {
       listingPriceLabel: listing?.price != null ? formatOfferMoney(Number(listing.price), currency) : null,
       listingStatus: (listing?.status as string) ?? "",
       buyerName: (contact?.name as string | null) ?? null,
+      buyerSearchId: (row.buyer_search_id as string | null) ?? null,
+      sellerLetter: sellerLetterLabel({
+        status,
+        acceptanceChannel: (row.acceptance_channel as string | null) ?? null,
+        revisionStatus: (row.revision_status as string | null) ?? null,
+      }),
       contactId: row.contact_id as string,
       leadId: (row.lead_id as string | null) ?? null,
       currentAmount: Number(row.current_offer_amount),

@@ -16,6 +16,7 @@ import {
   listingWriteSchema,
 } from "@/lib/real-estate/listings";
 import { assertComplianceProgressAllowed } from "@/lib/real-estate/compliance-service";
+import { loadListingHouse } from "@/lib/real-estate/listing-house-load";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ export async function GET(
 
   if (!canReadListing(g.session, listing)) return NextResponse.json({ error: "Listing is private", code: "LISTING_PRIVATE" }, { status: 403 });
   const listingDto = listingReadDto(g.session, listing, req.headers.has("authorization"));
+  const house = await loadListingHouse(params.clientId, params.listingId);
   const { data: contacts } = await supabase
     .from("contacts")
     .select(
@@ -84,10 +86,10 @@ export async function GET(
         introductions: facts.introductions,
       })
     );
-    return NextResponse.json({ listing: listingDto, matches: visible });
+    return NextResponse.json({ listing: listingDto, matches: visible, house });
   }
 
-  return NextResponse.json({ listing: listingDto, matches });
+  return NextResponse.json({ listing: listingDto, matches, house });
 }
 
 export async function PATCH(

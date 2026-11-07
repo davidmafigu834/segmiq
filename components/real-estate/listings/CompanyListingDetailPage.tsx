@@ -16,11 +16,12 @@ export function CompanyListingDetailPage({
   return (
     <CompanyRePageFrame
       chrome={chrome}
-      breadcrumb="Company / Listings"
+      breadcrumb="Company / Listing"
       title="Listing"
-      description="Property details, marketing, offers, and buyer matches."
+      description="Finish this house, then share a viewing form."
+      hideTitleBlock
     >
-      <ListingDetailView clientId={clientId} listingId={listingId} surface="client" />
+      <ListingDetailView clientId={clientId} listingId={listingId} surface="client" framed />
     </CompanyRePageFrame>
   );
 }

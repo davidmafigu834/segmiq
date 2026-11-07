@@ -19,8 +19,8 @@ export default async function SalesListingDetailPage({ params }: { params: { lis
   const shell = await loadSalesShellProps(session);
   return (
     <SalesLayout breadcrumb="Sales / LISTING" pageTitle="Listing" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Listings" title="Listing" description="Property details and your marketing link.">
-        <ListingDetailView clientId={session.clientId} listingId={params.listingId} analyticsBase="/sales/shared-listings" surface="sales" />
+      <SalesAppShell {...shell} breadcrumb="Sales / Listing" title="Listing" description="Finish this house, then share a viewing form." showDefaultHeader={false}>
+        <ListingDetailView clientId={session.clientId} listingId={params.listingId} surface="sales" />
       </SalesAppShell>
     </SalesLayout>
   );
