@@ -176,9 +176,16 @@ export function SellerProfile({
         title={owner.name || fieldValue(fields, "registeredOwner") || "Seller"}
         description={address || "A completed mandate opens this seller and the property they are listing."}
         actions={
-          <Link href={primaryHref} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11 sm:h-10")}>
-            {primaryLabel}
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            {request ? (
+              <a href={`/api/clients/${clientId}/seller-intakes/${request.id}/record`} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11 sm:h-10")}>
+                Download PDF
+              </a>
+            ) : null}
+            <Link href={primaryHref} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11 sm:h-10")}>
+              {primaryLabel}
+            </Link>
+          </div>
         }
       />
       <div className="grid min-w-0 gap-4 layout:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.85fr)]">
@@ -211,15 +218,20 @@ export function SellerProfile({
             ) : null}
           </ReSection>
 
-          <ReSection id="mandate" title="Mandate" description="The form this seller completed." action={<Link href={mandatesPath} className="re-focus min-h-11 text-[13px] font-semibold">Mandates</Link>}>
+          <ReSection id="mandate" title="Mandate" description="The form this seller completed. The PDF lists every answer, under the agency name and logo." action={<Link href={mandatesPath} className="re-focus min-h-11 text-[13px] font-semibold">Mandates</Link>}>
             {request ? (
-              <dl className="grid gap-3 sm:grid-cols-2">
-                <Fact label="Form" value={request.kind === "sole" ? "Sole mandate" : request.kind === "open" ? "Open mandate" : request.templateTitle || "Mandate form"} />
-                <Fact label="Status" value={request.status.replaceAll("_", " ")} />
-                <Fact label="Starts" value={fieldValue(fields, "mandateStartDate") || "Not set"} />
-                <Fact label="Ends" value={fieldValue(fields, "mandateEndDate") || "Not set"} />
-                <Fact label="Mandate price" value={mandatePrice ? money(mandatePrice) : "Not recorded"} />
-              </dl>
+              <>
+                <dl className="grid gap-3 sm:grid-cols-2">
+                  <Fact label="Form" value={request.kind === "sole" ? "Sole mandate" : request.kind === "open" ? "Open mandate" : request.templateTitle || "Mandate form"} />
+                  <Fact label="Status" value={request.status.replaceAll("_", " ")} />
+                  <Fact label="Starts" value={fieldValue(fields, "mandateStartDate") || "Not set"} />
+                  <Fact label="Ends" value={fieldValue(fields, "mandateEndDate") || "Not set"} />
+                  <Fact label="Mandate price" value={mandatePrice ? money(mandatePrice) : "Not recorded"} />
+                </dl>
+                <a href={`/api/clients/${clientId}/seller-intakes/${request.id}/record`} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "mt-4 inline-flex min-h-11")}>
+                  Download PDF
+                </a>
+              </>
             ) : (
               <ReEmptyState compact title="No mandate on this seller yet" description="Send the seller form from Mandates. Accepting the completed form keeps it here." />
             )}

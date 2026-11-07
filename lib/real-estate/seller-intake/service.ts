@@ -329,6 +329,34 @@ export async function getSellerIntake(input: { clientId: string; requestId: stri
   };
 }
 
+export async function loadSellerIntakeRecord(input: { clientId: string; requestId: string; actor: IntakeActor }) {
+  const off = disabled();
+  if (off) return off;
+  const loaded = await loadOwnedRequest(input.clientId, input.requestId, input.actor);
+  if (!loaded.ok) return loaded;
+  const template = await loadTemplate(input.clientId, String(loaded.request.template_id));
+  const submission = await latestSubmission(input.requestId);
+  const { data: client } = await db()
+    .from("clients")
+    .select("name, logo_url, primary_color, website, meta_whatsapp_display_number")
+    .eq("id", input.clientId)
+    .maybeSingle();
+  const kind: IntakeKind = template?.kind === "sole" ? "sole" : "open";
+  return {
+    ok: true as const,
+    kind,
+    answers: asRecord(submission?.answers),
+    restrictedPending: false,
+    templateTitle: typeof template?.title === "string" ? template.title : null,
+    submittedAt: typeof submission?.submitted_at === "string" ? submission.submitted_at : null,
+    agencyName: typeof client?.name === "string" && client.name.trim() ? client.name.trim() : "Agency",
+    logoUrl: typeof client?.logo_url === "string" ? client.logo_url : null,
+    brandColor: typeof client?.primary_color === "string" ? client.primary_color : null,
+    website: typeof client?.website === "string" ? client.website : null,
+    phone: typeof client?.meta_whatsapp_display_number === "string" ? client.meta_whatsapp_display_number : null,
+  };
+}
+
 async function replaceToken(request: Row, actor: IntakeActor, purpose: TokenPurpose, status: string) {
   const peppered = pepperOrFail();
   if (!peppered.ok) return peppered;
