@@ -197,9 +197,9 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
   return (
     <div className={shell}>
       <RePageHeader
-        title="Property viewings"
-        description="Manage appointments, property visits and customer feedback."
-        actions={<Link href={buyersPath} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Schedule from a search</Link>}
+        title="Viewings"
+        description="The date and time on a signed viewing form are booked here and on the agent calendar. The same form opens the buyer on that property."
+        actions={<Link href={buyersPath.replace("/buyers", "/calendar")} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Calendar</Link>}
       />
       <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Viewing list">
         {([
@@ -239,8 +239,8 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
                     ? "No viewings yet"
                     : "No upcoming viewings"
           }
-          description="Schedule a property visit from a buyer or tenant search."
-          action={<Link href={buyersPath} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open buyer searches</Link>}
+          description="Share a viewing form from the property. When the buyer signs it, the appointment appears here."
+          action={<Link href={buyersPath.replace("/buyers", "/listings")} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open a property</Link>}
         />
       ) : null}
       {!loading && visible.length > 0 ? (

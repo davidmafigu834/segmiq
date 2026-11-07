@@ -801,7 +801,7 @@ export function InquiryOffersSection({
       <div>
         <p className="text-[14px] font-medium">No offers yet.</p>
         <p className="mt-1 text-[13px] text-sales-text-secondary">
-          When the client is ready, create an offer for one of their interested properties.
+          After the viewing, generate the offer letter for this buyer. They fill it, then the seller reviews it.
         </p>
         <Button
           variant="primary"
@@ -812,7 +812,7 @@ export function InquiryOffersSection({
             onCreate({ listingId: defaultListingId, contactId, contactName, leadId })
           }
         >
-          Create offer
+          Generate offer letter
         </Button>
       </div>
     );
@@ -830,7 +830,7 @@ export function InquiryOffersSection({
           disabled={!contactId}
           onClick={() => onCreate({ listingId: defaultListingId, contactId, contactName, leadId })}
         >
-          Create offer
+          Generate offer letter
         </Button>
       </div>
       {active.length > 0 ? (
@@ -900,7 +900,7 @@ export function ListingOffersSection({
       <div className="flex items-center justify-between">
         <h3 className="text-[16px] font-semibold text-sales-text-primary">Offers</h3>
         <Button variant="primary" size="sm" onClick={onCreate}>
-          Create offer
+          Generate offer letter
         </Button>
       </div>
       {listingStatus === "under_offer" ? (

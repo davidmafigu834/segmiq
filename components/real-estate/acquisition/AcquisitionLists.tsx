@@ -106,13 +106,14 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
     return opportunities.filter((row) => row.contact_id === selected);
   }, [opportunities, owners, selected]);
   const phone = linked.find((row) => row.owner_phone)?.owner_phone ?? null;
-  const acquisitionsPath = basePath.replace(/\/owners$/, "/acquisitions");
+  const listingsPath = basePath.replace(/\/owners$/, "/listings");
+  const mandatesPath = basePath.replace(/\/owners$/, "/mandates");
 
   return (
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
-        title="Property owners"
-        description="Manage owner relationships and the properties they bring to your agency."
+        title="Sellers"
+        description="Each completed mandate opens a seller here, with the property they are listing underneath."
       />
       <SellerIntakePanel clientId={clientId} mode="queue" />
       <label>
@@ -124,13 +125,13 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
       {!loading && !error && visible.length === 0 ? (
         <ReEmptyState
           framed
-          title="No property owners yet"
-          description="Owner relationships appear when you record a property opportunity."
-          action={<Link href={`${acquisitionsPath}?new=1`} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>New opportunity</Link>}
+          title="No sellers yet"
+          description="A seller profile is created when a mandate form is completed."
+          action={<Link href={mandatesPath} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>Send a mandate form</Link>}
         />
       ) : null}
       {!loading && !error && visible.length > 0 ? (
-        <ReSection id="owners" title="Owners" count={visible.length} flush>
+        <ReSection id="owners" title="Sellers" count={visible.length} flush>
           <ul className="divide-y divide-sales-border-subtle">
             {visible.map((owner) => {
               const name = owner.name || "Unnamed owner";
@@ -161,8 +162,8 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
                       label={`Actions for ${name}`}
                       sheetTitle={name}
                       actions={[
-                        { id: "view", label: "View owner", onSelect: () => setSelected(owner.contactId) },
-                        { id: "new", label: "New opportunity", description: "Opens a blank opportunity. It does not attach this owner automatically.", onSelect: () => router.push(`${acquisitionsPath}?new=1`) },
+                        { id: "view", label: "View seller", onSelect: () => setSelected(owner.contactId) },
+                        { id: "form", label: "Send mandate form", onSelect: () => router.push(mandatesPath) },
                         ...(ownerPhone
                           ? [
                               { id: "call", label: "Call", onSelect: () => { window.location.href = `tel:${ownerPhone}`; } },
@@ -190,7 +191,7 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
                 WhatsApp
               </a>
             </div>
-          ) : <p className="mb-3 text-[13px] text-sales-text-muted">No phone on these opportunities.</p>}
+          ) : <p className="mb-3 text-[13px] text-sales-text-muted">No phone on this seller yet.</p>}
           {selectedOwner.contactId.startsWith("unlinked:") ? null : (
             <ContextCompliancePanel clientId={clientId} context="seller" title="Seller verification" contactId={selectedOwner.contactId} />
           )}
@@ -201,8 +202,8 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
                 <p className="mt-0.5 text-[12px] text-sales-text-muted">
                   {row.property_intent === "sale" ? "For sale" : row.property_intent === "rent" ? "To rent" : "Intent not set"} · {row.status.replaceAll("_", " ")}
                 </p>
-                <Link href={`${acquisitionsPath}/${row.id}`} className="re-focus mt-2 inline-flex min-h-11 items-center text-[13px] font-semibold underline-offset-2 hover:underline">
-                  Open opportunity
+                <Link href={listingsPath} className="re-focus mt-2 inline-flex min-h-11 items-center text-[13px] font-semibold underline-offset-2 hover:underline">
+                  Listing details
                 </Link>
               </li>
             ))}
@@ -260,7 +261,7 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
         title="Inspections"
-        description="Recorded from a property opportunity."
+        description="The listing from the mandate stays incomplete until this visit, the photos, and the remaining details are added."
       />
       <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Inspection filter">
         {INSPECTION_FILTERS.map((item) => (
@@ -283,8 +284,8 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
         <ReEmptyState
           framed
           title={filter === "all" ? "No inspections yet" : "No inspections in this view"}
-          description={filter === "all" ? "Inspections are scheduled from property opportunities." : "Nothing in this filter. Try another status, or open a property opportunity."}
-          action={<Link href={opportunityBase} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open property opportunities</Link>}
+          description={filter === "all" ? "Open a listing that came from a mandate and record the inspection there." : "Nothing in this filter."}
+          action={<Link href={opportunityBase.replace("/acquisitions", "/listings")} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open listings</Link>}
         />
       ) : null}
       {!loading && !error && visible.length > 0 ? (
@@ -310,7 +311,7 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
                       <td className="px-3 py-3 text-sales-text-secondary">{row.scheduled_at ? formatWhen(String(row.scheduled_at)) : "Not scheduled"}</td>
                       <td className="px-3 py-3"><ReStatusBadge label={inspectionStatusLabel(String(row.status))} tone={inspectionTone(String(row.status))} /></td>
                       <td className="px-3 py-3">
-                        <ReRowAction label={unfinished ? "Continue" : "Open"} srContext={label} href={`${opportunityBase}/${String(row.opportunity_id)}`} />
+                        <ReRowAction label={unfinished ? "Complete listing" : "Open listing"} srContext={label} href={`${opportunityBase}/${String(row.opportunity_id)}#acq-inspection`} />
                       </td>
                     </tr>
                   );
@@ -329,7 +330,7 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
                   title={label}
                   reason={row.scheduled_at ? formatWhen(String(row.scheduled_at)) ?? undefined : "Not scheduled"}
                   status={<ReStatusBadge label={inspectionStatusLabel(String(row.status))} tone={inspectionTone(String(row.status))} />}
-                  action={<ReRowAction label={unfinished ? "Continue" : "Open"} srContext={label} href={`${opportunityBase}/${String(row.opportunity_id)}`} />}
+                  action={<ReRowAction label={unfinished ? "Complete listing" : "Open listing"} srContext={label} href={`${opportunityBase}/${String(row.opportunity_id)}#acq-inspection`} />}
                 />
               );
             })}
@@ -393,9 +394,10 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
   return (
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
-        title="Property mandates"
-        description="Marketing authority recorded against a property opportunity."
+        title="Mandates"
+        description="Send the seller form. When it is approved, SegmiQ opens the seller profile and a draft listing."
       />
+      <SellerIntakePanel clientId={clientId} mode="send" />
       <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Mandate filter">
         {MANDATE_FILTERS.map((item) => (
           <button
@@ -417,8 +419,7 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
         <ReEmptyState
           framed
           title={filter === "attention" ? "No mandates awaiting review" : "No mandates in this view"}
-          description={filter === "attention" ? "Mandates are recorded from a property opportunity." : "Nothing matches this status in the mandates that loaded."}
-          action={<Link href={opportunityBase} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open property opportunities</Link>}
+          description={filter === "attention" ? "Send the form above. Submitted mandates show here for review." : "Nothing matches this status in the mandates that loaded."}
         />
       ) : null}
       {!loading && !error && visible.length > 0 ? (
@@ -471,10 +472,8 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
                       label={`Actions for ${label}`}
                       sheetTitle={label}
                       actions={[
-                        { id: "view", label: "View mandate", onSelect: () => setOpenId(row.id) },
-                        ...(row.opportunity_id
-                          ? [{ id: "opp", label: "Open opportunity", onSelect: () => { window.location.href = `${opportunityBase}/${String(row.opportunity_id)}`; } }]
-                          : []),
+                        { id: "view", label: "Review mandate", onSelect: () => setOpenId(row.id) },
+                        { id: "seller", label: "Open sellers", onSelect: () => { window.location.href = opportunityBase.replace("/acquisitions", "/owners"); } },
                       ]}
                     />
                   }
@@ -490,7 +489,7 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
           title={String(open.propertyLabel ?? "Mandate")}
           description={mandateStatusLabel(String(open.displayStatus ?? open.status))}
           onClose={() => setOpenId(null)}
-          headerAside={open.opportunity_id ? <Link href={`${opportunityBase}/${String(open.opportunity_id)}`} className="text-[13px] font-semibold underline-offset-2 hover:underline">Opportunity</Link> : undefined}
+          headerAside={<Link href={opportunityBase.replace("/acquisitions", "/owners")} className="text-[13px] font-semibold underline-offset-2 hover:underline">Sellers</Link>}
         >
           <dl className="mb-4 space-y-2 text-[13px]">
             <div className="flex justify-between gap-3"><dt className="text-sales-text-muted">Type</dt><dd>{mandateTypeLabel(open.mandate_type as string)}</dd></div>

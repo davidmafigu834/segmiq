@@ -158,8 +158,8 @@ export function SellerIntakePanel({
     <ReSection id="seller-intake" title="Seller form" count={outstanding.length || undefined}>
       {mode !== "queue" ? (
         <div className="space-y-3">
-          <p className="text-[13px] leading-5 text-sales-text-secondary">Generate a link, then copy or share it yourself. This does not send a WhatsApp message or create a listing.</p>
-          {templates.length === 0 ? <p className="text-[13px] text-sales-text-secondary">No approved template yet. A manager opens Company / Property opportunities, pastes the organisation&apos;s open or sole clauses, previews them and approves a version. Agents then select that version here.</p> : (
+          <p className="text-[13px] leading-5 text-sales-text-secondary">Share this link with the seller. When they submit, review the form here. Approving it opens their seller profile and a draft listing. Photos and the rest of the listing are added after the inspection.</p>
+          {templates.length === 0 ? <p className="text-[13px] text-sales-text-secondary">No approved template yet. A manager approves the organisation&apos;s mandate wording first. Agents then choose that version here.</p> : (
             <div className="flex flex-wrap gap-2">
               <select className="min-h-11 rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[14px]" value={templateId} onChange={(event) => setTemplateId(event.target.value)} aria-label="Seller form template">
                 <option value="">Choose a template</option>

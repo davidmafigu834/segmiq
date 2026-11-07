@@ -136,7 +136,7 @@ export function CreateOfferSheet({
 
   return (
     <PremiumSheet
-      title="Create offer"
+      title="Generate offer letter"
       description="Record a structured offer. Drafts are not presented to the seller."
       onClose={onClose}
       size="md"

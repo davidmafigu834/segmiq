@@ -41,7 +41,7 @@ export default async function SalesOffersPage() {
         {...shell}
         breadcrumb="Sales / Offers"
         title="Offers"
-        description="Track negotiations and progress property offers. An accepted offer is not a completed sale."
+        description="Generate an offer letter from the buyer. They fill it, then the seller reviews it."
       >
         <OffersWorkspace
           clientId={session.clientId}

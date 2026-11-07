@@ -46,8 +46,8 @@ function initials(name: string | null): string {
 function emptyCopy(tab: StatusTab): { title: string; description: string } {
   if (tab === "active") {
     return {
-      title: "No active offers",
-      description: "Create an offer from a viewing or inquiry when a buyer is ready to bid.",
+      title: "No offer letters yet",
+      description: "After a viewing, generate the offer letter from the buyer. They fill it, then the seller receives it to review.",
     };
   }
   if (tab === "submitted") {
@@ -77,7 +77,6 @@ function emptyCopy(tab: StatusTab): { title: string; description: string } {
 export function OffersWorkspace({
   clientId,
   variant,
-  inquiriesHref,
   complianceHref,
   hideCreateButton = false,
   headerCreateNonce = 0,
@@ -239,7 +238,7 @@ export function OffersWorkspace({
               onClick={() => setCreating({})}
               leftIcon={<Plus className="h-4 w-4" />}
             >
-              Create offer
+              Generate offer letter
             </Button>
           ) : null}
         </div>
@@ -269,18 +268,9 @@ export function OffersWorkspace({
             title={empty.title}
             description={empty.description}
             action={
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="primary" size="sm" onClick={() => setCreating({})}>
-                  Create offer
-                </Button>
-                <button
-                  type="button"
-                  className="inline-flex h-8 items-center rounded-[8px] px-3 text-[12px] font-semibold text-sales-text-secondary hover:text-sales-text-primary"
-                  onClick={() => router.push(inquiriesHref)}
-                >
-                  View inquiries
-                </button>
-              </div>
+              <Button type="button" variant="primary" size="sm" onClick={() => setCreating({})}>
+                Generate offer letter
+              </Button>
             }
             size="compact"
           />

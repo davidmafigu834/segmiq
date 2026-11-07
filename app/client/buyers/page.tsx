@@ -26,7 +26,7 @@ export default async function Page() {
         role={session.role}
         breadcrumb="Company / Buyers"
         title="Buyers and tenants"
-        description="Find people looking to buy or rent, and continue the work already in progress."
+        description="Buyer profiles opened from a signed viewing form, linked to the property."
       >
         <Suspense fallback={null}>
           <BuyerSalesWorkspace clientId={session.clientId} basePath="/client/buyers" framed />

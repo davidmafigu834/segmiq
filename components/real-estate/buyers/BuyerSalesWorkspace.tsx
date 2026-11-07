@@ -4,9 +4,10 @@
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import { useRouter } from "next/navigation";
-import { Plus, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import {
   PROPERTY_CATEGORIES,
   PROPERTY_CATEGORY_LABEL,
@@ -112,7 +113,7 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
   const [stage, setStage] = useState("");
   const [followUp, setFollowUp] = useState("");
   const [location, setLocation] = useState("");
-  const [view, setView] = useState<"people" | "pipeline">("people");
+  const [view] = useState<"people" | "pipeline">("people");
   const [pipelineStage, setPipelineStage] = useState<string>(SEARCH_STAGES[2]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [draft, setDraft] = useState({ intent: "", stage: "", followUp: "", location: "" });
@@ -293,29 +294,15 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
     <div className={framed ? reEmbeddedShell : shell}>
       <RePageHeader
         title="Buyers & tenants"
-        description="Manage property searches, customer relationships and active buying journeys."
+        description="A signed viewing form opens a buyer here, linked to the property they asked to see. Generate the offer letter from that buyer."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex h-11 items-center rounded-[var(--re-radius-control,8px)] border border-sales-border p-0.5" role="group" aria-label="Directory view">
-              {(["people", "pipeline"] as const).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  aria-pressed={view === item}
-                  onClick={() => setView(item)}
-                  className={cn(
-                    "re-focus inline-flex h-10 items-center whitespace-nowrap rounded-[6px] px-3 text-[13px] font-semibold",
-                    view === item ? "bg-sales-text-primary text-sales-surface" : "text-sales-text-secondary"
-                  )}
-                >
-                  {item === "people" ? "Customers" : "Pipeline"}
-                </button>
-              ))}
-            </div>
-            <button type="button" onClick={() => setOpen(true)} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11 sm:h-10")}>
-              <Plus size={16} strokeWidth={1.8} aria-hidden />
-              Add buyer / tenant
-            </button>
+            <Link href={basePath.replace("/buyers", "/viewings")} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11 sm:h-10")}>
+              Viewings
+            </Link>
+            <Link href={basePath.replace("/buyers", "/offers")} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11 sm:h-10")}>
+              Generate offer letter
+            </Link>
           </div>
         }
       />
@@ -386,17 +373,17 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
         <ReEmptyState
           framed
           title="No buyers or tenants yet"
-          description="Record a customer and whether they want to buy or rent. A name is enough to start."
+          description="A buyer profile is created when they sign a viewing form for a property."
           action={
-            <button type="button" onClick={() => setOpen(true)} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>
-              Add buyer / tenant
-            </button>
+            <Link href={basePath.replace("/buyers", "/listings")} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>
+              Open a property
+            </Link>
           }
         />
       ) : null}
 
       {!loading && !error && rows.length > 0 && view === "people" ? (
-        <ReSection id="buyers" title="Customers" count={people.length} description={`${activeSearchCount} searches in this view. A person with several searches is still one customer.`} flush>
+        <ReSection id="buyers" title="Buyers and tenants" count={people.length} description="Each person is linked to the property they asked to view. Generate the offer letter from their profile." flush>
           {listTotal != null && listTotal > rows.length ? (
             <RePartialNotice>
               Showing {rows.length} of {listTotal} searches. Narrow the search to see the rest. The directory loads one page from the existing list.
@@ -425,8 +412,8 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
                         label={`Actions for ${first.contact_name || "customer"}`}
                         sheetTitle={first.contact_name || "Customer"}
                         actions={[
-                          { id: "open", label: searches.length > 1 ? "View searches" : "Open search", onSelect: () => router.push(`${basePath}/${lead.id}`) },
-                          { id: "match", label: "Find matching properties", onSelect: () => router.push(`${basePath.replace("/buyers", "/matching")}`) },
+                          { id: "open", label: "Open buyer", onSelect: () => router.push(`${basePath}/${lead.id}`) },
+                          { id: "offer", label: "Generate offer letter", onSelect: () => router.push(`${basePath.replace("/buyers", "/offers")}`) },
                           ...(first.phone
                             ? [
                                 { id: "call", label: "Call", onSelect: () => { window.location.href = `tel:${first.phone}`; } },
@@ -452,7 +439,7 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
                       href={`${basePath}/${lead.id}`}
                       className="re-focus mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold text-sales-text-primary underline-offset-2 hover:underline"
                     >
-                      {searches.length > 1 ? "View searches" : "Open search"}
+                      Open buyer
                       <span className="sr-only"> for {first.contact_name || "customer"}</span>
                     </a>
                   </div>
@@ -491,7 +478,7 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
                         {row.next_action_at ? `${isOverdue(row.next_action_at, row.status) ? "Overdue" : "Due"} ${formatWhen(row.next_action_at)}` : "None recorded"}
                       </td>
                       <td className="px-3 py-3 align-top">
-                        <a href={`${basePath}/${row.id}`} className="re-focus inline-flex min-h-11 items-center font-semibold">Open search</a>
+                        <a href={`${basePath}/${row.id}`} className="re-focus inline-flex min-h-11 items-center font-semibold">Open buyer</a>
                       </td>
                     </tr>
                   );

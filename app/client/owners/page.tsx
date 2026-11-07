@@ -15,15 +15,15 @@ export default async function Page() {
   if (!client) redirect("/login");
   redirectIfNotRealEstate(client.business_type);
   return (
-    <ClientManagerLayout breadcrumbPage="OWNERS" pageTitle="Property Owners" hideShellHeader hideShellSidebar>
+    <ClientManagerLayout breadcrumbPage="SELLERS" pageTitle="Sellers" hideShellHeader hideShellSidebar>
       <CompanyReShell
         userId={session.userId}
         clientId={session.clientId}
         userName={session.user?.name ?? "User"}
         role={session.role}
         breadcrumb="Company / Owners"
-        title="Property owners"
-        description="Manage owner relationships and the properties they bring to your agency."
+        title="Sellers"
+        description="Seller profiles opened from a completed mandate, with the property they are listing."
       >
         <OwnerList clientId={session.clientId} basePath="/client/owners" framed />
       </CompanyReShell>

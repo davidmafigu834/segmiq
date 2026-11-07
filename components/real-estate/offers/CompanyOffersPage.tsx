@@ -24,7 +24,7 @@ export function CompanyOffersPage({
       chrome={chrome}
       breadcrumb="Company / Offers"
       title="Offers"
-      description="Bids in play — seller response, counters, and accepted next steps."
+      description="Offer letters from a buyer. The seller reviews the letter after the buyer fills it."
       hideMobileChrome={stackedSplit && Boolean(selectedId)}
       primaryAction={
         <Button
@@ -33,7 +33,7 @@ export function CompanyOffersPage({
           leftIcon={<Plus size={15} strokeWidth={1.8} />}
           onClick={() => setCreateNonce((n) => n + 1)}
         >
-          Create offer
+          Generate offer letter
         </Button>
       }
       titleActions={
@@ -44,7 +44,7 @@ export function CompanyOffersPage({
           leftIcon={<Plus size={15} strokeWidth={1.8} />}
           onClick={() => setCreateNonce((n) => n + 1)}
         >
-          Create offer
+          Generate offer letter
         </Button>
       }
     >

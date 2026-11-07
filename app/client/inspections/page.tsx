@@ -23,7 +23,7 @@ export default async function Page() {
         role={session.role}
         breadcrumb="Company / Inspections"
         title="Inspections"
-        description="Review captured property inspections before a listing is approved."
+        description="Finish the listing with the inspection, photos, and the details the mandate did not include."
       >
         <InspectionList clientId={session.clientId} opportunityBase="/client/acquisitions" framed />
       </CompanyReShell>
