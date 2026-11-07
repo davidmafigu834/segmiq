@@ -1,4 +1,5 @@
 import { loadListingPage } from "@/lib/real-estate/listing-read-service";
+import { loadListingWork } from "@/lib/real-estate/listing-work-load";
 import { canReadListing, listingReadDto, canAssignListingAgent } from "@/lib/real-estate/listing-access";
 import { bearerListingPhotoError } from "@/lib/real-estate/mobile-workflows";
 import { NextResponse } from "next/server";
@@ -24,6 +25,14 @@ export async function GET(req: Request, { params }: { params: { clientId: string
 
   if (!canSubmitListings(g.session.role)) return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
   const url = new URL(req.url);
+  if (url.searchParams.get("view") === "work") {
+    try {
+      const listings = await loadListingWork(params.clientId, g.session);
+      return NextResponse.json({ listings }, { headers: { "Cache-Control": "no-store" } });
+    } catch {
+      return NextResponse.json({ error: "Could not load listings", code: "SERVICE_UNAVAILABLE" }, { status: 503 });
+    }
+  }
   const limit = Number(url.searchParams.get("limit") ?? "80"), page = Number(url.searchParams.get("page") ?? "1");
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1000 || !Number.isSafeInteger(page) || page < 1 || page > 100000)
     return NextResponse.json({ error: "Invalid pagination", code: "INVALID_REQUEST" }, { status: 400 });
