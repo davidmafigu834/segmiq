@@ -3,12 +3,11 @@
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ClipboardCheck, Phone, ScrollText, UserRound } from "lucide-react";
+import { ClipboardCheck, ScrollText, UserRound } from "lucide-react";
 import { MandateActions, type MandateRow } from "./MandateActions";
-import { ContextCompliancePanel } from "@/components/real-estate/compliance/ContextCompliancePanel";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
@@ -68,7 +67,6 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
-  const [selected, setSelected] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -90,24 +88,22 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
 
   useEffect(() => {
     const id = new URL(window.location.href).searchParams.get("contactId");
-    if (id) setSelected(id);
-  }, []);
+    if (!id || id.startsWith("company:")) return;
+    const profileId = id.startsWith("unlinked:") ? id.slice("unlinked:".length) : id;
+    router.replace(`${basePath}/${profileId}`);
+  }, [basePath, router]);
 
   const visible = owners.filter((owner) => {
     const name = (owner.name || "Unnamed owner").toLowerCase();
     return !q.trim() || name.includes(q.trim().toLowerCase());
   });
-  const selectedOwner = owners.find((owner) => owner.contactId === selected) ?? null;
-  const linked = useMemo(() => {
-    if (!selected) return [];
-    const owner = owners.find((item) => item.contactId === selected);
-    if (owner?.opportunityIds?.length) return opportunities.filter((row) => owner.opportunityIds?.includes(row.id));
-    if (selected.startsWith("unlinked:")) return opportunities.filter((row) => `unlinked:${row.id}` === selected);
-    return opportunities.filter((row) => row.contact_id === selected);
-  }, [opportunities, owners, selected]);
-  const phone = linked.find((row) => row.owner_phone)?.owner_phone ?? null;
-  const listingsPath = basePath.replace(/\/owners$/, "/listings");
   const mandatesPath = basePath.replace(/\/owners$/, "/mandates");
+  const openSeller = (owner: Owner) => {
+    const id = owner.contactId.startsWith("unlinked:") || owner.contactId.startsWith("company:")
+      ? owner.opportunityIds?.[0]
+      : owner.contactId;
+    if (id) router.push(`${basePath}/${id}`);
+  };
 
   return (
     <div className={framed ? reEmbeddedShell : shellClass}>
@@ -156,13 +152,13 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
                     owner.limit,
                   ].filter(Boolean).join(" · ")}
                   meta={<span>{owner.properties} {owner.properties === 1 ? "property" : "properties"} · {owner.active} active</span>}
-                  action={<ReRowAction label="View" srContext={name} onClick={() => setSelected(owner.contactId)} />}
+                  action={<ReRowAction label="View" srContext={name} onClick={() => openSeller(owner)} />}
                   menu={
                     <ReActionMenu
                       label={`Actions for ${name}`}
                       sheetTitle={name}
                       actions={[
-                        { id: "view", label: "View seller", onSelect: () => setSelected(owner.contactId) },
+                        { id: "view", label: "View seller", onSelect: () => openSeller(owner) },
                         { id: "form", label: "Send mandate form", onSelect: () => router.push(mandatesPath) },
                         ...(ownerPhone
                           ? [
@@ -180,36 +176,6 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
         </ReSection>
       ) : null}
 
-      {selectedOwner ? (
-        <ReSheet title={selectedOwner.name || "Unnamed owner"} description={`${selectedOwner.properties} properties · ${selectedOwner.active} active`} onClose={() => setSelected(null)}>
-          {phone ? (
-            <div className="mb-4 flex flex-wrap gap-2">
-              <a href={`tel:${phone}`} className="re-focus inline-flex min-h-11 items-center gap-1.5 rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[13px] font-semibold">
-                <Phone size={14} aria-hidden /> Call
-              </a>
-              <a href={`https://wa.me/${phone.replace(/\D/g, "")}`} className="re-focus inline-flex min-h-11 items-center rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[13px] font-semibold">
-                WhatsApp
-              </a>
-            </div>
-          ) : <p className="mb-3 text-[13px] text-sales-text-muted">No phone on this seller yet.</p>}
-          {selectedOwner.contactId.startsWith("unlinked:") ? null : (
-            <ContextCompliancePanel clientId={clientId} context="seller" title="Seller verification" contactId={selectedOwner.contactId} />
-          )}
-          <ul className="mt-4 divide-y divide-sales-border">
-            {linked.map((row) => (
-              <li key={row.id} className="py-2.5">
-                <p className="text-[14px] font-semibold">{[row.suburb, row.city].filter(Boolean).join(", ") || "Location pending"}</p>
-                <p className="mt-0.5 text-[12px] text-sales-text-muted">
-                  {row.property_intent === "sale" ? "For sale" : row.property_intent === "rent" ? "To rent" : "Intent not set"} · {row.status.replaceAll("_", " ")}
-                </p>
-                <Link href={listingsPath} className="re-focus mt-2 inline-flex min-h-11 items-center text-[13px] font-semibold underline-offset-2 hover:underline">
-                  Listing details
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </ReSheet>
-      ) : null}
     </div>
   );
 }
