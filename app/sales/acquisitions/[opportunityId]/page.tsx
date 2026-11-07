@@ -19,8 +19,8 @@ export default async function Page({ params }: { params: { opportunityId: string
   if (shouldRedirectFromRealEstateRoute(client?.business_type)) redirect("/sales/dashboard");
   const shell = await loadSalesShellProps(session);
   return (
-    <SalesLayout breadcrumb="Sales / OPPORTUNITY" pageTitle="Opportunity" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Opportunity" title="Opportunity" description="Inspection, mandate and listing preparation." showDefaultHeader={false}>
+    <SalesLayout breadcrumb="Sales / INSPECTION" pageTitle="Inspection" hideShellHeader hideShellSidebar contentFlush>
+      <SalesAppShell {...shell} breadcrumb="Sales / Inspection" title="Inspection" description="The visit, the condition, and the photos for this house." showDefaultHeader={false}>
         <AcquisitionDetail
           clientId={session.clientId}
           opportunityId={params.opportunityId}

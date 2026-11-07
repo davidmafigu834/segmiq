@@ -15,15 +15,15 @@ export default async function Page({ params }: { params: { opportunityId: string
   if (!client) redirect("/login");
   redirectIfNotRealEstate(client.business_type);
   return (
-    <ClientManagerLayout breadcrumbPage="OPPORTUNITY" pageTitle="Opportunity" hideShellHeader hideShellSidebar>
+    <ClientManagerLayout breadcrumbPage="INSPECTION" pageTitle="Inspection" hideShellHeader hideShellSidebar>
       <CompanyReShell
         userId={session.userId}
         clientId={session.clientId}
         userName={session.user?.name ?? "User"}
         role={session.role}
-        breadcrumb="Company / Opportunity"
-        title="Opportunity"
-        description="Move one property from first contact through inspection, mandate and listing."
+        breadcrumb="Company / Inspection"
+        title="Inspection"
+        description="The visit, the condition, and the photos for this house."
       >
         <AcquisitionDetail
           clientId={session.clientId}

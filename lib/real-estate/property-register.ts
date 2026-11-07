@@ -256,9 +256,8 @@ export function propertyWorkLinks(input: {
   if (input.opportunityId) {
     const file = `${root}/acquisitions/${input.opportunityId}`;
     links.unshift(
-      { label: "Seller opportunity", href: file },
-      { label: "Mandates", href: `${file}#acq-mandate` },
-      { label: "Inspections", href: `${file}#acq-inspection` },
+      { label: "Inspection", href: `${file}#acq-inspection` },
+      { label: "Mandates", href: `${root}/mandates` },
     );
   } else {
     links.push(

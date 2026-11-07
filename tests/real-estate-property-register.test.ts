@@ -165,8 +165,9 @@ describe("property register identity", () => {
     assert.ok(links.some((link) => link.href === "/sales/viewings"));
     assert.ok(links.some((link) => link.href === "/sales/listings/listing-1#property-offers"));
     const withDraft = propertyWorkLinks({ surface: "client", listingId: null, opportunityId: "draft-1" });
-    assert.ok(withDraft.some((link) => link.href === "/client/acquisitions/draft-1#acq-mandate"));
     assert.ok(withDraft.some((link) => link.href === "/client/acquisitions/draft-1#acq-inspection"));
+    assert.ok(withDraft.some((link) => link.href === "/client/mandates"));
+    assert.equal(withDraft.some((link) => link.href.includes("#acq-mandate")), false);
     assert.equal(withDraft.some((link) => link.href === "/client/inspections"), false);
   });
 });

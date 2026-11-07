@@ -250,7 +250,7 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
         <ReEmptyState
           framed
           title={filter === "all" ? "No inspections yet" : "No inspections in this view"}
-          description={filter === "all" ? "Open a listing that came from a mandate and record the inspection there." : "Nothing in this filter."}
+          description={filter === "all" ? "Open a house from a seller and record the visit there." : "Nothing in this filter."}
           action={<Link href={opportunityBase.replace("/acquisitions", "/listings")} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open listings</Link>}
         />
       ) : null}
@@ -277,7 +277,7 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
                       <td className="px-3 py-3 text-sales-text-secondary">{row.scheduled_at ? formatWhen(String(row.scheduled_at)) : "Not scheduled"}</td>
                       <td className="px-3 py-3"><ReStatusBadge label={inspectionStatusLabel(String(row.status))} tone={inspectionTone(String(row.status))} /></td>
                       <td className="px-3 py-3">
-                        <ReRowAction label={unfinished ? "Complete listing" : "Open listing"} srContext={label} href={`${opportunityBase}/${String(row.opportunity_id)}#acq-inspection`} />
+                        <ReRowAction label={unfinished ? "Finish inspection" : "Open inspection"} srContext={label} href={`${opportunityBase}/${String(row.opportunity_id)}#acq-inspection`} />
                       </td>
                     </tr>
                   );
@@ -296,7 +296,7 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
                   title={label}
                   reason={row.scheduled_at ? formatWhen(String(row.scheduled_at)) ?? undefined : "Not scheduled"}
                   status={<ReStatusBadge label={inspectionStatusLabel(String(row.status))} tone={inspectionTone(String(row.status))} />}
-                  action={<ReRowAction label={unfinished ? "Complete listing" : "Open listing"} srContext={label} href={`${opportunityBase}/${String(row.opportunity_id)}#acq-inspection`} />}
+                  action={<ReRowAction label={unfinished ? "Finish inspection" : "Open inspection"} srContext={label} href={`${opportunityBase}/${String(row.opportunity_id)}#acq-inspection`} />}
                 />
               );
             })}
