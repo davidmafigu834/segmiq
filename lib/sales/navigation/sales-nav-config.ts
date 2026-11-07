@@ -559,13 +559,13 @@ const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
   dashboard: "main",
   whatsapp: "main",
   tasks: "main",
-  opportunities: "acquisition",
+  opportunities: "overview",
   owners: "acquisition",
   inspections: "acquisition",
   mandates: "acquisition",
   buyers: "buyer_sales",
-  introductions: "buyer_sales",
-  matching: "buyer_sales",
+  introductions: "overview",
+  matching: "overview",
   viewings: "buyer_sales",
   offers: "buyer_sales",
   listings: "agency",
@@ -588,6 +588,8 @@ const REAL_ESTATE_AGENT_LABELS: Record<string, { label: string; mobileLabel: str
   dashboard: { label: "Dashboard", mobileLabel: "Home" },
   whatsapp: { label: "Sales Inbox", mobileLabel: "Inbox" },
   tasks: { label: "My Activities", mobileLabel: "Activities" },
+  owners: { label: "Sellers", mobileLabel: "Sellers" },
+  offers: { label: "Offers", mobileLabel: "Offers" },
 };
 
 export const REAL_ESTATE_SALES_SECTION_ORDER: SalesNavSectionId[] = [
