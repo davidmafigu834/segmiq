@@ -12,12 +12,9 @@ import {
   PROPERTY_CATEGORY_LABEL,
   REJECTION_REASONS,
   REJECTION_LABEL,
-  STAGE_LABEL,
-  VIEWING_OUTCOMES,
   asPropertyCategories,
   type PropertyCategory,
   type RejectionReason,
-  type SearchStage,
 } from "@/lib/real-estate/buyer-match";
 import { Button, salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
@@ -32,7 +29,7 @@ import {
   ReSkeletonRows,
   ReStatusBadge,
 } from "@/components/real-estate/ui";
-import { acqFieldClass, acqLabelClass, asIsoTimestamp, formatWhen } from "@/components/real-estate/acquisition/acquisition-ui";
+import { acqFieldClass, acqLabelClass } from "@/components/real-estate/acquisition/acquisition-ui";
 
 type Bundle = {
   search: Record<string, unknown>;
@@ -65,27 +62,11 @@ type Match = {
   listing: ListingBits | null;
 };
 
-type Sibling = {
-  id: string;
-  intent: string;
-  locations: string[] | null;
-  budget_max: number | null;
-  currency: string | null;
-  bedrooms: number | null;
-  property_type: string | null;
-  pipeline_stage: string | null;
-  status: string;
-};
-
 type Panel =
   | { kind: "requirements" }
   | { kind: "recommend"; listingId: string }
   | { kind: "reject"; listingId: string }
-  | { kind: "match"; listingId: string }
-  | { kind: "viewing" }
-  | { kind: "outcome"; viewingId: string }
-  | { kind: "reschedule"; viewingId: string }
-  | { kind: "application" };
+  | { kind: "match"; listingId: string };
 
 const INTEREST_LABEL: Record<string, string> = {
   matched: "Matched",
@@ -108,26 +89,6 @@ const OUTCOME_LABEL: Record<string, string> = {
   condition: "Property condition",
   not_interested: "Not interested",
   no_show: "Did not attend",
-};
-
-const OUTCOME_GROUPS: Array<{ title: string; values: string[] }> = [
-  { title: "Positive interest", values: ["interested", "wants_offer"] },
-  { title: "Needs more time", values: ["considering", "second_viewing"] },
-  { title: "Not suitable", values: ["too_expensive", "location_unsuitable", "condition", "not_interested"] },
-  { title: "Did not attend", values: ["no_show"] },
-];
-
-const APPLICATION_LABEL: Record<string, string> = {
-  submitted: "Submitted",
-  under_review: "Under review",
-  accepted: "Accepted",
-  declined: "Declined",
-};
-
-const DEPOSIT_LABEL: Record<string, string> = {
-  expected: "Deposit expected",
-  reported: "Deposit reported",
-  verified: "Deposit verified",
 };
 
 const shell = reSalesShell;
@@ -180,7 +141,6 @@ export function BuyerSearchDetail({
   clientId,
   searchId,
   offersHref,
-  canVerifyDeposit = false,
   framed = false,
 }: {
   clientId: string;
@@ -195,7 +155,6 @@ export function BuyerSearchDetail({
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [matchNotice, setMatchNotice] = useState<string | null>(null);
-  const [siblings, setSiblings] = useState<Sibling[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -203,10 +162,6 @@ export function BuyerSearchDetail({
   const [more, setMore] = useState(false);
   const [rejectReason, setRejectReason] = useState<RejectionReason | "">("");
   const [rejectNote, setRejectNote] = useState("");
-  const [outcome, setOutcome] = useState("");
-  const [outcomeNote, setOutcomeNote] = useState("");
-  const [savedOutcome, setSavedOutcome] = useState<string | null>(null);
-  const [overlap, setOverlap] = useState<{ body: Record<string, unknown>; warning: string } | null>(null);
   const [requirements, setRequirements] = useState({
     budgetMax: "",
     locations: "",
@@ -250,12 +205,6 @@ export function BuyerSearchDetail({
       above: Boolean(search.allow_above_budget),
       categories: asPropertyCategories(search.property_categories),
     });
-    const contactId = text(search.contact_id);
-    if (contactId) {
-      const siblingRes = await fetch(`/api/clients/${clientId}/buyer-searches?contactId=${contactId}`);
-      const siblingJson = await siblingRes.json().catch(() => ({}));
-      setSiblings(siblingRes.ok ? (siblingJson.searches ?? []).filter((row: Sibling) => row.id !== searchId) : []);
-    }
     setLoading(false);
   }
 
@@ -289,16 +238,10 @@ export function BuyerSearchDetail({
     const json = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
-      if (res.status === 409 && json.warning && (body.action === "viewing" || body.action === "reschedule_viewing") && !body.confirmOverlap) {
-        setOverlap({ body, warning: String(json.warning) });
-        return false;
-      }
       setError(json.error ?? "Could not save");
       return false;
     }
-    setOverlap(null);
     setPanel(null);
-    if (body.action === "viewing_outcome") setSavedOutcome(String(body.outcome));
     await load();
     return true;
   }
@@ -324,9 +267,6 @@ export function BuyerSearchDetail({
   const categoryLabel = categories.map((category) => PROPERTY_CATEGORY_LABEL[category]).join(", ");
   const locations = Array.isArray(search.locations) ? (search.locations as string[]).filter(Boolean) : [];
   const interestByListing = new Map(bundle.interests.map((row) => [String(row.listing_id), row]));
-  const recommendedCount = bundle.interests.filter((row) => row.interest_state === "recommended" || row.interest_state === "sent").length;
-  const completedViewings = bundle.viewings.filter((row) => row.status === "completed" || row.outcome).length;
-  const openOffers = bundle.offers.filter((row) => !["rejected", "withdrawn", "expired"].includes(String(row.status)));
   const linkedViewing = bundle.viewings.find((row) => row.listing_id) ?? null;
   const linkedListingId = text(linkedViewing?.listing_id);
   const linkedMatch = matches.find((row) => row.listingId === linkedListingId) ?? null;
@@ -336,14 +276,6 @@ export function BuyerSearchDetail({
   if (bundle.contact?.id) offerParams.set("contactId", bundle.contact.id);
   const offerQuery = offerParams.toString();
   const offerHref = offerQuery ? `${offersHref}?${offerQuery}` : offersHref;
-  const listingOptions = new Map<string, string>();
-  for (const match of matches) listingOptions.set(match.listingId, `${place(match.listing)} · ${strengthLabel(match.strength)}`);
-  for (const interest of bundle.interests) {
-    const id = String(interest.listing_id ?? "");
-    if (id && interest.interest_state !== "not_interested" && !listingOptions.has(id)) {
-      listingOptions.set(id, `Recorded interest · ${INTEREST_LABEL[String(interest.interest_state)] ?? String(interest.interest_state)}`);
-    }
-  }
   const activeMatch = panel && "listingId" in panel ? matches.find((row) => row.listingId === panel.listingId) ?? null : null;
 
   return (
@@ -361,7 +293,6 @@ export function BuyerSearchDetail({
               sheetTitle="Buyer actions"
               actions={[
                 { id: "edit", label: "Edit what they are looking for", onSelect: () => setPanel({ kind: "requirements" }) },
-                { id: "viewing", label: "Schedule viewing", onSelect: () => setPanel({ kind: "viewing" }) },
               ]}
             />
           </div>
@@ -424,26 +355,6 @@ export function BuyerSearchDetail({
             ) : null}
           </ReSection>
 
-          {siblings.length ? (
-            <ReSection id="other-searches" className="order-5" title="Other records for this person" count={siblings.length} description="Each record keeps its own requirements.">
-              <ul className="space-y-2">
-                {siblings.map((row) => (
-                  <li key={row.id}>
-                    <Link href={`${buyersPath}/${row.id}`} className="re-focus block rounded-[10px] border border-sales-border-subtle px-3 py-2.5">
-                      <span className="block text-[14px] font-semibold">{row.intent === "rental" ? "Renting" : "Buying"}{row.property_type ? ` · ${row.property_type}` : ""}</span>
-                      <span className="mt-0.5 block text-[12px] text-sales-text-secondary">
-                        {(row.locations ?? []).filter(Boolean).join(", ") || "Location open"}
-                        {row.budget_max != null ? ` · Up to ${row.currency ? `${row.currency} ` : ""}${row.budget_max}` : ""}
-                        {" · "}
-                        {STAGE_LABEL[(row.pipeline_stage as SearchStage) || "actively_searching"] ?? row.status}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </ReSection>
-          ) : null}
-
           <ReSection id="recommendations" className="order-6" title="Property recommendation" count={matches.length} description="Properties that fit what this buyer is looking for. Recommending one records it on this profile.">
             {matchNotice ? <p className="mb-3 rounded-[8px] border border-sales-warning/30 bg-sales-warning-soft px-3 py-2 text-[12px] text-sales-warning-fg">{matchNotice}</p> : null}
             {matches.length === 0 ? (
@@ -492,10 +403,9 @@ export function BuyerSearchDetail({
                             sheetTitle={place(match.listing)}
                             actions={[
                               { id: "details", label: "View match explanation", onSelect: () => setPanel({ kind: "match", listingId: match.listingId }) },
-                              { id: "property", label: "View property", onSelect: () => { window.location.href = listingsPath; } },
+                              { id: "property", label: "View property", onSelect: () => { window.location.href = `${listingsPath}/${match.listingId}`; } },
                               { id: "yes", label: "Mark interested", onSelect: () => void act({ action: "interest", searchId, listingId: match.listingId, state: "interested" }) },
                               { id: "no", label: "Mark not interested", onSelect: () => { setRejectReason(""); setPanel({ kind: "reject", listingId: match.listingId }); } },
-                              { id: "view", label: "Schedule viewing", onSelect: () => setPanel({ kind: "viewing" }) },
                             ]}
                           />
                         </div>
@@ -507,38 +417,13 @@ export function BuyerSearchDetail({
             )}
           </ReSection>
 
-          <ReSection id="considered" className="order-7" title="Properties considered" count={bundle.interests.length}>
-            {bundle.interests.length === 0 ? <ReEmptyState compact title="Nothing recorded yet" description="Recommend a match or mark interest before this list fills in." /> : (
-              <ul className="divide-y divide-sales-border-subtle">
-                {bundle.interests.map((interest) => (
-                  <li key={String(interest.id)} className="flex min-w-0 items-start justify-between gap-3 py-2.5">
-                    <div className="min-w-0">
-                      <p className="text-[14px] font-semibold">{INTEREST_LABEL[String(interest.interest_state)] ?? String(interest.interest_state || "Recorded")}</p>
-                      <p className="text-[12px] text-sales-text-secondary [overflow-wrap:anywhere]">
-                        {interest.interest_state === "not_interested"
-                          ? REJECTION_LABEL[(interest.rejection_reason as RejectionReason) || "other"]
-                          : "Still in play on this search"}
-                        {interest.interest_state === "sent" ? "" : interest.interest_state === "recommended" ? " · Recorded here. This is not a sent message." : ""}
-                      </p>
-                    </div>
-                    {interest.interest_state !== "not_interested" ? (
-                      <button type="button" className="re-focus min-h-11 shrink-0 text-[13px] font-semibold" onClick={() => { setRejectReason(""); setPanel({ kind: "reject", listingId: String(interest.listing_id) }); }}>
-                        Not interested
-                      </button>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </ReSection>
-
           <ReSection
             id="viewings"
             className="order-2"
-            title="Viewings"
+            title="Viewing"
             count={bundle.viewings.length}
-            description="The date and time from the viewing form are booked here."
-            action={<button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => setPanel({ kind: "viewing" })}>Schedule viewing</button>}
+            description="The date and time from the signed viewing form."
+            action={<Link href={offersHref.replace(/\/offers$/, "/viewings")} className="re-focus min-h-11 text-[13px] font-semibold">Viewings</Link>}
           >
             {bundle.viewings.length === 0 ? <ReEmptyState compact title="No viewing yet" description="A signed viewing form books the visit on this buyer and on the calendar." /> : (
               <ul className="space-y-2">
@@ -547,68 +432,26 @@ export function BuyerSearchDetail({
                     <p className="text-[14px] font-semibold [overflow-wrap:anywhere]">{text(viewing.property_label) || "Property"}</p>
                     <p className="mt-0.5 text-[12px] text-sales-text-secondary">
                       {viewing.scheduled_at ? new Date(String(viewing.scheduled_at)).toLocaleString() : "Time not recorded"}
-                      {" · "}
-                      Status {String(viewing.status || "scheduled")}
-                      {viewing.confirmation_status ? ` · Confirmation ${String(viewing.confirmation_status).replaceAll("_", " ")}` : ""}
+                      {viewing.outcome ? ` · ${OUTCOME_LABEL[String(viewing.outcome)] ?? String(viewing.outcome)}` : ""}
                     </p>
-                    {viewing.outcome ? <p className="mt-1 text-[13px]">{OUTCOME_LABEL[String(viewing.outcome)] ?? String(viewing.outcome)}</p> : null}
-                    {viewing.status === "scheduled" ? (
-                      <div className="mt-2 flex flex-wrap gap-3">
-                        <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => { setOutcome(""); setPanel({ kind: "outcome", viewingId: String(viewing.id) }); }}>Record outcome</button>
-                        <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => setPanel({ kind: "reschedule", viewingId: String(viewing.id) })}>Reschedule</button>
-                      </div>
-                    ) : null}
+                    {viewing.outcome === "wants_offer" ? <Link href={offerHref} className="re-focus mt-2 inline-flex min-h-11 items-center text-[13px] font-semibold">Generate offer letter</Link> : null}
                   </li>
                 ))}
               </ul>
             )}
-            {savedOutcome ? (
-              <p className="mt-3 text-[13px] text-sales-text-secondary">
-                Outcome saved as {OUTCOME_LABEL[savedOutcome] ?? savedOutcome}.
-                {savedOutcome === "wants_offer" ? " Generate the offer letter so the seller can review it." : ""}
-                {savedOutcome === "second_viewing" ? " Book the next visit when you have a time." : ""}
-              </p>
-            ) : null}
           </ReSection>
 
-          <ReSection id="offers" className="order-3" title={rental ? "Applications" : "Offer letter"} description={rental ? "An accepted application is not a completed tenancy." : "After the viewing, generate the letter. The buyer fills it, then the seller reviews it."}>
-            {bundle.offers.length === 0 && !rental ? <ReEmptyState compact title="No offer letter yet" description="Generate it for this buyer and the property they viewed." action={<Link href={offerHref} className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold">Generate offer letter</Link>} /> : null}
-            <ul className="space-y-2 text-[14px]">
-              {bundle.offers.map((offer) => (
-                <li key={String(offer.id)} className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">
-                  <span className="font-semibold tabular-nums [overflow-wrap:anywhere]">{text(offer.currency) || "Amount"} {text(offer.current_offer_amount)}</span>
-                  <ReStatusBadge label={text(offer.status).replaceAll("_", " ") || "Draft"} />
-                </li>
-              ))}
-            </ul>
-            <Link href={offerHref} className="re-focus mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold">Generate offer letter</Link>
-            {rental ? (
-              <div className="mt-4 border-t border-sales-border-subtle pt-3">
-                <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => setPanel({ kind: "application" })}>Submit rental application</button>
-                <ul className="mt-2 space-y-2">
-                  {bundle.applications.map((row) => {
-                    const deposit = String(row.deposit_status || "expected");
-                    return (
-                      <li key={String(row.id)} className="rounded-[10px] border border-sales-border-subtle px-3 py-2.5">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <ReStatusBadge label={APPLICATION_LABEL[String(row.status)] ?? String(row.status)} tone={row.status === "declined" ? "danger" : row.status === "accepted" ? "success" : "neutral"} />
-                          <ReStatusBadge label={DEPOSIT_LABEL[deposit] ?? deposit} tone={deposit === "verified" ? "success" : deposit === "reported" ? "warning" : "neutral"} />
-                        </div>
-                        <p className="mt-1 text-[12px] text-sales-text-secondary">A reported deposit is not verified cash. Accepting an application does not mark the property let.</p>
-                        <div className="mt-2 flex flex-wrap gap-3">
-                          {deposit === "expected" ? (
-                            <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" disabled={busy} onClick={() => void act({ action: "deposit", applicationId: row.id, depositAction: "report" })}>Report deposit</button>
-                          ) : null}
-                          {canVerifyDeposit && deposit !== "verified" ? (
-                            <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" disabled={busy} onClick={() => void act({ action: "deposit", applicationId: row.id, depositAction: "verify" })}>Mark deposit verified</button>
-                          ) : null}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ) : null}
+          <ReSection id="offers" className="order-3" title="Offer letter" description="After the viewing, generate the letter. The buyer fills it, then the seller reviews it.">
+            {bundle.offers.length === 0 ? <ReEmptyState compact title="No offer letter yet" description="Generate it for this buyer and the property they viewed." action={<Link href={offerHref} className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold">Generate offer letter</Link>} /> : (
+              <ul className="space-y-2 text-[14px]">
+                {bundle.offers.map((offer) => (
+                  <li key={String(offer.id)} className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">
+                    <Link href={`${offersHref}?offerId=${String(offer.id)}`} className="re-focus font-semibold tabular-nums underline-offset-2 hover:underline [overflow-wrap:anywhere]">{text(offer.currency) || "Amount"} {text(offer.current_offer_amount)}</Link>
+                    <ReStatusBadge label={text(offer.status).replaceAll("_", " ") || "Draft"} />
+                  </li>
+                ))}
+              </ul>
+            )}
           </ReSection>
 
           {bundle.contact?.id ? (
@@ -617,20 +460,6 @@ export function BuyerSearchDetail({
             </div>
           ) : null}
 
-          <ReSection id="activity" className="order-9" title="Activity" count={bundle.events.length}>
-            {bundle.events.length === 0 ? <ReEmptyState compact title="No activity yet" /> : (
-              <ul className="space-y-2">
-                {bundle.events.map((event) => (
-                  <li key={String(event.id)} className="text-[13px] text-sales-text-secondary">
-                    <span className="font-medium text-sales-text-primary">{text(event.event_type).replaceAll("_", " ")}</span>
-                    {event.field_name ? ` · ${text(event.field_name).replaceAll("_", " ")}` : ""}
-                    {event.to_value ? ` → ${text(event.to_value)}` : ""}
-                    {event.created_at ? ` · ${formatWhen(text(event.created_at))}` : ""}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </ReSection>
         </div>
 
         <aside className="order-1 flex min-w-0 flex-col gap-4 layout:order-2">
@@ -645,13 +474,6 @@ export function BuyerSearchDetail({
             ) : <p className="mt-2 text-[12px] text-sales-text-muted">No phone is available on this record.</p>}
           </ReSection>
 
-          <ReSection id="summary" title="Activity summary">
-            <dl className="grid grid-cols-3 gap-2 text-center">
-              <Count label="Recommended" value={recommendedCount} />
-              <Count label="Viewings done" value={completedViewings} />
-              <Count label="Open offers" value={openOffers.length} />
-            </dl>
-          </ReSection>
         </aside>
       </div>
 
@@ -751,7 +573,7 @@ export function BuyerSearchDetail({
             <button type="button" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")} onClick={() => setPanel({ kind: "recommend", listingId: activeMatch.listingId })}>Recommend property</button>
             <button type="button" className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")} disabled={busy} onClick={() => void act({ action: "interest", searchId, listingId: activeMatch.listingId, state: "interested" })}>Mark interested</button>
             <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => { setRejectReason(""); setPanel({ kind: "reject", listingId: activeMatch.listingId }); }}>Not interested</button>
-            <Link href={listingsPath} className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold">Open property</Link>
+            <Link href={`${listingsPath}/${activeMatch.listingId}`} className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold">Open property</Link>
           </div>
         </ReSheet>
       ) : null}
@@ -777,107 +599,6 @@ export function BuyerSearchDetail({
         </ReSheet>
       ) : null}
 
-      {panel?.kind === "viewing" || panel?.kind === "reschedule" ? (
-        <ReSheet title={panel.kind === "reschedule" ? "Reschedule viewing" : "Schedule viewing"} description="This updates the appointment. It does not message the customer." onClose={() => { setPanel(null); setOverlap(null); }}>
-          <form
-            className="grid gap-3"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const data = new FormData(event.currentTarget);
-              const scheduledAt = asIsoTimestamp(data.get("when"));
-              if (!scheduledAt) {
-                setError("Pick a valid date and time.");
-                return;
-              }
-              if (panel.kind === "reschedule") {
-                void act({ action: "reschedule_viewing", viewingId: panel.viewingId, scheduledAt, confirmOverlap: false });
-                return;
-              }
-              void act({
-                action: "viewing",
-                searchId,
-                listingId: String(data.get("listingId") || ""),
-                scheduledAt,
-                instructions: String(data.get("instructions") || ""),
-                confirmOverlap: false,
-              });
-            }}
-          >
-            {panel.kind === "viewing" ? (
-              <>
-                <label className={acqLabelClass} htmlFor="view-listing">Property</label>
-                <select id="view-listing" required name="listingId" className={acqFieldClass} defaultValue="">
-                  <option value="" disabled>{listingOptions.size ? "Choose a property" : "No matched or interested properties yet"}</option>
-                  {[...listingOptions].map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-                </select>
-              </>
-            ) : <p className="text-[13px] text-sales-text-secondary">Current time stays until you save a new one.</p>}
-            <label className={acqLabelClass} htmlFor="view-when">Date and time</label>
-            <input id="view-when" required name="when" type="datetime-local" className={acqFieldClass} />
-            {panel.kind === "viewing" ? (
-              <>
-                <label className={acqLabelClass} htmlFor="view-notes">Instructions</label>
-                <input id="view-notes" name="instructions" className={acqFieldClass} />
-              </>
-            ) : null}
-            {overlap ? (
-              <div className="rounded-[10px] border border-sales-warning/40 bg-sales-warning-soft p-3" role="alert">
-                <p className="text-[13px] font-semibold">This time clashes</p>
-                <p className="mt-1 text-[13px]">{overlap.warning}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => setOverlap(null)}>Change time</button>
-                  <button type="button" className={cn(salesMenuTriggerClass({ variant: "secondary", size: "sm" }), "min-h-11")} disabled={busy} onClick={() => void act({ ...overlap.body, confirmOverlap: true })}>Continue anyway</button>
-                </div>
-              </div>
-            ) : null}
-            {error ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
-            <Button variant="primary" size="md" type="submit" loading={busy}>{busy ? "Saving…" : panel.kind === "reschedule" ? "Save new time" : "Schedule viewing"}</Button>
-          </form>
-        </ReSheet>
-      ) : null}
-
-      {panel?.kind === "outcome" ? (
-        <ReSheet title="Record viewing outcome" onClose={() => setPanel(null)} footer={
-          <div className="flex justify-end gap-2">
-            <button type="button" className="re-focus min-h-11 px-3 text-[14px] font-semibold" onClick={() => setPanel(null)}>Cancel</button>
-            <button type="button" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")} disabled={busy || !outcome} onClick={() => void act({ action: "viewing_outcome", viewingId: panel.viewingId, outcome, note: outcomeNote || null })}>Save outcome</button>
-          </div>
-        }>
-          {OUTCOME_GROUPS.map((group) => (
-            <fieldset key={group.title} className="mb-3">
-              <legend className={acqLabelClass}>{group.title}</legend>
-              <ul>
-                {group.values.filter((value) => (VIEWING_OUTCOMES as readonly string[]).includes(value)).map((value) => (
-                  <li key={value}>
-                    <label className="flex min-h-12 items-center gap-3 text-[14px]">
-                      <input type="radio" name="outcome" checked={outcome === value} onChange={() => setOutcome(value)} />
-                      {OUTCOME_LABEL[value]}
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </fieldset>
-          ))}
-          <label className={acqLabelClass} htmlFor="outcome-note">Note <span className="font-normal">optional</span></label>
-          <input id="outcome-note" className={acqFieldClass} value={outcomeNote} onChange={(event) => setOutcomeNote(event.target.value)} />
-        </ReSheet>
-      ) : null}
-
-      {panel?.kind === "application" ? (
-        <ReSheet title="Submit rental application" description="Submitting an application does not mark the property let." onClose={() => setPanel(null)}>
-          <form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); const data = new FormData(event.currentTarget); void act({ action: "rental_application", searchId, listingId: String(data.get("listingId") || ""), notes: String(data.get("notes") || "") }); }}>
-            <label className={acqLabelClass} htmlFor="app-listing">Property</label>
-            <select id="app-listing" required name="listingId" className={acqFieldClass} defaultValue="">
-              <option value="" disabled>Choose a property</option>
-              {[...listingOptions].map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-            </select>
-            <label className={acqLabelClass} htmlFor="app-notes">Notes</label>
-            <input id="app-notes" name="notes" className={acqFieldClass} />
-            {error ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
-            <Button variant="primary" size="md" type="submit" loading={busy}>{busy ? "Saving…" : "Submit application"}</Button>
-          </form>
-        </ReSheet>
-      ) : null}
     </div>
   );
 }
@@ -887,15 +608,6 @@ function Fact({ label, value }: { label: string; value: string }) {
     <div className="min-w-0">
       <dt className="text-[12px] text-sales-text-muted">{label}</dt>
       <dd className="mt-0.5 text-[14px] font-medium text-sales-text-primary [overflow-wrap:anywhere]">{value}</dd>
-    </div>
-  );
-}
-
-function Count({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-[11px] text-sales-text-muted">{label}</dt>
-      <dd className="mt-1 font-display text-[22px] font-semibold tabular-nums">{value}</dd>
     </div>
   );
 }

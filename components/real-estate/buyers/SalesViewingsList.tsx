@@ -29,8 +29,11 @@ type Viewing = {
   outcome?: string | null;
   access?: "full" | "listing_only" | "none";
   instructions?: string | null;
-  listing?: { suburb?: string | null; address?: string | null } | null;
-  contact?: { name?: string | null; phone?: string | null } | null;
+  listing_id?: string | null;
+  buyer_search_id?: string | null;
+  contact_id?: string | null;
+  listing?: { id?: string; suburb?: string | null; address?: string | null } | null;
+  contact?: { id?: string; name?: string | null; phone?: string | null } | null;
 };
 
 const OUTCOME_LABEL: Record<string, string> = {
@@ -292,15 +295,19 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
 
       {selected ? (
         <ReSheet title={selected.listing?.suburb || selected.listing?.address || "Viewing"} description={selected.scheduled_at ? new Date(selected.scheduled_at).toLocaleString() : undefined} onClose={() => setSelected(null)}>
-          <dl className="space-y-2 text-[14px]">
-            <div><dt className="text-[12px] text-sales-text-muted">Status</dt><dd>{selected.status.replaceAll("_", " ")}</dd></div>
-            <div><dt className="text-[12px] text-sales-text-muted">Confirmation</dt><dd>{selected.confirmation_status?.replaceAll("_", " ") || "Not recorded"}</dd></div>
-            <div><dt className="text-[12px] text-sales-text-muted">Customer</dt><dd>{selected.contact?.name || "Not available"}</dd></div>
-            {selected.access === "full" && selected.contact?.phone ? <div><dt className="text-[12px] text-sales-text-muted">Phone</dt><dd>{selected.contact.phone}</dd></div> : null}
-            {selected.access === "listing_only" ? <p className="text-[13px] text-sales-text-secondary">You can see this appointment because of the listing. The customer contact details stay with the agent who owns the search.</p> : null}
-            {selected.instructions ? <div><dt className="text-[12px] text-sales-text-muted">Instructions</dt><dd className="[overflow-wrap:anywhere]">{selected.instructions}</dd></div> : null}
+          <dl className="mb-4 space-y-2 text-[14px]">
+            <div><dt className="text-[12px] text-sales-text-muted">Buyer</dt><dd>{selected.contact?.name || "Not available"}</dd></div>
+            <div><dt className="text-[12px] text-sales-text-muted">Property</dt><dd>{selected.listing?.address || selected.listing?.suburb || "Property"}</dd></div>
             {selected.outcome ? <div><dt className="text-[12px] text-sales-text-muted">Outcome</dt><dd>{OUTCOME_LABEL[selected.outcome] ?? selected.outcome}</dd></div> : null}
+            {selected.access === "full" && selected.contact?.phone ? <div><dt className="text-[12px] text-sales-text-muted">Phone</dt><dd>{selected.contact.phone}</dd></div> : null}
           </dl>
+          <div className="flex flex-wrap gap-2">
+            {selected.buyer_search_id ? <Link href={`${buyersPath}/${selected.buyer_search_id}`} className="inline-flex min-h-11 items-center rounded-[8px] bg-sales-text-primary px-3 text-[13px] font-semibold text-sales-surface">Open buyer</Link> : null}
+            {selected.listing_id || selected.listing?.id ? <Link href={`${buyersPath.replace(/\/buyers$/, "/listings")}/${selected.listing_id || selected.listing?.id}`} className="inline-flex min-h-11 items-center rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold">Open property</Link> : null}
+            {selected.outcome === "wants_offer" || selected.outcome === "interested" ? (
+              <Link href={`${buyersPath.replace(/\/buyers$/, "/offers")}?${new URLSearchParams({ ...(selected.listing_id || selected.listing?.id ? { listingId: selected.listing_id || selected.listing?.id || "" } : {}), ...(selected.contact_id || selected.contact?.id ? { contactId: selected.contact_id || selected.contact?.id || "" } : {}) }).toString()}`} className="inline-flex min-h-11 items-center rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold">Generate offer letter</Link>
+            ) : null}
+          </div>
         </ReSheet>
       ) : null}
 

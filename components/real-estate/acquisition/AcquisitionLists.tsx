@@ -247,7 +247,7 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
           framed
           title={filter === "all" ? "No inspections yet" : "No inspections in this view"}
           description={filter === "all" ? "Open a house from a seller and record the visit there." : "Nothing in this filter."}
-          action={<Link href={opportunityBase.replace("/acquisitions", "/listings")} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open listings</Link>}
+          action={<Link href={opportunityBase.replace("/acquisitions", "/owners")} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open sellers</Link>}
         />
       ) : null}
       {!loading && !error && visible.length > 0 ? (

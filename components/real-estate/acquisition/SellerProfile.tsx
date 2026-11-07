@@ -45,6 +45,7 @@ type OfferRow = {
   buyerName: string | null;
   currentAmountLabel: string;
   statusLabel: string;
+  sellerLetter?: string;
   propertyLabel: string;
 };
 
@@ -166,7 +167,7 @@ export function SellerProfile({
   const mandatePrice = fieldValue(fields, "mandatePrice");
   const openOffers = offers.filter((row) => !["Rejected", "Withdrawn", "Expired"].includes(row.statusLabel));
   const finishHref = listingId ? `${listingsPath}/${listingId}` : property ? `${inspectionsPath}/${property.id}#acq-inspection` : listingsPath;
-  const primaryHref = openOffers.length ? offersPath : finishHref;
+  const primaryHref = openOffers.length ? `${offersPath}?offerId=${openOffers[0].id}` : finishHref;
   const primaryLabel = openOffers.length ? "Review offer" : "Finish the listing";
   const contactId = property?.contact_id && !String(property.contact_id).startsWith("unlinked:") ? property.contact_id : owner.contactId.startsWith("unlinked:") || owner.contactId.startsWith("company:") ? "" : owner.contactId;
   const formAnswers: Record<string, string> = {};
@@ -205,7 +206,12 @@ export function SellerProfile({
           >
             {address ? (
               <dl className="grid gap-3 sm:grid-cols-2">
-                <Fact label="Address" value={address} />
+                <div>
+                  <dt className="text-[12px] text-sales-text-muted">Address</dt>
+                  <dd className="text-[14px] text-sales-text-primary [overflow-wrap:anywhere]">
+                    {listingId ? <Link href={`${listingsPath}/${listingId}`} className="re-focus font-semibold underline-offset-2 hover:underline">{address}</Link> : address}
+                  </dd>
+                </div>
                 <Fact label="Type" value={fieldValue(fields, "propertyCategory") || "Not recorded"} />
                 <Fact label="Ownership" value={fieldValue(fields, "propertyRights") || "Not recorded"} />
                 <Fact label="Occupied by" value={fieldValue(fields, "occupation") || "Not recorded"} />
@@ -218,7 +224,7 @@ export function SellerProfile({
               <ul className="mt-4 divide-y divide-sales-border-subtle">
                 {opportunities.slice(1).map((row) => (
                   <li key={row.id} className="py-2">
-                    <Link href={`${basePath}/${row.id}`} className="re-focus text-[14px] font-semibold">{place(row, [])}</Link>
+                    <Link href={row.converted_listing_id ? `${listingsPath}/${row.converted_listing_id}` : `${inspectionsPath}/${row.id}#acq-inspection`} className="re-focus text-[14px] font-semibold">{place(row, [])}</Link>
                   </li>
                 ))}
               </ul>
@@ -240,7 +246,7 @@ export function SellerProfile({
                 </a>
               </>
             ) : (
-              <ReEmptyState compact title="No mandate on this seller yet" description="Send the seller form from Mandates. Accepting the completed form keeps it here." />
+              <ReEmptyState compact title="No mandate on this seller yet" description="Send the seller form from Mandates. Opening the completed form keeps it here." />
             )}
           </ReSection>
 
@@ -251,13 +257,12 @@ export function SellerProfile({
               <ul className="divide-y divide-sales-border-subtle">
                 {offers.map((offer) => (
                   <li key={offer.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2.5">
-                    <span className="text-[14px] font-semibold">{offer.buyerName || "Buyer"} · {offer.currentAmountLabel}</span>
-                    <ReStatusBadge label={offer.statusLabel} />
+                    <Link href={`${offersPath}?offerId=${offer.id}`} className="re-focus text-[14px] font-semibold underline-offset-2 hover:underline">{offer.buyerName || "Buyer"} · {offer.currentAmountLabel}</Link>
+                    <ReStatusBadge label={offer.sellerLetter || offer.statusLabel} />
                   </li>
                 ))}
               </ul>
             )}
-            {offers.length ? <Link href={offersPath} className="re-focus mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold">Review offer</Link> : null}
           </ReSection>
         </div>
 

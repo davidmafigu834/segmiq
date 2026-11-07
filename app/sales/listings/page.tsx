@@ -41,7 +41,7 @@ export default async function SalesListingsPage() {
         {...shell}
         breadcrumb="Sales / Listings"
         title="Listings"
-        description="Houses from approved mandates. Finish the ones that still need details or photos."
+        description="Houses opened from a completed seller form. Finish the ones that still need details or photos."
         searchPlaceholder="Search listings..."
       >
         <ListingWorkList clientId={session.clientId} surface="sales" />

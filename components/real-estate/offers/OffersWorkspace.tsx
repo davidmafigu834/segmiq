@@ -82,6 +82,7 @@ export function OffersWorkspace({
   onSelectionChange,
   initialListingId = null,
   initialContactId = null,
+  initialOfferId = null,
 }: {
   clientId: string;
   variant: "manager" | "agent";
@@ -92,6 +93,7 @@ export function OffersWorkspace({
   onSelectionChange?: (id: string | null) => void;
   initialListingId?: string | null;
   initialContactId?: string | null;
+  initialOfferId?: string | null;
 }) {
   const overlayPanel = useMediaQuery("(max-width: 1279px)");
   const stackedSplit = useMediaQuery("(max-width: 767px)");
@@ -114,6 +116,8 @@ export function OffersWorkspace({
   const [multi, setMulti] = useState<Array<{ listingId: string; propertyLabel: string; count: number }>>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState<CreateOfferPrefill | null>(null);
+  const [letterFilter, setLetterFilter] = useState<"all" | "buyer" | "seller" | "approved" | "declined">("all");
+  const letterMode = variant === "agent";
 
   const select = useCallback(
     (id: string | null) => {
@@ -125,11 +129,11 @@ export function OffersWorkspace({
 
   const load = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ tab });
+    const params = new URLSearchParams({ tab: letterMode ? "all" : tab });
     if (q.trim()) params.set("q", q.trim());
-    if (agentId) params.set("agent_id", agentId);
-    if (min) params.set("min", min);
-    if (max) params.set("max", max);
+    if (!letterMode && agentId) params.set("agent_id", agentId);
+    if (!letterMode && min) params.set("min", min);
+    if (!letterMode && max) params.set("max", max);
     const res = await fetch(`/api/clients/${clientId}/offers?${params.toString()}`);
     const j = (await res.json()) as {
       offers?: OfferListRow[];
@@ -142,7 +146,7 @@ export function OffersWorkspace({
     setAgents(j.agents ?? []);
     setMulti(j.multiOfferListings ?? []);
     setLoading(false);
-  }, [clientId, tab, q, agentId, min, max]);
+  }, [clientId, tab, q, agentId, min, max, letterMode]);
 
   useEffect(() => {
     void load();
@@ -153,8 +157,9 @@ export function OffersWorkspace({
   }, [headerCreateNonce]);
 
   useEffect(() => {
-    if (initialListingId || initialContactId) setCreating({ listingId: initialListingId, contactId: initialContactId });
-  }, [initialListingId, initialContactId]);
+    if (initialOfferId) select(initialOfferId);
+    else if (initialListingId || initialContactId) setCreating({ listingId: initialListingId, contactId: initialContactId });
+  }, [initialListingId, initialContactId, initialOfferId, select]);
 
   const tabCounts: Record<StatusTab, number> = {
     active: summary.active,
@@ -164,7 +169,19 @@ export function OffersWorkspace({
     closed: summary.closed,
   };
 
-  const empty = emptyCopy(tab);
+  const empty = letterMode
+    ? { title: "No offer letters yet", description: "Generate the letter from the buyer after the viewing. It shows here once it exists." }
+    : emptyCopy(tab);
+  const shown = letterMode
+    ? offers.filter((row) => {
+        if (letterFilter === "all") return true;
+        if (letterFilter === "seller") return row.sellerLetter === "With the seller to approve";
+        if (letterFilter === "approved") return row.sellerLetter === "Seller approved";
+        if (letterFilter === "declined") return row.sellerLetter === "Seller declined";
+        return row.sellerLetter !== "With the seller to approve" && row.sellerLetter !== "Seller approved" && row.sellerLetter !== "Seller declined";
+      })
+    : offers;
+  const openRow = offers.find((row) => row.id === openId) ?? null;
 
   const table = (
     <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border-subtle bg-sales-surface shadow-none">
@@ -174,15 +191,27 @@ export function OffersWorkspace({
           role="tablist"
           aria-label="Offer status"
         >
-          {TABS.map((item) => {
-            const active = tab === item.id;
+          {(letterMode
+            ? [
+                ["all", "All"],
+                ["buyer", "With the buyer"],
+                ["seller", "With the seller"],
+                ["approved", "Seller approved"],
+                ["declined", "Seller declined"],
+              ] as const
+            : TABS.map((item) => [item.id, item.label] as const)
+          ).map(([id, label]) => {
+            const active = letterMode ? letterFilter === id : tab === id;
             return (
               <button
-                key={item.id}
+                key={id}
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={() => setTab(item.id)}
+                onClick={() => {
+                  if (letterMode) setLetterFilter(id as typeof letterFilter);
+                  else setTab(id as StatusTab);
+                }}
                 className={cn(
                   "relative flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-1 text-[13px] transition-colors duration-150",
                   active
@@ -190,8 +219,8 @@ export function OffersWorkspace({
                     : "font-medium text-sales-text-secondary hover:text-sales-text-primary"
                 )}
               >
-                {item.label}
-                <span className="tabular-nums text-sales-text-muted">{tabCounts[item.id]}</span>
+                {label}
+                {letterMode ? null : <span className="tabular-nums text-sales-text-muted">{tabCounts[id as StatusTab]}</span>}
                 {active ? (
                   <span className="absolute inset-x-0 -bottom-px h-[3px] bg-sales-brand" aria-hidden />
                 ) : null}
@@ -199,7 +228,7 @@ export function OffersWorkspace({
             );
           })}
         </div>
-        <p className="text-[12px] leading-snug text-sales-text-secondary">An accepted offer is not a completed sale. Open the linked transaction when the offer has one.</p>
+        {letterMode ? null : <p className="text-[12px] leading-snug text-sales-text-secondary">An accepted offer is not a completed sale. Open the linked transaction when the offer has one.</p>}
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <SearchInput
             value={q}
@@ -218,6 +247,8 @@ export function OffersWorkspace({
               ]}
             />
           ) : null}
+          {letterMode ? null : (
+            <>
           <input
             type="number"
             inputMode="decimal"
@@ -236,7 +267,9 @@ export function OffersWorkspace({
             onChange={(e) => setMax(e.target.value)}
             className="h-10 w-24 rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-border-strong focus:ring-2 focus:ring-sales-brand/40"
           />
-          {!hideCreateButton ? (
+            </>
+          )}
+          {!letterMode && !hideCreateButton ? (
             <Button
               type="button"
               variant="primary"
@@ -267,17 +300,17 @@ export function OffersWorkspace({
 
       {loading && offers.length === 0 ? (
         <p className="px-4 py-8 text-[13px] text-sales-text-muted sm:px-5">Loading…</p>
-      ) : offers.length === 0 ? (
+      ) : shown.length === 0 ? (
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
             icon={<Handshake className="h-4 w-4" strokeWidth={1.5} />}
             title={empty.title}
             description={empty.description}
-            action={
+            action={letterMode ? undefined : (
               <Button type="button" variant="primary" size="sm" onClick={() => setCreating({})}>
                 Generate offer letter
               </Button>
-            }
+            )}
             size="compact"
           />
         </div>
@@ -289,18 +322,19 @@ export function OffersWorkspace({
                 <tr>
                   <DataTableTh>Buyer / property</DataTableTh>
                   <DataTableTh>Offer</DataTableTh>
-                  <DataTableTh>Status</DataTableTh>
-                  <DataTableTh>Next</DataTableTh>
+                  <DataTableTh>{letterMode ? "Letter" : "Status"}</DataTableTh>
+                  {letterMode ? null : <DataTableTh>Next</DataTableTh>}
                   {variant === "manager" ? <DataTableTh>Agent</DataTableTh> : null}
                   <DataTableTh className="text-right">Updated</DataTableTh>
                 </tr>
               </DataTableHead>
               <DataTableBody>
-                {offers.map((row) => (
+                {shown.map((row) => (
                   <OfferTableRow
                     key={row.id}
                     row={row}
                     showAgent={variant === "manager"}
+                    letterMode={letterMode}
                     selected={row.id === openId}
                     onOpen={() => select(row.id)}
                   />
@@ -309,7 +343,7 @@ export function OffersWorkspace({
             </DataTableEl>
           </div>
           <div className="divide-y divide-sales-border-subtle md:hidden">
-            {offers.map((row) => (
+            {shown.map((row) => (
               <button
                 key={row.id}
                 type="button"
@@ -332,7 +366,7 @@ export function OffersWorkspace({
                     {row.currentAmountLabel}
                   </p>
                 </div>
-                <OfferStatusPill status={row.status} />
+                <span className="max-w-[140px] text-right text-[11px] text-sales-text-secondary">{letterMode ? row.sellerLetter : null}{letterMode ? null : <OfferStatusPill status={row.status} />}</span>
               </button>
             ))}
           </div>
@@ -350,12 +384,15 @@ export function OffersWorkspace({
       onChanged={() => void load()}
       overlay={overlayPanel}
       stacked={stackedSplit}
+      letterLabel={letterMode ? openRow?.sellerLetter ?? null : null}
+      buyerHref={letterMode && openRow?.buyerSearchId ? `/sales/buyers/${openRow.buyerSearchId}` : null}
+      propertyHref={letterMode && openRow ? `/sales/listings/${openRow.listingId}` : null}
     />
   ) : null;
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-4">
+      {letterMode ? null : <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-4">
         <CompanyKpiCard
           item={{
             id: "active",
@@ -392,7 +429,7 @@ export function OffersWorkspace({
             icon: "won",
           }}
         />
-      </div>
+      </div>}
 
       {openId && !overlayPanel ? (
         <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,30%)]">
@@ -424,11 +461,13 @@ export function OffersWorkspace({
 function OfferTableRow({
   row,
   showAgent,
+  letterMode = false,
   selected,
   onOpen,
 }: {
   row: OfferListRow;
   showAgent: boolean;
+  letterMode?: boolean;
   selected: boolean;
   onOpen: () => void;
 }) {
@@ -478,8 +517,9 @@ function OfferTableRow({
         </p>
       </DataTableTd>
       <DataTableTd>
-        <OfferStatusPill status={row.status} />
+        {letterMode ? <span className="text-[12px] text-sales-text-secondary">{row.sellerLetter}</span> : <OfferStatusPill status={row.status} />}
       </DataTableTd>
+      {letterMode ? null : (
       <DataTableTd>
         <p
           className={cn(
@@ -490,6 +530,7 @@ function OfferTableRow({
           {next}
         </p>
       </DataTableTd>
+      )}
       {showAgent ? (
         <DataTableTd className="text-[12px] text-sales-text-secondary">{row.agentName ?? "—"}</DataTableTd>
       ) : null}

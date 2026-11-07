@@ -68,6 +68,12 @@ export async function GET(req: Request, { params }: { params: { clientId: string
     followUp: url.searchParams.get("followUp"),
     contactId: url.searchParams.get("contactId"),
     page: Number(url.searchParams.get("page") ?? "1"),
+    pageSize: (() => {
+      const raw = url.searchParams.get("pageSize");
+      if (raw == null || raw === "") return 25;
+      const requested = Number(raw);
+      return Number.isFinite(requested) ? requested : 25;
+    })(),
   });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
   return NextResponse.json(result);

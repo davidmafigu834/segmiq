@@ -66,6 +66,9 @@ export function OfferDetailPanel({
   onChanged,
   overlay = true,
   stacked = false,
+  letterLabel = null,
+  buyerHref = null,
+  propertyHref = null,
 }: {
   clientId: string;
   offerId: string;
@@ -74,6 +77,9 @@ export function OfferDetailPanel({
   onChanged: () => void;
   overlay?: boolean;
   stacked?: boolean;
+  letterLabel?: string | null;
+  buyerHref?: string | null;
+  propertyHref?: string | null;
 }) {
   const [data, setData] = useState<DetailPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -280,11 +286,17 @@ export function OfferDetailPanel({
                   <OfferStatusPill status={status} />
                 </div>
                 <p className="mt-1 text-[13px] text-sales-text-secondary">
-                  Agent: {(offer.buyer_agent_name as string | null) ?? "Unassigned"}
+                  {letterLabel ?? `Agent: ${(offer.buyer_agent_name as string | null) ?? "Unassigned"}`}
                 </p>
+                {letterLabel ? (
+                  <div className="mt-3 flex flex-wrap gap-3 text-[13px] font-semibold">
+                    {buyerHref ? <Link href={buyerHref} className="underline-offset-2 hover:underline">Open buyer</Link> : null}
+                    {propertyHref ? <Link href={propertyHref} className="underline-offset-2 hover:underline">Open property</Link> : null}
+                  </div>
+                ) : null}
               </section>
 
-              {status === "accepted" ? (
+              {!letterLabel && status === "accepted" ? (
                 <section className="rounded-[12px] border border-sales-border bg-sales-neutral-50 p-3">
                   <p className="text-[11px] font-semibold text-sales-text-muted">
                     Next step
@@ -359,7 +371,7 @@ export function OfferDetailPanel({
                 </section>
               ) : null}
 
-              {data.siblingActive.length > 0 ? (
+              {!letterLabel && data.siblingActive.length > 0 ? (
                 <section className="rounded-[12px] border border-sales-warning/35 bg-sales-warning-soft p-3">
                   <p className="text-[13px] font-medium">
                     This property has {data.siblingActive.length} other active offer
