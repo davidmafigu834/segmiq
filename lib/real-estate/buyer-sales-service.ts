@@ -504,6 +504,13 @@ export async function getBuyerSearchBundle(clientId: string, searchId: string, a
     supabase.from("real_estate_rental_applications").select("*").eq("client_id", clientId).eq("search_id", searchId),
   ]);
   const { data: viewings } = await supabase.from("viewings").select("*").eq("client_id", clientId).eq("buyer_search_id", searchId).order("scheduled_at", { ascending: false }).limit(30);
+  const viewingRows = viewings ?? [];
+  const listingIds = [...new Set(viewingRows.map((row) => row.listing_id).filter((id): id is string => typeof id === "string" && id.length > 0))];
+  let propertyLabel = new Map<string, string>();
+  if (listingIds.length) {
+    const { data: listingRows } = await supabase.from("listings").select("id, address, suburb").eq("client_id", clientId).in("id", listingIds);
+    propertyLabel = new Map((listingRows ?? []).map((row) => [row.id as string, [row.address, row.suburb].filter(Boolean).join(", ") || "Property"]));
+  }
   const { data: offers } = await supabase.from("real_estate_offers").select("id, listing_id, status, current_offer_amount, currency, buyer_search_id").eq("client_id", clientId).eq("buyer_search_id", searchId);
   const showContact = canSeeBuyerContact({
     requesterId: actor.id,
@@ -524,7 +531,10 @@ export async function getBuyerSearchBundle(clientId: string, searchId: string, a
     roles: roles ?? [],
     interests: interests ?? [],
     events: events ?? [],
-    viewings: viewings ?? [],
+    viewings: viewingRows.map((row) => ({
+      ...row,
+      property_label: propertyLabel.get(row.listing_id as string) ?? null,
+    })),
     offers: offers ?? [],
     applications: applications ?? [],
   };

@@ -11,7 +11,11 @@ import { shouldRedirectFromRealEstateRoute } from "@/lib/real-estate/gating";
 
 export const dynamic = "force-dynamic";
 
-export default async function SalesOffersPage() {
+export default async function SalesOffersPage({
+  searchParams,
+}: {
+  searchParams?: { listingId?: string; contactId?: string };
+}) {
   const session = await getServerSession(authOptions);
   if (!session?.userId || !canActAsSalesperson(session) || !session.clientId) {
     redirect("/login");
@@ -48,6 +52,8 @@ export default async function SalesOffersPage() {
           variant="agent"
           inquiriesHref="/sales/pipeline"
           complianceHref={null}
+          initialListingId={typeof searchParams?.listingId === "string" ? searchParams.listingId : null}
+          initialContactId={typeof searchParams?.contactId === "string" ? searchParams.contactId : null}
         />
       </SalesAppShell>
     </SalesLayout>

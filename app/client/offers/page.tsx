@@ -11,7 +11,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientOffersPage() {
+export default async function ClientOffersPage({
+  searchParams,
+}: {
+  searchParams?: { listingId?: string; contactId?: string };
+}) {
   const session = await getServerSession(authOptions);
   if (!session?.userId || session.role !== "CLIENT_MANAGER" || !session.clientId) {
     redirect("/login");
@@ -36,7 +40,12 @@ export default async function ClientOffersPage() {
   return (
     <ClientManagerLayout breadcrumbPage="OFFERS" pageTitle="Offers" hideShellHeader hideShellSidebar>
       <Suspense fallback={<CompanyOffersPageSkeleton />}>
-        <CompanyOffersPage chrome={chrome} clientId={session.clientId} />
+        <CompanyOffersPage
+          chrome={chrome}
+          clientId={session.clientId}
+          initialListingId={typeof searchParams?.listingId === "string" ? searchParams.listingId : null}
+          initialContactId={typeof searchParams?.contactId === "string" ? searchParams.contactId : null}
+        />
       </Suspense>
     </ClientManagerLayout>
   );

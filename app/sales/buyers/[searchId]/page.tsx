@@ -19,8 +19,8 @@ export default async function Page({ params }: { params: { searchId: string } })
   if (shouldRedirectFromRealEstateRoute(client?.business_type)) redirect("/sales/dashboard");
   const shell = await loadSalesShellProps(session);
   return (
-    <SalesLayout breadcrumb="Sales / BUYERS" pageTitle="Buyer search" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Buyers" title="Buyer search" description="Requirements, matches, viewings and offers for this search." showDefaultHeader={false}>
+    <SalesLayout breadcrumb="Sales / BUYERS" pageTitle="Buyer" hideShellHeader hideShellSidebar contentFlush>
+      <SalesAppShell {...shell} breadcrumb="Sales / Buyers" title="Buyer" description="The buyer, the property they viewed, and the offer letter. Property recommendation stays on this profile." showDefaultHeader={false}>
         <BuyerSearchDetail clientId={session.clientId} searchId={params.searchId} offersHref="/sales/offers" />
       </SalesAppShell>
     </SalesLayout>

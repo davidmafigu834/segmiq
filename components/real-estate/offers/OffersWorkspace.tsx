@@ -80,6 +80,8 @@ export function OffersWorkspace({
   hideCreateButton = false,
   headerCreateNonce = 0,
   onSelectionChange,
+  initialListingId = null,
+  initialContactId = null,
 }: {
   clientId: string;
   variant: "manager" | "agent";
@@ -88,6 +90,8 @@ export function OffersWorkspace({
   hideCreateButton?: boolean;
   headerCreateNonce?: number;
   onSelectionChange?: (id: string | null) => void;
+  initialListingId?: string | null;
+  initialContactId?: string | null;
 }) {
   const overlayPanel = useMediaQuery("(max-width: 1279px)");
   const stackedSplit = useMediaQuery("(max-width: 767px)");
@@ -147,6 +151,10 @@ export function OffersWorkspace({
   useEffect(() => {
     if (headerCreateNonce > 0) setCreating({});
   }, [headerCreateNonce]);
+
+  useEffect(() => {
+    if (initialListingId || initialContactId) setCreating({ listingId: initialListingId, contactId: initialContactId });
+  }, [initialListingId, initialContactId]);
 
   const tabCounts: Record<StatusTab, number> = {
     active: summary.active,

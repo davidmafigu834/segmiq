@@ -11,9 +11,13 @@ import { OffersWorkspace } from "./OffersWorkspace";
 export function CompanyOffersPage({
   chrome,
   clientId,
+  initialListingId = null,
+  initialContactId = null,
 }: {
   chrome: CompanyPageChrome;
   clientId: string;
+  initialListingId?: string | null;
+  initialContactId?: string | null;
 }) {
   const stackedSplit = useMediaQuery("(max-width: 767px)");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -55,6 +59,8 @@ export function CompanyOffersPage({
         complianceHref="/client/compliance"
         hideCreateButton
         headerCreateNonce={createNonce}
+        initialListingId={initialListingId}
+        initialContactId={initialContactId}
         onSelectionChange={setSelectedId}
       />
     </CompanyRePageFrame>

@@ -12,7 +12,6 @@ import {
   PROPERTY_CATEGORY_LABEL,
   REJECTION_REASONS,
   REJECTION_LABEL,
-  SEARCH_STAGES,
   STAGE_LABEL,
   VIEWING_OUTCOMES,
   asPropertyCategories,
@@ -79,7 +78,6 @@ type Sibling = {
 };
 
 type Panel =
-  | { kind: "stage" }
   | { kind: "requirements" }
   | { kind: "recommend"; listingId: string }
   | { kind: "reject"; listingId: string }
@@ -203,9 +201,6 @@ export function BuyerSearchDetail({
   const [busy, setBusy] = useState(false);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [more, setMore] = useState(false);
-  const [note, setNote] = useState("");
-  const [when, setWhen] = useState("");
-  const [closureReason, setClosureReason] = useState("");
   const [rejectReason, setRejectReason] = useState<RejectionReason | "">("");
   const [rejectNote, setRejectNote] = useState("");
   const [outcome, setOutcome] = useState("");
@@ -313,17 +308,16 @@ export function BuyerSearchDetail({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId, searchId]);
 
-  if (loading && !bundle) return <div className={rootClass}><ReSkeletonRows rows={5} label="Loading this search" /></div>;
+  if (loading && !bundle) return <div className={rootClass}><ReSkeletonRows rows={5} label="Loading this buyer" /></div>;
   if (!bundle) {
     return (
       <div className={rootClass}>
-        <ReErrorState title="This search didn't open" description={error ?? "Try again."} onRetry={() => void load()} />
+        <ReErrorState title="This buyer didn't open" description={error ?? "Try again."} onRetry={() => void load()} />
       </div>
     );
   }
 
   const search = bundle.search;
-  const stage = ((search.pipeline_stage as SearchStage) || "actively_searching");
   const phone = bundle.contact?.phone;
   const rental = search.intent === "rental";
   const categories = asPropertyCategories(search.property_categories);
@@ -333,6 +327,15 @@ export function BuyerSearchDetail({
   const recommendedCount = bundle.interests.filter((row) => row.interest_state === "recommended" || row.interest_state === "sent").length;
   const completedViewings = bundle.viewings.filter((row) => row.status === "completed" || row.outcome).length;
   const openOffers = bundle.offers.filter((row) => !["rejected", "withdrawn", "expired"].includes(String(row.status)));
+  const linkedViewing = bundle.viewings.find((row) => row.listing_id) ?? null;
+  const linkedListingId = text(linkedViewing?.listing_id);
+  const linkedMatch = matches.find((row) => row.listingId === linkedListingId) ?? null;
+  const linkedLabel = text(linkedViewing?.property_label) || (linkedMatch ? place(linkedMatch.listing) : "");
+  const offerParams = new URLSearchParams();
+  if (linkedListingId) offerParams.set("listingId", linkedListingId);
+  if (bundle.contact?.id) offerParams.set("contactId", bundle.contact.id);
+  const offerQuery = offerParams.toString();
+  const offerHref = offerQuery ? `${offersHref}?${offerQuery}` : offersHref;
   const listingOptions = new Map<string, string>();
   for (const match of matches) listingOptions.set(match.listingId, `${place(match.listing)} · ${strengthLabel(match.strength)}`);
   for (const interest of bundle.interests) {
@@ -347,18 +350,17 @@ export function BuyerSearchDetail({
     <div className={rootClass}>
       <RePageHeader
         context={<Link href={buyersPath} className="re-focus rounded text-sales-text-secondary hover:text-sales-text-primary">Buyers & tenants</Link>}
-        title={`${bundle.contact?.name ?? "Customer"} — property search`}
-        description={`${rental ? "Renting" : "Buying"} · ${STAGE_LABEL[stage] ?? stage}${search.created_at && formatWhen(text(search.created_at)) ? ` · Opened ${formatWhen(text(search.created_at))}` : ""}`}
+        title={bundle.contact?.name ?? (rental ? "Tenant" : "Buyer")}
+        description={linkedLabel ? `${rental ? "Tenant" : "Buyer"} · ${linkedLabel}` : `${rental ? "Tenant" : "Buyer"} profile. A signed viewing form links them to a property.`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <a href="#matches" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11 sm:h-10")}>Find matching properties</a>
+            <Link href={offerHref} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11 sm:h-10")}>Generate offer letter</Link>
+            <a href="#recommendations" className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11 sm:h-10")}>Property recommendation</a>
             <ReActionMenu
-              label="More actions for this search"
-              sheetTitle="Search actions"
+              label="More actions for this buyer"
+              sheetTitle="Buyer actions"
               actions={[
-                { id: "edit", label: "Edit requirements", onSelect: () => setPanel({ kind: "requirements" }) },
-                { id: "follow", label: "Add follow-up", onSelect: () => document.getElementById("next-action")?.scrollIntoView({ behavior: "smooth", block: "start" }) },
-                { id: "stage", label: "Change stage", onSelect: () => setPanel({ kind: "stage" }) },
+                { id: "edit", label: "Edit what they are looking for", onSelect: () => setPanel({ kind: "requirements" }) },
                 { id: "viewing", label: "Schedule viewing", onSelect: () => setPanel({ kind: "viewing" }) },
               ]}
             />
@@ -376,7 +378,26 @@ export function BuyerSearchDetail({
 
       <div className="grid min-w-0 gap-4 layout:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.85fr)]">
         <div className="order-2 flex min-w-0 flex-col gap-4 layout:order-1">
-          <ReSection id="requirements" title="Looking for" action={<button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => setPanel({ kind: "requirements" })}>Edit requirements</button>}>
+          <ReSection
+            id="property"
+            className="order-1"
+            title="Property"
+            description="The house this buyer asked to view. The offer letter is written against this property and its seller."
+            action={linkedListingId ? <Link href={`${listingsPath}/${linkedListingId}`} className="re-focus min-h-11 text-[13px] font-semibold">Open property</Link> : undefined}
+          >
+            {linkedLabel ? (
+              <div>
+                <p className="text-[16px] font-semibold [overflow-wrap:anywhere]">{linkedLabel}</p>
+                <p className="mt-1 text-[13px] text-sales-text-secondary">
+                  {linkedViewing?.scheduled_at ? `Viewing ${new Date(String(linkedViewing.scheduled_at)).toLocaleString()}` : "Viewing time not recorded"}
+                  {linkedViewing?.outcome ? ` · ${OUTCOME_LABEL[String(linkedViewing.outcome)] ?? String(linkedViewing.outcome)}` : ""}
+                </p>
+              </div>
+            ) : (
+              <p className="text-[14px] text-sales-text-secondary">No property is linked yet. A signed viewing form puts the house and the appointment on this profile.</p>
+            )}
+          </ReSection>
+          <ReSection id="requirements" className="order-4" title="Looking for" description="These details feed property recommendation." action={<button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => setPanel({ kind: "requirements" })}>Edit</button>}>
             <dl className="grid gap-3 sm:grid-cols-2">
               <Fact label={rental ? "Renting" : "Buying"} value={categoryLabel || text(search.property_type) || "Property type open"} />
               <Fact label="Location" value={locations.join(", ") || "Location open"} />
@@ -404,7 +425,7 @@ export function BuyerSearchDetail({
           </ReSection>
 
           {siblings.length ? (
-            <ReSection id="other-searches" title="Other searches for this customer" count={siblings.length} description="These requirements stay separate from the search you are working on.">
+            <ReSection id="other-searches" className="order-5" title="Other records for this person" count={siblings.length} description="Each record keeps its own requirements.">
               <ul className="space-y-2">
                 {siblings.map((row) => (
                   <li key={row.id}>
@@ -423,7 +444,7 @@ export function BuyerSearchDetail({
             </ReSection>
           ) : null}
 
-          <ReSection id="matches" title="Matching properties" count={matches.length} description="Explanations come from the matcher. A match score is not a chance of closing.">
+          <ReSection id="recommendations" className="order-6" title="Property recommendation" count={matches.length} description="Properties that fit what this buyer is looking for. Recommending one records it on this profile.">
             {matchNotice ? <p className="mb-3 rounded-[8px] border border-sales-warning/30 bg-sales-warning-soft px-3 py-2 text-[12px] text-sales-warning-fg">{matchNotice}</p> : null}
             {matches.length === 0 ? (
               <ReEmptyState
@@ -486,7 +507,7 @@ export function BuyerSearchDetail({
             )}
           </ReSection>
 
-          <ReSection id="considered" title="Properties considered" count={bundle.interests.length}>
+          <ReSection id="considered" className="order-7" title="Properties considered" count={bundle.interests.length}>
             {bundle.interests.length === 0 ? <ReEmptyState compact title="Nothing recorded yet" description="Recommend a match or mark interest before this list fills in." /> : (
               <ul className="divide-y divide-sales-border-subtle">
                 {bundle.interests.map((interest) => (
@@ -513,16 +534,20 @@ export function BuyerSearchDetail({
 
           <ReSection
             id="viewings"
+            className="order-2"
             title="Viewings"
             count={bundle.viewings.length}
+            description="The date and time from the viewing form are booked here."
             action={<button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => setPanel({ kind: "viewing" })}>Schedule viewing</button>}
           >
-            {bundle.viewings.length === 0 ? <ReEmptyState compact title="No viewings scheduled" description="Book one from a property this customer is considering." /> : (
+            {bundle.viewings.length === 0 ? <ReEmptyState compact title="No viewing yet" description="A signed viewing form books the visit on this buyer and on the calendar." /> : (
               <ul className="space-y-2">
                 {bundle.viewings.map((viewing) => (
                   <li key={String(viewing.id)} className="rounded-[10px] border border-sales-border-subtle px-3 py-2.5">
-                    <p className="text-[14px] font-semibold">{viewing.scheduled_at ? new Date(String(viewing.scheduled_at)).toLocaleString() : "Time not recorded"}</p>
+                    <p className="text-[14px] font-semibold [overflow-wrap:anywhere]">{text(viewing.property_label) || "Property"}</p>
                     <p className="mt-0.5 text-[12px] text-sales-text-secondary">
+                      {viewing.scheduled_at ? new Date(String(viewing.scheduled_at)).toLocaleString() : "Time not recorded"}
+                      {" · "}
                       Status {String(viewing.status || "scheduled")}
                       {viewing.confirmation_status ? ` · Confirmation ${String(viewing.confirmation_status).replaceAll("_", " ")}` : ""}
                     </p>
@@ -540,14 +565,14 @@ export function BuyerSearchDetail({
             {savedOutcome ? (
               <p className="mt-3 text-[13px] text-sales-text-secondary">
                 Outcome saved as {OUTCOME_LABEL[savedOutcome] ?? savedOutcome}.
-                {savedOutcome === "wants_offer" ? " Create the offer from Offers when you are ready. Nothing was created automatically." : ""}
+                {savedOutcome === "wants_offer" ? " Generate the offer letter so the seller can review it." : ""}
                 {savedOutcome === "second_viewing" ? " Book the next visit when you have a time." : ""}
               </p>
             ) : null}
           </ReSection>
 
-          <ReSection id="offers" title={rental ? "Applications" : "Offers"} description={rental ? "An accepted application is not a completed tenancy." : "An accepted offer is not a completed sale."}>
-            {bundle.offers.length === 0 && !rental ? <ReEmptyState compact title="No offers yet" description="Offers are prepared from the offers workspace." /> : null}
+          <ReSection id="offers" className="order-3" title={rental ? "Applications" : "Offer letter"} description={rental ? "An accepted application is not a completed tenancy." : "After the viewing, generate the letter. The buyer fills it, then the seller reviews it."}>
+            {bundle.offers.length === 0 && !rental ? <ReEmptyState compact title="No offer letter yet" description="Generate it for this buyer and the property they viewed." action={<Link href={offerHref} className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold">Generate offer letter</Link>} /> : null}
             <ul className="space-y-2 text-[14px]">
               {bundle.offers.map((offer) => (
                 <li key={String(offer.id)} className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">
@@ -556,7 +581,7 @@ export function BuyerSearchDetail({
                 </li>
               ))}
             </ul>
-            <Link href={offersHref} className="re-focus mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold">Open offers</Link>
+            <Link href={offerHref} className="re-focus mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold">Generate offer letter</Link>
             {rental ? (
               <div className="mt-4 border-t border-sales-border-subtle pt-3">
                 <button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => setPanel({ kind: "application" })}>Submit rental application</button>
@@ -587,10 +612,12 @@ export function BuyerSearchDetail({
           </ReSection>
 
           {bundle.contact?.id ? (
-            <ContextCompliancePanel clientId={clientId} context="buyer" title="Buyer verification" contactId={bundle.contact.id} />
+            <div className="order-8">
+              <ContextCompliancePanel clientId={clientId} context="buyer" title="Buyer verification" contactId={bundle.contact.id} />
+            </div>
           ) : null}
 
-          <ReSection id="activity" title="Activity" count={bundle.events.length}>
+          <ReSection id="activity" className="order-9" title="Activity" count={bundle.events.length}>
             {bundle.events.length === 0 ? <ReEmptyState compact title="No activity yet" /> : (
               <ul className="space-y-2">
                 {bundle.events.map((event) => (
@@ -609,37 +636,13 @@ export function BuyerSearchDetail({
         <aside className="order-1 flex min-w-0 flex-col gap-4 layout:order-2">
           <ReSection id="customer" title="Customer">
             <p className="text-[16px] font-semibold [overflow-wrap:anywhere]">{bundle.contact?.name ?? "Customer"}</p>
-            <p className="mt-1 text-[13px] text-sales-text-secondary">{rental ? "Tenant search" : "Buyer search"}{bundle.roles.length ? ` · Also recorded as ${bundle.roles.map((role) => role.role).join(", ")}` : ""}</p>
+            <p className="mt-1 text-[13px] text-sales-text-secondary">{rental ? "Tenant" : "Buyer"}{bundle.roles.length ? ` · Also recorded as ${bundle.roles.map((role) => role.role).join(", ")}` : ""}</p>
             {phone ? (
               <div className="mt-3 hidden flex-wrap gap-2 layout:flex">
                 <a className="re-focus inline-flex min-h-11 items-center rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold" href={`tel:${phone}`}>Call</a>
                 <a className="re-focus inline-flex min-h-11 items-center rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold" href={`https://wa.me/${phone.replace(/\D/g, "")}`}>WhatsApp</a>
               </div>
             ) : <p className="mt-2 text-[12px] text-sales-text-muted">No phone is available on this record.</p>}
-          </ReSection>
-
-          <ReSection id="next-action" title="Next action">
-            <p className="text-[14px]">{text(search.next_action_note) || "No next action recorded."}</p>
-            {search.next_action_at ? <p className="mt-1 text-[12px] text-sales-text-muted">{formatWhen(text(search.next_action_at))}</p> : null}
-            <form
-              className="mt-3 grid gap-2"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void patchSearch({ nextActionNote: note, nextActionAt: asIsoTimestamp(when) });
-              }}
-            >
-              <label className={acqLabelClass} htmlFor="follow-note">What should happen next</label>
-              <input id="follow-note" className={acqFieldClass} value={note} onChange={(event) => setNote(event.target.value)} />
-              <label className={acqLabelClass} htmlFor="follow-when">When</label>
-              <input id="follow-when" className={acqFieldClass} type="datetime-local" value={when} onChange={(event) => setWhen(event.target.value)} />
-              <Button variant="secondary" size="md" type="submit" loading={busy}>{busy ? "Saving…" : "Add follow-up"}</Button>
-            </form>
-          </ReSection>
-
-          <ReSection id="stage" title="Search progress" action={<button type="button" className="re-focus min-h-11 text-[13px] font-semibold" onClick={() => setPanel({ kind: "stage" })}>Change stage</button>}>
-            <p className="text-[12px] text-sales-text-muted">Current stage</p>
-            <p className="mt-1 text-[16px] font-semibold">{STAGE_LABEL[stage] ?? stage}</p>
-            <p className="mt-2 text-[12px] text-sales-text-secondary">Changing stage does not book a viewing, create an offer, or close another search.</p>
           </ReSection>
 
           <ReSection id="summary" title="Activity summary">
@@ -652,50 +655,9 @@ export function BuyerSearchDetail({
         </aside>
       </div>
 
-      {panel?.kind === "stage" ? (
-        <ReSheet title="Change stage" description="This updates only this search." onClose={() => setPanel(null)} placement="bottom">
-          <ul className="space-y-1">
-            {SEARCH_STAGES.filter((item) => item !== "paused" && item !== "closed").map((item) => (
-              <li key={item}>
-                <button
-                  type="button"
-                  className={cn("re-focus flex min-h-12 w-full items-center justify-between rounded-[10px] px-3 text-left text-[14px] font-medium", item === stage ? "bg-sales-surface-hover" : "hover:bg-sales-surface-hover")}
-                  onClick={() => void patchSearch({ pipelineStage: item, closureReason: null })}
-                >
-                  {STAGE_LABEL[item]}
-                  {item === stage ? <span className="text-[12px] text-sales-text-muted">Current</span> : null}
-                </button>
-              </li>
-            ))}
-          </ul>
-          <form
-            className="mt-4 grid gap-2 border-t border-sales-border-subtle pt-3"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const picked = (event.currentTarget.elements.namedItem("closing") as HTMLSelectElement).value;
-              if ((picked === "paused" || picked === "closed") && !closureReason.trim()) {
-                setError("Add a reason before pausing or closing this search.");
-                return;
-              }
-              void patchSearch({ pipelineStage: picked, closureReason: closureReason.trim() || null });
-            }}
-          >
-            <label className={acqLabelClass} htmlFor="closing-stage">Pause or close</label>
-            <select id="closing-stage" name="closing" className={acqFieldClass} defaultValue="paused">
-              <option value="paused">Paused</option>
-              <option value="closed">Closed</option>
-            </select>
-            <label className={acqLabelClass} htmlFor="closure-reason">Reason</label>
-            <input id="closure-reason" className={acqFieldClass} value={closureReason} onChange={(event) => setClosureReason(event.target.value)} />
-            {error ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
-            <Button variant="secondary" size="md" type="submit" loading={busy}>{busy ? "Saving…" : "Save stage"}</Button>
-          </form>
-        </ReSheet>
-      ) : null}
-
       {panel?.kind === "requirements" ? (
         <ReSheet
-          title="Edit requirements"
+          title="What they are looking for"
           onClose={() => setPanel(null)}
           footer={<div className="flex flex-col gap-2"><div className="flex justify-end">{error ? <p className="mr-auto self-center text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}<Button form="edit-requirements" variant="primary" size="md" type="submit" loading={busy}>{busy ? "Saving…" : "Save requirements"}</Button></div></div>}
         >

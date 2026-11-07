@@ -17,15 +17,15 @@ export default async function Page({ params }: { params: { searchId: string } })
   if (!client) redirect("/login");
   redirectIfNotRealEstate(client.business_type);
   return (
-    <ClientManagerLayout breadcrumbPage="BUYERS" pageTitle="Buyer search" hideShellHeader hideShellSidebar>
+    <ClientManagerLayout breadcrumbPage="BUYERS" pageTitle="Buyer" hideShellHeader hideShellSidebar>
       <CompanyReShell
         userId={session.userId}
         clientId={session.clientId}
         userName={session.user?.name ?? "User"}
         role={session.role}
         breadcrumb="Company / Buyer"
-        title="Buyer search"
-        description="Requirements, matches, viewings and the next step for this buyer or tenant."
+        title="Buyer"
+        description="The buyer, the property they viewed, and the offer letter. Property recommendation stays on this profile."
       >
         <BuyerSearchDetail clientId={session.clientId} searchId={params.searchId} offersHref="/client/offers" canVerifyDeposit framed />
       </CompanyReShell>
