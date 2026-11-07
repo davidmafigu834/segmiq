@@ -474,6 +474,24 @@ function TransactionDetailPanel({
     await mutate({ action, ...extra });
   }
 
+  async function inviteLawyer() {
+    setBusy(true);
+    const response = await fetch(`/api/clients/${clientId}/transactions/${transactionId}/lawyer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const json = await response.json().catch(() => ({})) as { path?: string; error?: string };
+    setBusy(false);
+    if (!response.ok || !json.path) {
+      setToast(json.error ?? "The lawyer invitation was not created.");
+      return;
+    }
+    const url = `${window.location.origin}${json.path}`;
+    await navigator.clipboard?.writeText(url).catch(() => undefined);
+    setToast("Lawyer invitation copied.");
+  }
+
   async function toggleMilestone(m: TransactionMilestoneRow) {
     if (closed) return;
     const next: ReMilestoneStatus = m.status === "done" ? "pending" : "done";
@@ -590,7 +608,16 @@ function TransactionDetailPanel({
                       disabled={busy}
                       onClick={() => void runAction("complete")}
                     >
-                      Complete
+                      Mark sold
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => void inviteLawyer()}
+                    >
+                      Invite lawyer
                     </Button>
                   </>
                 ) : null}

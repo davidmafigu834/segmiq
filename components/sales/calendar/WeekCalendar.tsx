@@ -1,8 +1,9 @@
 "use client";
 
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import {
   buildWeekDays,
+  eventHour,
   eventsForDateKey,
   formatEventTime,
   isToday,
@@ -68,7 +69,7 @@ export function WeekCalendar({
         <div className="px-1 py-2 text-[10px] font-medium text-sales-text-muted">All day</div>
         {days.map((day) => {
           const key = toDateKey(day);
-          const dayEvents = eventsForDateKey(events, key).filter((e) => !e.hasTimedCallback);
+          const dayEvents = eventsForDateKey(events, key).filter((e) => !e.hasTimedCallback || (e.kind === "VIEWING" && !HOURS.includes(eventHour(e))));
           return (
             <div key={key} className="min-h-[44px] space-y-0.5 border-l border-sales-border p-1">
               {dayEvents.slice(0, 3).map((event) => (
@@ -77,6 +78,7 @@ export function WeekCalendar({
                   event={event}
                   selected={event.id === selectedEventId}
                   onClick={() => onSelectEvent(event)}
+                  showTime={event.kind === "VIEWING"}
                 />
               ))}
             </div>
@@ -106,8 +108,9 @@ export function WeekCalendar({
               const key = toDateKey(day);
               const hourEvents = eventsForDateKey(events, key).filter((e) => {
                 if (!e.hasTimedCallback) return false;
+                if (e.kind === "VIEWING" && !HOURS.includes(eventHour(e))) return false;
                 try {
-                  return parseISO(e.startAt).getHours() === hour;
+                  return eventHour(e) === hour;
                 } catch {
                   return false;
                 }
@@ -165,7 +168,7 @@ function WeekEventBlock({
         />
         <span className="truncate text-[10px] font-semibold text-sales-text-primary">
           {showTime
-            ? `${formatEventTime(event.startAt, true)} · ${getEventTypeLabel(event.kind)}`
+            ? `${formatEventTime(event.startAt, true, event.timeZone)} · ${getEventTypeLabel(event.kind)}`
             : getEventTypeLabel(event.kind)}
         </span>
       </span>

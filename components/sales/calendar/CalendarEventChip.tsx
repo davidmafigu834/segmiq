@@ -13,9 +13,11 @@ export function CalendarEventChip({
   selected?: boolean;
   onClick: () => void;
 }) {
-  const time = formatEventTime(event.startAt, event.hasTimedCallback);
+  const time = formatEventTime(event.startAt, event.hasTimedCallback, event.timeZone);
   const label = getEventTypeLabel(event.kind);
-  const customer = event.customerName;
+  const customer = event.kind === "VIEWING" ? event.location : event.customerName;
+  const pending = event.kind === "VIEWING" && (event.pipelineStage === "Pending confirmation" || event.pipelineStage === "Tentative");
+  const closed = event.kind === "VIEWING" && (event.status === "cancelled" || event.status === "completed" || event.status === "no_show");
 
   return (
     <button
@@ -30,6 +32,8 @@ export function CalendarEventChip({
           ? "border-sales-brand/40 bg-sales-brand-soft"
           : "border-sales-border-subtle hover:border-sales-border-strong",
         event.overdue ? "border-sales-danger/40" : "",
+        closed && event.status !== "completed" ? "opacity-50 line-through" : "",
+        event.status === "completed" && event.kind === "VIEWING" ? "opacity-65" : "",
       ].join(" ")}
       aria-label={`Open ${customer ?? label} ${label}`}
     >
@@ -47,6 +51,9 @@ export function CalendarEventChip({
         </span>
         {customer ? (
           <span className="line-clamp-1 block text-[10px] text-sales-text-secondary">{customer}</span>
+        ) : null}
+        {pending ? (
+          <span className="block text-[9px] font-medium text-sales-text-secondary">{event.pipelineStage}</span>
         ) : null}
         {event.overdue ? (
           <span className="block text-[9px] font-medium text-sales-danger">Overdue</span>

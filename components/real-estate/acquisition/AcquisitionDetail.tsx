@@ -3,7 +3,7 @@
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, Phone, UserRound } from "lucide-react";
 import { PRICE_TYPES, conversionDecision } from "@/lib/real-estate/acquisition-plan";
@@ -23,6 +23,7 @@ import {
 } from "@/components/real-estate/ui";
 import { MandateActions, uploadEvidence } from "./MandateActions";
 import { SellerIntakePanel } from "@/components/real-estate/seller-intake/SellerIntakePanel";
+import { PropertyFileLinks } from "@/components/real-estate/properties/PropertyFileLinks";
 import {
   acqFieldClass,
   acqLabelClass,
@@ -89,6 +90,8 @@ export function AcquisitionDetail({
   const [lostOpen, setLostOpen] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<{ src: string; caption: string } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [authorisedListingHref, setAuthorisedListingHref] = useState<string | null>(null);
+  const rememberListing = useCallback((href: string | null) => setAuthorisedListingHref(href), []);
 
   async function load() {
     const res = await fetch(`/api/clients/${clientId}/acquisitions/${opportunityId}`, { cache: "no-store" });
@@ -120,7 +123,8 @@ export function AcquisitionDetail({
       return json;
     }
     if (json.listingId) {
-      window.location.href = basePath.includes("/sales") ? `/sales/listings` : `/client/listings/${json.listingId}`;
+      const listingRoot = basePath.includes("/sales") ? "/sales/listings" : "/client/listings";
+      window.location.href = `${listingRoot}/${json.listingId}`;
       return json;
     }
     await load();
@@ -166,7 +170,7 @@ export function AcquisitionDetail({
   const ownerName = companyParty?.display_name || (opp.owner_name as string) || bundle.contact?.name || "Owner not recorded";
   const representativeName = companyParty ? (representativeParty?.display_name || bundle.contact?.name || null) : null;
   const listingId = (opp.converted_listing_id as string | null) ?? null;
-  const listingHref = listingId ? (basePath.includes("/sales") ? "/sales/listings" : `/client/listings/${listingId}`) : null;
+  const listingHref = authorisedListingHref;
   const listingDecision = conversionDecision({
     existingListingId: listingId,
     hasValidMandate: evidence.hasValidMandate,
@@ -237,6 +241,13 @@ export function AcquisitionDetail({
           </div>
         </div>
       </div>
+
+      <PropertyFileLinks
+        clientId={clientId}
+        surface={basePath.includes("/sales") ? "sales" : "client"}
+        opportunityId={opportunityId}
+        onListingHref={rememberListing}
+      />
 
       {error ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
 

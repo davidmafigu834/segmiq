@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   addMonths,
   addWeeks,
@@ -14,6 +14,7 @@ import { AlarmClock, CalendarDays, ChevronLeft, ChevronRight, Plus, SlidersHoriz
 import type { CalendarDealOption, CalendarEvent, CalendarEventKind, CalendarViewMode } from "@/lib/sales/calendar/types";
 import { SUPPORTED_EVENT_KINDS } from "@/lib/sales/calendar/types";
 import {
+  eventDateKey,
   eventsForDateKey,
   filterEventsByKinds,
   formatCalendarMonth,
@@ -35,6 +36,13 @@ import { QuickLogSheet } from "@/components/sales/QuickLogSheet";
 import { SegmentedControl } from "@/components/sales/ui";
 import { useRouter } from "next/navigation";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import {
+  calendarViewingBounds,
+  replaceViewingEvents,
+  salesCalendarViewingWindow,
+  shouldApplyViewingLoad,
+  viewingWindowCovers,
+} from "@/lib/real-estate/viewing-calendar";
 
 const DEFAULT_ENABLED = new Set<CalendarEventKind>(SUPPORTED_EVENT_KINDS);
 
@@ -44,20 +52,37 @@ export function SalesCalendarPage({
   scheduleableDeals = [],
   presetDealId = null,
   presetLeadId = null,
+  includeViewings = false,
+  viewingsPartial: viewingsPartialInitial = false,
+  clientId = null,
+  timezone = "UTC",
+  viewingWindow = null,
 }: {
   initialEvents: CalendarEvent[];
   scheduleableLeads: PriorityLead[];
   scheduleableDeals?: CalendarDealOption[];
   presetDealId?: string | null;
   presetLeadId?: string | null;
+  includeViewings?: boolean;
+  viewingsPartial?: boolean;
+  clientId?: string | null;
+  timezone?: string;
+  viewingWindow?: { startKey: string; endKeyExclusive: string } | null;
 }) {
   const router = useRouter();
   const [events, setEvents] = useState(initialEvents);
+  const [viewingsPartial, setViewingsPartial] = useState(viewingsPartialInitial);
+  const [loadedWindow, setLoadedWindow] = useState(viewingWindow);
+  const viewingRequest = useRef(0);
   const [viewMonth, setViewMonth] = useState(() => startOfMonth(new Date()));
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()));
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<CalendarViewMode>("month");
-  const [enabledKinds, setEnabledKinds] = useState(() => new Set(DEFAULT_ENABLED));
+  const [enabledKinds, setEnabledKinds] = useState(() => {
+    const next = new Set(DEFAULT_ENABLED);
+    if (includeViewings) next.add("VIEWING");
+    return next;
+  });
   const [addOpen, setAddOpen] = useState(() => Boolean(presetDealId || presetLeadId));
   const [editOpen, setEditOpen] = useState(false);
   const [logLeadId, setLogLeadId] = useState<string | null>(null);
@@ -91,6 +116,53 @@ export function SalesCalendarPage({
     [filtered]
   );
 
+  function neededViewingWindow() {
+    return salesCalendarViewingWindow(viewMonth);
+  }
+
+  async function loadViewingWindow(window: { startKey: string; endKeyExclusive: string }) {
+    if (!includeViewings || !clientId) return;
+    const bounds = calendarViewingBounds(window.startKey, window.endKeyExclusive, timezone);
+    if (!bounds) return;
+    const requestId = ++viewingRequest.current;
+    try {
+      const params = new URLSearchParams({
+        from: bounds.fromIso,
+        to: bounds.toIsoExclusive,
+        surface: "sales",
+        timezone,
+      });
+      const response = await fetch(`/api/clients/${clientId}/calendar/viewings?${params}`);
+      const json = (await response.json().catch(() => ({}))) as {
+        failed?: boolean;
+        incomplete?: boolean;
+        events?: CalendarEvent[];
+      };
+      if (!shouldApplyViewingLoad(requestId, viewingRequest.current)) return;
+      if (!response.ok || json.failed) {
+        setViewingsPartial(true);
+        return;
+      }
+      setEvents((current) =>
+        replaceViewingEvents(current, { ok: true, events: json.events ?? [], incomplete: json.incomplete }).events
+      );
+      setViewingsPartial(Boolean(json.incomplete));
+      setLoadedWindow(window);
+    } catch {
+      if (!shouldApplyViewingLoad(requestId, viewingRequest.current)) return;
+      setViewingsPartial(true);
+    }
+  }
+
+  useEffect(() => {
+    if (!includeViewings || !clientId) return;
+    const needed = neededViewingWindow();
+    if (loadedWindow && viewingWindowCovers(loadedWindow, needed)) return;
+    void loadViewingWindow(needed);
+    // The window is derived from the visible month. Lead and deal events stay in place.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includeViewings, clientId, timezone, viewMonth, loadedWindow]);
+
   function goToday() {
     const today = new Date();
     setViewMonth(startOfMonth(today));
@@ -111,11 +183,11 @@ export function SalesCalendarPage({
 
   function selectEvent(event: CalendarEvent) {
     setSelectedEventId(event.id);
-    setSelectedDateKey(toDateKey(parseISO(event.startAt)));
+    setSelectedDateKey(eventDateKey(event));
   }
 
   function toggleKind(kind: CalendarEventKind) {
-    if (!SUPPORTED_EVENT_KINDS.includes(kind)) return;
+    if (!SUPPORTED_EVENT_KINDS.includes(kind) && !(includeViewings && kind === "VIEWING")) return;
     setEnabledKinds((prev) => {
       const next = new Set(prev);
       if (next.has(kind)) next.delete(kind);
@@ -188,13 +260,27 @@ export function SalesCalendarPage({
         onSelectDate={selectDate}
         onToday={goToday}
       />
-      <EventTypeFilters enabled={enabledKinds} onToggle={toggleKind} />
+      <EventTypeFilters enabled={enabledKinds} onToggle={toggleKind} extraKinds={includeViewings ? ["VIEWING"] : []} />
       <AvailabilityCard />
     </>
   );
 
   return (
     <div className="calendar-premium space-y-3">
+      {viewingsPartial ? (
+        <div className="flex min-h-[48px] items-center justify-between gap-3 rounded-[12px] border border-sales-warning/30 bg-sales-warning-soft px-3.5 py-2.5 text-sales-warning-fg">
+          <p className="text-[13px] text-sales-warning-fg">
+            Viewings could not all be loaded. Follow-ups and other events are still shown.
+          </p>
+          <button
+            type="button"
+            className="shrink-0 text-[13px] font-semibold underline-offset-2 hover:underline"
+            onClick={() => void loadViewingWindow(neededViewingWindow())}
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
       {overdueCount > 0 ? (
         <div className="flex min-h-[48px] items-center gap-3 rounded-[12px] border border-sales-danger/25 bg-sales-danger-soft px-3.5 py-2.5">
           <AlarmClock size={16} strokeWidth={1.8} className="shrink-0 text-sales-danger" aria-hidden />

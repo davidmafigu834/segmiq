@@ -137,7 +137,7 @@ function AgendaRow({
           aria-label={`Open ${event.customerName ?? getEventTypeLabel(event.kind)}`}
         >
           <span className="w-12 shrink-0 pt-0.5 text-[12px] font-semibold tabular-nums text-sales-text-secondary">
-            {formatEventTime(event.startAt, event.hasTimedCallback)}
+            {formatEventTime(event.startAt, event.hasTimedCallback, event.timeZone)}
           </span>
           <span
             className="mt-1.5 h-2 w-2 shrink-0 rounded-full"

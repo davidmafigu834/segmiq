@@ -48,6 +48,62 @@ export function SelectedEventCard({
     );
   }
 
+  if (event.kind === "VIEWING") {
+    return (
+      <div className="cal-card border-sales-border bg-sales-surface p-3 text-sales-text-primary">
+        <div className="mb-2.5 flex min-w-0 items-center gap-2">
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: getEventTypeColor(event.kind) }} aria-hidden />
+          <h2 className="truncate text-[14px] font-semibold text-sales-text-primary">Viewing</h2>
+        </div>
+        <dl className="space-y-2">
+          <div>
+            <dt className="text-[11px] font-medium text-sales-text-muted">Status</dt>
+            <dd className="text-[13px] text-sales-text-primary">{event.pipelineStage ?? "Scheduled"}</dd>
+          </div>
+          <div>
+            <dt className="text-[11px] font-medium text-sales-text-muted">Property</dt>
+            <dd className="text-[13px] text-sales-text-primary">{event.location ?? "Property"}</dd>
+          </div>
+          {event.customerName ? (
+            <div>
+              <dt className="text-[11px] font-medium text-sales-text-muted">Buyer</dt>
+              <dd className="text-[13px] text-sales-text-primary">{event.customerName}</dd>
+            </div>
+          ) : null}
+          {event.phone ? (
+            <div>
+              <dt className="text-[11px] font-medium text-sales-text-muted">Phone</dt>
+              <dd>
+                <a href={`tel:${event.phone}`} className="font-mono text-[13px] text-sales-text-primary underline-offset-2 hover:underline">{event.phone}</a>
+              </dd>
+            </div>
+          ) : null}
+          <div>
+            <dt className="text-[11px] font-medium text-sales-text-muted">Time</dt>
+            <dd className="text-[13px] text-sales-text-primary">{formatEventRange(event)}</dd>
+          </div>
+        </dl>
+        <div className="mt-3 flex flex-col gap-2">
+          {event.viewingHref ? (
+            <Link href={event.viewingHref} className="inline-flex min-h-10 items-center text-[13px] font-semibold text-sales-text-primary underline-offset-2 hover:underline">
+              Open viewing
+            </Link>
+          ) : null}
+          {event.propertyHref ? (
+            <Link href={event.propertyHref} className="inline-flex min-h-10 items-center text-[13px] font-semibold text-sales-text-primary underline-offset-2 hover:underline">
+              Open property file
+            </Link>
+          ) : null}
+          {event.buyerHref ? (
+            <Link href={event.buyerHref} className="inline-flex min-h-10 items-center text-[13px] font-semibold text-sales-text-primary underline-offset-2 hover:underline">
+              Open buyer
+            </Link>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
   const leadHref = event.dealId
     ? `/sales/deals/${event.dealId}`
     : isWhatsAppInboundLead(event.source)

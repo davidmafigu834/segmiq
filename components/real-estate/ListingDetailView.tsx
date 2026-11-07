@@ -10,6 +10,8 @@ import { ListingOffersSection, OfferDetailPanel } from "@/components/real-estate
 import { ListingMarketingSection } from "@/components/real-estate/marketing/ListingMarketingSection";
 import { MarketThisProperty } from "@/components/real-estate/listing-pages/MarketThisProperty";
 import { ContextCompliancePanel } from "@/components/real-estate/compliance/ContextCompliancePanel";
+import { PropertyFileLinks } from "@/components/real-estate/properties/PropertyFileLinks";
+import { JourneySharePanel } from "@/components/real-estate/workflow/JourneySharePanel";
 
 type MatchContact = {
   id: string;
@@ -26,10 +28,12 @@ export function ListingDetailView({
   clientId,
   listingId,
   analyticsBase = "/client/listing-pages",
+  surface = "client",
 }: {
   clientId: string;
   listingId: string;
   analyticsBase?: string;
+  surface?: "sales" | "client";
 }) {
   const [listing, setListing] = useState<ListingRow | null>(null);
   const [matches, setMatches] = useState<MatchContact[]>([]);
@@ -83,6 +87,9 @@ export function ListingDetailView({
           {toast}
         </p>
       ) : null}
+
+      <PropertyFileLinks clientId={clientId} surface={surface} listingId={listingId} />
+      <JourneySharePanel clientId={clientId} listingId={listingId} />
 
       <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-5">
         <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-sales-text-primary">{listingLabel(listing)}</h2>
@@ -139,6 +146,7 @@ export function ListingDetailView({
 
       <ListingMarketingSection clientId={clientId} listingId={listingId} />
 
+      <div id="property-offers">
       <ListingOffersSection
         key={offersKey}
         clientId={clientId}
@@ -147,6 +155,7 @@ export function ListingDetailView({
         onCreate={() => setCreatePrefill({ listingId })}
         onOpen={setOpenOfferId}
       />
+      </div>
 
       <div className="space-y-3">
         <h3 className="text-[16px] font-semibold text-sales-text-primary">Matches</h3>

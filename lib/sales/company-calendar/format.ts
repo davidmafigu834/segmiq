@@ -8,11 +8,12 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import type {
-  CompanyCalendarEvent,
-  CompanyCalendarEventKind,
-  CompanyCalendarFilters,
-  CompanyCalendarView,
+import {
+  COMPANY_CALENDAR_EVENT_KINDS,
+  type CompanyCalendarEvent,
+  type CompanyCalendarEventKind,
+  type CompanyCalendarFilters,
+  type CompanyCalendarView,
 } from "./types";
 
 export const COMPANY_CALENDAR_KIND_META: Record<
@@ -67,7 +68,18 @@ export const COMPANY_CALENDAR_KIND_META: Record<
     className: "border-slate-300/70 bg-slate-50 text-slate-950 dark:border-slate-600/60 dark:bg-slate-900/40 dark:text-slate-100",
     dotClassName: "bg-slate-500",
   },
+  viewing: {
+    label: "Viewing",
+    shortLabel: "Viewing",
+    className: "border-sky-300/70 bg-sky-50 text-sky-950 dark:border-sky-700/60 dark:bg-sky-950/35 dark:text-sky-100",
+    dotClassName: "bg-sky-600",
+  },
 };
+
+/** Viewing stays off the shared kind list so trade and solar filters are unchanged. */
+export function companyCalendarKindOptions(includeViewings: boolean): CompanyCalendarEventKind[] {
+  return includeViewings ? [...COMPANY_CALENDAR_EVENT_KINDS, "viewing"] : [...COMPANY_CALENDAR_EVENT_KINDS];
+}
 
 function dateParts(value: Date | string, timezone: string) {
   const date = typeof value === "string" ? new Date(value) : value;

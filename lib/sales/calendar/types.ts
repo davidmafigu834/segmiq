@@ -6,7 +6,8 @@ export type CalendarEventKind =
   | "QUOTE_REVIEW"
   | "SITE_VISIT"
   | "INSTALLATION_MEETING"
-  | "PERSONAL";
+  | "PERSONAL"
+  | "VIEWING";
 
 /** Event kinds backed by real SegmiQ data today. */
 export const SUPPORTED_EVENT_KINDS: CalendarEventKind[] = [
@@ -37,6 +38,12 @@ export type CalendarEvent = {
   leadScore: number | null;
   overdue: boolean;
   hasTimedCallback: boolean;
+  /** Set for viewings so the day is the configured calendar timezone, not the browser zone. */
+  calendarDateKey?: string | null;
+  timeZone?: string | null;
+  viewingHref?: string | null;
+  propertyHref?: string | null;
+  buyerHref?: string | null;
 };
 
 export type CalendarViewMode = "month" | "week" | "agenda";

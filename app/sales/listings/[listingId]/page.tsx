@@ -20,7 +20,7 @@ export default async function SalesListingDetailPage({ params }: { params: { lis
   return (
     <SalesLayout breadcrumb="Sales / LISTING" pageTitle="Listing" hideShellHeader hideShellSidebar contentFlush>
       <SalesAppShell {...shell} breadcrumb="Sales / Listings" title="Listing" description="Property details and your marketing link.">
-        <ListingDetailView clientId={session.clientId} listingId={params.listingId} analyticsBase="/sales/shared-listings" />
+        <ListingDetailView clientId={session.clientId} listingId={params.listingId} analyticsBase="/sales/shared-listings" surface="sales" />
       </SalesAppShell>
     </SalesLayout>
   );

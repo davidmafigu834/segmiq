@@ -10,7 +10,8 @@ export type CompanyCalendarEventKind =
   | "deal_action"
   | "site_visit"
   | "field_visit"
-  | "project_start";
+  | "project_start"
+  | "viewing";
 
 export type CompanyCalendarEventSource = "lead_follow_up" | "deal_next_action" | "viewing" | "work_visit" | "work_project";
 export type CompanyCalendarRelationType = "lead" | "deal" | "customer";
@@ -49,6 +50,7 @@ export type CompanyCalendarEvent = {
   attentionReason: string | null;
   canEdit: boolean;
   canComplete: boolean;
+  actions?: { label: string; href: string }[];
 };
 
 export type CompanyCalendarOwnerOption = {
@@ -99,6 +101,10 @@ export type CompanyCalendarPageData = {
   scheduleableLeads: PriorityLead[];
   leadOwners: Record<string, CompanyCalendarLeadOwner>;
   summary: CompanyCalendarExecutionSummary;
+  /** Real Estate calendars include booked viewings. Other industries leave this unset. */
+  includeViewings?: boolean;
+  /** The viewing read failed or stopped early. Other events are still present. */
+  viewingsPartial?: boolean;
 };
 
 export type CompanyCalendarFilters = {

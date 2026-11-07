@@ -16,16 +16,19 @@ const ALL_FILTER_KINDS: CalendarEventKind[] = [
 export function EventTypeFilters({
   enabled,
   onToggle,
+  extraKinds = [],
 }: {
   enabled: Set<CalendarEventKind>;
   onToggle: (kind: CalendarEventKind) => void;
+  extraKinds?: CalendarEventKind[];
 }) {
+  const kinds = [...ALL_FILTER_KINDS, ...extraKinds.filter((kind) => !ALL_FILTER_KINDS.includes(kind))];
   return (
     <div className="cal-card border-sales-border bg-sales-surface p-2.5 text-sales-text-primary">
       <p className="mb-1.5 text-[14px] font-semibold text-sales-text-primary">Event types</p>
       <ul>
-        {ALL_FILTER_KINDS.map((kind) => {
-          const supported = SUPPORTED_EVENT_KINDS.includes(kind);
+        {kinds.map((kind) => {
+          const supported = SUPPORTED_EVENT_KINDS.includes(kind) || extraKinds.includes(kind);
           const checked = enabled.has(kind);
           return (
             <li key={kind}>

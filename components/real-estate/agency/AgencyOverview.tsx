@@ -47,11 +47,7 @@ import {
   type ReFetchState,
 } from "@/components/real-estate/ui";
 import { AgencyAttentionPanel, useAgencyAttention, type AgencyAttentionPayload } from "./AgencyAttention";
-
-type AcquisitionOverview = {
-  incomplete: boolean;
-  summary: { active: number; inProgress: number; overdue: number; lost: number; converted: number };
-};
+import { SaleJourney } from "@/components/real-estate/workflow/SaleJourney";
 
 type OperationsReport = {
   incomplete: boolean;
@@ -131,7 +127,6 @@ export function AgencyOverview({
   const live = !fictional;
   const base = `/api/clients/${data.clientId}`;
   const attention = useAgencyAttention(data.clientId, live);
-  const acquisitions = useReFetch<AcquisitionOverview>(live ? `${base}/acquisitions/overview` : null);
   const operations = useReFetch<OperationsReport>(live ? `${base}/buyer-reports?report=operations` : null);
   const demand = useReFetch<DemandReport>(live ? `${base}/buyer-reports?report=demand` : null);
   const transactions = useReFetch<TransactionsPayload>(live ? `${base}/transactions?tab=active` : null);
@@ -144,7 +139,6 @@ export function AgencyOverview({
   const listings = kpiValue(data, "active-listings");
   const viewings = kpiValue(data, "upcoming-viewings");
   const activeTxn = kpiValue(data, "active-transactions");
-  const inquiries = kpiValue(data, "active-inquiries");
   const offers = kpiValue(data, "active-offers");
   const response = kpiValue(data, "response");
 
@@ -187,23 +181,23 @@ export function AgencyOverview({
         },
         secondary: [
           {
-            id: "opportunity",
-            label: "New property opportunity",
-            description: "Record a property the agency could list",
+            id: "mandate",
+            label: "Send seller form",
+            description: "A completed mandate opens the seller and a draft listing",
             icon: <Building2 size={16} strokeWidth={1.8} />,
-            onSelect: () => router.push("/client/acquisitions?new=1"),
+            onSelect: () => router.push("/client/listings#seller-intake"),
           },
           {
             id: "buyer",
-            label: "Add buyer or tenant",
-            description: "Start a buyer or rental search",
+            label: "Buyers and tenants",
+            description: "Profiles opened when a viewing form is signed",
             icon: <UserPlus size={16} strokeWidth={1.8} />,
-            onSelect: () => router.push("/client/buyers?new=1"),
+            onSelect: () => router.push("/client/buyers"),
           },
           {
             id: "viewing",
-            label: "Schedule viewing",
-            description: "Opens the agency viewings page",
+            label: "Viewings",
+            description: "Appointments booked from a signed viewing form",
             icon: <CalendarPlus size={16} strokeWidth={1.8} />,
             onSelect: () => router.push("/client/viewings"),
           },
@@ -227,8 +221,8 @@ export function AgencyOverview({
         avatarUrl={avatarUrl}
         canAddLead={live}
         fictional={fictional}
-        breadcrumb="Agency / Overview"
-        title="Agency overview"
+        breadcrumb="Agency / Today"
+        title="Today"
         description={`${data.clientName} · ${todayLabel()}`}
         primaryAction={null}
         titleActions={
@@ -237,6 +231,8 @@ export function AgencyOverview({
           ) : null
         }
       />
+
+      <SaleJourney surface="client" />
 
       {data.reAgentOvernight ? <ReAgentOvernightBanner summary={data.reAgentOvernight} /> : null}
 
@@ -375,30 +371,31 @@ export function AgencyOverview({
         <div className="layout:order-6 layout:col-span-12">
           <h2 className="mb-3 text-[15px] font-semibold tracking-[-0.01em] text-sales-text-primary">Business operations</h2>
           <div className="grid grid-cols-1 items-start gap-[var(--re-section-gap,16px)] md:grid-cols-2 xl:grid-cols-3">
-            <ReSection id="re-ops-acquisition" title="Property acquisition" action={<ReViewAll href="/client/acquisitions" />}>
+            <ReSection id="re-ops-acquisition" title="Property acquisition" action={<ReViewAll href="/client/mandates" />}>
               {!live ? (
                 <DemoNote />
-              ) : acquisitions.status === "loading" ? (
+              ) : attention.status === "loading" ? (
                 <div className="-mx-[var(--re-card-pad,16px)]">
                   <ReSkeletonRows rows={2} label="Loading acquisition" />
                 </div>
-              ) : acquisitions.status === "error" ? (
+              ) : attention.status === "error" ? (
                 <div className="-mx-[var(--re-card-pad,16px)]">
-                  <ReErrorState onRetry={acquisitions.reload} />
+                  <ReErrorState onRetry={attention.reload} />
                 </div>
               ) : (
                 <>
                   <ReFigureList
                     items={[
-                      { label: "Active opportunities", value: acquisitions.data.summary.active, href: "/client/acquisitions" },
-                      { label: "Overdue follow-ups", value: acquisitions.data.summary.overdue, tone: "attention" },
                       { label: "Mandates to approve", value: countPrefix(attention, "mandate"), href: "/client/mandates", tone: "attention" },
                       { label: "Listings to approve", value: countPrefix(attention, "listing"), href: "/client/listings", tone: "attention" },
                     ]}
                   />
-                  {acquisitions.data.incomplete ? (
-                    <p className="mt-3 text-[12px] text-sales-warning-fg">Some opportunities could not be counted.</p>
-                  ) : null}
+                  <Link
+                    href="/client/inspections"
+                    className="re-focus mt-3 inline-flex min-h-11 items-center rounded-[4px] text-[13px] font-semibold text-sales-text-primary underline-offset-2 hover:underline sm:min-h-0"
+                  >
+                    Inspections
+                  </Link>
                 </>
               )}
             </ReSection>
@@ -406,33 +403,20 @@ export function AgencyOverview({
             <ReSection id="re-ops-buyers" title="Buyer & tenant sales" action={<ReViewAll href="/client/buyers" />}>
               {!live ? (
                 <DemoNote />
-              ) : operations.status === "loading" ? (
-                <div className="-mx-[var(--re-card-pad,16px)]">
-                  <ReSkeletonRows rows={2} label="Loading buyer sales" />
-                </div>
-              ) : operations.status === "error" ? (
-                <div className="-mx-[var(--re-card-pad,16px)]">
-                  <ReErrorState onRetry={operations.reload} />
-                </div>
               ) : (
                 <>
                   <ReFigureList
                     items={[
-                      { label: "Active searches", value: operations.data.activeSearches, href: "/client/buyers" },
-                      { label: "Without a next step", value: operations.data.searchesWithoutNextAction, tone: "attention" },
+                      { label: "Upcoming viewings", value: viewings?.value ?? null, href: "/client/viewings" },
                       { label: "Offers in negotiation", value: offers?.value ?? null, href: "/client/offers" },
-                      { label: "Open inquiries", value: inquiries?.value ?? null, href: "/client/leads" },
                     ]}
                   />
                   <Link
-                    href="/client/matching"
+                    href="/client/viewings"
                     className="re-focus mt-3 inline-flex min-h-11 items-center rounded-[4px] text-[13px] font-semibold text-sales-text-primary underline-offset-2 hover:underline sm:min-h-0"
                   >
-                    Open property matching
+                    Viewing forms
                   </Link>
-                  {operations.data.incomplete ? (
-                    <p className="mt-2 text-[12px] text-sales-warning-fg">Some searches could not be counted.</p>
-                  ) : null}
                 </>
               )}
             </ReSection>

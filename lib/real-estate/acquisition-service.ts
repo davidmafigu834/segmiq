@@ -22,6 +22,7 @@ import {
   type PriceType,
 } from "@/lib/real-estate/acquisition-plan";
 import { listingPartyPlan, portfolioGroups, type AcquisitionParty } from "@/lib/real-estate/seller-intake/parties";
+import { draftListingResolution } from "@/lib/real-estate/workflow/journey";
 
 export type AcquisitionActor = {
   id: string;
@@ -776,6 +777,37 @@ export async function saveMandate(input: {
   return { ok: true as const, mandate: saved.data };
 }
 
+async function ensureDraftListingForMandate(
+  clientId: string,
+  actor: AcquisitionActor,
+  mandate: Record<string, unknown>
+) {
+  const opportunityId = (mandate.opportunity_id as string | null) ?? null;
+  if (!opportunityId) return null;
+  try {
+    const prepared = await prepareListingFromAcquisition({ clientId, opportunityId, actor });
+    if (prepared.ok) return { ok: true as const, listingId: prepared.listingId, reused: Boolean(prepared.alreadyConverted) };
+    const opportunity = await loadOpportunity(clientId, opportunityId);
+    const existingId = (opportunity?.converted_listing_id as string | null) ?? null;
+    const supabase = createAdminClient();
+    const listing = existingId
+      ? await supabase.from("listings").select("id, acquisition_opportunity_id").eq("id", existingId).eq("client_id", clientId).maybeSingle()
+      : { data: null };
+    return draftListingResolution({
+      opportunityId,
+      opportunityListingId: existingId,
+      listingOpportunityId: (listing.data?.acquisition_opportunity_id as string | null) ?? null,
+      prepared: { ok: false, error: prepared.error },
+    });
+  } catch (error) {
+    return {
+      ok: false as const,
+      recoverable: true as const,
+      error: error instanceof Error ? error.message : "The draft listing could not be created.",
+    };
+  }
+}
+
 export async function reviewMandate(input: {
   clientId: string;
   mandateId: string;
@@ -798,7 +830,10 @@ export async function reviewMandate(input: {
   if (mandate.provenance === "legacy_unverified") {
     return { ok: false as const, error: "Legacy listing mandate fields are not an approval. Record a new mandate.", status: 409 };
   }
-  if (mandate.status === input.decision) return { ok: true as const, mandate, idempotent: true };
+  if (mandate.status === input.decision) {
+    const draftListing = input.decision === "approved" ? await ensureDraftListingForMandate(input.clientId, input.actor, mandate) : null;
+    return { ok: true as const, mandate, idempotent: true, draftListing };
+  }
   if (mandate.status !== "submitted" && mandate.status !== "awaiting_evidence" && mandate.status !== "draft") {
     return { ok: false as const, error: "Only a mandate awaiting review can be approved or rejected.", status: 409 };
   }
@@ -892,7 +927,8 @@ export async function reviewMandate(input: {
       actorId: input.actor.id,
     });
   }
-  return { ok: true as const, mandate: data };
+  const draftListing = input.decision === "approved" ? await ensureDraftListingForMandate(input.clientId, input.actor, data) : null;
+  return { ok: true as const, mandate: data, draftListing };
 }
 
 async function mandateWriteGuard(clientId: string, actor: AcquisitionActor, mandate: Record<string, unknown>): Promise<Fail | null> {

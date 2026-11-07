@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { getRealEstateOfferDetail, mutateRealEstateOffer, assertRealEstateClient } from "@/lib/real-estate/offer-service";
+import { transactionStartRecovery } from "@/lib/real-estate/workflow/journey";
 import type { ReOfferAction } from "@/lib/real-estate/offers";
 
 export const dynamic = "force-dynamic";
@@ -92,18 +93,23 @@ export async function PATCH(
 
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
 
+  let transactionStart: { state: "started" } | { state: "recovery"; error: string } | null = null;
   if (body.action === "accept") {
     try {
       const { startOrGetTransactionFromOffer } = await import(
         "@/lib/real-estate/transaction-service"
       );
-      await startOrGetTransactionFromOffer({
+      const started = await startOrGetTransactionFromOffer({
         clientId: params.clientId,
         offerId: params.offerId,
         actor: actorFromSession(session),
       });
-    } catch {
-      // Soft-fail: offer accept must succeed even if transaction bootstrap fails.
+      transactionStart = transactionStartRecovery(started);
+    } catch (error) {
+      transactionStart = transactionStartRecovery({
+        ok: false,
+        error: error instanceof Error ? error.message : "The transaction did not start.",
+      });
     }
   }
 
@@ -111,5 +117,6 @@ export async function PATCH(
     offer: result.offer,
     notifyAvailable: result.notifyAvailable,
     siblingActiveCount: result.siblingActiveCount,
+    transactionStart,
   });
 }

@@ -180,6 +180,12 @@ export async function getCompanyCalendarData(opts: {
   timezone: string;
   canManageAny: boolean;
   canActAsSalesperson: boolean;
+  /** When set, Real Estate viewings replace the shared site-visit query. */
+  realEstateViewings?: {
+    failed: boolean;
+    incomplete: boolean;
+    events: CompanyCalendarEvent[];
+  };
 }): Promise<CompanyCalendarPageData> {
   const supabase = createAdminClient();
   const [clientRes, teamRes] = await Promise.all([
@@ -205,6 +211,9 @@ export async function getCompanyCalendarData(opts: {
   const summaryRangeStartIso = weekStartIso < todayStartIso ? weekStartIso : todayStartIso;
   const summaryRangeEndIso = weekEndIso > nextSevenEndIso ? weekEndIso : nextSevenEndIso;
   const sixtyDaysAgoIso = new Date(nowMs - 60 * 86_400_000).toISOString();
+  const emptyViewingQuery = Promise.resolve({ data: [] as unknown[], error: null as null });
+  const viewingSelect =
+    "id, contact_id, listing_id, agent_id, scheduled_at, status, feedback_text, contacts!inner(id, client_id, name, phone, location), listings(id, address, suburb)";
 
   const [
     scheduledLeadsRes,
@@ -260,26 +269,26 @@ export async function getCompanyCalendarData(opts: {
       .in("stage", [...DEAL_ACTIVE_STAGES])
       .order("updated_at", { ascending: false })
       .limit(2000),
-    supabase
-      .from("viewings")
-      .select(
-        "id, contact_id, listing_id, agent_id, scheduled_at, status, feedback_text, contacts!inner(id, client_id, name, phone, location), listings(id, address, suburb)"
-      )
-      .eq("contacts.client_id", opts.clientId)
-      .gte("scheduled_at", rangeStartIso)
-      .lt("scheduled_at", rangeEndIso)
-      .order("scheduled_at", { ascending: true })
-      .limit(1500),
-    supabase
-      .from("viewings")
-      .select(
-        "id, contact_id, listing_id, agent_id, scheduled_at, status, feedback_text, contacts!inner(id, client_id, name, phone, location), listings(id, address, suburb)"
-      )
-      .eq("contacts.client_id", opts.clientId)
-      .gte("scheduled_at", summaryRangeStartIso)
-      .lt("scheduled_at", summaryRangeEndIso)
-      .order("scheduled_at", { ascending: true })
-      .limit(1500),
+    opts.realEstateViewings
+      ? emptyViewingQuery
+      : supabase
+          .from("viewings")
+          .select(viewingSelect)
+          .eq("contacts.client_id", opts.clientId)
+          .gte("scheduled_at", rangeStartIso)
+          .lt("scheduled_at", rangeEndIso)
+          .order("scheduled_at", { ascending: true })
+          .limit(1500),
+    opts.realEstateViewings
+      ? emptyViewingQuery
+      : supabase
+          .from("viewings")
+          .select(viewingSelect)
+          .eq("contacts.client_id", opts.clientId)
+          .gte("scheduled_at", summaryRangeStartIso)
+          .lt("scheduled_at", summaryRangeEndIso)
+          .order("scheduled_at", { ascending: true })
+          .limit(1500),
     supabase
       .from("lead_events")
       .select(`id, lead_id, actor_id, event_type, event_data, created_at, leads!inner(${LEAD_SELECT})`)
@@ -626,45 +635,59 @@ export async function getCompanyCalendarData(opts: {
     });
   }
 
-  for (const viewing of viewings) {
-    const contact = unwrap(viewing.contacts);
-    const listing = unwrap(viewing.listings);
-    if (!contact || contact.client_id !== opts.clientId) continue;
-    const owner = viewing.agent_id ? teamById.get(viewing.agent_id) : null;
-    const location = [listing?.address, listing?.suburb].filter(Boolean).join(", ") || contact.location;
-    events.push({
-      id: `viewing-${viewing.id}`,
-      sourceType: "viewing",
-      sourceId: viewing.id,
-      kind: "site_visit",
-      title: "Site visit",
-      startAt: viewing.scheduled_at,
-      endAt: null,
-      allDay: false,
-      status: viewingStatus(viewing.status, viewing.scheduled_at, nowMs),
-      sourceStatus: viewing.status,
-      ownerId: viewing.agent_id,
-      ownerName: owner?.name?.trim() || null,
-      ownerAvatarUrl: owner?.avatar_url ?? null,
-      ownerRoleLabel: teamRoleLabel(owner),
-      relationType: "customer",
-      relatedId: contact.id,
-      relatedLabel: contact.name?.trim() || "Customer",
-      relatedSecondary: location || null,
-      relatedHref: `/client/contacts/${contact.id}`,
-      leadId: null,
-      dealId: null,
-      customerId: contact.id,
-      phone: contact.phone?.trim() || null,
-      location: location || null,
-      description: viewing.feedback_text?.trim() || null,
-      attentionReason:
-        viewingStatus(viewing.status, viewing.scheduled_at, nowMs) === "overdue"
-          ? "The scheduled visit time has passed without a completed or cancelled state."
-          : null,
-      canEdit: false,
-      canComplete: false,
-    });
+  if (!opts.realEstateViewings) {
+    for (const viewing of viewings) {
+      const contact = unwrap(viewing.contacts);
+      const listing = unwrap(viewing.listings);
+      if (!contact || contact.client_id !== opts.clientId) continue;
+      const owner = viewing.agent_id ? teamById.get(viewing.agent_id) : null;
+      const location = [listing?.address, listing?.suburb].filter(Boolean).join(", ") || contact.location;
+      events.push({
+        id: `viewing-${viewing.id}`,
+        sourceType: "viewing",
+        sourceId: viewing.id,
+        kind: "site_visit",
+        title: "Site visit",
+        startAt: viewing.scheduled_at,
+        endAt: null,
+        allDay: false,
+        status: viewingStatus(viewing.status, viewing.scheduled_at, nowMs),
+        sourceStatus: viewing.status,
+        ownerId: viewing.agent_id,
+        ownerName: owner?.name?.trim() || null,
+        ownerAvatarUrl: owner?.avatar_url ?? null,
+        ownerRoleLabel: teamRoleLabel(owner),
+        relationType: "customer",
+        relatedId: contact.id,
+        relatedLabel: contact.name?.trim() || "Customer",
+        relatedSecondary: location || null,
+        relatedHref: `/client/contacts/${contact.id}`,
+        leadId: null,
+        dealId: null,
+        customerId: contact.id,
+        phone: contact.phone?.trim() || null,
+        location: location || null,
+        description: viewing.feedback_text?.trim() || null,
+        attentionReason:
+          viewingStatus(viewing.status, viewing.scheduled_at, nowMs) === "overdue"
+            ? "The scheduled visit time has passed without a completed or cancelled state."
+            : null,
+        canEdit: false,
+        canComplete: false,
+      });
+    }
+  } else if (!opts.realEstateViewings.failed) {
+    for (const viewingEvent of opts.realEstateViewings.events) {
+      const key = calendarDateKey(viewingEvent.startAt, timezone);
+      if (key < opts.rangeStartKey || key >= opts.rangeEndKey) continue;
+      const owner = viewingEvent.ownerId ? teamById.get(viewingEvent.ownerId) : null;
+      events.push({
+        ...viewingEvent,
+        ownerName: owner?.name?.trim() || viewingEvent.ownerName,
+        ownerAvatarUrl: owner?.avatar_url ?? viewingEvent.ownerAvatarUrl,
+        ownerRoleLabel: teamRoleLabel(owner) ?? viewingEvent.ownerRoleLabel,
+      });
+    }
   }
 
   events.sort((a, b) => a.startAt.localeCompare(b.startAt));
@@ -729,17 +752,34 @@ export async function getCompanyCalendarData(opts: {
       atRisk: attention.atRisk,
     });
   }
-  const summaryViewingById = new Map(summaryViewings.map((viewing) => [viewing.id, viewing]));
-  for (const viewing of summaryViewingById.values()) {
-    const status = viewingStatus(viewing.status, viewing.scheduled_at, nowMs);
-    summarySignals.push({
-      ownerId: viewing.agent_id,
-      sourceType: "viewing",
-      startAt: viewing.scheduled_at,
-      completedAt: status === "completed" ? viewing.scheduled_at : null,
-      status,
-      atRisk: status === "overdue",
-    });
+  if (!opts.realEstateViewings) {
+    const summaryViewingById = new Map(summaryViewings.map((viewing) => [viewing.id, viewing]));
+    for (const viewing of summaryViewingById.values()) {
+      const status = viewingStatus(viewing.status, viewing.scheduled_at, nowMs);
+      summarySignals.push({
+        ownerId: viewing.agent_id,
+        sourceType: "viewing",
+        startAt: viewing.scheduled_at,
+        completedAt: status === "completed" ? viewing.scheduled_at : null,
+        status,
+        atRisk: status === "overdue",
+      });
+    }
+  } else if (!opts.realEstateViewings.failed) {
+    const summaryStart = Date.parse(summaryRangeStartIso);
+    const summaryEnd = Date.parse(summaryRangeEndIso);
+    for (const viewingEvent of opts.realEstateViewings.events) {
+      const start = Date.parse(viewingEvent.startAt);
+      if (!Number.isFinite(start) || start < summaryStart || start >= summaryEnd) continue;
+      summarySignals.push({
+        ownerId: viewingEvent.ownerId,
+        sourceType: "viewing",
+        startAt: viewingEvent.startAt,
+        completedAt: viewingEvent.status === "completed" ? viewingEvent.startAt : null,
+        status: viewingEvent.status,
+        atRisk: viewingEvent.status === "overdue",
+      });
+    }
   }
   for (const completion of weekCompletions) {
     const lead = unwrap(completion.leads);
@@ -784,5 +824,9 @@ export async function getCompanyCalendarData(opts: {
     scheduleableLeads: manageableLeads.map(toPriorityLead),
     leadOwners,
     summary,
+    includeViewings: Boolean(opts.realEstateViewings),
+    viewingsPartial: Boolean(
+      opts.realEstateViewings && (opts.realEstateViewings.failed || opts.realEstateViewings.incomplete)
+    ),
   };
 }

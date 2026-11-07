@@ -4,18 +4,20 @@
 /* Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V4 */
 
 import { useMemo, useState, type ReactNode } from "react";
+import { SaleJourney } from "@/components/real-estate/workflow/SaleJourney";
 import { useRouter } from "next/navigation";
 import {
   Building2,
   CalendarPlus,
+  ClipboardList,
   FileCheck2,
   Handshake,
   Landmark,
   MessageSquareText,
   PhoneCall,
+  ScrollText,
   Search,
   ShieldCheck,
-  UserPlus,
   UsersRound,
 } from "lucide-react";
 import { DealSideBadge } from "@/components/real-estate/DealSideBadge";
@@ -68,12 +70,6 @@ type BuyerMetrics = {
     offersInProgress: number;
     followUpDue: number;
   };
-};
-
-type AcquisitionOverview = {
-  incomplete: boolean;
-  summary: { active: number; inProgress: number; overdue: number; lost: number; converted: number };
-  attention: Array<{ id: string; label: string; reason: string }>;
 };
 
 type TransactionsPayload = { rows?: TransactionListRow[]; counts?: Record<string, number> };
@@ -203,7 +199,6 @@ export function AgentDailyWorkspace({
 
   const buyerReports = useReFetch<{ priorities?: BuyerPriority[] }>(`/api/clients/${clientId}/buyer-reports`);
   const buyerMetrics = useReFetch<BuyerMetrics>(`/api/clients/${clientId}/buyer-searches?metrics=1`);
-  const acquisitions = useReFetch<AcquisitionOverview>(`/api/clients/${clientId}/acquisitions/overview`);
   const transactions = useReFetch<TransactionsPayload>(`/api/clients/${clientId}/transactions?tab=active`);
   const buyerPriorities = buyerReports.status === "ready" ? buyerReports.data.priorities ?? [] : null;
 
@@ -416,19 +411,19 @@ export function AgentDailyWorkspace({
 
   const quickActions = {
     primary: {
-      id: "opportunity",
-      label: "New opportunity",
-      description: "Record a property you could list or rent out",
-      icon: <Building2 size={16} strokeWidth={1.8} />,
-      onSelect: () => router.push("/sales/acquisitions?new=1"),
+      id: "mandate",
+      label: "Send seller form",
+      description: "A completed mandate opens the seller and a draft listing",
+      icon: <ScrollText size={16} strokeWidth={1.8} />,
+      onSelect: () => router.push("/sales/listings#seller-intake"),
     },
     secondary: [
       {
         id: "buyer",
-        label: "Add buyer or tenant",
-        description: "Start a buyer or rental search",
-        icon: <UserPlus size={16} strokeWidth={1.8} />,
-        onSelect: () => router.push("/sales/buyers?new=1"),
+        label: "Buyers and tenants",
+        description: "Profiles opened when a viewing form is signed",
+        icon: <UsersRound size={16} strokeWidth={1.8} />,
+        onSelect: () => router.push("/sales/buyers"),
       },
       ...(onAddInquiry
         ? [
@@ -442,18 +437,11 @@ export function AgentDailyWorkspace({
           ]
         : []),
       {
-        id: "match",
-        label: "Find properties",
-        description: "Match buyer searches to available stock",
-        icon: <Search size={16} strokeWidth={1.8} />,
-        onSelect: () => router.push("/sales/matching"),
-      },
-      {
         id: "viewing",
-        label: "Schedule viewing",
-        description: "Viewings are booked from a buyer search",
+        label: "Viewing form",
+        description: "Share it from a property. A signed form books the calendar",
         icon: <CalendarPlus size={16} strokeWidth={1.8} />,
-        onSelect: () => router.push("/sales/buyers"),
+        onSelect: () => router.push("/sales/listings"),
       },
       ...(onLogCall
         ? [
@@ -494,7 +482,7 @@ export function AgentDailyWorkspace({
       <header className="layout:hidden">
         <p className="text-[12px] font-medium leading-4 text-sales-text-muted">{todayLabel()}</p>
         <div className="mt-1 flex items-center justify-between gap-3">
-          <h1 className="min-w-0 font-display text-[24px] font-semibold leading-none tracking-[-0.02em] text-sales-text-primary">My Day</h1>
+          <h1 className="min-w-0 font-display text-[24px] font-semibold leading-none tracking-[-0.02em] text-sales-text-primary">Today</h1>
           <div className="shrink-0">
             <ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />
           </div>
@@ -504,7 +492,7 @@ export function AgentDailyWorkspace({
       <RePageHeader
         className="hidden layout:flex"
         context={todayLabel()}
-        title="Today's work"
+        title="Today"
         description={
           attentionCount > 0
             ? `${attentionCount} ${attentionCount === 1 ? "item needs" : "items need"} your next action.`
@@ -514,6 +502,8 @@ export function AgentDailyWorkspace({
         }
         actions={<ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />}
       />
+
+      <SaleJourney surface="sales" />
 
       <div className="grid grid-cols-1 items-start gap-3 layout:grid-cols-12 layout:gap-[var(--re-section-gap,16px)]">
         <ReSection
@@ -661,17 +651,9 @@ export function AgentDailyWorkspace({
               href="/sales/buyers"
             />
             <ActiveWorkTile
-              title="Property opportunities"
-              detail={
-                acquisitions.status === "loading"
-                  ? "Loading"
-                  : acquisitions.status === "error"
-                    ? "Could not load"
-                    : acquisitions.status === "ready"
-                      ? `${acquisitions.data.summary.active} active${acquisitions.data.summary.overdue > 0 ? ` · ${acquisitions.data.summary.overdue} overdue` : ""}`
-                      : "—"
-              }
-              href="/sales/acquisitions"
+              title="Seller mandates"
+              detail="Form, inspection, then the listing"
+              href="/sales/mandates"
             />
             <ActiveWorkTile
               title="Transactions in progress"
@@ -707,12 +689,12 @@ export function AgentDailyWorkspace({
                     items={[
                       { label: "Active buyers", value: metrics.activeBuyers, href: "/sales/buyers" },
                       { label: "Active tenants", value: metrics.activeTenants, href: "/sales/buyers" },
-                      { label: "Follow-ups due", value: metrics.followUpDue, tone: "attention" },
-                      { label: "New this week", value: metrics.newSearches },
+                      { label: "Viewings booked", value: metrics.viewingsScheduled, href: "/sales/viewings" },
+                      { label: "Offers in progress", value: metrics.offersInProgress, href: "/sales/offers" },
                     ]}
                   />
                   <p className="mt-3 text-[12px] leading-snug text-sales-text-muted">
-                    People are counted once per search type. New this week counts searches.
+                    A signed viewing form opens the buyer on the property they asked to see.
                   </p>
                   {buyerMetrics.data.incomplete ? (
                     <p className="mt-2 text-[12px] text-sales-warning-fg">Some searches could not be counted.</p>
@@ -722,43 +704,31 @@ export function AgentDailyWorkspace({
             </ReSection>
 
             <ReSection
-              id="re-agent-opportunities"
-              title="Property opportunities"
-              count={acquisitions.status === "ready" ? acquisitions.data.summary.active : null}
+              id="re-agent-sellers"
+              title="Seller mandates"
               flush
-              action={<ReViewAll href="/sales/acquisitions" />}
+              action={<ReViewAll href="/sales/mandates" />}
             >
-              {acquisitions.status === "loading" ? (
-                <ReSkeletonRows rows={2} label="Loading property opportunities" />
-              ) : acquisitions.status === "error" ? (
-                <ReErrorState onRetry={acquisitions.reload} />
-              ) : acquisitions.data.attention.length === 0 ? (
-                <ReEmptyState
-                  compact
-                  title={acquisitions.data.summary.active === 0 ? "No active opportunities" : "Every opportunity has a next step"}
-                  description={
-                    acquisitions.data.summary.active === 0
-                      ? "Record a property you could list to start tracking it here."
-                      : `${acquisitions.data.summary.inProgress} in progress.`
-                  }
+              <ReList label="Seller workflow">
+                <ReWorkItem
+                  icon={<ScrollText />}
+                  title="Mandates"
+                  reason="Send the seller form and review what comes back."
+                  action={<ReRowAction label="Open" srContext="Mandates" href="/sales/mandates" />}
                 />
-              ) : (
-                <ReList label="Opportunities that need a next step">
-                  {acquisitions.data.attention.slice(0, 4).map((row) => (
-                    <ReWorkItem
-                      key={row.id}
-                      icon={<Building2 />}
-                      iconTone={row.reason === "Overdue follow-up" ? "danger" : "neutral"}
-                      title={row.label}
-                      reason={row.reason}
-                      action={<ReRowAction label="Open" srContext={row.label} href={`/sales/acquisitions/${row.id}`} />}
-                    />
-                  ))}
-                </ReList>
-              )}
-              {acquisitions.status === "ready" && acquisitions.data.incomplete ? (
-                <RePartialNotice>Some opportunities could not be loaded.</RePartialNotice>
-              ) : null}
+                <ReWorkItem
+                  icon={<ClipboardList />}
+                  title="Inspections"
+                  reason="Photos and the rest of the listing are added after the visit."
+                  action={<ReRowAction label="Open" srContext="Inspections" href="/sales/inspections" />}
+                />
+                <ReWorkItem
+                  icon={<Building2 />}
+                  title="Sellers"
+                  reason="Each completed mandate opens a seller and a draft listing."
+                  action={<ReRowAction label="Open" srContext="Sellers" href="/sales/owners" />}
+                />
+              </ReList>
             </ReSection>
 
             <ReSection
