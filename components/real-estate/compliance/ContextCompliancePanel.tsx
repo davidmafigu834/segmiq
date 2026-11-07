@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ReEmptyState, ReErrorState, ReSection, ReStatusBadge } from "@/components/real-estate/ui";
 import { invitationStatusLabel, paymentEvidenceLabel, requirementStateLabel, requirementTone, words } from "@/components/real-estate/compliance/copy";
+import type { MandateCheck, MandateComplianceReport } from "@/lib/real-estate/seller-intake/compliance-checks";
 
 type Requirement = { id: string; key: string; label: string; state: string; mandatory: boolean };
 type Summary = {
@@ -47,6 +48,7 @@ export function ContextCompliancePanel({
   transactionId,
   customerType = "individual",
   synthetic = null,
+  formCheck = null,
 }: {
   clientId: string;
   context: "buyer" | "seller" | "property" | "transaction";
@@ -57,6 +59,8 @@ export function ContextCompliancePanel({
   customerType?: "individual" | "company";
   /** Development preview only. Live pages must not pass this. */
   synthetic?: Payload | null;
+  /** Seller page: what the mandate form already satisfies. */
+  formCheck?: MandateComplianceReport | null;
 }) {
   const [company, setCompany] = useState(customerType === "company");
   const [data, setData] = useState<Payload | null>(synthetic);
@@ -193,11 +197,17 @@ export function ContextCompliancePanel({
         : `${outstanding} required items still need attention.`;
 
   return (
-    <ReSection id={`${context}-compliance`} className="max-w-3xl" title={title} description={data?.notice}>
+    <ReSection
+      id={`${context}-compliance`}
+      className="max-w-3xl"
+      title={title}
+      description={formCheck ? "Checked against the mandate form. An answer recorded here is ready for review. It does not verify identity or decide the law." : data?.notice}
+    >
+      {formCheck ? <FormCheckReport report={formCheck} /> : null}
       {synthetic ? <p className="mb-2 text-[12px] text-sales-text-muted">Synthetic preview. Nothing on this panel is saved.</p> : null}
       {error ? <ReErrorState title="Checklist unavailable" description={error} onRetry={() => void load()} /> : null}
       {notice ? <p className="mb-2 text-[13px] text-sales-text-secondary" role="status">{notice}</p> : null}
-      {context === "buyer" || context === "seller" ? (
+      {(context === "buyer" || context === "seller") && !formCheck ? (
         <div className="mb-3 inline-flex rounded-[8px] border border-sales-border p-0.5" role="group" aria-label="Customer type">
           <button type="button" className={`re-focus min-h-11 rounded-[6px] px-3 text-[13px] font-semibold ${!company ? "bg-sales-text-primary text-sales-surface" : "text-sales-text-secondary"}`} aria-pressed={!company} onClick={() => setCompany(false)}>Individual</button>
           <button type="button" className={`re-focus min-h-11 rounded-[6px] px-3 text-[13px] font-semibold ${company ? "bg-sales-text-primary text-sales-surface" : "text-sales-text-secondary"}`} aria-pressed={company} onClick={() => setCompany(true)}>Company</button>
@@ -260,15 +270,17 @@ export function ContextCompliancePanel({
             </ul>
           ) : <p className="mt-3 text-[13px] text-sales-text-muted">No document request has been sent.</p>}
         </div>
+      ) : formCheck ? (
+        <button type="button" className="re-focus mt-4 min-h-11 text-[13px] font-semibold" disabled={busy} onClick={() => void openCase()}>{busy ? "Opening…" : "Open a document checklist"}</button>
       ) : (
         <div>
           <ReEmptyState compact title="No compliance case yet" description="Opening a checklist does not block the sale until a reviewed policy is enforced." />
           <button type="button" className="re-focus min-h-11 rounded-[8px] bg-sales-brand px-3 text-[13px] font-semibold text-sales-brand-text" disabled={busy} onClick={() => void openCase()}>{busy ? "Opening…" : "Open checklist"}</button>
         </div>
       )}
-      <button type="button" className="re-focus mt-4 min-h-11 text-[13px] font-semibold" aria-expanded={showForm} onClick={() => setShowForm((value) => !value)}>
+      {formCheck ? null : <button type="button" className="re-focus mt-4 min-h-11 text-[13px] font-semibold" aria-expanded={showForm} onClick={() => setShowForm((value) => !value)}>
         {showForm ? "Hide sample fields" : company ? "Show company sample fields" : "Show individual sample fields"}
-      </button>
+      </button>}
       {showForm && template ? (
         <ul className="mt-1 divide-y divide-sales-border">
           {template.requirements.map((item) => (
@@ -323,5 +335,56 @@ export function ContextCompliancePanel({
         </div>
       ) : null}
     </ReSection>
+  );
+}
+
+function FormCheckReport({ report }: { report: MandateComplianceReport }) {
+  return (
+    <div className="mb-4">
+      <p className="text-[14px] font-medium text-sales-text-primary">{report.summary}</p>
+      <CheckGroup title="Good on the form" items={report.recorded} badge="On the form" tone="success" />
+      <CheckGroup title="Needs a reviewer" items={report.attention} badge="Review" tone="warning" />
+      <CheckGroup title="Still blank" items={report.missing} badge="Missing" tone="warning" />
+      {report.notOnForm.length > 0 ? (
+        <div className="mt-4">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">Not collected on this form</p>
+          <ul className="mt-1">
+            {report.notOnForm.map((item) => (
+              <li key={item} className="py-1 text-[13px] text-sales-text-secondary">{item}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function CheckGroup({
+  title,
+  items,
+  badge,
+  tone,
+}: {
+  title: string;
+  items: MandateCheck[];
+  badge: string;
+  tone: "success" | "warning";
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-3">
+      <p className="text-[12px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">{title}</p>
+      <ul className="mt-1 divide-y divide-sales-border-subtle">
+        {items.map((item) => (
+          <li key={item.key} className="flex items-start justify-between gap-3 py-2">
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium">{item.label}</p>
+              <p className="text-[12px] text-sales-text-secondary [overflow-wrap:anywhere]">{item.detail}</p>
+            </div>
+            <ReStatusBadge tone={tone} label={badge} />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

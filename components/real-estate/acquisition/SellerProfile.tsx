@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ContextCompliancePanel } from "@/components/real-estate/compliance/ContextCompliancePanel";
+import { evaluateMandateCompliance } from "@/lib/real-estate/seller-intake/compliance-checks";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
@@ -168,6 +169,12 @@ export function SellerProfile({
   const primaryHref = openOffers.length ? offersPath : finishHref;
   const primaryLabel = openOffers.length ? "Review offer" : "Finish the listing";
   const contactId = property?.contact_id && !String(property.contact_id).startsWith("unlinked:") ? property.contact_id : owner.contactId.startsWith("unlinked:") || owner.contactId.startsWith("company:") ? "" : owner.contactId;
+  const formAnswers: Record<string, string> = {};
+  for (const field of fields) {
+    if (field.value) formAnswers[field.key] = field.value;
+  }
+  const formCheck = request ? evaluateMandateCompliance(request.kind === "sole" ? "sole" : "open", formAnswers) : null;
+  const sellerIsCompany = formAnswers.ownerKind === "Company" || owner.kind === "company";
 
   return (
     <div className={rootClass}>
@@ -271,7 +278,16 @@ export function SellerProfile({
               </dl>
             ) : null}
           </ReSection>
-          {contactId ? <ContextCompliancePanel clientId={clientId} context="seller" title="Seller verification" contactId={contactId} /> : null}
+          {contactId || formCheck ? (
+            <ContextCompliancePanel
+              clientId={clientId}
+              context="seller"
+              title="Seller verification"
+              contactId={contactId || null}
+              customerType={sellerIsCompany ? "company" : "individual"}
+              formCheck={formCheck}
+            />
+          ) : null}
         </aside>
       </div>
     </div>
