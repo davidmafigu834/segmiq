@@ -107,7 +107,7 @@ function SalesDashboardInner({
             notificationRole={notificationRole}
             onOpenLog={() => openLogSheet("")}
             onAddLead={openAddHubSheet}
-            description="Here's what needs attention across your inquiries and viewings today."
+            description="Seller forms, viewings today, and offer letters."
             userRoleLabel={roleLabel}
             realEstate
             toolbar
@@ -117,8 +117,6 @@ function SalesDashboardInner({
           <AgentDailyWorkspace
             clientId={data.clientId!}
             data={data.realEstate!}
-            onAddInquiry={demoGuest ? undefined : openAddHubSheet}
-            onLogCall={demoGuest ? undefined : () => openLogSheet("")}
             copilot={<SalesCopilotDailyWorkspace firstName={firstName} embedded />}
           />
         </>

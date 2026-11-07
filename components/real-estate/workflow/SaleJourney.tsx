@@ -2,16 +2,14 @@ import Link from "next/link";
 
 const STEPS = {
   sales: [
-    { href: "/sales/listings#seller-intake", title: "1. Mandate", detail: "Send the seller form. A completed mandate opens the seller and a draft listing." },
+    { href: "/sales/mandates", title: "1. Mandate", detail: "Send the seller form. Opening a completed form goes to that seller and a draft listing." },
     { href: "/sales/listings", title: "2. Viewing", detail: "Share the viewing form from the property. A signed form opens the buyer and books the calendar." },
     { href: "/sales/offers", title: "3. Offer", detail: "Generate the offer from the buyer, then send it to the seller to review." },
-    { href: "/sales/transactions", title: "4. Sold", detail: "Invite the lawyer from the transaction, then mark it sold." },
   ],
   client: [
-    { href: "/client/listings#seller-intake", title: "1. Mandate", detail: "Review the signed mandate. Approval opens the seller and one draft listing." },
+    { href: "/client/mandates", title: "1. Mandate", detail: "Send the seller form. Opening a completed form goes to that seller and a draft listing." },
     { href: "/client/listings", title: "2. Viewing", detail: "Share the viewing form from the property. A signed form opens the buyer and books the calendar." },
     { href: "/client/offers", title: "3. Offer", detail: "Generate the offer from the buyer, then send it to the seller to review." },
-    { href: "/client/transactions", title: "4. Sold", detail: "Invite the lawyer from the transaction, then mark it sold." },
   ],
 } as const;
 
@@ -20,8 +18,8 @@ export function SaleJourney({ surface }: { surface: "sales" | "client" }) {
   return (
     <section aria-label="Sale workflow" className="rounded-[12px] border border-sales-border bg-sales-surface px-4 py-3">
       <h2 className="text-[15px] font-semibold text-sales-text-primary">Sale workflow</h2>
-      <p className="mt-1 text-[13px] text-sales-text-secondary">Mandate, viewing, offer, then sold. Each step opens the page where that work is done.</p>
-      <ol className="mt-3 grid gap-2 sm:grid-cols-2 layout:grid-cols-4">
+      <p className="mt-1 text-[13px] text-sales-text-secondary">Mandate, viewing, then the offer letter. Each step opens the page where that work is done.</p>
+      <ol className="mt-3 grid gap-2 sm:grid-cols-2 layout:grid-cols-3">
         {steps.map((step) => (
           <li key={step.href + step.title}>
             <Link

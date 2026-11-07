@@ -33,6 +33,7 @@ export type AgentReDashboard = {
     listingLabel: string;
     leadId: string | null;
     listingId: string;
+    buyerSearchId: string | null;
   }>;
   followUps: Array<{
     leadId: string;
@@ -99,7 +100,7 @@ export async function getAgentRealEstateDashboard(opts: {
     (listingRows ?? []).map((l) => [l.id as string, listingLabel(l)])
   );
 
-  const [{ data: contactRows }, { data: viewingRows }] = await Promise.all([
+  const [{ data: contactRows }, viewingRows] = await Promise.all([
     contactIds.length
       ? supabase
           .from("contacts")
@@ -107,15 +108,21 @@ export async function getAgentRealEstateDashboard(opts: {
           .eq("client_id", opts.clientId)
           .in("id", contactIds)
       : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
-    listingIds.length
-      ? supabase
+    (async (): Promise<Array<Record<string, unknown>>> => {
+      if (!listingIds.length) return [];
+      const run = (columns: string) =>
+        supabase
           .from("viewings")
-          .select("id, contact_id, listing_id, agent_id, scheduled_at, status")
+          .select(columns)
           .eq("agent_id", opts.userId)
           .in("listing_id", listingIds)
           .gte("scheduled_at", yesterdayStart.toISOString())
-          .lt("scheduled_at", dayEnd.toISOString())
-      : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
+          .lt("scheduled_at", dayEnd.toISOString());
+      const withBuyer = await run("id, contact_id, listing_id, agent_id, scheduled_at, status, buyer_search_id");
+      if (!withBuyer.error) return (withBuyer.data ?? []) as unknown as Array<Record<string, unknown>>;
+      const plain = await run("id, contact_id, listing_id, agent_id, scheduled_at, status");
+      return (plain.data ?? []) as unknown as Array<Record<string, unknown>>;
+    })(),
   ]);
 
   const contactById = new Map((contactRows ?? []).map((c) => [c.id as string, c]));
@@ -138,6 +145,7 @@ export async function getAgentRealEstateDashboard(opts: {
       listingLabel: listingById.get(v.listing_id as string) ?? "Listing",
       leadId: leadByContact.get(v.contact_id as string) ?? null,
       listingId: v.listing_id as string,
+      buyerSearchId: (v.buyer_search_id as string | null) ?? null,
     }));
 
   const completedYesterday = new Set(

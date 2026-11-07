@@ -185,7 +185,7 @@ export function AgencyOverview({
             label: "Send seller form",
             description: "A completed mandate opens the seller and a draft listing",
             icon: <Building2 size={16} strokeWidth={1.8} />,
-            onSelect: () => router.push("/client/listings#seller-intake"),
+            onSelect: () => router.push("/client/mandates"),
           },
           {
             id: "buyer",
