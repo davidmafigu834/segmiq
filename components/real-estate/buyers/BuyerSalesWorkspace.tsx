@@ -197,7 +197,6 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
   }, [rows]);
 
   const filterCount = [intent, stage, followUp, location].filter(Boolean).length;
-  const activeSearchCount = rows.filter((row) => row.status === "active" || !row.status).length;
 
   function payload(contactId?: string) {
     const phone = composeOwnerPhone(dialCode, phoneNational);

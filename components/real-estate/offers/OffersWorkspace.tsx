@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Handshake, Plus } from "lucide-react";
 import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 import { useMediaQuery } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
@@ -90,7 +89,6 @@ export function OffersWorkspace({
   headerCreateNonce?: number;
   onSelectionChange?: (id: string | null) => void;
 }) {
-  const router = useRouter();
   const overlayPanel = useMediaQuery("(max-width: 1279px)");
   const stackedSplit = useMediaQuery("(max-width: 767px)");
   const [tab, setTab] = useState<StatusTab>("active");
