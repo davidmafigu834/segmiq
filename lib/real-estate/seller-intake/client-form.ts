@@ -18,7 +18,7 @@ const SECTION_FIELDS: Record<Exclude<SectionId, "review">, readonly string[]> = 
   ownership: ["ownerKind", "registeredOwner"],
   property: ["propertyAddress", "propertyCategory", "propertyCategoryOther", "propertyRights", "titleReference", "propertyDescription", "occupation", "occupantName", "occupantPhone"],
   details: ["sellerTitle", "givenName", "surname", "nationality", "identityNumber", "maritalStatus", "spouseName", "cell", "email", "residentialAddress", "companyName", "companyAddress", "companyIndustry", "companyEmail", "companyPhones", "representativeName", "representativeIdentity", "representativePosition", "representativeAddress", "representativePhone", "shareholderLines"],
-  checks: ["occupationJob", "industry", "position", "employerName", "employerAddress", "sourceOfFunds", "pep"],
+  checks: ["occupationJob", "industry", "industryOther", "position", "employerName", "employerAddress", "sourceOfFunds", "pep"],
   instructions: ["mandateStartDate", "mandateEndDate", "mandatePrice", "mandatePriceWords", "paymentMode", "paymentModeOther", "askingPrice"],
 };
 
@@ -37,18 +37,19 @@ const COPY: Record<string, { label: string; help: string; companyLabel?: string;
   occupation: { label: "Who currently occupies the property?", help: "This is about who lives at the property, not the owner's job." },
   occupantName: { label: "Occupant's full name", help: "This person may be different from the owner. Do not assume the representative lives here." },
   occupantPhone: { label: "Occupant's mobile number", help: "Include the country code where available." },
-  sellerTitle: { label: "Title", help: "Use the title you want recorded with your name.", companyLabel: "Representative's title", companyHelp: "The title of the person completing this form for the company." },
+  sellerTitle: { label: "Title", help: "Choose Mr, Mrs, or Ms.", companyLabel: "Representative's title", companyHelp: "Choose Mr, Mrs, or Ms for the person completing this form." },
   surname: { label: "Last name / surname", help: "As shown on the identity document requested by the agency.", companyLabel: "Representative's last name / surname" },
   givenName: { label: "First name(s)", help: "Include all first names where applicable.", companyLabel: "Representative's first name(s)" },
   nationality: { label: "Nationality", help: "Use the nationality recorded on your identity document.", companyLabel: "Representative's nationality" },
   identityNumber: { label: "Identity document number", help: "Enter the number from the identity document requested by your agency.", companyLabel: "Representative's identity document number" },
-  maritalStatus: { label: "Marital status", help: "This forms part of the agency's personal-information section.", companyLabel: "Representative's marital status" },
+  maritalStatus: { label: "Marital status", help: "Choose one. A spouse's name is asked only when the status is Married.", companyLabel: "Representative's marital status" },
   spouseName: { label: "Spouse's full name", help: "Shown because the marital status you entered asks for a spouse.", companyLabel: "Representative's spouse's full name" },
   cell: { label: "Your mobile number", help: "Include your country code, for example +263.", companyLabel: "Representative's mobile number", companyHelp: "The number on which the person completing this form can be contacted." },
   email: { label: "Email address", help: "Optional unless your agency has asked for it. This form does not send a copy by email." },
   residentialAddress: { label: "Where do you currently live?", help: "This is a residential address. It may be different from the property being sold.", companyLabel: "Representative's residential address", companyHelp: "Keep this separate from the company address and the property being sold." },
   occupationJob: { label: "What kind of work do you do?", help: "Your occupation, profession or type of business.", companyLabel: "What kind of work does the representative do?" },
-  industry: { label: "What industry do you work in?", help: "For example, education, retail, construction or agriculture." },
+  industry: { label: "What industry do you work in?", help: "Choose the closest industry. Use Other if none of these fit." },
+  industryOther: { label: "How would you describe the industry?", help: "Use this only when the industry is Other." },
   position: { label: "Job title or role", help: "For example, teacher, business owner or sales manager." },
   employerName: { label: "Employer or business name", help: "Complete the work details that apply. This is separate from the company that owns the property." },
   employerAddress: { label: "Employer or business address", help: "Keep this separate from your home and the property address." },
@@ -106,6 +107,7 @@ export function isFieldVisible(key: string, answers: Record<string, string>, pre
   }
   if (key === "propertyCategoryOther" && answers.propertyCategory !== "Other") return false;
   if (key === "paymentModeOther" && answers.paymentMode !== "Other") return false;
+  if (key === "industryOther" && answers.industry !== "Other") return false;
   if (key === "spouseName" && !spouseRelevant(answers.maritalStatus)) return false;
   if ((key === "occupantName" || key === "occupantPhone") && answers.occupation !== "Tenant occupied" && answers.occupation !== "Owner occupied") return false;
   return true;

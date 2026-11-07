@@ -112,6 +112,13 @@ test("seller intake stays off unless the flag is explicitly on", () => {
 test("open and sole forms do not collect the same fields or invent dates", () => {
   const open = fieldsForKind("open").map((field) => field.key);
   const sole = fieldsForKind("sole").map((field) => field.key);
+  const title = fieldsForKind("open").find((field) => field.key === "sellerTitle");
+  const marital = fieldsForKind("open").find((field) => field.key === "maritalStatus");
+  const industry = fieldsForKind("open").find((field) => field.key === "industry");
+  assert.deepEqual(title?.options, ["Mr", "Mrs", "Ms"]);
+  assert.deepEqual(marital?.options, ["Single", "Married", "Divorced", "Widowed"]);
+  assert.equal(industry?.options?.includes("Other"), true);
+  assert.equal(open.includes("industryOther"), true);
   assert.equal(open.includes("mandatePrice"), true);
   assert.equal(open.includes("propertyCategory"), true);
   assert.equal(sole.includes("mandatePrice"), false);

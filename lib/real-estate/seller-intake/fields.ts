@@ -34,6 +34,24 @@ export const OPEN_PROPERTY_CATEGORIES = [
 
 export const OPEN_PROPERTY_RIGHTS = ["Full Title", "Sectional Title", "Share Transfer", "Cession"] as const;
 
+export const SELLER_TITLES = ["Mr", "Mrs", "Ms"] as const;
+
+export const MARITAL_STATUSES = ["Single", "Married", "Divorced", "Widowed"] as const;
+
+export const WORK_INDUSTRIES = [
+  "Agriculture",
+  "Construction",
+  "Education",
+  "Finance",
+  "Healthcare",
+  "Manufacturing",
+  "Mining",
+  "Professional services",
+  "Retail",
+  "Transport",
+  "Other",
+] as const;
+
 const openFields: IntakeField[] = [
   { key: "propertyAddress", label: "Property address", group: "property", input: "textarea", requiredToSubmit: true, restricted: false },
   { key: "registeredOwner", label: "Registered owner", group: "parties", input: "text", requiredToSubmit: true, restricted: false },
@@ -52,15 +70,16 @@ const openFields: IntakeField[] = [
   { key: "paymentMode", label: "Payment", group: "mandate_terms", input: "choice", options: ["Cash", "Electronic", "Other"], requiredToSubmit: false, restricted: false },
   { key: "paymentModeOther", label: "Other payment", group: "mandate_terms", input: "text", requiredToSubmit: false, restricted: false },
   { key: "askingPrice", label: "Asking price before commission", group: "mandate_terms", input: "money", requiredToSubmit: true, restricted: false },
-  { key: "sellerTitle", label: "Title", group: "owner_identity", input: "text", requiredToSubmit: false, restricted: true },
+  { key: "sellerTitle", label: "Title", group: "owner_identity", input: "choice", options: SELLER_TITLES, requiredToSubmit: false, restricted: true },
   { key: "surname", label: "Surname", group: "owner_identity", input: "text", requiredToSubmit: false, restricted: true },
   { key: "givenName", label: "Name", group: "owner_identity", input: "text", requiredToSubmit: false, restricted: true },
   { key: "nationality", label: "Nationality", group: "owner_identity", input: "text", requiredToSubmit: false, restricted: true },
   { key: "identityNumber", label: "Identity number", group: "owner_identity", input: "text", requiredToSubmit: false, restricted: true },
-  { key: "maritalStatus", label: "Marital status", group: "owner_identity", input: "text", requiredToSubmit: false, restricted: true },
+  { key: "maritalStatus", label: "Marital status", group: "owner_identity", input: "choice", options: MARITAL_STATUSES, requiredToSubmit: false, restricted: true },
   { key: "spouseName", label: "Spouse", group: "owner_identity", input: "text", requiredToSubmit: false, restricted: true },
   { key: "occupationJob", label: "Occupation", group: "owner_identity", input: "text", requiredToSubmit: false, restricted: true },
-  { key: "industry", label: "Industry", group: "owner_identity", input: "text", requiredToSubmit: false, restricted: true },
+  { key: "industry", label: "Industry", group: "owner_identity", input: "choice", options: WORK_INDUSTRIES, requiredToSubmit: false, restricted: true },
+  { key: "industryOther", label: "Other industry", group: "owner_identity", input: "text", requiredToSubmit: false, restricted: true },
   { key: "position", label: "Position", group: "owner_identity", input: "text", requiredToSubmit: false, restricted: true },
   { key: "cell", label: "Cell", group: "parties", input: "text", requiredToSubmit: false, restricted: false },
   { key: "employerName", label: "Employer", group: "owner_identity", input: "text", requiredToSubmit: false, restricted: true },

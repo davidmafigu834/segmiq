@@ -52,6 +52,8 @@ test("guided sections follow the owner type and hide irrelevant answers from the
     representativeName: "Should not be sent",
     paymentMode: "Cash",
     paymentModeOther: "Should not be sent",
+    industry: "Education",
+    industryOther: "Should not be sent",
     mandatePrice: "80000",
     mandatePriceWords: "Eighty thousand",
   };
@@ -62,6 +64,7 @@ test("guided sections follow the owner type and hide irrelevant answers from the
   assert.equal("spouseName" in saved, false);
   assert.equal("propertyCategoryOther" in saved, false);
   assert.equal("paymentModeOther" in saved, false);
+  assert.equal("industryOther" in saved, false);
   assert.equal("occupantName" in saved, false);
 
   const company = answersForSave({ ...stale, ownerKind: "Company", companyName: "Moyo Holdings", representativeName: "Tariro Ncube", maritalStatus: "Married", spouseName: "Ada Ncube", occupation: "Tenant occupied", occupantName: "Tenant Person" });
