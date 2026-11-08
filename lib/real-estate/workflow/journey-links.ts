@@ -9,6 +9,9 @@ import { viewingOverlapWarning } from "@/lib/real-estate/buyer-match";
 import { createRealEstateOffer, mutateRealEstateOffer } from "@/lib/real-estate/offer-service";
 import { buyerRecordIsOpenable } from "@/lib/real-estate/viewing-calendar";
 import { offerExpiryInstant, offerRevisionAfterTermChange, secureLinkAccess, claimViewingSubmission, issuanceTemplateDecision, transactionStartRecovery, SYNTHETIC_OFFER_TEMPLATE, SYNTHETIC_VIEWING_TEMPLATE, type SecureLinkScope } from "@/lib/real-estate/workflow/journey";
+import { authorisedMarketingPhotoUrl, privatePhotoKeyAt } from "@/lib/real-estate/agent-listing-pages/policy";
+import { readPrivateListingImage } from "@/lib/real-estate/private-listing-images";
+import { viewingPropertyCard } from "@/lib/real-estate/workflow/viewing-form";
 
 const LINK_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -34,7 +37,7 @@ function builtInForm(templateKey: string) {
 async function agencyCard(clientId: string, agentId: string | null) {
   const supabase = createAdminClient();
   const [{ data: client }, { data: agent }] = await Promise.all([
-    supabase.from("clients").select("name, logo_url").eq("id", clientId).maybeSingle(),
+    supabase.from("clients").select("name, logo_url, primary_color").eq("id", clientId).maybeSingle(),
     agentId ? supabase.from("users").select("name, email, phone").eq("id", agentId).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   return {
@@ -43,7 +46,35 @@ async function agencyCard(clientId: string, agentId: string | null) {
     contactName: (agent?.name as string | null) ?? null,
     contactEmail: (agent?.email as string | null) ?? null,
     contactPhone: (agent?.phone as string | null) ?? null,
+    accent: typeof client?.primary_color === "string" && /^#[0-9a-fA-F]{6}$/.test(client.primary_color) ? client.primary_color : null,
   };
+}
+
+function textOrNull(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function numberOrNull(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+async function quotationCurrency(clientId: string): Promise<{ currency: string | null; configured: boolean }> {
+  const { data, error } = await createAdminClient().from("quotation_settings").select("default_currency").eq("client_id", clientId).maybeSingle();
+  const code = textOrNull((data as { default_currency?: string | null } | null)?.default_currency)?.toUpperCase() ?? "";
+  if (error || !/^[A-Z]{3}$/.test(code)) return { currency: null, configured: false };
+  return { currency: code, configured: true };
+}
+
+function listingPhotoUrl(token: string, clientId: string, listingId: string, photos: unknown): string | null {
+  if (privatePhotoKeyAt(photos, clientId, listingId, 0)) return `/api/public/journey/${encodeURIComponent(token)}/photo`;
+  if (!Array.isArray(photos)) return null;
+  for (const value of photos) {
+    const url = authorisedMarketingPhotoUrl(value, clientId, listingId, process.env.CLOUDFLARE_R2_PUBLIC_URL);
+    if (url) return url;
+  }
+  return null;
 }
 
 export async function issueViewingLink(input: {
@@ -132,18 +163,63 @@ export async function previewJourneyLink(token: string) {
   });
   if (!access.ok) return fail(410, access.error);
   const supabase = createAdminClient();
-  const { data: listing } = await supabase.from("listings").select("address, suburb").eq("id", link.listing_id as string).eq("client_id", link.client_id as string).maybeSingle();
-  const brand = await agencyCard(String(link.client_id), (link.agent_id as string | null) ?? null);
+  const clientId = String(link.client_id);
+  const listingId = String(link.listing_id);
+  const [{ data: listing }, money, brand] = await Promise.all([
+    supabase.from("listings").select("address, suburb, price, bedrooms, bathrooms, description, photos, property_category, transaction_type").eq("id", listingId).eq("client_id", clientId).maybeSingle(),
+    quotationCurrency(clientId),
+    agencyCard(clientId, (link.agent_id as string | null) ?? null),
+  ]);
+  const row = (listing ?? {}) as Record<string, unknown>;
+  const property = viewingPropertyCard({
+    address: textOrNull(row.address),
+    suburb: textOrNull(row.suburb),
+    price: numberOrNull(row.price),
+    currency: money.currency,
+    currencyConfigured: money.configured,
+    transactionType: textOrNull(row.transaction_type),
+    propertyCategory: textOrNull(row.property_category),
+    bedrooms: numberOrNull(row.bedrooms),
+    bathrooms: numberOrNull(row.bathrooms),
+    description: textOrNull(row.description),
+    photoUrl: listing ? listingPhotoUrl(token, clientId, listingId, row.photos) : null,
+  });
   return {
     ok: true as const,
     purpose: link.purpose,
     synthetic: Boolean(link.synthetic),
     brand,
-    propertyLabel: [listing?.address, listing?.suburb].filter(Boolean).join(", ") || "Property",
+    property,
+    propertyLabel: [property.heading, property.place].filter(Boolean).join(", ") || "Property",
     slots: Array.isArray(link.authorised_slots) ? link.authorised_slots : [],
     revision: String(link.revision ?? "1"),
     savedProfile: null,
   };
+}
+
+export async function journeyListingPhoto(token: string) {
+  const loaded = await loadLink(token);
+  if (!loaded.ok) return loaded;
+  const link = loaded.link;
+  if (link.purpose !== "viewing_acknowledgement") return fail(404, "This link is not a viewing form.");
+  const access = secureLinkAccess({
+    link: scopeOf(link),
+    clientId: String(link.client_id),
+    purpose: "viewing_acknowledgement",
+    recordId: String(link.id),
+    revision: String(link.revision ?? "1"),
+    recipientId: (link.recipient_id as string | null) ?? null,
+    nowMs: Date.now(),
+  });
+  if (!access.ok) return fail(410, access.error);
+  const clientId = String(link.client_id);
+  const listingId = String(link.listing_id);
+  const { data: listing } = await createAdminClient().from("listings").select("photos").eq("id", listingId).eq("client_id", clientId).maybeSingle();
+  const key = privatePhotoKeyAt((listing as { photos?: unknown } | null)?.photos, clientId, listingId, 0);
+  if (!key) return fail(404, "This house has no photograph yet.");
+  const image = await readPrivateListingImage(key);
+  if (!image) return fail(404, "This house has no photograph yet.");
+  return { ok: true as const, bytes: image.bytes, contentType: image.contentType };
 }
 
 export async function submitViewingLink(input: { token: string; slot: string; name: string; phone: string; signature: string }) {

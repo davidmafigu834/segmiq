@@ -1,0 +1,366 @@
+.page {
+  --paper: #f7f4ef;
+  --ink: #171916;
+  --muted: #5c6158;
+  --line: rgba(23, 25, 22, 0.12);
+  --card: #ffffff;
+  --accent: #2f3a32;
+  --accent-ink: #f7f4ef;
+  --soft: #ece7df;
+  min-height: 100dvh;
+  background: linear-gradient(180deg, #fbf9f6 0%, var(--paper) 220px);
+  color: var(--ink);
+  font-family: var(--font-dm-sans), "Segoe UI", sans-serif;
+}
+
+.page button,
+.page input {
+  font: inherit;
+  color: inherit;
+}
+
+.wrap {
+  width: min(1080px, calc(100% - 28px));
+  margin: 0 auto;
+  padding-bottom: 48px;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 64px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.logo,
+.mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  flex: none;
+}
+
+.logo {
+  object-fit: cover;
+  background: var(--soft);
+}
+
+.mark {
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-dm-serif), Georgia, serif;
+  font-size: 18px;
+}
+
+.agency {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.agent {
+  margin: 1px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.house {
+  min-width: 0;
+}
+
+.kicker {
+  margin: 8px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.title {
+  margin: 8px 0 0;
+  font-family: var(--font-dm-serif), Georgia, serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: clamp(36px, 5vw, 52px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.suburb {
+  margin: 8px 0 0;
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.price {
+  margin: 16px 0 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.price small {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  font-family: var(--font-dm-sans), "Segoe UI", sans-serif;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.facts li {
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.facts li span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.plate,
+.platePhoto {
+  margin-top: 18px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.plate {
+  min-height: 148px;
+  background: var(--soft);
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.plate svg {
+  width: 88px;
+  height: 58px;
+}
+
+.plate p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.platePhoto img {
+  display: block;
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+}
+
+.about {
+  margin: 16px 0 0;
+  max-width: 46ch;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.form {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px 22px 18px;
+}
+
+.choice {
+  margin: 0;
+  font-family: var(--font-dm-serif), Georgia, serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.lead,
+.note,
+.foot,
+.practice,
+.status {
+  color: var(--muted);
+}
+
+.lead {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.times {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.time[aria-pressed="true"] {
+  border: 2px solid var(--accent);
+  background: #f3f5f2;
+}
+
+.time strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.time span {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.fields input {
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 10px 12px;
+  font-weight: 400;
+  font-size: 16px;
+}
+
+.sign input {
+  font-family: "Segoe Script", "Brush Script MT", cursive;
+  font-size: 22px;
+}
+
+.fields input:focus-visible,
+.time:focus-visible,
+.submit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.note {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.submit {
+  margin-top: 16px;
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submit:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.foot {
+  margin: 14px 0 0;
+  font-size: 12px;
+}
+
+.practice,
+.status,
+.alert {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.alert {
+  color: #8c2f2f;
+}
+
+@media (max-width: 800px) {
+  .sheet {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .form {
+    padding: 18px 16px 16px;
+  }
+
+  .wrap {
+    padding-bottom: 28px;
+  }
+}
