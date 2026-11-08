@@ -117,7 +117,6 @@ function SalesDashboardInner({
           <AgentDailyWorkspace
             clientId={data.clientId!}
             data={data.realEstate!}
-            copilot={<SalesCopilotDailyWorkspace firstName={firstName} embedded />}
           />
         </>
       ) : (

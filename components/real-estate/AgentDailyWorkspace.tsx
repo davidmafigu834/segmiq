@@ -3,7 +3,7 @@
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 /* Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V4 */
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { SaleJourney } from "@/components/real-estate/workflow/SaleJourney";
 import { useRouter } from "next/navigation";
 import { Building2, CalendarPlus, ClipboardList, ScrollText, UsersRound } from "lucide-react";
@@ -141,13 +141,10 @@ function AttentionCard({ entry, group, className }: { entry: AttentionEntry; gro
 export function AgentDailyWorkspace({
   clientId,
   data,
-  copilot,
 }: {
   clientId: string;
   firstName?: string;
   data: AgentReDashboard;
-  /** Sales Copilot board, rendered as its own section below the work. */
-  copilot?: ReactNode;
 }) {
   const router = useRouter();
   const [showAllAttention, setShowAllAttention] = useState(false);
@@ -543,8 +540,6 @@ export function AgentDailyWorkspace({
             </ReSection>
           </div>
         </div>
-
-        {copilot ? <div className="order-4 min-w-0 layout:order-none layout:col-span-12">{copilot}</div> : null}
       </div>
     </div>
   );
