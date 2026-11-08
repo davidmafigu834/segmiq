@@ -181,6 +181,7 @@ export function AcquisitionDetail({
             setUploading={setUploading}
             setError={setError}
             act={act}
+            reload={load}
             onPreview={setPhotoPreview}
           />
 
@@ -229,6 +230,7 @@ function InspectionForm({
   setUploading,
   setError,
   act,
+  reload,
   onPreview,
 }: {
   clientId: string;
@@ -239,8 +241,11 @@ function InspectionForm({
   setUploading: (value: boolean) => void;
   setError: (value: string | null) => void;
   act: (body: Record<string, unknown>) => Promise<unknown>;
+  reload: () => Promise<void>;
   onPreview: (value: { src: string; caption: string }) => void;
 }) {
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const opportunityId = String(opp.id ?? "");
   return (
     <form
       id="acq-inspection"
@@ -359,27 +364,26 @@ function InspectionForm({
                   const inspectionId = String(bundle.inspections[0]?.id ?? "");
                   event.target.value = "";
                   if (!file || !inspectionId || uploading) return;
+                  const kind = `${file.type} ${file.name}`.toLowerCase();
+                  if (kind.includes("heic") || kind.includes("heif")) {
+                    setPhotoError("This phone saves HEIC photos. Choose a JPEG or PNG instead.");
+                    return;
+                  }
                   setUploading(true);
+                  setPhotoError(null);
                   setError(null);
                   void (async () => {
-                    const presign = await fetch(`/api/clients/${clientId}/company-documents/presign`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ filename: file.name, contentType: file.type || "image/jpeg", sizeBytes: file.size, title: file.name }),
-                    });
-                    const json = await presign.json();
-                    if (!presign.ok) {
-                      setError(json.error ?? "Photo upload is not available");
+                    const body = new FormData();
+                    body.set("file", file);
+                    body.set("inspectionId", inspectionId);
+                    const res = await fetch(`/api/clients/${clientId}/acquisitions/${opportunityId}/photos`, { method: "POST", body });
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                      setPhotoError(json.error ?? "The photo could not be stored.");
                       setUploading(false);
                       return;
                     }
-                    const put = await fetch(json.uploadUrl, { method: "PUT", headers: { "Content-Type": file.type || "image/jpeg" }, body: file });
-                    if (!put.ok) {
-                      setError("The photo could not be stored.");
-                      setUploading(false);
-                      return;
-                    }
-                    await act({ action: "photo", inspectionId, documentId: json.documentId, caption: file.name });
+                    await reload();
                     setUploading(false);
                   })();
                 }}
@@ -387,12 +391,17 @@ function InspectionForm({
             </label>
           ) : <p className="mt-2 text-[13px] text-sales-text-muted">Save an inspection before adding photos. Photos attach to the latest inspection.</p>}
           {uploading ? <p className="mt-2 text-[13px]" role="status">Uploading photo…</p> : null}
+          {photoError ? <p className="mt-2 text-[13px] text-sales-danger-fg" role="alert">{photoError}</p> : null}
           {bundle.photos.length ? (
             <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {bundle.photos.map((photo) => {
                 const caption = String(photo.caption || "Inspection photo");
                 const docId = photo.document_id ? String(photo.document_id) : null;
-                const src = docId ? `/api/clients/${clientId}/company-documents/${docId}/download` : null;
+                const src = docId
+                  ? `/api/clients/${clientId}/company-documents/${docId}/download`
+                  : photo.storage_key
+                    ? `/api/clients/${clientId}/acquisitions/${opportunityId}/photos/${photo.id}`
+                    : null;
                 return (
                   <li key={String(photo.id)} className="min-w-0">
                     {src ? (
