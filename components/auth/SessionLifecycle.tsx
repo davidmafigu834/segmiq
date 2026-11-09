@@ -16,6 +16,8 @@ const PUBLIC_PREFIXES = [
   "/p/",
   "/quote/",
   "/proposal/",
+  "/journey/",
+  "/seller-form/",
   "/lead/",
   "/forgot-password",
   "/reset-password",

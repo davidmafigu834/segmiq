@@ -222,6 +222,8 @@ export async function middleware(req: NextRequest) {
     path.startsWith("/proposal/") ||
     path.startsWith("/quote/") ||
     path.startsWith("/offer/") ||
+    path.startsWith("/journey/") ||
+    path.startsWith("/seller-form/") ||
     path === "/portal" ||
     path.startsWith("/portal/") ||
     path.startsWith("/api/portal") ||
@@ -253,7 +255,7 @@ export async function middleware(req: NextRequest) {
       return releaseDemoSession(req);
     }
     const response = withListingVisitor(req);
-    if (path.startsWith("/verify/") || path.startsWith("/api/public/compliance")) {
+    if (path.startsWith("/verify/") || path.startsWith("/api/public/compliance") || path.startsWith("/journey/") || path.startsWith("/seller-form/")) {
       response.headers.set("Referrer-Policy", "no-referrer");
       response.headers.set("Cache-Control", "no-store");
       response.headers.set("X-Robots-Tag", "noindex, nofollow");
@@ -638,6 +640,8 @@ function isCloudPublicPath(resolved: string): boolean {
     resolved.startsWith("/onboard/") ||
     resolved.startsWith("/proposal/") ||
     resolved.startsWith("/quote/") ||
+    resolved.startsWith("/journey/") ||
+    resolved.startsWith("/seller-form/") ||
     resolved.startsWith("/l/") ||
     resolved.startsWith("/d/")
   );
