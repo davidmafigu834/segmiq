@@ -6092,3 +6092,24 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-wo
     display: none;
   }
 }
+
+/* Loading bones match the row or number they stand in for. */
+@keyframes re-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.re-bone {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--sales-neutral-300) 70%, var(--sales-surface)) 0%,
+    var(--sales-neutral-200) 42%,
+    color-mix(in srgb, var(--sales-neutral-300) 70%, var(--sales-surface)) 100%
+  );
+  background-size: 220% 100%;
+  animation: re-shimmer 1.35s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .re-bone { animation: none; }
+}

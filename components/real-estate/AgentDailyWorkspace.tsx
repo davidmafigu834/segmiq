@@ -365,7 +365,7 @@ export function AgentDailyWorkspace({
           ) : null}
           {attention.length === 0 ? (
             extrasLoading ? (
-              <ReSkeletonRows rows={3} label="Loading what needs your next action" />
+              <ReSkeletonRows rows={1} label="Loading what needs your next action" />
             ) : (
               <ReEmptyState
                 title="Nothing needs your attention right now"
@@ -488,7 +488,7 @@ export function AgentDailyWorkspace({
             <ReSection id="re-agent-buyers" title="Buyers & tenants" action={<ReViewAll href="/sales/buyers" />}>
               {buyerMetrics.status === "loading" ? (
                 <div className="-mx-[var(--re-card-pad,16px)]">
-                  <ReSkeletonRows rows={2} label="Loading buyer searches" />
+                  <ReSkeletonRows rows={3} variant="figure" label="Loading buyer searches" />
                 </div>
               ) : buyerMetrics.status === "error" ? (
                 <div className="-mx-[var(--re-card-pad,16px)]">
