@@ -6033,3 +6033,62 @@ html[data-marketing-theme="dark"] .auth-shell > main {
     animation: re-fade-in 120ms linear both;
   }
 }
+
+/* Real estate workspace — the preview’s type, outlines, and phone layout.
+   Section outline is the strong line. Rules inside a section stay subtle. */
+.sales-dashboard-premium[data-re-workspace="true"] {
+  --sales-text-secondary: #344054;
+  --sales-text-muted: #475467;
+  --sales-border: #667085;
+  --sales-border-strong: #475467;
+  --sales-border-subtle: #eef1f6;
+  --sales-card-border: #667085;
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] .font-semibold {
+  font-weight: 700;
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] .font-bold {
+  font-weight: 800;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] {
+  --sales-text-primary: #f7f9fc;
+  --sales-text-secondary: #d5deee;
+  --sales-text-muted: #aebbd4;
+  --sales-border: #8b9cc0;
+  --sales-border-strong: #aebbd4;
+  --sales-border-subtle: #243044;
+  --sales-card-border: #8b9cc0;
+  --sales-brand: #d4ff4f;
+  --sales-brand-text: #101828;
+}
+
+@media (max-width: 479px) {
+  .sales-dashboard-premium[data-re-workspace="true"] .re-page-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .sales-dashboard-premium[data-re-workspace="true"] .re-page-actions > * {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .sales-dashboard-premium[data-re-workspace="true"] .re-page-actions > :only-child {
+    grid-column: 1 / -1;
+  }
+
+  .sales-dashboard-premium[data-re-workspace="true"] .re-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .sales-dashboard-premium[data-re-workspace="true"] .re-chips::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -81,7 +81,7 @@ export function RePageHeader({
           </p>
         ) : null}
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="re-page-actions flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
     </header>
   );
 }
@@ -126,18 +126,20 @@ export function ReSection({
         <div className="min-w-0">
           <h2
             id={headingId}
-            className="flex min-w-0 items-baseline gap-2 text-[15px] font-semibold leading-tight tracking-[-0.01em] text-sales-text-primary"
+            className="min-w-0 text-[15px] font-semibold leading-tight tracking-[-0.01em] text-sales-text-primary"
           >
             <span className="min-w-0 truncate">{title}</span>
-            {count != null ? (
-              <span className="shrink-0 text-[13px] font-medium tabular-nums text-sales-text-muted">{count}</span>
-            ) : null}
           </h2>
           {description ? (
             <p className={cn("mt-1 text-[12px] leading-snug text-sales-text-secondary sm:text-[13px]", hideMobileDescription && "hidden layout:block")}>{description}</p>
           ) : null}
         </div>
-        {action ? <div className="flex shrink-0 items-center">{action}</div> : null}
+        {count != null || action ? (
+          <div className="flex shrink-0 items-center gap-2">
+            {count != null ? <span className="text-[13px] font-medium tabular-nums text-sales-text-muted">{count}</span> : null}
+            {action}
+          </div>
+        ) : null}
       </div>
       <div className={cn(flush ? "pb-1.5" : "px-[var(--re-card-pad,16px)] pb-[var(--re-card-pad,16px)]", bodyClassName)}>
         {children}
@@ -152,7 +154,7 @@ export function ReViewAll({ href, label = "View all" }: { href: string; label?: 
       href={href}
       className={cn(
         RE_FOCUS,
-        "-mr-2 inline-flex min-h-11 items-center gap-0.5 rounded-[var(--re-radius-control,8px)] px-2 text-[13px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary layout:min-h-8"
+        "inline-flex min-h-11 items-center gap-0.5 rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[13px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover layout:min-h-9"
       )}
     >
       {label}
@@ -424,7 +426,7 @@ export function ReWorkItem({
   menu?: ReactNode;
 }) {
   return (
-    <li className="flex min-w-0 flex-col gap-2 px-[var(--re-card-pad,16px)] py-3 sm:flex-row sm:items-start sm:gap-3">
+    <li className="flex min-w-0 items-center gap-3 px-[var(--re-card-pad,16px)] py-3">
       <div className="flex min-w-0 flex-1 items-start gap-3">
         {icon ? <ReRowIcon tone={iconTone}>{icon}</ReRowIcon> : null}
         <div className="min-w-0 flex-1">
@@ -443,7 +445,7 @@ export function ReWorkItem({
         </div>
       </div>
       {action || menu ? (
-        <div className="flex shrink-0 items-center gap-1 pl-12 sm:self-center sm:pl-0">
+        <div className="flex shrink-0 items-center gap-1">
           {action}
           {menu}
         </div>

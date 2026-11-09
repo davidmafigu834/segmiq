@@ -3,15 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { SellerIntakePanel } from "@/components/real-estate/seller-intake/SellerIntakePanel";
-import { SaleJourney } from "@/components/real-estate/workflow/SaleJourney";
 import { ReStatusBadge } from "@/components/real-estate/ui";
 import type { PropertyGroup, PropertyRegisterEntry } from "@/lib/real-estate/property-register";
 
 const GROUPS: Array<{ id: PropertyGroup; label: string }> = [
   { id: "all", label: "All" },
-  { id: "drafts", label: "Drafts" },
-  { id: "listings", label: "Listings" },
-  { id: "inactive", label: "Inactive" },
+  { id: "drafts", label: "In preparation" },
+  { id: "listings", label: "On the market" },
+  { id: "inactive", label: "Closed" },
 ];
 
 type Payload = {
@@ -77,15 +76,14 @@ export function PropertyRegister({
 
   return (
     <section className="space-y-3" aria-label="Properties">
-      <SaleJourney surface={surface} />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Property grouping">
+        <div className="re-chips flex gap-2" role="group" aria-label="Property grouping">
           {GROUPS.map((item) => (
             <button
               key={item.id}
               type="button"
               aria-pressed={group === item.id}
-              className={`min-h-11 rounded-[10px] border px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)] ${group === item.id ? "border-sales-text-primary bg-sales-text-primary text-sales-surface" : "border-sales-border bg-sales-surface text-sales-text-primary hover:bg-sales-surface-hover"}`}
+              className={`min-h-11 shrink-0 rounded-full border px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)] ${group === item.id ? "border-sales-text-primary bg-sales-text-primary text-sales-surface" : "border-sales-border bg-sales-surface text-sales-text-primary hover:bg-sales-surface-hover"}`}
               onClick={() => { setGroup(item.id); setPage(1); }}
             >
               {item.label}
@@ -126,7 +124,7 @@ export function PropertyRegister({
               >
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="text-[14px] font-semibold text-sales-text-primary">{entry.title}</span>
-                  <ReStatusBadge label={entry.kind === "draft" ? "Seller opportunity" : "Listing"} tone="neutral" />
+                  <ReStatusBadge label={entry.kind === "draft" ? "In preparation" : "On the market"} tone="neutral" />
                   <ReStatusBadge label={entry.stageLabel} />
                 </span>
                 <span className="text-[12px] text-sales-text-secondary">
@@ -136,7 +134,7 @@ export function PropertyRegister({
               {entry.historyHref ? (
                 <div className="px-4 pb-3">
                   <Link href={entry.historyHref} className="text-[12px] font-semibold text-sales-text-secondary underline focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]">
-                    Seller opportunity history
+                    Preparation file
                   </Link>
                 </div>
               ) : null}
