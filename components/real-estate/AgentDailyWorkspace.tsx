@@ -4,7 +4,6 @@
 /* Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V4 */
 
 import { useMemo, useState } from "react";
-import { SaleJourney } from "@/components/real-estate/workflow/SaleJourney";
 import { useRouter } from "next/navigation";
 import { Building2, CalendarPlus, ClipboardList, ScrollText, UsersRound } from "lucide-react";
 import type { AgentReDashboard } from "@/lib/sales/get-agent-real-estate-dashboard";
@@ -120,7 +119,7 @@ function ActiveWorkTile({ title, detail, href }: { title: string; detail: string
 
 function AttentionCard({ entry, group, className }: { entry: AttentionEntry; group: AttentionGroup; className?: string }) {
   return (
-    <li className={cn("flex min-w-0 flex-col gap-2 px-3 py-3 sm:flex-row sm:items-start sm:gap-3 sm:px-[var(--re-card-pad,16px)]", className)}>
+    <li className={cn("flex min-w-0 items-center gap-3 px-3 py-3 sm:px-[var(--re-card-pad,16px)]", className)}>
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <p className="min-w-0 text-[15px] font-semibold leading-snug text-sales-text-primary [overflow-wrap:anywhere]">{entry.title}</p>
@@ -128,7 +127,7 @@ function AttentionCard({ entry, group, className }: { entry: AttentionEntry; gro
         </div>
         <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary [overflow-wrap:anywhere]">{entry.reason}</p>
       </div>
-      <div className="flex min-w-0 flex-wrap items-center gap-1 sm:shrink-0 sm:pt-0.5">
+      <div className="flex shrink-0 items-center gap-1">
         <ReRowAction label={entry.action.label} srContext={entry.title} onClick={entry.action.onClick} href={entry.action.href} />
         {entry.menu.length > 0 ? (
           <ReActionMenu label={`More actions for ${entry.title}`} sheetTitle={entry.title} actions={entry.menu} />
@@ -269,7 +268,7 @@ export function AgentDailyWorkspace({
   const quickActions = {
     primary: {
       id: "mandate",
-      label: "Send seller form",
+      label: "New seller form",
       description: "A completed form opens the seller and a draft listing",
       icon: <ScrollText size={16} strokeWidth={1.8} />,
       onSelect: () => router.push("/sales/mandates"),
@@ -277,15 +276,15 @@ export function AgentDailyWorkspace({
     secondary: [
       {
         id: "buyer",
-        label: "Buyers and tenants",
-        description: "Profiles opened when a viewing form is signed",
+        label: "Add buyer",
+        description: "Open buyers and tenants to add someone",
         icon: <UsersRound size={16} strokeWidth={1.8} />,
-        onSelect: () => router.push("/sales/buyers"),
+        onSelect: () => router.push("/sales/buyers?new=1"),
       },
       {
         id: "viewing",
         label: "Viewing form",
-        description: "Share it from a property. A signed form books the calendar",
+        description: "Copy a viewing form from a property",
         icon: <CalendarPlus size={16} strokeWidth={1.8} />,
         onSelect: () => router.push("/sales/listings"),
       },
@@ -337,8 +336,6 @@ export function AgentDailyWorkspace({
         }
         actions={<ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />}
       />
-
-      <SaleJourney surface="sales" />
 
       <div className="grid grid-cols-1 items-start gap-3 layout:grid-cols-12 layout:gap-[var(--re-section-gap,16px)]">
         <ReSection
@@ -404,7 +401,7 @@ export function AgentDailyWorkspace({
           )}
         </ReSection>
 
-        <div className="order-5 layout:order-first layout:col-span-12">
+        <div className="order-3 layout:order-first layout:col-span-12">
           <h2 className="sr-only">My sales snapshot</h2>
           <ReMetricOverview label="My sales snapshot" quiet>
             <ReMetricGrid label="My sales snapshot">
@@ -438,7 +435,7 @@ export function AgentDailyWorkspace({
           id="re-agent-schedule"
           title="Today's schedule"
           count={schedule.length}
-          className="order-3 layout:order-none layout:col-span-4"
+          className="order-2 layout:order-none layout:col-span-4"
           flush
           action={<ReViewAll href="/sales/calendar" label="Calendar" />}
         >
@@ -527,13 +524,13 @@ export function AgentDailyWorkspace({
                 <ReWorkItem
                   icon={<ClipboardList />}
                   title="Inspections"
-                  reason="Photos and the rest of the listing are added after the visit."
+                  reason="Visits still to record."
                   action={<ReRowAction label="Open" srContext="Inspections" href="/sales/inspections" />}
                 />
                 <ReWorkItem
                   icon={<Building2 />}
                   title="Sellers"
-                  reason="Each completed mandate opens a seller and a draft listing."
+                  reason="People with a property on file."
                   action={<ReRowAction label="Open" srContext="Sellers" href="/sales/owners" />}
                 />
               </ReList>

@@ -1,0 +1,122 @@
+.re-mock {
+  --sales-border-subtle: #eef1f6;
+  --sales-border: #667085;
+  --sales-border-strong: #475467;
+  --sales-text-secondary: #344054;
+  --sales-text-muted: #475467;
+}
+.re-mock[data-theme=dark] {
+  color-scheme: dark;
+  --sales-bg: #070814;
+  --sales-bg-subtle: #0c0718;
+  --sales-surface: #081a35;
+  --sales-surface-subtle: #12131f;
+  --sales-surface-hover: #18132a;
+  --sales-surface-active: #1c1630;
+  --sales-neutral-900: #f7f9fc;
+  --sales-neutral-700: #c5d0e6;
+  --sales-neutral-500: #9aabc8;
+  --sales-neutral-400: #8b9cc0;
+  --sales-neutral-300: #3d4d6e;
+  --sales-neutral-200: #2a3854;
+  --sales-neutral-100: #1a2540;
+  --sales-neutral-0: #10182c;
+  --sales-text-primary: #f7f9fc;
+  --sales-text-secondary: #d5deee;
+  --sales-text-muted: #aebbd4;
+  --sales-border-subtle: #243044;
+  --sales-border: #8b9cc0;
+  --sales-border-strong: #aebbd4;
+  --sales-brand: #d4ff4f;
+  --sales-brand-text: #101828;
+  --sales-danger: #ff5d73;
+  --sales-danger-fg: #ff8a9a;
+}
+.re-mock[data-theme=dark] .dd {
+  --sales-text-primary: #101828;
+  --sales-surface: #f4f6fb;
+}
+.re-mock .font-semibold { font-weight: 700; }
+.re-mock .font-bold { font-weight: 800; }
+@keyframes re-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+@keyframes re-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.re-bone {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--sales-neutral-300) 70%, var(--sales-surface)) 0%,
+    var(--sales-neutral-200) 42%,
+    color-mix(in srgb, var(--sales-neutral-300) 70%, var(--sales-surface)) 100%
+  );
+  background-size: 220% 100%;
+  animation: re-shimmer 1.35s ease-in-out infinite;
+}
+.re-in { animation: re-in 180ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .re-bone, .re-in { animation: none; }
+}
+@media (max-width: 479px) {
+  .re-mock .re-head { flex-direction: column; align-items: stretch; }
+  .re-mock .re-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .re-mock .re-actions.re-stack { grid-template-columns: 1fr; }
+  .re-mock .re-actions > * { width: 100%; justify-content: center; text-align: center; }
+  .re-mock .re-fill { width: 100%; justify-content: center; text-align: center; }
+  .re-mock .re-split { flex-direction: column; align-items: stretch; }
+  .re-mock .re-split > button,
+  .re-mock .re-split > .re-actions { width: 100%; }
+  .re-mock .re-nav,
+  .re-mock .re-chips { flex-wrap: nowrap; overflow-x: auto; width: 100%; scrollbar-width: none; }
+  .re-mock .re-nav::-webkit-scrollbar,
+  .re-mock .re-chips::-webkit-scrollbar { display: none; }
+  .re-mock .re-bar { flex-direction: column; align-items: stretch; }
+  .re-mock .re-bar > * { width: 100%; }
+  .re-mock .re-toggle { display: grid; grid-template-columns: 1fr 1fr; }
+  .re-mock .re-pager { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; width: 100%; }
+  .re-mock .re-pager > p { min-width: 0; }
+  .re-mock .re-day { padding-left: 0; padding-right: 0; letter-spacing: 0; font-size: 10px; }
+}
+
+.dd-plate { position: relative; overflow: hidden; }
+.dd-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 84px;
+  margin-top: -84px;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--sales-brand) 18%, transparent) 55%, var(--sales-brand));
+  animation: dd-beam 2.2s linear infinite;
+  pointer-events: none;
+}
+.dd-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--sales-brand);
+  border-style: solid;
+}
+.dd-bar {
+  height: 10px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--sales-surface) 16%, transparent);
+}
+@keyframes dd-beam {
+  from { top: 0; }
+  to { top: 112%; }
+}
+@keyframes dd-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.dd-live { animation: dd-live 1.4s ease-in-out infinite; }
+.dd-dim { color: color-mix(in srgb, var(--sales-surface) 68%, transparent); }
+.dd-line { border-color: color-mix(in srgb, var(--sales-surface) 16%, transparent); }
+@keyframes dd-in { from { opacity: 0; } to { opacity: 1; } }
+.dd-in { animation: dd-in 180ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .dd-beam, .dd-live, .dd-in { animation: none; }
+}
