@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function ClientOffersPage({
   searchParams,
 }: {
-  searchParams?: { listingId?: string; contactId?: string };
+  searchParams?: { listingId?: string; contactId?: string; buyerSearchId?: string };
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId || session.role !== "CLIENT_MANAGER" || !session.clientId) {
@@ -45,6 +45,7 @@ export default async function ClientOffersPage({
           clientId={session.clientId}
           initialListingId={typeof searchParams?.listingId === "string" ? searchParams.listingId : null}
           initialContactId={typeof searchParams?.contactId === "string" ? searchParams.contactId : null}
+          initialBuyerSearchId={typeof searchParams?.buyerSearchId === "string" ? searchParams.buyerSearchId : null}
         />
       </Suspense>
     </ClientManagerLayout>

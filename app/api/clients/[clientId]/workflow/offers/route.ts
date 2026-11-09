@@ -14,6 +14,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     listingId?: string;
     contactId?: string;
     buyerSearchId?: string | null;
+    leadId?: string | null;
     amount?: number;
     conditions?: string | null;
     templateKey?: string;
@@ -35,13 +36,14 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
       });
     }
   }
-  if (!body.listingId || !body.contactId || !body.amount) return NextResponse.json({ error: "Choose the buyer, property, and amount." }, { status: 400 });
+  if (!body.listingId || !body.contactId) return NextResponse.json({ error: "Choose the buyer and the property." }, { status: 400 });
   const result = await issueOfferLink({
     clientId: params.clientId,
     actor,
     listingId: body.listingId,
     contactId: body.contactId,
     buyerSearchId: body.buyerSearchId,
+    leadId: body.leadId,
     amount: body.amount,
     conditions: body.conditions,
     templateKey: body.templateKey || "synthetic-offer-to-purchase",

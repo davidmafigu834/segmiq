@@ -82,6 +82,7 @@ export function OffersWorkspace({
   onSelectionChange,
   initialListingId = null,
   initialContactId = null,
+  initialBuyerSearchId = null,
   initialOfferId = null,
 }: {
   clientId: string;
@@ -93,6 +94,7 @@ export function OffersWorkspace({
   onSelectionChange?: (id: string | null) => void;
   initialListingId?: string | null;
   initialContactId?: string | null;
+  initialBuyerSearchId?: string | null;
   initialOfferId?: string | null;
 }) {
   const overlayPanel = useMediaQuery("(max-width: 1279px)");
@@ -158,8 +160,8 @@ export function OffersWorkspace({
 
   useEffect(() => {
     if (initialOfferId) select(initialOfferId);
-    else if (initialListingId || initialContactId) setCreating({ listingId: initialListingId, contactId: initialContactId });
-  }, [initialListingId, initialContactId, initialOfferId, select]);
+    else if (initialListingId || initialContactId) setCreating({ listingId: initialListingId, contactId: initialContactId, buyerSearchId: initialBuyerSearchId });
+  }, [initialListingId, initialContactId, initialBuyerSearchId, initialOfferId, select]);
 
   const tabCounts: Record<StatusTab, number> = {
     active: summary.active,
@@ -170,7 +172,7 @@ export function OffersWorkspace({
   };
 
   const empty = letterMode
-    ? { title: "No offer letters yet", description: "Generate the letter from the buyer after the viewing. It shows here once it exists." }
+    ? { title: "No offer letters yet", description: "Generate the letter from the buyer after the viewing. It shows here after they sign the form." }
     : emptyCopy(tab);
   const shown = letterMode
     ? offers.filter((row) => {

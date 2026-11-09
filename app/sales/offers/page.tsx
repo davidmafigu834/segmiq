@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function SalesOffersPage({
   searchParams,
 }: {
-  searchParams?: { listingId?: string; contactId?: string; offerId?: string };
+  searchParams?: { listingId?: string; contactId?: string; buyerSearchId?: string; offerId?: string };
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId || !canActAsSalesperson(session) || !session.clientId) {
@@ -54,6 +54,7 @@ export default async function SalesOffersPage({
           complianceHref={null}
           initialListingId={typeof searchParams?.listingId === "string" ? searchParams.listingId : null}
           initialContactId={typeof searchParams?.contactId === "string" ? searchParams.contactId : null}
+          initialBuyerSearchId={typeof searchParams?.buyerSearchId === "string" ? searchParams.buyerSearchId : null}
           initialOfferId={typeof searchParams?.offerId === "string" ? searchParams.offerId : null}
         />
       </SalesAppShell>

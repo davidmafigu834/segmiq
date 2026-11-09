@@ -124,6 +124,7 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
     const params = new URLSearchParams();
     if (row.listingId) params.set("listingId", row.listingId);
     if (row.contact_id) params.set("contactId", row.contact_id);
+    params.set("buyerSearchId", row.id);
     const query = params.toString();
     return query ? `${offersPath}?${query}` : `${basePath}/${row.id}`;
   };

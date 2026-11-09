@@ -7,6 +7,9 @@ import { isPrivateDocumentStorageConfigured, putPrivateDocument } from "@/lib/re
 import { createScheduledViewing } from "@/lib/real-estate/viewing-service";
 import { viewingOverlapWarning } from "@/lib/real-estate/buyer-match";
 import { createRealEstateOffer, mutateRealEstateOffer } from "@/lib/real-estate/offer-service";
+import { listingAllowsOffer } from "@/lib/real-estate/offers";
+import { canCreateOfferForPrivateBuyer } from "@/lib/real-estate/buyer-contact-access";
+import { loadBuyerContactAccessFacts } from "@/lib/real-estate/buyer-contact-access-service";
 import { buyerRecordIsOpenable } from "@/lib/real-estate/viewing-calendar";
 import { offerExpiryInstant, offerRevisionAfterTermChange, secureLinkAccess, claimViewingSubmission, issuanceTemplateDecision, transactionStartRecovery, SYNTHETIC_OFFER_TEMPLATE, SYNTHETIC_VIEWING_TEMPLATE, type SecureLinkScope } from "@/lib/real-estate/workflow/journey";
 import { readPrivateListingImage } from "@/lib/real-estate/private-listing-images";
@@ -332,13 +335,66 @@ async function storeJourneyPdf(input: { clientId: string; linkId: string; title:
   }
 }
 
+function offerLinkMeta(link: Record<string, unknown>): { validityDays: number | null; leadId: string | null } {
+  const slots = link.authorised_slots;
+  if (!Array.isArray(slots)) return { validityDays: null, leadId: null };
+  for (const slot of slots) {
+    if (!slot || typeof slot !== "object") continue;
+    const record = slot as { validityDays?: unknown; leadId?: unknown };
+    const days = Number(record.validityDays);
+    const leadId = typeof record.leadId === "string" && record.leadId ? record.leadId : null;
+    if ((Number.isFinite(days) && days > 0) || leadId) return { validityDays: Number.isFinite(days) && days > 0 ? days : null, leadId };
+  }
+  return { validityDays: null, leadId: null };
+}
+
+async function assertOfferParties(input: { clientId: string; actor: Actor; listingId: string; contactId: string }) {
+  const supabase = createAdminClient();
+  const [{ data: listing }, { data: contact }] = await Promise.all([
+    supabase.from("listings").select("id, status").eq("id", input.listingId).eq("client_id", input.clientId).maybeSingle(),
+    supabase.from("contacts").select("id").eq("id", input.contactId).eq("client_id", input.clientId).maybeSingle(),
+  ]);
+  if (!listing) return fail(404, "Listing not found.");
+  if (!listingAllowsOffer(listing.status as string)) return fail(409, "This listing is not open to offers.");
+  if (!contact) return fail(404, "Contact not found.");
+  const buyerAccess = await loadBuyerContactAccessFacts(input.clientId, [input.contactId]);
+  if (!buyerAccess.ok) return fail(503, buyerAccess.error);
+  if (
+    !canCreateOfferForPrivateBuyer({
+      actor: { id: input.actor.userId, role: input.actor.role, clientId: input.actor.clientId },
+      recordClientId: input.clientId,
+      contactId: input.contactId,
+      leadAssignedToId: null,
+      searches: buyerAccess.searches,
+    })
+  ) {
+    return fail(403, "You cannot create an offer for this buyer.");
+  }
+  return { ok: true as const };
+}
+
+async function offerActorFromLink(link: Record<string, unknown>) {
+  const userId = String(link.created_by ?? link.agent_id ?? "");
+  if (!userId) return null;
+  const supabase = createAdminClient();
+  const { data } = await supabase.from("users").select("id, name, role, client_id").eq("id", userId).maybeSingle();
+  if (!data?.id || !data.role) return null;
+  return {
+    id: String(data.id),
+    name: String(data.name ?? "Agent"),
+    role: String(data.role),
+    clientId: (data.client_id as string | null) ?? String(link.client_id),
+  };
+}
+
 export async function issueOfferLink(input: {
   clientId: string;
   actor: Actor;
   listingId: string;
   contactId: string;
   buyerSearchId?: string | null;
-  amount: number;
+  leadId?: string | null;
+  amount?: number | null;
   conditions?: string | null;
   templateKey: string;
   templateValidityDays?: number | null;
@@ -351,25 +407,36 @@ export async function issueOfferLink(input: {
   if (!template.ok) return fail(409, template.error);
   const secret = pepper();
   if (!secret.ok) return secret;
-  const created = await createRealEstateOffer({
-    clientId: input.clientId,
-    actor: { id: input.actor.userId, name: input.actor.name ?? "Agent", role: input.actor.role, clientId: input.actor.clientId },
-    listingId: input.listingId,
-    contactId: input.contactId,
-    buyerSearchId: input.buyerSearchId,
-    amount: input.amount,
-    conditions: input.conditions,
-    acceptanceChannel: "seller_link",
-  });
-  if (!created.ok) return created;
+  const hasAmount = Number.isFinite(input.amount) && (input.amount as number) > 0;
+  let offerId: string | null = null;
+  if (hasAmount) {
+    const created = await createRealEstateOffer({
+      clientId: input.clientId,
+      actor: { id: input.actor.userId, name: input.actor.name ?? "Agent", role: input.actor.role, clientId: input.actor.clientId },
+      listingId: input.listingId,
+      contactId: input.contactId,
+      buyerSearchId: input.buyerSearchId,
+      leadId: input.leadId,
+      amount: input.amount as number,
+      conditions: input.conditions,
+      acceptanceChannel: "seller_link",
+    });
+    if (!created.ok) return created;
+    offerId = created.offer.id as string;
+  } else {
+    const ready = await assertOfferParties(input);
+    if (!ready.ok) return ready;
+  }
   const token = newInvitationToken();
   const supabase = createAdminClient();
+  const validityDays = input.templateValidityDays ?? 7;
   const inserted = await supabase.from("re_journey_links").insert({
     client_id: input.clientId,
     purpose: "offer_buyer",
     listing_id: input.listingId,
     buyer_search_id: input.buyerSearchId ?? null,
-    offer_id: created.offer.id,
+    offer_id: offerId,
+    recipient_id: input.contactId,
     agent_id: input.actor.userId,
     revision: "1",
     token_hash: hashSecret(token, secret.pepper),
@@ -377,11 +444,13 @@ export async function issueOfferLink(input: {
     template_key: input.templateKey,
     synthetic: template.synthetic,
     created_by: input.actor.userId,
-    authorised_slots: [],
+    authorised_slots: offerId ? [] : [{ validityDays, leadId: input.leadId ?? null }],
   }).select("id").maybeSingle();
-  if (inserted.error || !inserted.data) return fail(503, "The offer was not issued because the link could not be saved.");
-  await supabase.from("real_estate_offers").update({ internal_notes: `validity-days:${input.templateValidityDays ?? 7}` }).eq("id", created.offer.id as string).eq("client_id", input.clientId);
-  return { ok: true as const, offerId: created.offer.id as string, path: `/journey/${token}`, synthetic: template.synthetic };
+  if (inserted.error || !inserted.data) return fail(503, "The buyer form was not created because the link could not be saved.");
+  if (offerId) {
+    await supabase.from("real_estate_offers").update({ internal_notes: `validity-days:${validityDays}` }).eq("id", offerId).eq("client_id", input.clientId);
+  }
+  return { ok: true as const, offerId, path: `/journey/${token}`, synthetic: template.synthetic };
 }
 
 export async function signBuyerOffer(input: { token: string; name: string; signature: string; amount: number; conditions: string }) {
@@ -400,7 +469,44 @@ export async function signBuyerOffer(input: { token: string; name: string; signa
   });
   if (!access.ok) return fail(410, access.error);
   if (input.signature.trim().length < 2) return fail(400, "Sign the offer before sending it.");
+  if (!Number.isFinite(input.amount) || input.amount <= 0) return fail(400, "Enter an offer amount greater than 0.");
   const supabase = createAdminClient();
+  if (!link.offer_id) {
+    const contactId = String(link.recipient_id ?? "");
+    if (!contactId) return fail(400, "This offer form has no buyer.");
+    const actor = await offerActorFromLink(link);
+    if (!actor) return fail(403, "The offer could not be recorded.");
+    const meta = offerLinkMeta(link);
+    const created = await createRealEstateOffer({
+      clientId: String(link.client_id),
+      actor,
+      listingId: String(link.listing_id),
+      contactId,
+      leadId: meta.leadId,
+      buyerSearchId: (link.buyer_search_id as string | null) ?? null,
+      amount: input.amount,
+      conditions: input.conditions,
+      notes: `validity-days:${meta.validityDays ?? 7}`,
+      acceptanceChannel: "seller_link",
+    });
+    if (!created.ok) return created;
+    const offerId = String(created.offer.id);
+    const attached = await supabase
+      .from("re_journey_links")
+      .update({ offer_id: offerId })
+      .eq("id", link.id as string)
+      .is("offer_id", null)
+      .select("id")
+      .maybeSingle();
+    if (!attached.data) {
+      await supabase.from("real_estate_offers").delete().eq("id", offerId).eq("client_id", link.client_id as string).eq("status", "draft");
+      const { data: winner } = await supabase.from("re_journey_links").select("offer_id").eq("id", link.id as string).maybeSingle();
+      if (!winner?.offer_id) return fail(503, "The offer was not saved.");
+      link.offer_id = winner.offer_id;
+    } else {
+      link.offer_id = offerId;
+    }
+  }
   const { data: offer } = await supabase.from("real_estate_offers").select("*").eq("id", link.offer_id as string).eq("client_id", link.client_id as string).maybeSingle();
   if (!offer) return fail(404, "Offer not found.");
   const currentRevision = String(offer.revision ?? link.revision ?? "1");

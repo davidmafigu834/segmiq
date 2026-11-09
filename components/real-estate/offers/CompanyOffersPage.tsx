@@ -13,11 +13,13 @@ export function CompanyOffersPage({
   clientId,
   initialListingId = null,
   initialContactId = null,
+  initialBuyerSearchId = null,
 }: {
   chrome: CompanyPageChrome;
   clientId: string;
   initialListingId?: string | null;
   initialContactId?: string | null;
+  initialBuyerSearchId?: string | null;
 }) {
   const stackedSplit = useMediaQuery("(max-width: 767px)");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export function CompanyOffersPage({
         headerCreateNonce={createNonce}
         initialListingId={initialListingId}
         initialContactId={initialContactId}
+        initialBuyerSearchId={initialBuyerSearchId}
         onSelectionChange={setSelectedId}
       />
     </CompanyRePageFrame>

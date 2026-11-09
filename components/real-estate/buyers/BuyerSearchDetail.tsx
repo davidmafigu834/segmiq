@@ -274,6 +274,7 @@ export function BuyerSearchDetail({
   const offerParams = new URLSearchParams();
   if (linkedListingId) offerParams.set("listingId", linkedListingId);
   if (bundle.contact?.id) offerParams.set("contactId", bundle.contact.id);
+  if (search.id) offerParams.set("buyerSearchId", String(search.id));
   const offerQuery = offerParams.toString();
   const offerHref = offerQuery ? `${offersHref}?${offerQuery}` : offersHref;
   const activeMatch = panel && "listingId" in panel ? matches.find((row) => row.listingId === panel.listingId) ?? null : null;

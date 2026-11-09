@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import { Button, Field, Input, TextArea } from "@/components/sales/ui";
+import { Button, Field, Input } from "@/components/sales/ui";
 import { formatOfferMoney, listingAllowsOffer } from "@/lib/real-estate/offers";
 import { listingLabel } from "@/lib/real-estate/helpers";
 
@@ -21,31 +21,29 @@ export type CreateOfferPrefill = {
   contactId?: string | null;
   contactName?: string | null;
   leadId?: string | null;
+  buyerSearchId?: string | null;
 };
 
 export function CreateOfferSheet({
   clientId,
   prefill,
   onClose,
-  onCreated,
 }: {
   clientId: string;
   prefill?: CreateOfferPrefill;
   onClose: () => void;
-  onCreated: (offerId: string, submitted: boolean) => void;
+  onCreated?: (offerId: string, submitted: boolean) => void;
 }) {
   const [listings, setListings] = useState<ListingOpt[]>([]);
   const [contacts, setContacts] = useState<ContactOpt[]>([]);
   const [listingId, setListingId] = useState(prefill?.listingId ?? "");
   const [contactId, setContactId] = useState(prefill?.contactId ?? "");
   const [contactQuery, setContactQuery] = useState(prefill?.contactName ?? "");
-  const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("USD");
-  const [conditions, setConditions] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState<"draft" | "submit" | null>(null);
+  const [saving, setSaving] = useState(Boolean(prefill?.listingId && prefill?.contactId));
+  const issued = useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const [link, setLink] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,71 +89,90 @@ export function CreateOfferSheet({
   const listing = listings.find((l) => l.id === listingId) ?? null;
   const listingOpen = listing ? listingAllowsOffer(listing.status) : true;
 
-  async function save(submit: boolean) {
+  async function createLink() {
     setError(null);
-    const n = Number(amount);
     if (!listingId) {
       setError("Select a property.");
+      setSaving(false);
       return;
     }
     if (!contactId) {
       setError("Select a buyer.");
+      setSaving(false);
       return;
     }
-    if (!Number.isFinite(n) || n <= 0) {
-      setError("Enter an offer amount greater than 0.");
+    if (listing && !listingOpen) {
+      setError("This listing is not open to offers.");
+      setSaving(false);
       return;
     }
-    setSaving(submit ? "submit" : "draft");
+    setSaving(true);
     try {
-      const res = await fetch(`/api/clients/${clientId}/offers`, {
+      const res = await fetch(`/api/clients/${clientId}/workflow/offers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          listing_id: listingId,
-          contact_id: contactId,
-          lead_id: prefill?.leadId ?? null,
-          amount: n,
-          currency,
-          conditions: conditions.trim() || null,
-          expiry_date: expiry || null,
-          notes: notes.trim() || null,
-          submit,
+          listingId,
+          contactId,
+          buyerSearchId: prefill?.buyerSearchId ?? null,
+          leadId: prefill?.leadId ?? null,
+          templateKey: "synthetic-offer-to-purchase",
         }),
       });
-      const j = (await res.json().catch(() => ({}))) as { error?: string; offer?: { id: string } };
-      if (!res.ok || !j.offer?.id) {
-        setError(j.error ?? "Could not save offer.");
+      const j = (await res.json().catch(() => ({}))) as { error?: string; path?: string };
+      if (!res.ok || !j.path) {
+        setError(j.error ?? "The buyer form was not created.");
         return;
       }
-      onCreated(j.offer.id, submit);
+      const url = `${window.location.origin}${j.path}`;
+      setLink(url);
+      const copied = await navigator.clipboard?.writeText(url).then(() => true).catch(() => false);
+      setNotice(copied ? "Buyer form link copied." : "Copy this link and send it to the buyer.");
     } finally {
-      setSaving(null);
+      setSaving(false);
     }
   }
+
+  // The buyer and property are already chosen, so opening this sheet creates the link.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (issued.current || !prefill?.listingId || !prefill.contactId) return;
+    issued.current = true;
+    void createLink();
+  }, [prefill?.listingId, prefill?.contactId]);
 
   return (
     <PremiumSheet
       title="Generate offer letter"
-      description="Record a structured offer. Drafts are not presented to the seller."
+      description="The buyer enters the amount, conditions, and signature. Send them this link."
       onClose={onClose}
       size="md"
       footer={
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <Button variant="secondary" onClick={onClose} disabled={saving != null}>
-            Cancel
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
+            {link ? "Done" : "Cancel"}
           </Button>
-          <Button variant="secondary" onClick={() => void save(false)} loading={saving === "draft"} disabled={saving != null}>
-            {saving === "draft" ? "Saving…" : "Save draft"}
-          </Button>
-          <Button variant="primary" onClick={() => void save(true)} loading={saving === "submit"} disabled={saving != null}>
-            {saving === "submit" ? "Submitting…" : "Submit offer"}
-          </Button>
+          {link ? (
+            <Button
+              variant="primary"
+              onClick={() => {
+                void navigator.clipboard?.writeText(link).then(() => setNotice("Buyer form link copied.")).catch(() => setNotice("Copy the link below."));
+              }}
+            >
+              Copy link
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={() => void createLink()} loading={saving} disabled={saving}>
+              {saving ? "Creating…" : "Create buyer link"}
+            </Button>
+          )}
         </div>
       }
     >
       <div className="space-y-4">
         {error ? <p className="text-[13px] text-sales-danger">{error}</p> : null}
+        {notice ? <p className="text-[13px] text-sales-text-secondary">{notice}</p> : null}
+        {link ? <p className="break-all text-[14px] font-medium text-sales-text-primary">{link}</p> : null}
 
         <Field label="Property">
           {prefill?.listingId ? (
@@ -167,6 +184,7 @@ export function CreateOfferSheet({
               className="h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px]"
               value={listingId}
               onChange={(e) => setListingId(e.target.value)}
+              disabled={Boolean(link)}
             >
               <option value="">Select listing</option>
               {listings.map((l) => (
@@ -184,7 +202,7 @@ export function CreateOfferSheet({
 
         <Field label="Listing price">
           <p className="text-[18px] font-semibold tabular-nums text-sales-text-primary">
-            {listing?.price != null ? formatOfferMoney(Number(listing.price), currency) : "—"}
+            {listing?.price != null ? formatOfferMoney(Number(listing.price), "USD") : "—"}
           </p>
         </Field>
 
@@ -197,8 +215,9 @@ export function CreateOfferSheet({
                 value={contactQuery}
                 onChange={(e) => setContactQuery(e.target.value)}
                 placeholder="Search contacts"
+                disabled={Boolean(link)}
               />
-              {contacts.length > 0 ? (
+              {contacts.length > 0 && !link ? (
                 <ul className="mt-2 max-h-36 overflow-y-auto rounded-[10px] border border-sales-border-subtle">
                   {contacts.map((c) => (
                     <li key={c.id}>
@@ -221,56 +240,6 @@ export function CreateOfferSheet({
               ) : null}
             </>
           )}
-        </Field>
-
-        <div className="grid grid-cols-3 gap-2">
-          <Field label="Offer amount" className="col-span-2">
-            <Input
-              className="h-12 text-[18px] font-semibold tabular-nums"
-              inputMode="decimal"
-              type="number"
-              min={1}
-              step={1}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="145000"
-            />
-          </Field>
-          <Field label="Currency">
-            <select
-              className="h-12 w-full rounded-[10px] border border-sales-border bg-sales-surface px-2 text-[13px]"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-            >
-              {["USD", "ZAR", "GBP", "EUR", "ZWG"].map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-
-        <Field label="Conditions">
-          <TextArea
-            rows={3}
-            value={conditions}
-            onChange={(e) => setConditions(e.target.value)}
-            placeholder="e.g. Cash purchase."
-          />
-        </Field>
-
-        <Field label="Expiry">
-          <Input type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
-        </Field>
-
-        <Field label="Internal note">
-          <TextArea
-            rows={2}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Visible to your team only."
-          />
         </Field>
       </div>
     </PremiumSheet>
