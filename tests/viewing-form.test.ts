@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { viewingAccentInk, viewingPropertyCard } from "../lib/real-estate/workflow/viewing-form";
+import { viewingAccentInk, viewingFormPhotoSources, viewingPropertyCard } from "../lib/real-estate/workflow/viewing-form";
 
 test("viewing card uses the listing address, price, and house facts", () => {
   const card = viewingPropertyCard({
@@ -46,6 +46,30 @@ test("a listing without a configured currency does not print a bare price", () =
   assert.equal(card.priceOnRequest, true);
   assert.equal(card.place, null);
   assert.equal(card.transactionLabel, "To rent");
+});
+
+test("viewing photos include inspection files and photos added on the listing", () => {
+  const clientId = "org-a";
+  const listingId = "listing-a";
+  const base = "https://media.example.test";
+  const added = `${base}/clients/${clientId}/projects/real-estate-listing-${listingId}/originals/added.jpg`;
+  const sources = viewingFormPhotoSources(
+    [
+      `clients/${clientId}/listings/${listingId}/photos/inspection.jpg`,
+      added,
+      `clients/${clientId}/listings/${listingId}/photos/kitchen.png`,
+      "https://evil.example/photo.jpg",
+    ],
+    clientId,
+    listingId,
+    "tok en",
+    base,
+  );
+  assert.deepEqual(sources, [
+    "/api/public/journey/tok%20en/photo",
+    added,
+    "/api/public/journey/tok%20en/photo?index=1",
+  ]);
 });
 
 test("light agency colours keep dark button text", () => {

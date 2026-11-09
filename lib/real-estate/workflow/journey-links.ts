@@ -9,9 +9,9 @@ import { viewingOverlapWarning } from "@/lib/real-estate/buyer-match";
 import { createRealEstateOffer, mutateRealEstateOffer } from "@/lib/real-estate/offer-service";
 import { buyerRecordIsOpenable } from "@/lib/real-estate/viewing-calendar";
 import { offerExpiryInstant, offerRevisionAfterTermChange, secureLinkAccess, claimViewingSubmission, issuanceTemplateDecision, transactionStartRecovery, SYNTHETIC_OFFER_TEMPLATE, SYNTHETIC_VIEWING_TEMPLATE, type SecureLinkScope } from "@/lib/real-estate/workflow/journey";
-import { authorisedMarketingPhotoUrl, privatePhotoKeyAt } from "@/lib/real-estate/agent-listing-pages/policy";
+import { privatePhotoKeyAt } from "@/lib/real-estate/agent-listing-pages/policy";
 import { readPrivateListingImage } from "@/lib/real-estate/private-listing-images";
-import { viewingPropertyCard } from "@/lib/real-estate/workflow/viewing-form";
+import { viewingFormPhotoSources, viewingPropertyCard } from "@/lib/real-estate/workflow/viewing-form";
 
 const LINK_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -65,16 +65,6 @@ async function quotationCurrency(clientId: string): Promise<{ currency: string |
   const code = textOrNull((data as { default_currency?: string | null } | null)?.default_currency)?.toUpperCase() ?? "";
   if (error || !/^[A-Z]{3}$/.test(code)) return { currency: null, configured: false };
   return { currency: code, configured: true };
-}
-
-function listingPhotoUrl(token: string, clientId: string, listingId: string, photos: unknown): string | null {
-  if (privatePhotoKeyAt(photos, clientId, listingId, 0)) return `/api/public/journey/${encodeURIComponent(token)}/photo`;
-  if (!Array.isArray(photos)) return null;
-  for (const value of photos) {
-    const url = authorisedMarketingPhotoUrl(value, clientId, listingId, process.env.CLOUDFLARE_R2_PUBLIC_URL);
-    if (url) return url;
-  }
-  return null;
 }
 
 export async function issueViewingLink(input: {
@@ -182,7 +172,7 @@ export async function previewJourneyLink(token: string) {
     bedrooms: numberOrNull(row.bedrooms),
     bathrooms: numberOrNull(row.bathrooms),
     description: textOrNull(row.description),
-    photoUrl: listing ? listingPhotoUrl(token, clientId, listingId, row.photos) : null,
+    photoUrls: listing ? viewingFormPhotoSources(row.photos, clientId, listingId, token, process.env.CLOUDFLARE_R2_PUBLIC_URL) : [],
   });
   return {
     ok: true as const,
@@ -197,7 +187,8 @@ export async function previewJourneyLink(token: string) {
   };
 }
 
-export async function journeyListingPhoto(token: string) {
+export async function journeyListingPhoto(token: string, index = 0) {
+  if (!Number.isInteger(index) || index < 0 || index > 49) return fail(400, "That photograph is not on this listing.");
   const loaded = await loadLink(token);
   if (!loaded.ok) return loaded;
   const link = loaded.link;
@@ -215,7 +206,7 @@ export async function journeyListingPhoto(token: string) {
   const clientId = String(link.client_id);
   const listingId = String(link.listing_id);
   const { data: listing } = await createAdminClient().from("listings").select("photos").eq("id", listingId).eq("client_id", clientId).maybeSingle();
-  const key = privatePhotoKeyAt((listing as { photos?: unknown } | null)?.photos, clientId, listingId, 0);
+  const key = privatePhotoKeyAt((listing as { photos?: unknown } | null)?.photos, clientId, listingId, index);
   if (!key) return fail(404, "This house has no photograph yet.");
   const image = await readPrivateListingImage(key);
   if (!image) return fail(404, "This house has no photograph yet.");

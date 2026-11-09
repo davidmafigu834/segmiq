@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { uploadErrorMessage, uploadProjectMediaFile } from "@/app/cloud/lib/upload-project-media";
 import { acqFieldClass, acqLabelClass, formatWhen } from "@/components/real-estate/acquisition/acquisition-ui";
 import { OfferDetailPanel } from "@/components/real-estate/offers/OfferDetailPanel";
 import { ReErrorState, ReSection, ReSheet, ReSkeletonRows, ReStatusBadge } from "@/components/real-estate/ui";
@@ -32,8 +31,6 @@ type ViewingRow = {
   buyer_search_id?: string | null;
   contact?: { name?: string | null } | null;
 };
-type InspectionPhoto = { id?: string; caption?: string | null; document_id?: string | null };
-
 const shellClass = reSalesShell;
 
 function categoryLabel(value: string | null | undefined): string | null {
@@ -67,7 +64,6 @@ export function ListingDetailView({
   const [house, setHouse] = useState<ListingHouseContext | null>(null);
   const [viewings, setViewings] = useState<ViewingRow[]>([]);
   const [offers, setOffers] = useState<OfferRow[]>([]);
-  const [inspectionPhotos, setInspectionPhotos] = useState<InspectionPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openOfferId, setOpenOfferId] = useState<string | null>(null);
@@ -105,24 +101,6 @@ export function ListingDetailView({
   }, [clientId, listingId, reloadKey]);
 
   const opportunityId = house?.opportunityId ?? null;
-  useEffect(() => {
-    if (!opportunityId) {
-      setInspectionPhotos([]);
-      return;
-    }
-    let cancelled = false;
-    fetch(`/api/clients/${clientId}/acquisitions/${opportunityId}`, { cache: "no-store" })
-      .then((response) => response.json())
-      .then((json: { photos?: InspectionPhoto[] }) => {
-        if (!cancelled) setInspectionPhotos(json.photos ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setInspectionPhotos([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [clientId, opportunityId]);
 
   if (loading) {
     return (
@@ -184,7 +162,6 @@ export function ListingDetailView({
             key={listing.updated_at}
             clientId={clientId}
             listing={listing}
-            inspectionPhotos={inspectionPhotos}
             onSaved={() => setReloadKey((value) => value + 1)}
           />
           <ViewingsSection viewings={viewings} buyersRoot={`${root}/buyers`} />
@@ -229,15 +206,58 @@ function Field({ label, name, children }: { label: string; name: string; childre
   );
 }
 
+function ListingPhotoTile({
+  clientId,
+  listingId,
+  src,
+  serverIndex,
+  onOpen,
+}: {
+  clientId: string;
+  listingId: string;
+  src: string;
+  serverIndex: number;
+  onOpen: (src: string) => void;
+}) {
+  const direct = photoSrc(src);
+  const [signed, setSigned] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (direct || serverIndex < 0) return;
+    let cancelled = false;
+    fetch(`/api/clients/${clientId}/listings/${listingId}/images/${serverIndex}`, { cache: "no-store" })
+      .then(async (response) => {
+        const json = (await response.json().catch(() => ({}))) as { url?: string };
+        if (cancelled) return;
+        if (response.ok && json.url) setSigned(json.url);
+        else setFailed(true);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [clientId, listingId, serverIndex, direct]);
+  const shown = direct ?? signed;
+  if (!shown) {
+    return <p className="rounded-[10px] border border-sales-border-subtle px-2 py-3 text-[12px] text-sales-text-muted">{failed || serverIndex < 0 ? "Photo unavailable" : "Loading photo"}</p>;
+  }
+  return (
+    <button type="button" className="re-focus block w-full overflow-hidden rounded-[10px] border border-sales-border-subtle" onClick={() => onOpen(shown)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={shown} alt="" className="aspect-[4/3] w-full object-cover" />
+    </button>
+  );
+}
+
 function FinishForm({
   clientId,
   listing,
-  inspectionPhotos,
   onSaved,
 }: {
   clientId: string;
   listing: ListingDetail;
-  inspectionPhotos: InspectionPhoto[];
   onSaved: () => void;
 }) {
   const editable = Boolean(listing.permittedActions?.edit);
@@ -258,10 +278,23 @@ function FinishForm({
     setNotice(null);
     const data = new FormData(form);
     let nextPhotos = photos;
+    const storedIds: string[] = [];
+    const alreadySaved = new Set((Array.isArray(listing.photos) ? listing.photos : []).filter((value): value is string => typeof value === "string"));
     try {
-      if (pending.length) {
-        const uploaded = await Promise.all(pending.map((item) => uploadProjectMediaFile(item.file, clientId, `real-estate-listing-${listing.id}`)));
-        nextPhotos = [...photos, ...uploaded.map((item) => item.publicUrl)];
+      for (const item of pending) {
+        const body = new FormData();
+        body.set("file", item.file);
+        const uploaded = await fetch(`/api/clients/${clientId}/listings/${listing.id}/images`, { method: "POST", body });
+        const uploadedJson = (await uploaded.json().catch(() => ({}))) as { error?: string; listing?: { photos?: unknown } };
+        if (!uploaded.ok) throw new Error(uploadedJson.error ?? "The photo could not be stored.");
+        const serverPhotos = Array.isArray(uploadedJson.listing?.photos)
+          ? uploadedJson.listing.photos.filter((value): value is string => typeof value === "string")
+          : [];
+        const fresh = serverPhotos.filter((value) => !alreadySaved.has(value));
+        if (!fresh.length) throw new Error("The photo was stored. Reload this page to see it.");
+        fresh.forEach((value) => alreadySaved.add(value));
+        nextPhotos = [...nextPhotos, ...fresh];
+        storedIds.push(item.id);
       }
       const body: Record<string, unknown> = {
         address: String(data.get("address") ?? "").trim() || null,
@@ -281,14 +314,17 @@ function FinishForm({
         body: JSON.stringify(body),
       });
       const json = await response.json().catch(() => ({})) as { error?: string };
-      if (!response.ok) {
-        setNotice(json.error ?? "The listing could not be saved.");
-        setBusy(false);
-        return;
-      }
+      if (!response.ok) throw new Error(json.error ?? "The listing could not be saved.");
       onSaved();
     } catch (error) {
-      setNotice(uploadErrorMessage(error));
+      if (storedIds.length) {
+        setPhotos(nextPhotos);
+        setPending((current) => {
+          current.filter((item) => storedIds.includes(item.id)).forEach((item) => URL.revokeObjectURL(item.previewUrl));
+          return current.filter((item) => !storedIds.includes(item.id));
+        });
+      }
+      setNotice(error instanceof Error ? error.message : "The listing could not be saved.");
       setBusy(false);
     }
   }
@@ -321,20 +357,21 @@ function FinishForm({
 
         <div className="mt-4 border-t border-sales-border-subtle pt-4">
           <h3 className="text-[14px] font-semibold">Photos</h3>
-          <p className="mt-1 text-[13px] text-sales-text-secondary">Add the photographs that should appear with this listing.</p>
+          <p className="mt-1 text-[13px] text-sales-text-secondary">Photographs from the inspection and photographs added here are one set. They appear on the viewing form.</p>
           {photos.length || pending.length ? (
             <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {photos.map((src) => {
-                const shown = photoSrc(src);
+              {photos.map((src, index) => {
+                const saved = Array.isArray(listing.photos) ? listing.photos : [];
                 return (
-                  <li key={src} className="min-w-0">
-                    {shown ? (
-                      <button type="button" className="re-focus block w-full overflow-hidden rounded-[10px] border border-sales-border-subtle" onClick={() => setPreview({ src: shown, caption: "Listing photo" })}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={shown} alt="" className="aspect-[4/3] w-full object-cover" />
-                      </button>
-                    ) : <p className="rounded-[10px] border border-sales-border-subtle px-2 py-3 text-[12px]">Stored photo</p>}
-                    {editable ? <button type="button" className="mt-1 text-[12px] font-semibold text-sales-text-secondary" onClick={() => setPhotos((current) => current.filter((item) => item !== src))}>Remove</button> : null}
+                  <li key={`${src}-${index}`} className="min-w-0">
+                    <ListingPhotoTile
+                      clientId={clientId}
+                      listingId={listing.id}
+                      src={src}
+                      serverIndex={saved.indexOf(src)}
+                      onOpen={(shown) => setPreview({ src: shown, caption: "Listing photo" })}
+                    />
+                    {editable ? <button type="button" className="mt-1 min-h-11 text-[12px] font-semibold text-sales-text-secondary" onClick={() => setPhotos((current) => current.filter((item) => item !== src))}>Remove</button> : null}
                   </li>
                 );
               })}
@@ -342,21 +379,21 @@ function FinishForm({
                 <li key={item.id}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.previewUrl} alt="" className="aspect-[4/3] w-full rounded-[10px] object-cover" />
-                  <button type="button" className="mt-1 text-[12px] font-semibold text-sales-text-secondary" onClick={() => {
+                  <button type="button" className="mt-1 min-h-11 text-[12px] font-semibold text-sales-text-secondary" onClick={() => {
                     URL.revokeObjectURL(item.previewUrl);
                     setPending((current) => current.filter((photo) => photo.id !== item.id));
                   }}>Remove</button>
                 </li>
               ))}
             </ul>
-          ) : <p className="mt-2 text-[13px] text-sales-text-muted">No listing photos yet.</p>}
+          ) : <p className="mt-2 text-[13px] text-sales-text-muted">No photos yet.</p>}
           {editable ? (
-            <label className="mt-3 block text-[13px] font-medium text-sales-text-secondary">
+            <label className="mt-3 inline-flex min-h-11 cursor-pointer items-center rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[14px] font-semibold">
               Add photos
               <input
-                className="mt-1 block w-full text-[14px]"
+                className="sr-only"
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/avif"
                 multiple
                 disabled={busy}
                 onChange={(event) => {
@@ -368,29 +405,6 @@ function FinishForm({
             </label>
           ) : null}
         </div>
-
-        {inspectionPhotos.length ? (
-          <div className="mt-4 border-t border-sales-border-subtle pt-4">
-            <h3 className="text-[14px] font-semibold">From the inspection</h3>
-            <p className="mt-1 text-[13px] text-sales-text-secondary">These stay on the inspection. Add the ones that belong on the listing above.</p>
-            <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {inspectionPhotos.map((photo, index) => {
-                const caption = photo.caption || "Inspection photo";
-                const src = photo.document_id ? `/api/clients/${clientId}/company-documents/${photo.document_id}/download` : null;
-                return (
-                  <li key={photo.id ?? `${caption}-${index}`}>
-                    {src ? (
-                      <button type="button" className="re-focus block w-full overflow-hidden rounded-[10px] border border-sales-border-subtle" onClick={() => setPreview({ src, caption })}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt={caption} className="aspect-[4/3] w-full object-cover" />
-                      </button>
-                    ) : <p className="rounded-[10px] border border-sales-border-subtle px-2 py-3 text-[12px]">{caption}</p>}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ) : null}
 
         {editable ? <button type="submit" disabled={busy} className="mt-4 min-h-11 rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[14px] font-semibold">{busy ? "Saving…" : "Save listing"}</button> : null}
         {notice ? <p className="mt-2 text-[13px] text-sales-danger-fg" role="alert">{notice}</p> : null}

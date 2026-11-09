@@ -40,9 +40,12 @@ function HouseMark() {
   );
 }
 
-function Photograph({ photoUrl, heading }: { photoUrl: string | null; heading: string }) {
-  const [failed, setFailed] = useState(false);
-  if (!photoUrl || failed) {
+function Photographs({ urls, heading }: { urls: string[]; heading: string }) {
+  const [failed, setFailed] = useState<Record<number, boolean>>({});
+  const [active, setActive] = useState(0);
+  const available = urls.map((url, index) => ({ url, index })).filter((item) => !failed[item.index]);
+  const current = available.find((item) => item.index === active) ?? available[0];
+  if (!current) {
     return (
       <div className={styles.plate}>
         <div>
@@ -53,8 +56,19 @@ function Photograph({ photoUrl, heading }: { photoUrl: string | null; heading: s
     );
   }
   return (
-    <div className={styles.platePhoto}>
-      <img src={photoUrl} alt={`Photograph of ${heading}`} onError={() => setFailed(true)} />
+    <div>
+      <div className={styles.platePhoto}>
+        <img src={current.url} alt={`Photograph of ${heading}`} onError={() => setFailed((currentFailed) => ({ ...currentFailed, [current.index]: true }))} />
+      </div>
+      {available.length > 1 ? (
+        <div className={styles.film} role="list">
+          {available.map((item, position) => (
+            <button key={`${item.index}-${item.url}`} type="button" aria-label={`Photograph ${position + 1}`} aria-pressed={item.index === current.index} onClick={() => setActive(item.index)}>
+              <img src={item.url} alt="" />
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -128,7 +142,7 @@ export function ViewingRequestForm({ token, preview }: { token: string; preview:
                   {facts.map((item) => <li key={item.label}>{item.value}<span>{item.label}</span></li>)}
                 </ul>
               ) : null}
-              <Photograph photoUrl={property?.photoUrl ?? null} heading={property?.heading ?? "this property"} />
+              <Photographs urls={property?.photoUrls?.length ? property.photoUrls : property?.photoUrl ? [property.photoUrl] : []} heading={property?.heading ?? "this property"} />
               {property?.description ? <p className={styles.about}>{property.description}</p> : null}
               {preview.synthetic ? <p className={styles.practice}>This is a practice form until the agency approves its template.</p> : null}
             </section>
