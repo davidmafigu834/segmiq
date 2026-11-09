@@ -45,8 +45,8 @@ export function RealEstateInquiryWorkspace({
   clientId: string;
   leadId: string;
   onClose: () => void;
-  onCall: () => void;
-  onWhatsApp: () => void;
+  onCall?: () => void;
+  onWhatsApp?: () => void;
   overlay?: boolean;
   stacked?: boolean;
 }) {
@@ -58,6 +58,23 @@ export function RealEstateInquiryWorkspace({
   const [scheduleListingId, setScheduleListingId] = useState<string | null>(null);
   const [createOffer, setCreateOffer] = useState<CreateOfferPrefill | null>(null);
   const [openOfferId, setOpenOfferId] = useState<string | null>(null);
+
+  function reachByPhone() {
+    if (onCall) {
+      onCall();
+      return;
+    }
+    if (data?.phone) window.location.href = `tel:${data.phone}`;
+  }
+
+  function reachByWhatsApp() {
+    if (onWhatsApp) {
+      onWhatsApp();
+      return;
+    }
+    const digits = data?.phone?.replace(/\D/g, "");
+    if (digits) window.location.href = `https://wa.me/${digits}`;
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -128,10 +145,10 @@ export function RealEstateInquiryWorkspace({
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
-          <IconAction label="Call" onClick={onCall} disabled={!data?.phone}>
+          <IconAction label="Call" onClick={reachByPhone} disabled={!data?.phone && !onCall}>
             <Phone size={14} />
           </IconAction>
-          <IconAction label="WhatsApp" onClick={onWhatsApp} disabled={!data?.phone && !data?.email}>
+          <IconAction label="WhatsApp" onClick={reachByWhatsApp} disabled={!data?.phone && !data?.email && !onWhatsApp}>
             <SiWhatsapp size={14} />
           </IconAction>
           <IconAction label="Log call" onClick={() => setSheet("log")}>
@@ -287,7 +304,7 @@ export function RealEstateInquiryWorkspace({
             size="md"
             className="w-full"
             onClick={() => {
-              if (primary.id === "contact") onCall();
+              if (primary.id === "contact") reachByPhone();
               else if (primary.id === "requirements") setTab("requirements");
               else if (primary.id === "find_property") {
                 setTab("matches");
