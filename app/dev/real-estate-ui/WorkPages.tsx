@@ -662,16 +662,13 @@ function Empty({ title, detail }: { title: string; detail: string }) {
 
 function Bones() {
   return (
-    <>
-      {Array.from({ length: 3 }).map((_, index) => (
-        <li key={index} className="flex items-center gap-3 border-t border-sales-border-subtle px-4 py-3" aria-hidden>
-          <div className="flex-1 space-y-2">
-            <span className="re-bone block h-3.5 w-36 rounded-[4px]" />
-            <span className="re-bone block h-3 w-52 rounded-[4px]" />
-          </div>
-          <span className="re-bone h-9 w-16 rounded-[8px]" />
-        </li>
-      ))}
-    </>
+    <li className="flex items-center gap-3 border-t border-sales-border-subtle px-4 py-3" aria-hidden>
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <span className="re-bone block h-3.5 w-36 max-w-[46%] rounded-[4px]" />
+        <span className="re-bone block h-3 w-28 max-w-[36%] rounded-[4px]" />
+        <span className="re-bone block h-3 w-52 max-w-[62%] rounded-[4px]" />
+      </div>
+      <span className="re-bone h-9 w-16 shrink-0 rounded-[8px]" />
+    </li>
   );
 }

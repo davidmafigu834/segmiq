@@ -482,7 +482,7 @@ function CalendarBones({ view }: { view: View }) {
   return (
     <div className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface" aria-hidden>
       <div className={`grid grid-cols-7 ${view === "month" ? "min-h-[280px]" : ""}`}>
-        {Array.from({ length: view === "month" ? 14 : 7 }).map((_, index) => (
+        {Array.from({ length: 7 }).map((_, index) => (
           <div key={index} className="border-l border-sales-border-subtle px-2 py-4 first:border-l-0">
             <span className="re-bone mx-auto block h-3 w-8 rounded-[4px]" />
             <span className="re-bone mx-auto mt-2 block h-8 w-8 rounded-full" />
@@ -496,14 +496,15 @@ function CalendarBones({ view }: { view: View }) {
 function ListBones() {
   return (
     <ul aria-hidden>
-      {Array.from({ length: 3 }).map((_, index) => (
-        <li key={index} className="flex items-center gap-3 border-t border-sales-border-subtle px-4 py-3">
-          <span className="re-bone h-8 w-[3px] rounded-full" />
-          <span className="re-bone h-3.5 w-12 rounded-[4px]" />
-          <span className="re-bone h-3.5 flex-1 rounded-[4px]" />
-          <span className="re-bone h-9 w-16 rounded-[8px]" />
-        </li>
-      ))}
+      <li className="flex items-center gap-3 border-t border-sales-border-subtle px-4 py-3">
+        <span className="re-bone h-8 w-[3px] shrink-0 rounded-full" />
+        <span className="re-bone h-3.5 w-12 shrink-0 rounded-[4px]" />
+        <span className="min-w-0 flex-1 space-y-1.5">
+          <span className="re-bone block h-3.5 w-36 max-w-[46%] rounded-[4px]" />
+          <span className="re-bone block h-3 w-48 max-w-[60%] rounded-[4px]" />
+        </span>
+        <span className="re-bone h-9 w-16 shrink-0 rounded-[8px]" />
+      </li>
     </ul>
   );
 }

@@ -185,8 +185,8 @@ function Today({ loading, onOpenOffer }: { loading: boolean; onOpenOffer: (id: O
       </div>
 
       <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.85fr)]">
-        <Panel title="Needs you" count={3}>
-          {loading ? <Bones rows={3} /> : (
+        <Panel title="Needs you" count={loading ? undefined : 3}>
+          {loading ? <Bones /> : (
             <ul>
               <GroupLabel>Overdue</GroupLabel>
               <WorkRow delay={0} name="Tendai Moyo" meta="Buyer · Borrowdale" detail="Viewing follow-up was due yesterday" mark="overdue" action="Call" />
@@ -197,8 +197,8 @@ function Today({ loading, onOpenOffer }: { loading: boolean; onOpenOffer: (id: O
             </ul>
           )}
         </Panel>
-        <Panel title="Schedule" count={2}>
-          {loading ? <Bones rows={2} compact /> : (
+        <Panel title="Schedule" count={loading ? undefined : 2}>
+          {loading ? <Bones kind="time" /> : (
             <ul>
               <TimeRow delay={60} time="09:30" name="Rudo Ncube" detail="Viewing · 4 Borrowdale Brooke" action="Open" />
               <TimeRow delay={100} time="14:00" name="Farai Dube" detail="Follow-up · Mount Pleasant search" action="Call" />
@@ -215,7 +215,7 @@ function Today({ loading, onOpenOffer }: { loading: boolean; onOpenOffer: (id: O
       </div>
 
       <Panel title="My work" flush>
-        {loading ? <Bones rows={3} compact /> : (
+        {loading ? <Bones kind="quiet" /> : (
           <ul>
             <QuietRow name="Buyers and tenants" detail="6 buyers · 2 tenants" action="Open" />
             <QuietRow name="Sellers" detail="4 mandates · 1 inspection to record" action="Open" />
@@ -243,8 +243,8 @@ function Properties({ loading, onOpenOffer }: { loading: boolean; onOpenOffer: (
           </span>
         ))}
       </div>
-      <Panel title="Properties" count={3} flush>
-        {loading ? <Bones rows={3} /> : (
+      <Panel title="Properties" count={loading ? undefined : 3} flush>
+        {loading ? <Bones kind="quiet" /> : (
           <>
           <ul className="min-[480px]:hidden">
             {rows.map((row, index) => (
@@ -300,8 +300,8 @@ function Offers({ loading, onOpenOffer }: { loading: boolean; onOpenOffer: (id: 
   return (
     <div className="space-y-5">
       <PageTitle kicker="Negotiation" title="Offers" detail="A form is sent to the buyer. A signed form becomes a PDF for the seller." action="Send offer form" />
-      <Panel title="Needs you" count={2} flush>
-        {loading ? <Bones rows={2} /> : (
+      <Panel title="Needs you" count={loading ? undefined : 2} flush>
+        {loading ? <Bones /> : (
           <ul>
             <WorkRow delay={0} name="Tendai Moyo" meta="14 Kingsmead · US$180,000" detail="Seller sent a counter. The buyer signs again." mark="today" action="Open offer" onAction={() => onOpenOffer("kingsmead")} />
             <WorkRow delay={40} name="Chipo Ndlovu" meta="8 Stonechat · US$240,000" detail="Buyer signed the form. The PDF is ready." mark="waiting" action="Open offer" onAction={() => onOpenOffer("stonechat")} />
@@ -321,7 +321,7 @@ function States() {
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel title="Loading">
-          <Bones rows={3} />
+          <Bones />
         </Panel>
         <Panel title="Empty">
           <div className="px-4 py-10 text-center">
@@ -453,19 +453,19 @@ function Metric({ label, value, attention = false }: { label: string; value: str
   );
 }
 
-function Bones({ rows, compact = false }: { rows: number; compact?: boolean }) {
+function Bones({ kind = "work" }: { kind?: "work" | "time" | "quiet" }) {
   return (
     <ul aria-hidden>
-      {Array.from({ length: rows }).map((_, index) => (
-        <li key={index} className="flex items-center gap-3 border-t border-sales-border-subtle px-4 py-3">
-          <span className="re-bone h-8 w-[3px] rounded-full" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <span className="re-bone block h-3.5 w-36 rounded-[4px]" />
-            {compact ? null : <span className="re-bone block h-3 w-52 rounded-[4px]" />}
-          </div>
-          <span className="re-bone h-9 w-16 rounded-[8px]" />
-        </li>
-      ))}
+      <li className="flex items-center gap-3 border-t border-sales-border-subtle px-4 py-3">
+        {kind === "time" ? <span className="re-bone h-3.5 w-12 shrink-0 rounded-[4px]" /> : null}
+        {kind === "work" ? <span className="re-bone h-8 w-[3px] shrink-0 rounded-full" /> : null}
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <span className="re-bone block h-3.5 w-36 max-w-[46%] rounded-[4px]" />
+          {kind === "work" ? <span className="re-bone block h-3 w-28 max-w-[36%] rounded-[4px]" /> : null}
+          <span className="re-bone block h-3 w-52 max-w-[62%] rounded-[4px]" />
+        </div>
+        <span className="re-bone h-9 w-16 shrink-0 rounded-[8px]" />
+      </li>
     </ul>
   );
 }
