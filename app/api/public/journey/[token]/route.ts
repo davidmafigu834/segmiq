@@ -5,7 +5,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(_req: Request, { params }: { params: { token: string } }) {
   const result = await previewJourneyLink(params.token);
-  return NextResponse.json(result.ok ? result : { error: result.error }, { status: result.ok ? 200 : result.status });
+  return NextResponse.json(result.ok ? result : { error: result.error }, {
+    status: result.ok ? 200 : result.status,
+    headers: { "Cache-Control": "no-store" },
+  });
 }
 
 export async function POST(req: Request, { params }: { params: { token: string } }) {

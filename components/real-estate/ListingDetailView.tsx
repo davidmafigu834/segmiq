@@ -262,7 +262,12 @@ function FinishForm({
 }) {
   const editable = Boolean(listing.permittedActions?.edit);
   const askRooms = listingAsksForRooms(listing.property_category);
-  const [photos, setPhotos] = useState<string[]>(Array.isArray(listing.photos) ? listing.photos : []);
+  const initialPhotos = Array.isArray(listing.photos) ? listing.photos.filter((value): value is string => typeof value === "string") : [];
+  const [photos, setPhotos] = useState<string[]>(initialPhotos);
+  const [savedPhotos, setSavedPhotos] = useState<string[]>(initialPhotos);
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
+  const removeChain = useRef(Promise.resolve());
   const [pending, setPending] = useState<Array<{ id: string; file: File; previewUrl: string }>>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -277,9 +282,9 @@ function FinishForm({
     setBusy(true);
     setNotice(null);
     const data = new FormData(form);
-    let nextPhotos = photos;
+    let nextPhotos = photosRef.current;
     const storedIds: string[] = [];
-    const alreadySaved = new Set((Array.isArray(listing.photos) ? listing.photos : []).filter((value): value is string => typeof value === "string"));
+    const alreadySaved = new Set(savedPhotos);
     try {
       for (const item of pending) {
         const body = new FormData();
@@ -329,6 +334,31 @@ function FinishForm({
     }
   }
 
+  function removePhoto(src: string) {
+    const next = photosRef.current.filter((item) => item !== src);
+    photosRef.current = next;
+    setPhotos(next);
+    setNotice(null);
+    removeChain.current = removeChain.current.then(async () => {
+      setBusy(true);
+      try {
+        const response = await fetch(`/api/clients/${clientId}/listings/${listing.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ photos: photosRef.current }),
+        });
+        const json = (await response.json().catch(() => ({}))) as { error?: string };
+        if (!response.ok) throw new Error(json.error ?? "The photo could not be removed.");
+        setSavedPhotos(photosRef.current);
+      } catch (error) {
+        setNotice(error instanceof Error ? error.message : "The photo could not be removed.");
+        onSaved();
+      } finally {
+        setBusy(false);
+      }
+    });
+  }
+
   return (
     <form
       onSubmit={(event) => {
@@ -360,21 +390,18 @@ function FinishForm({
           <p className="mt-1 text-[13px] text-sales-text-secondary">Photographs from the inspection and photographs added here are one set. They appear on the viewing form.</p>
           {photos.length || pending.length ? (
             <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {photos.map((src, index) => {
-                const saved = Array.isArray(listing.photos) ? listing.photos : [];
-                return (
+              {photos.map((src, index) => (
                   <li key={`${src}-${index}`} className="min-w-0">
                     <ListingPhotoTile
                       clientId={clientId}
                       listingId={listing.id}
                       src={src}
-                      serverIndex={saved.indexOf(src)}
+                      serverIndex={savedPhotos.indexOf(src)}
                       onOpen={(shown) => setPreview({ src: shown, caption: "Listing photo" })}
                     />
-                    {editable ? <button type="button" className="mt-1 min-h-11 text-[12px] font-semibold text-sales-text-secondary" onClick={() => setPhotos((current) => current.filter((item) => item !== src))}>Remove</button> : null}
+                    {editable ? <button type="button" className="mt-1 min-h-11 text-[12px] font-semibold text-sales-text-secondary" disabled={busy} onClick={() => removePhoto(src)}>Remove</button> : null}
                   </li>
-                );
-              })}
+              ))}
               {pending.map((item) => (
                 <li key={item.id}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}

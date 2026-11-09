@@ -66,9 +66,9 @@ test("viewing photos include inspection files and photos added on the listing", 
     base,
   );
   assert.deepEqual(sources, [
-    "/api/public/journey/tok%20en/photo",
+    "/api/public/journey/tok%20en/photo?id=inspection.jpg",
     added,
-    "/api/public/journey/tok%20en/photo?index=1",
+    "/api/public/journey/tok%20en/photo?id=kitchen.png",
   ]);
 });
 

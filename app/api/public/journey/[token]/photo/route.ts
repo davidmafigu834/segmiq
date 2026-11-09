@@ -6,9 +6,8 @@ export const dynamic = "force-dynamic";
 
 /** Streams the listing photograph for a valid viewing link. The storage key stays on the server. */
 export async function GET(req: Request, { params }: { params: { token: string } }) {
-  const raw = new URL(req.url).searchParams.get("index");
-  const index = raw == null || raw === "" ? 0 : Number(raw);
-  const result = await journeyListingPhoto(params.token, index);
+  const fileId = new URL(req.url).searchParams.get("id") ?? "";
+  const result = await journeyListingPhoto(params.token, fileId);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
   return new NextResponse(Buffer.from(result.bytes), {
     headers: { "Content-Type": result.contentType, "Cache-Control": "private, no-store" },

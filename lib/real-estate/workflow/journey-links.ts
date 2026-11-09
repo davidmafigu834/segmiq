@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashSecret, newInvitationToken } from "@/lib/real-estate/compliance-management/engine";
 import { intakePepper } from "@/lib/real-estate/seller-intake/flag";
-import { canReadListing, type ListingActor } from "@/lib/real-estate/listing-access";
+import { canReadListing, privateListingImageKey, type ListingActor } from "@/lib/real-estate/listing-access";
 import { renderPlainPdf } from "@/lib/real-estate/seller-intake/pdf";
 import { isPrivateDocumentStorageConfigured, putPrivateDocument } from "@/lib/real-estate/private-document-storage";
 import { createScheduledViewing } from "@/lib/real-estate/viewing-service";
@@ -9,7 +9,6 @@ import { viewingOverlapWarning } from "@/lib/real-estate/buyer-match";
 import { createRealEstateOffer, mutateRealEstateOffer } from "@/lib/real-estate/offer-service";
 import { buyerRecordIsOpenable } from "@/lib/real-estate/viewing-calendar";
 import { offerExpiryInstant, offerRevisionAfterTermChange, secureLinkAccess, claimViewingSubmission, issuanceTemplateDecision, transactionStartRecovery, SYNTHETIC_OFFER_TEMPLATE, SYNTHETIC_VIEWING_TEMPLATE, type SecureLinkScope } from "@/lib/real-estate/workflow/journey";
-import { privatePhotoKeyAt } from "@/lib/real-estate/agent-listing-pages/policy";
 import { readPrivateListingImage } from "@/lib/real-estate/private-listing-images";
 import { viewingFormPhotoSources, viewingPropertyCard } from "@/lib/real-estate/workflow/viewing-form";
 
@@ -187,8 +186,10 @@ export async function previewJourneyLink(token: string) {
   };
 }
 
-export async function journeyListingPhoto(token: string, index = 0) {
-  if (!Number.isInteger(index) || index < 0 || index > 49) return fail(400, "That photograph is not on this listing.");
+const PRIVATE_PHOTO_FILE = /^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp|avif)$/i;
+
+export async function journeyListingPhoto(token: string, fileId: string) {
+  if (!PRIVATE_PHOTO_FILE.test(fileId)) return fail(404, "This photograph was removed.");
   const loaded = await loadLink(token);
   if (!loaded.ok) return loaded;
   const link = loaded.link;
@@ -206,8 +207,9 @@ export async function journeyListingPhoto(token: string, index = 0) {
   const clientId = String(link.client_id);
   const listingId = String(link.listing_id);
   const { data: listing } = await createAdminClient().from("listings").select("photos").eq("id", listingId).eq("client_id", clientId).maybeSingle();
-  const key = privatePhotoKeyAt((listing as { photos?: unknown } | null)?.photos, clientId, listingId, index);
-  if (!key) return fail(404, "This house has no photograph yet.");
+  const photos = (listing as { photos?: unknown } | null)?.photos;
+  const key = privateListingImageKey(`clients/${clientId}/listings/${listingId}/photos/${fileId}`, clientId, listingId);
+  if (!key || !Array.isArray(photos) || !photos.includes(key)) return fail(404, "This photograph was removed.");
   const image = await readPrivateListingImage(key);
   if (!image) return fail(404, "This house has no photograph yet.");
   return { ok: true as const, bytes: image.bytes, contentType: image.contentType };

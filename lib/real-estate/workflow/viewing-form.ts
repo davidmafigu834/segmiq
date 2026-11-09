@@ -27,13 +27,12 @@ export function viewingFormPhotoSources(
 ): string[] {
   if (!Array.isArray(photos)) return [];
   const base = `/api/public/journey/${encodeURIComponent(token)}/photo`;
-  let privateIndex = 0;
   const sources: string[] = [];
   for (const value of photos) {
     if (sources.length >= 50) break;
     if (privateListingImageKey(value, clientId, listingId)) {
-      sources.push(privateIndex === 0 ? base : `${base}?index=${privateIndex}`);
-      privateIndex += 1;
+      const fileId = value.slice(value.lastIndexOf("/") + 1);
+      sources.push(`${base}?id=${encodeURIComponent(fileId)}`);
       continue;
     }
     const url = authorisedMarketingPhotoUrl(value, clientId, listingId, publicBase);

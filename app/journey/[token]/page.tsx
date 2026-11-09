@@ -21,7 +21,7 @@ export default function JourneyFormPage({ params }: { params: { token: string } 
   const [result, setResult] = useState<string | null>(null);
 
   useEffect(() => {
-    void fetch(`/api/public/journey/${params.token}`).then(async (response) => {
+    void fetch(`/api/public/journey/${params.token}`, { cache: "no-store" }).then(async (response) => {
       setPreview(await response.json());
     });
   }, [params.token]);
