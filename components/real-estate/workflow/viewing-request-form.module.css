@@ -14,7 +14,9 @@
 }
 
 .page button,
-.page input {
+.page input,
+.page select,
+.page textarea {
   font: inherit;
   color: inherit;
 }
@@ -322,12 +324,104 @@
   font-size: 16px;
 }
 
+.sign {
+  display: block;
+}
+
 .sign input {
+  width: 100%;
   font-family: "Segoe Script", "Brush Script MT", cursive;
   font-size: 22px;
 }
 
+.fields select {
+  min-height: 48px;
+}
+
+.fields select,
+.fields textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 10px 12px;
+  font: inherit;
+  font-weight: 400;
+  font-size: 16px;
+}
+
+.fields textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+.section {
+  margin: 22px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.terms {
+  margin-top: 16px;
+  padding: 14px 14px 12px;
+  border-radius: 12px;
+  background: var(--soft);
+}
+
+.terms .section {
+  margin: 0;
+}
+
+.terms strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+.terms p {
+  margin: 10px 0 0;
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.choiceRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.choiceRow label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.tick {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.tick input {
+  margin-top: 3px;
+}
+
 .fields input:focus-visible,
+.fields select:focus-visible,
+.fields textarea:focus-visible,
 .time:focus-visible,
 .submit:focus-visible {
   outline: 2px solid var(--accent);
@@ -353,9 +447,29 @@
   cursor: pointer;
 }
 
-.submit:disabled {
+.submit:disabled,
+.secondary:disabled {
   cursor: wait;
   opacity: 0.7;
+}
+
+.secondary {
+  margin-top: 8px;
+  width: 100%;
+  min-height: 52px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+fieldset.wide {
+  margin: 18px 0 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
 }
 
 .foot {

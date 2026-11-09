@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { previewJourneyLink, sellerOfferDecision, signBuyerOffer, submitViewingLink } from "@/lib/real-estate/workflow/journey-links";
+import { offerLetterFields, previewJourneyLink, sellerOfferDecision, signBuyerOffer, submitViewingLink } from "@/lib/real-estate/workflow/journey-links";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +20,9 @@ export async function POST(req: Request, { params }: { params: { token: string }
     signature?: string;
     amount?: number;
     conditions?: string;
+    letter?: Record<string, unknown> | null;
     decision?: "accept" | "decline";
+    witness?: string;
   };
   if (body.action === "viewing") {
     const result = await submitViewingLink({
@@ -39,6 +41,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
       signature: body.signature ?? "",
       amount: Number(body.amount),
       conditions: body.conditions ?? "",
+      letter: offerLetterFields(body.letter),
     });
     return NextResponse.json(result.ok ? result : { error: result.error }, { status: result.ok ? 200 : result.status });
   }
@@ -48,6 +51,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
       name: body.name ?? "",
       signature: body.signature ?? "",
       decision: body.decision === "decline" ? "decline" : "accept",
+      witness: body.witness,
     });
     return NextResponse.json(result.ok ? result : { error: result.error }, { status: result.ok ? 200 : result.status });
   }

@@ -40,7 +40,7 @@ function HouseMark() {
   );
 }
 
-function Photographs({ urls, heading }: { urls: string[]; heading: string }) {
+export function Photographs({ urls, heading }: { urls: string[]; heading: string }) {
   const [failed, setFailed] = useState<Record<number, boolean>>({});
   const [active, setActive] = useState(0);
   const available = urls.map((url, index) => ({ url, index })).filter((item) => !failed[item.index]);

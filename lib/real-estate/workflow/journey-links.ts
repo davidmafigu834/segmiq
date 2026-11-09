@@ -52,6 +52,124 @@ async function agencyCard(clientId: string, agentId: string | null) {
   };
 }
 
+const LETTER_FIELDS = [
+  "amountWords",
+  "payableOn",
+  "title",
+  "surname",
+  "givenName",
+  "nationality",
+  "identityNumber",
+  "maritalStatus",
+  "spouseName",
+  "occupation",
+  "industry",
+  "position",
+  "cell",
+  "employer",
+  "email",
+  "residentialAddress",
+  "employerAddress",
+  "sourceOfFunds",
+  "pep",
+  "companyName",
+  "companyAddress",
+  "companyIndustry",
+  "companyEmail",
+  "companyPhone",
+  "companyRepresentative",
+  "companyRepresentativeId",
+  "companyRepresentativePosition",
+  "companyContactAddress",
+  "companyContactPhone",
+  "witness",
+] as const;
+
+const LETTER_LABELS: Record<(typeof LETTER_FIELDS)[number], string> = {
+  amountWords: "In words",
+  payableOn: "Payable on or before",
+  title: "Title",
+  surname: "Surname",
+  givenName: "Name",
+  nationality: "Nationality",
+  identityNumber: "Identity number",
+  maritalStatus: "Marital status",
+  spouseName: "Spouse",
+  occupation: "Occupation",
+  industry: "Industry",
+  position: "Position",
+  cell: "Cell",
+  employer: "Employer",
+  email: "Email",
+  residentialAddress: "Residential address",
+  employerAddress: "Employer address",
+  sourceOfFunds: "Source of funds",
+  pep: "Politically exposed person",
+  companyName: "Company",
+  companyAddress: "Company address",
+  companyIndustry: "Company industry",
+  companyEmail: "Company email",
+  companyPhone: "Company phone",
+  companyRepresentative: "Company representative",
+  companyRepresentativeId: "Representative identity number",
+  companyRepresentativePosition: "Representative position",
+  companyContactAddress: "Representative address",
+  companyContactPhone: "Representative phone",
+  witness: "Witness",
+};
+
+export function offerLetterFields(input: Record<string, unknown> | null | undefined): Record<string, string> {
+  const clean: Record<string, string> = {};
+  for (const key of LETTER_FIELDS) {
+    const value = input?.[key];
+    if (typeof value !== "string") continue;
+    const trimmed = value.trim().slice(0, 400);
+    if (trimmed) clean[key] = trimmed;
+  }
+  return clean;
+}
+
+function composedOfferConditions(conditions: string, letter: Record<string, string>): string {
+  return [letter.amountWords ? `In words: ${letter.amountWords}` : null, letter.payableOn ? `Payable on or before: ${letter.payableOn}` : null, conditions.trim() || null, letter.witness ? `Witness: ${letter.witness}` : null]
+    .filter(Boolean)
+    .join("\n");
+}
+
+async function signedOfferTerms(supabase: ReturnType<typeof createAdminClient>, clientId: string, offerId: unknown) {
+  if (!offerId) return null;
+  const { data: offer } = await supabase
+    .from("real_estate_offers")
+    .select("current_offer_amount, currency, conditions, expires_at, contact_id")
+    .eq("id", String(offerId))
+    .eq("client_id", clientId)
+    .maybeSingle();
+  if (!offer) return null;
+  let buyerName: string | null = null;
+  if (offer.contact_id) {
+    const { data: contact } = await supabase.from("contacts").select("name").eq("id", offer.contact_id as string).eq("client_id", clientId).maybeSingle();
+    buyerName = textOrNull(contact?.name);
+  }
+  const amount = Number(offer.current_offer_amount);
+  return {
+    amount: Number.isFinite(amount) ? amount : null,
+    currency: textOrNull(offer.currency),
+    conditions: textOrNull(offer.conditions),
+    expiresAt: textOrNull(offer.expires_at),
+    buyerName,
+  };
+}
+
+async function purchaserCard(supabase: ReturnType<typeof createAdminClient>, clientId: string, contactId: unknown) {
+  if (typeof contactId !== "string" || !contactId) return null;
+  const { data } = await supabase.from("contacts").select("name, phone, email").eq("id", contactId).eq("client_id", clientId).maybeSingle();
+  if (!data) return null;
+  return {
+    name: textOrNull(data.name),
+    phone: textOrNull(data.phone),
+    email: textOrNull(data.email),
+  };
+}
+
 function textOrNull(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value : null;
 }
@@ -162,6 +280,8 @@ export async function previewJourneyLink(token: string) {
     quotationCurrency(clientId),
     agencyCard(clientId, (link.agent_id as string | null) ?? null),
   ]);
+  const offerTerms = await signedOfferTerms(supabase, clientId, link.offer_id);
+  const purchaser = link.purpose === "offer_buyer" ? await purchaserCard(supabase, clientId, link.recipient_id) : null;
   const row = (listing ?? {}) as Record<string, unknown>;
   const property = viewingPropertyCard({
     address: textOrNull(row.address),
@@ -182,6 +302,8 @@ export async function previewJourneyLink(token: string) {
     synthetic: Boolean(link.synthetic),
     brand,
     property,
+    offer: offerTerms,
+    purchaser,
     propertyLabel: [property.heading, property.place].filter(Boolean).join(", ") || "Property",
     slots: Array.isArray(link.authorised_slots) ? link.authorised_slots : [],
     revision: String(link.revision ?? "1"),
@@ -196,11 +318,11 @@ export async function journeyListingPhoto(token: string, fileId: string) {
   const loaded = await loadLink(token);
   if (!loaded.ok) return loaded;
   const link = loaded.link;
-  if (link.purpose !== "viewing_acknowledgement") return fail(404, "This link is not a viewing form.");
+  if (link.purpose !== "viewing_acknowledgement" && link.purpose !== "offer_buyer" && link.purpose !== "offer_seller") return fail(404, "This link is not a viewing form.");
   const access = secureLinkAccess({
     link: scopeOf(link),
     clientId: String(link.client_id),
-    purpose: "viewing_acknowledgement",
+    purpose: link.purpose as SecureLinkScope["purpose"],
     recordId: String(link.id),
     revision: String(link.revision ?? "1"),
     recipientId: (link.recipient_id as string | null) ?? null,
@@ -453,7 +575,7 @@ export async function issueOfferLink(input: {
   return { ok: true as const, offerId, path: `/journey/${token}`, synthetic: template.synthetic };
 }
 
-export async function signBuyerOffer(input: { token: string; name: string; signature: string; amount: number; conditions: string }) {
+export async function signBuyerOffer(input: { token: string; name: string; signature: string; amount: number; conditions: string; letter?: Record<string, unknown> | null }) {
   const loaded = await loadLink(input.token);
   if (!loaded.ok) return loaded;
   const link = loaded.link;
@@ -470,6 +592,8 @@ export async function signBuyerOffer(input: { token: string; name: string; signa
   if (!access.ok) return fail(410, access.error);
   if (input.signature.trim().length < 2) return fail(400, "Sign the offer before sending it.");
   if (!Number.isFinite(input.amount) || input.amount <= 0) return fail(400, "Enter an offer amount greater than 0.");
+  const letter = offerLetterFields(input.letter);
+  const conditions = composedOfferConditions(input.conditions, letter);
   const supabase = createAdminClient();
   if (!link.offer_id) {
     const contactId = String(link.recipient_id ?? "");
@@ -485,7 +609,7 @@ export async function signBuyerOffer(input: { token: string; name: string; signa
       leadId: meta.leadId,
       buyerSearchId: (link.buyer_search_id as string | null) ?? null,
       amount: input.amount,
-      conditions: input.conditions,
+      conditions,
       notes: `validity-days:${meta.validityDays ?? 7}`,
       acceptanceChannel: "seller_link",
     });
@@ -510,7 +634,7 @@ export async function signBuyerOffer(input: { token: string; name: string; signa
   const { data: offer } = await supabase.from("real_estate_offers").select("*").eq("id", link.offer_id as string).eq("client_id", link.client_id as string).maybeSingle();
   if (!offer) return fail(404, "Offer not found.");
   const currentRevision = String(offer.revision ?? link.revision ?? "1");
-  const changed = Number(offer.current_offer_amount) !== input.amount || String(offer.conditions ?? "") !== input.conditions;
+  const changed = Number(offer.current_offer_amount) !== input.amount || String(offer.conditions ?? "") !== conditions;
   const next = offerRevisionAfterTermChange({ revision: currentRevision, termsChanged: changed && offer.revision_status === "buyer_signed" });
   if (next.requiresBuyerSignature && offer.revision_status === "buyer_signed" && String(link.revision) !== next.revision) {
     return fail(409, "These terms differ from the signed revision. Ask the agent for a new offer link.");
@@ -523,12 +647,12 @@ export async function signBuyerOffer(input: { token: string; name: string; signa
     clientId: String(link.client_id),
     linkId: String(link.id),
     title: "Offer to purchase",
-    lines: [`Revision ${currentRevision}`, `Amount: ${input.amount}`, `Conditions: ${input.conditions}`, `Valid until: ${expiresAt}`, `Signer: ${input.name}`, `Signed: ${signedAt}`],
+    lines: [`Revision ${currentRevision}`, `Purchaser: ${input.name.trim()}`, `Amount: ${input.amount}`, ...LETTER_FIELDS.flatMap((key) => (letter[key] ? [`${LETTER_LABELS[key]}: ${letter[key]}`] : [])), `Conditions: ${input.conditions.trim() || "None"}`, `Valid until: ${expiresAt}`, `Signed: ${signedAt}`],
   });
   await supabase.from("real_estate_offers").update({
     current_offer_amount: input.amount,
     original_offer_amount: offer.revision_status === "buyer_signed" ? offer.original_offer_amount : input.amount,
-    conditions: input.conditions,
+    conditions,
     expires_at: expiresAt,
     expiry_date: expiresAt.slice(0, 10),
     revision_status: "buyer_signed",
@@ -542,7 +666,7 @@ export async function signBuyerOffer(input: { token: string; name: string; signa
     revision: currentRevision,
     signer_name: input.name.trim(),
     signed_at: signedAt,
-    answers: { amount: input.amount, conditions: input.conditions, expiresAt },
+    answers: { amount: input.amount, conditions, expiresAt, ...letter },
     storage_key: pdf.key,
     content_sha256: pdf.sha256,
     idempotency_key: `offer-buyer:${String(offer.id)}:${currentRevision}`,
@@ -567,7 +691,7 @@ export async function signBuyerOffer(input: { token: string; name: string; signa
   return { ok: true as const, revision: currentRevision, expiresAt, sellerPath: `/journey/${sellerToken}`, pdfReady: Boolean(pdf.key) || Boolean(pdf.sha256) };
 }
 
-export async function sellerOfferDecision(input: { token: string; name: string; signature: string; decision: "accept" | "decline" }) {
+export async function sellerOfferDecision(input: { token: string; name: string; signature: string; decision: "accept" | "decline"; witness?: string | null }) {
   const loaded = await loadLink(input.token);
   if (!loaded.ok) return loaded;
   const link = loaded.link;
@@ -582,6 +706,7 @@ export async function sellerOfferDecision(input: { token: string; name: string; 
     nowMs: Date.now(),
   });
   if (!access.ok) return fail(410, access.error);
+  const witness = input.witness?.trim().slice(0, 400) || "";
   if (input.decision === "decline") {
     const declined = await mutateRealEstateOffer({
       clientId: String(link.client_id),
@@ -618,7 +743,7 @@ export async function sellerOfferDecision(input: { token: string; name: string; 
     clientId: String(link.client_id),
     linkId: String(link.id),
     title: "Offer accepted",
-    lines: [`Revision ${String(link.revision)}`, `Seller: ${input.name}`, `Signed: ${new Date().toISOString()}`],
+    lines: [`Revision ${String(link.revision)}`, `Seller: ${input.name}`, witness ? `Witness: ${witness}` : "", `Signed: ${new Date().toISOString()}`].filter(Boolean),
   });
   await createAdminClient().from("re_journey_submissions").insert({
     client_id: link.client_id,
@@ -627,7 +752,7 @@ export async function sellerOfferDecision(input: { token: string; name: string; 
     revision: String(link.revision ?? "1"),
     signer_name: input.name.trim(),
     signed_at: new Date().toISOString(),
-    answers: {},
+    answers: witness ? { witness } : {},
     storage_key: pdf.key,
     content_sha256: pdf.sha256,
     idempotency_key: `offer-seller:${String(link.offer_id)}:${String(link.revision)}`,
