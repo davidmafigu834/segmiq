@@ -36,7 +36,7 @@ type MandateForm = {
   contactId: string | null;
 };
 
-type Mark = "overdue" | "today" | "waiting";
+type Mark = "today" | "waiting";
 
 type NeedRow = {
   key: string;
@@ -48,10 +48,9 @@ type NeedRow = {
   href: string;
 };
 
-const GROUP_ORDER: Mark[] = ["overdue", "today", "waiting"];
+const GROUP_ORDER: Mark[] = ["today", "waiting"];
 
 const GROUP_LABEL: Record<Mark, string> = {
-  overdue: "Overdue",
   today: "Today",
   waiting: "Waiting",
 };
@@ -65,7 +64,7 @@ function todayLabel(): string {
 }
 
 function NeedMark({ mark }: { mark: Mark }) {
-  const tone = mark === "overdue" ? "bg-sales-danger" : mark === "today" ? "bg-sales-brand" : "bg-sales-border";
+  const tone = mark === "today" ? "bg-sales-brand" : "bg-sales-border";
   return <span className={`h-8 w-[3px] shrink-0 rounded-full ${tone}`} aria-hidden />;
 }
 
@@ -109,17 +108,6 @@ export function AgentDailyWorkspace({
 
   const needs = useMemo<NeedRow[]>(() => {
     const rows: NeedRow[] = [];
-    for (const item of data.followUps) {
-      rows.push({
-        key: `follow-${item.leadId}`,
-        group: item.overdue ? "overdue" : "today",
-        name: item.name,
-        meta: "Follow-up",
-        detail: item.note?.trim() || (item.overdue ? "Follow-up was due" : "Follow-up is due today"),
-        action: "Open",
-        href: "/sales/tasks",
-      });
-    }
     for (const offer of data.offersNeedingAttention) {
       const waiting = offer.reason === "awaiting_seller";
       rows.push({
@@ -147,7 +135,7 @@ export function AgentDailyWorkspace({
       });
     }
     return GROUP_ORDER.flatMap((group) => rows.filter((row) => row.group === group));
-  }, [data.followUps, data.offersNeedingAttention, forms]);
+  }, [data.offersNeedingAttention, forms]);
 
   const schedule = data.viewingsToday.map((viewing) => {
     const buyerHref = viewing.buyerSearchId ? `/sales/buyers/${viewing.buyerSearchId}` : null;
@@ -224,7 +212,7 @@ export function AgentDailyWorkspace({
           {mandateForms.status === "loading" && count === 0 ? (
             <ReSkeletonRows rows={1} label="Loading what needs a next action" />
           ) : count === 0 ? (
-            <ReEmptyState title="Nothing needs a next action" description="Overdue follow-ups, offers, and seller forms show here." />
+            <ReEmptyState title="Nothing needs a next action" description="Offers and seller forms show here." />
           ) : (
             <ul>
               {GROUP_ORDER.map((group) => {
