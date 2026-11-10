@@ -6054,6 +6054,13 @@ html[data-marketing-theme="dark"] .auth-shell > main {
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] {
+  --sales-bg: #070814;
+  --sales-bg-subtle: #0c0718;
+  --sales-surface: #081a35;
+  --sales-surface-subtle: #12131f;
+  --sales-surface-hover: #18132a;
+  --sales-surface-active: #1c1630;
+  --segmiq-canvas: none;
   --sales-text-primary: #f7f9fc;
   --sales-text-secondary: #d5deee;
   --sales-text-muted: #aebbd4;
@@ -6063,6 +6070,19 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-wo
   --sales-card-border: #8b9cc0;
   --sales-brand: #d4ff4f;
   --sales-brand-text: #101828;
+  background-color: #070814;
+  background-image: none;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas,
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas > .sales-mobile-scroll,
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .sales-mobile-scroll {
+  background-color: #070814;
+  background-image: none;
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] .segmiq-dot-wave {
+  display: none;
 }
 
 @media (max-width: 479px) {
