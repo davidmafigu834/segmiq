@@ -7,8 +7,6 @@ import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
 import { ListingWorkList } from "@/components/real-estate/listings/ListingWorkList";
 import { RePageHeader } from "@/components/real-estate/ui";
-import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
-import { cn } from "@/lib/ui/cn";
 import Link from "next/link";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import { shouldRedirectFromRealEstateRoute } from "@/lib/real-estate/gating";
@@ -54,7 +52,7 @@ export default async function SalesListingsPage() {
             title="Properties"
             description="In preparation, on the market, and under offer."
             actions={
-              <Link href="/sales/mandates" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11 text-[14px] sm:h-11")}>
+              <Link href="/sales/mandates" className="re-focus inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text">
                 + New seller form
               </Link>
             }
