@@ -62,10 +62,10 @@ export function RePageHeader({
         ) : null}
         <h1
           className={cn(
-            "min-w-0 font-display font-semibold tracking-[-0.02em] text-sales-text-primary [overflow-wrap:anywhere]",
+            "min-w-0 font-display font-semibold tracking-[-0.03em] text-sales-text-primary [overflow-wrap:anywhere]",
             mobileTitle
-              ? "text-[17px] leading-6 layout:mt-0.5 layout:text-[26px] layout:leading-[1.15]"
-              : "mt-0.5 text-[22px] leading-7 layout:text-[26px] layout:leading-[1.15]"
+              ? "text-[32px] leading-none layout:mt-1"
+              : "mt-1 text-[32px] leading-none"
           )}
         >
           {title}
@@ -136,7 +136,7 @@ export function ReSection({
         </div>
         {count != null || action ? (
           <div className="flex shrink-0 items-center gap-2">
-            {count != null ? <span className="text-[13px] font-medium tabular-nums text-sales-text-muted">{count}</span> : null}
+            {count != null ? <span className="text-[13px] tabular-nums text-sales-text-muted">{count}</span> : null}
             {action}
           </div>
         ) : null}
@@ -206,12 +206,12 @@ export function ReStatCard({
   const body = (
     <>
       <span className="flex min-w-0 items-center gap-1">
-        <span className="min-w-0 truncate text-[12px] font-medium text-sales-text-secondary">{label}</span>
+        <span className="min-w-0 truncate text-[12px] text-sales-text-muted">{label}</span>
       </span>
       {state === "loading" ? (
         <span className="re-bone mt-2 block h-6 w-8 rounded-[4px]" aria-hidden />
       ) : (
-        <span className="mt-1 block truncate font-display text-[22px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-sales-text-primary sm:text-[24px]">
+        <span className="mt-1 block truncate font-display text-[26px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-sales-text-primary">
           {state === "error" || value == null ? "—" : value}
         </span>
       )}
@@ -431,7 +431,7 @@ export function ReWorkItem({
         {icon ? <ReRowIcon tone={iconTone}>{icon}</ReRowIcon> : null}
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="min-w-0 max-w-full text-[15px] font-semibold leading-snug text-sales-text-primary [overflow-wrap:anywhere] sm:truncate sm:text-[14px]">{title}</p>
+            <p className="min-w-0 max-w-full truncate text-[14px] font-semibold leading-snug text-sales-text-primary">{title}</p>
             {status}
           </div>
           {reason ? (
@@ -505,7 +505,7 @@ export function ReGroupLabel({ children, count, className }: { children: ReactNo
     <li
       role="presentation"
       className={cn(
-        "flex items-baseline gap-1.5 px-[var(--re-card-pad,16px)] pb-0.5 pt-3 text-[12px] font-medium text-sales-text-muted first:pt-2",
+        "flex items-baseline gap-1.5 px-[var(--re-card-pad,16px)] pb-0.5 pt-3 text-[11px] font-medium uppercase tracking-[0.12em] text-sales-text-muted first:pt-2",
         className
       )}
     >

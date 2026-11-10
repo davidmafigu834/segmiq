@@ -158,14 +158,14 @@ export function ReQuickActions({
           type="button"
           onClick={primary.onSelect}
           disabled={primary.disabled}
-          className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11 sm:h-10")}
+          className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11 text-[14px] sm:h-11")}
         >
           {primary.icon ? <span className="inline-flex shrink-0" aria-hidden>{primary.icon}</span> : null}
           {primary.label}
         </button>
         {secondary.length > 0 ? (
           <DropdownMenu align="end">
-            <DropdownMenuTrigger className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11 sm:h-10")}>
+            <DropdownMenuTrigger className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11 text-[14px] sm:h-11")}>
               More actions
               <ChevronDown size={14} strokeWidth={1.8} aria-hidden />
             </DropdownMenuTrigger>

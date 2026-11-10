@@ -122,7 +122,7 @@ function AttentionCard({ entry, group, className }: { entry: AttentionEntry; gro
     <li className={cn("flex min-w-0 items-center gap-3 px-3 py-3 sm:px-[var(--re-card-pad,16px)]", className)}>
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="min-w-0 text-[15px] font-semibold leading-snug text-sales-text-primary [overflow-wrap:anywhere]">{entry.title}</p>
+          <p className="min-w-0 truncate text-[14px] font-semibold leading-snug text-sales-text-primary">{entry.title}</p>
           <ReStatusBadge label={entry.statusLabel} urgency={GROUP_URGENCY[group]} />
         </div>
         <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary [overflow-wrap:anywhere]">{entry.reason}</p>
@@ -314,14 +314,14 @@ export function AgentDailyWorkspace({
   return (
     <div className="space-y-3 layout:space-y-[var(--re-section-gap,16px)]">
       <header className="layout:hidden">
-        <p className="text-[12px] font-medium leading-4 text-sales-text-muted">{todayLabel()}</p>
+        <p className="text-[13px] font-medium leading-4 text-sales-text-muted">{todayLabel()}</p>
         <div className="mt-1 flex items-center justify-between gap-3">
-          <h1 className="min-w-0 font-display text-[24px] font-semibold leading-none tracking-[-0.02em] text-sales-text-primary">Today</h1>
+          <h1 className="min-w-0 font-display text-[32px] font-semibold leading-none tracking-[-0.03em] text-sales-text-primary">Today</h1>
           <div className="shrink-0">
             <ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />
           </div>
         </div>
-        <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary">{daySummary}</p>
+        <p className="mt-2 text-[14px] leading-snug text-sales-text-secondary">{daySummary}</p>
       </header>
       <RePageHeader
         className="hidden layout:flex"
@@ -449,7 +449,7 @@ export function AgentDailyWorkspace({
             <ul aria-label="Today's schedule" className="divide-y divide-sales-border-subtle">
               {schedule.map((row) => (
                 <li key={row.key} className="flex min-w-0 items-center gap-3 px-3 py-2.5 sm:px-[var(--re-card-pad,16px)]">
-                  <span className="w-12 shrink-0 text-[12px] font-semibold tabular-nums text-sales-text-secondary">{row.when}</span>
+                  <span className="w-12 shrink-0 text-[13px] font-semibold tabular-nums text-sales-text-secondary">{row.when}</span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[14px] font-semibold leading-snug text-sales-text-primary">{row.title}</p>
                     <p className="truncate text-[12px] leading-snug text-sales-text-muted">{row.detail}</p>
