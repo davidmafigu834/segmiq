@@ -149,12 +149,14 @@ export function AgentDailyWorkspace({
   });
 
   const count = needs.length;
+  const toOpen = needs.filter((row) => row.group === "today").length;
+  const waiting = needs.filter((row) => row.group === "waiting").length;
   const summary =
     mandateForms.status === "loading" && count === 0
-      ? "Checking seller forms, viewings, and offer letters."
+      ? "Checking offers and seller forms."
       : count === 0
-        ? "Nothing needs a next action."
-        : `${count} ${count === 1 ? "item needs" : "items need"} a next action.`;
+        ? "No offers or seller forms to open."
+        : [toOpen ? `${toOpen} to open today.` : null, waiting ? `${waiting} waiting.` : null].filter(Boolean).join(" ");
 
   const buyerDetail =
     buyerMetrics.status === "loading"
@@ -210,9 +212,9 @@ export function AgentDailyWorkspace({
             </RePartialNotice>
           ) : null}
           {mandateForms.status === "loading" && count === 0 ? (
-            <ReSkeletonRows rows={1} label="Loading what needs a next action" />
+            <ReSkeletonRows rows={1} label="Loading offers and seller forms" />
           ) : count === 0 ? (
-            <ReEmptyState title="Nothing needs a next action" description="Offers and seller forms show here." />
+            <ReEmptyState title="Nothing to open" description="Offers and seller forms show here." />
           ) : (
             <ul>
               {GROUP_ORDER.map((group) => {
