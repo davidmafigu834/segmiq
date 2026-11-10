@@ -6045,6 +6045,24 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   --sales-card-border: #667085;
 }
 
+html[data-crm-theme="light"] .sales-dashboard-premium[data-re-workspace="true"] {
+  --sales-bg: #e4e9f2;
+  --sales-bg-subtle: #dce3ee;
+  --sales-surface: #f7f9fc;
+  --sales-surface-subtle: #eef2f8;
+  --sales-surface-hover: #e6ecf5;
+  --sales-surface-active: #dde5f1;
+  background-color: #e4e9f2;
+  background-image: none;
+}
+
+html[data-crm-theme="light"] .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas,
+html[data-crm-theme="light"] .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas > .sales-mobile-scroll,
+html[data-crm-theme="light"] .sales-dashboard-premium[data-re-workspace="true"] .sales-mobile-scroll {
+  background-color: #e4e9f2;
+  background-image: none;
+}
+
 .sales-dashboard-premium[data-re-workspace="true"] .font-semibold {
   font-weight: 700;
 }
