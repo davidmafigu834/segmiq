@@ -10,6 +10,7 @@ import {
   type AcquisitionStage,
   type StageEvidence,
 } from "@/lib/real-estate/acquisition-plan";
+import Link from "next/link";
 import type { BadgeTone } from "@/components/sales/ui/Badge";
 
 export const acqFieldClass =
@@ -165,6 +166,63 @@ export function evidenceFromBundle(input: EvidenceInput): StageEvidence {
     hasListing: Boolean(input.listingId),
     listingApproval: null,
   };
+}
+
+export function FilterChips<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: ReadonlyArray<{ id: T; label: string }>;
+  onChange: (id: T) => void;
+}) {
+  return (
+    <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label={label}>
+      {options.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          role="tab"
+          aria-selected={value === item.id}
+          onClick={() => onChange(item.id)}
+          className={`re-focus inline-flex h-9 shrink-0 items-center whitespace-nowrap rounded-full px-3 text-[13px] font-medium ${value === item.id ? "bg-sales-text-primary text-sales-surface" : "border border-sales-border text-sales-text-secondary"}`}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function WorkLine({
+  name,
+  meta,
+  detail,
+  action,
+  href,
+  onClick,
+}: {
+  name: string;
+  meta: string;
+  detail: string;
+  action: string;
+  href?: string;
+  onClick?: () => void;
+}) {
+  const className = "re-focus inline-flex h-9 shrink-0 items-center rounded-[8px] border border-sales-border bg-sales-bg px-3 text-[13px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover";
+  return (
+    <li className="flex items-center gap-3 border-t border-sales-border-subtle px-4 py-3">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14px] font-semibold text-sales-text-primary">{name}</p>
+        <p className="truncate text-[12px] text-sales-text-muted">{meta}</p>
+        <p className="mt-0.5 truncate text-[13px] text-sales-text-secondary">{detail}</p>
+      </div>
+      {href ? <Link href={href} className={className}>{action}</Link> : <button type="button" onClick={onClick} className={className}>{action}</button>}
+    </li>
+  );
 }
 
 export function stageChoices(evidence: StageEvidence) {

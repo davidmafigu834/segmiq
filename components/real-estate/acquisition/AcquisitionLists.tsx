@@ -6,29 +6,24 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ClipboardCheck, ScrollText, UserRound } from "lucide-react";
 import { mandateFormVisible, mandateKindLabel, type MandateFormFilter } from "@/lib/real-estate/mandate-form";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import {
-  ReActionMenu,
   ReEmptyState,
   ReErrorState,
   RePageHeader,
   RePartialNotice,
-  ReRowAction,
   ReSection,
   ReSheet,
   ReSkeletonRows,
-  ReStatusBadge,
-  ReWorkItem,
 } from "@/components/real-estate/ui";
 import {
   acqFieldClass,
+  FilterChips,
   formatWhen,
-  inspectionStatusLabel,
-  inspectionTone,
+  WorkLine,
 } from "./acquisition-ui";
 import { SellerIntakePanel } from "@/components/real-estate/seller-intake/SellerIntakePanel";
 
@@ -105,11 +100,14 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
   return (
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
+        mobileTitle
+        context="Property acquisition"
         title="Sellers"
-        description="Each completed mandate opens a seller here, with the property they are listing underneath."
+        description="People with a property on file."
+        actions={<Link href={mandatesPath} className="re-focus inline-flex h-11 items-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text">New seller form</Link>}
       />
       <label>
-        <span className="sr-only">Search owners</span>
+        <span className="sr-only">Search sellers</span>
         <input className={acqFieldClass} placeholder="Search by name" value={q} onChange={(event) => setQ(event.target.value)} />
       </label>
       {error ? <ReErrorState title="Owners didn't load" description={error} onRetry={() => void load()} /> : null}
@@ -124,47 +122,25 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
       ) : null}
       {!loading && !error && visible.length > 0 ? (
         <ReSection id="owners" title="Sellers" count={visible.length} flush>
-          <ul className="divide-y divide-sales-border-subtle">
+          <ul>
             {visible.map((owner) => {
               const name = owner.name || "Unnamed owner";
               const owned = (row: { id: string; contact_id: string | null }) => owner.opportunityIds?.length
                 ? owner.opportunityIds.includes(row.id)
                 : (owner.contactId.startsWith("unlinked:") ? `unlinked:${row.id}` === owner.contactId : row.contact_id === owner.contactId);
-              const ownerPhone = opportunities.find((row) => owned(row) && row.owner_phone)?.owner_phone;
               const places = opportunities
                 .filter((row) => owned(row))
                 .map((row) => row.suburb || row.city)
                 .filter((value): value is string => Boolean(value))
-                .slice(0, 3);
+                .slice(0, 1);
               return (
-                <ReWorkItem
+                <WorkLine
                   key={owner.contactId}
-                  icon={<UserRound />}
-                  title={name}
-                  reason={[
-                    owner.kind === "company" ? "Company" : null,
-                    owner.representatives?.length ? `Representatives: ${owner.representatives.join(", ")}` : null,
-                    places.length ? places.join(" · ") : "Location not recorded",
-                    owner.limit,
-                  ].filter(Boolean).join(" · ")}
-                  meta={<span>{owner.properties} {owner.properties === 1 ? "property" : "properties"} · {owner.active} active</span>}
-                  action={<ReRowAction label="View" srContext={name} onClick={() => openSeller(owner)} />}
-                  menu={
-                    <ReActionMenu
-                      label={`Actions for ${name}`}
-                      sheetTitle={name}
-                      actions={[
-                        { id: "view", label: "View seller", onSelect: () => openSeller(owner) },
-                        { id: "form", label: "Send mandate form", onSelect: () => router.push(mandatesPath) },
-                        ...(ownerPhone
-                          ? [
-                              { id: "call", label: "Call", onSelect: () => { window.location.href = `tel:${ownerPhone}`; } },
-                              { id: "wa", label: "WhatsApp", onSelect: () => { window.location.href = `https://wa.me/${ownerPhone.replace(/\D/g, "")}`; } },
-                            ]
-                          : []),
-                      ]}
-                    />
-                  }
+                  name={name}
+                  meta={places[0] || (owner.kind === "company" ? "Company" : "Seller")}
+                  detail={`${owner.properties} ${owner.properties === 1 ? "property" : "properties"} · ${owner.active} active`}
+                  action="Open"
+                  onClick={() => openSeller(owner)}
                 />
               );
             })}
@@ -177,11 +153,9 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
 }
 
 const INSPECTION_FILTERS = [
+  { id: "record", label: "To record" },
+  { id: "recorded", label: "Recorded" },
   { id: "all", label: "All" },
-  { id: "upcoming", label: "Upcoming" },
-  { id: "completed", label: "Completed" },
-  { id: "cancelled", label: "Cancelled" },
-  { id: "attention", label: "Needs attention" },
 ] as const;
 
 export function InspectionList({ clientId, opportunityBase, framed = false }: { clientId: string; opportunityBase: string; framed?: boolean }) {
@@ -212,33 +186,19 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
   const visible = rows.filter((row) => {
     const status = String(row.status ?? "");
     if (filter === "all") return true;
-    if (filter === "completed") return status === "completed";
-    if (filter === "cancelled") return status === "cancelled";
-    if (filter === "upcoming") return ["scheduled", "confirmed", "rescheduled"].includes(status);
-    const when = row.scheduled_at ? new Date(String(row.scheduled_at)).getTime() : NaN;
-    return status === "incomplete" || (["scheduled", "confirmed", "rescheduled"].includes(status) && !Number.isNaN(when) && when < Date.now());
+    if (filter === "recorded") return status === "completed";
+    return status !== "completed" && status !== "cancelled";
   });
 
   return (
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
+        mobileTitle
+        context="Property acquisition"
         title="Inspections"
-        description="The listing from the mandate stays incomplete until this visit, the photos, and the remaining details are added."
+        description="Visits to prepare a property for the market."
       />
-      <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Inspection filter">
-        {INSPECTION_FILTERS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={filter === item.id}
-            onClick={() => setFilter(item.id)}
-            className={`re-focus inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold ${filter === item.id ? "border-sales-text-primary bg-sales-text-primary text-sales-surface" : "border-sales-border text-sales-text-secondary"}`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      <FilterChips label="Inspection filter" value={filter} options={INSPECTION_FILTERS} onChange={setFilter} />
       {incomplete ? <RePartialNotice>Some inspections could not be loaded. This list may be short.</RePartialNotice> : null}
       {error ? <ReErrorState title="Inspections didn't load" description={error} onRetry={() => void load()} /> : null}
       {loading ? <ReSkeletonRows rows={4} label="Loading inspections" /> : null}
@@ -252,47 +212,19 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
       ) : null}
       {!loading && !error && visible.length > 0 ? (
         <ReSection id="inspections" title="Inspections" count={visible.length} flush>
-          <div className="hidden md:block">
-            <table className="w-full table-fixed text-left text-[13px]">
-              <caption className="sr-only">Property inspections</caption>
-              <thead>
-                <tr className="border-y border-sales-border-subtle bg-sales-surface-subtle text-[12px] text-sales-text-secondary">
-                  <th className="px-[var(--re-card-pad,16px)] py-2 font-medium">Property</th>
-                  <th className="px-3 py-2 font-medium">Scheduled</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="w-[140px] px-3 py-2 font-medium"><span className="sr-only">Action</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-sales-border-subtle">
-                {visible.map((row) => {
-                  const label = String(row.suburb || row.address || "Inspection");
-                  const unfinished = ["draft", "incomplete", "in_progress"].includes(String(row.status));
-                  return (
-                    <tr key={String(row.id)}>
-                      <td className="truncate px-[var(--re-card-pad,16px)] py-3 font-semibold">{label}</td>
-                      <td className="px-3 py-3 text-sales-text-secondary">{row.scheduled_at ? formatWhen(String(row.scheduled_at)) : "Not scheduled"}</td>
-                      <td className="px-3 py-3"><ReStatusBadge label={inspectionStatusLabel(String(row.status))} tone={inspectionTone(String(row.status))} /></td>
-                      <td className="px-3 py-3">
-                        <ReRowAction label={unfinished ? "Finish inspection" : "Open inspection"} srContext={label} href={`${opportunityBase}/${String(row.opportunity_id)}#acq-inspection`} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <ul className="divide-y divide-sales-border-subtle md:hidden">
+          <ul>
             {visible.map((row) => {
               const label = String(row.suburb || row.address || "Inspection");
-              const unfinished = ["draft", "incomplete", "in_progress"].includes(String(row.status));
+              const status = String(row.status ?? "");
+              const action = status === "completed" ? "Open" : row.scheduled_at ? "Record" : "Book";
               return (
-                <ReWorkItem
+                <WorkLine
                   key={String(row.id)}
-                  icon={<ClipboardCheck />}
-                  title={label}
-                  reason={row.scheduled_at ? formatWhen(String(row.scheduled_at)) ?? undefined : "Not scheduled"}
-                  status={<ReStatusBadge label={inspectionStatusLabel(String(row.status))} tone={inspectionTone(String(row.status))} />}
-                  action={<ReRowAction label={unfinished ? "Finish inspection" : "Open inspection"} srContext={label} href={`${opportunityBase}/${String(row.opportunity_id)}#acq-inspection`} />}
+                  name={label}
+                  meta={String(row.owner_name || row.seller_name || "Seller")}
+                  detail={row.scheduled_at ? formatWhen(String(row.scheduled_at)) ?? "Not scheduled" : "Not scheduled"}
+                  action={action}
+                  href={`${opportunityBase}/${String(row.opportunity_id)}#acq-inspection`}
                 />
               );
             })}
@@ -304,10 +236,9 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
 }
 
 const MANDATE_FILTERS: Array<{ id: MandateFormFilter; label: string }> = [
+  { id: "with_seller", label: "Waiting" },
+  { id: "complete", label: "Accepted" },
   { id: "all", label: "All" },
-  { id: "with_seller", label: "With the seller" },
-  { id: "complete", label: "Complete" },
-  { id: "expiring", label: "Expiring" },
 ];
 
 type MandateFormRow = {
@@ -393,28 +324,17 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
   return (
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
+        mobileTitle
+        context="Property acquisition"
         title="Mandates"
-        description="Send the seller form. Opening a completed form goes to that seller and that draft listing."
+        description="Forms returned by sellers, and the mandates on file."
       />
       <SellerIntakePanel clientId={clientId} mode="send" />
       <label>
         <span className="sr-only">Search mandates</span>
         <input className={acqFieldClass} placeholder="Search seller or property" value={query} onChange={(event) => setQuery(event.target.value)} />
       </label>
-      <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Mandate filter">
-        {MANDATE_FILTERS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={filter === item.id}
-            onClick={() => setFilter(item.id)}
-            className={`re-focus inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold ${filter === item.id ? "border-sales-text-primary bg-sales-text-primary text-sales-surface" : "border-sales-border text-sales-text-secondary"}`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      <FilterChips label="Mandate filter" value={filter} options={MANDATE_FILTERS} onChange={setFilter} />
       {error ? <ReErrorState title="Mandates didn't load" description={error} onRetry={() => void load()} /> : null}
       {loading ? <ReSkeletonRows rows={4} label="Loading mandates" /> : null}
       {!loading && !error && visible.length === 0 ? (
@@ -425,52 +345,16 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
         />
       ) : null}
       {!loading && !error && visible.length > 0 ? (
-        <ReSection id="mandates" title="Seller forms" count={visible.length} flush>
-          <div className="hidden md:block">
-            <table className="w-full table-fixed text-left text-[13px]">
-              <caption className="sr-only">Seller forms</caption>
-              <thead>
-                <tr className="border-y border-sales-border-subtle bg-sales-surface-subtle text-[12px] text-sales-text-secondary">
-                  <th className="w-[24%] px-[var(--re-card-pad,16px)] py-2 font-medium">Seller</th>
-                  <th className="px-3 py-2 font-medium">Property</th>
-                  <th className="w-[90px] px-3 py-2 font-medium">Type</th>
-                  <th className="w-[150px] px-3 py-2 font-medium">Status</th>
-                  <th className="w-[150px] px-3 py-2 font-medium">End</th>
-                  <th className="w-[90px] px-3 py-2 font-medium"><span className="sr-only">Open</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-sales-border-subtle">
-                {visible.map((row) => (
-                  <tr key={row.id} className="cursor-pointer hover:bg-sales-surface-hover" onClick={() => void openForm(row)}>
-                    <td className="truncate px-[var(--re-card-pad,16px)] py-3 font-semibold">{row.sellerName}</td>
-                    <td className="truncate px-3 py-3">{row.property}</td>
-                    <td className="px-3 py-3 text-sales-text-secondary">{mandateKindLabel(row.kind)}</td>
-                    <td className="px-3 py-3"><ReStatusBadge label={row.phase === "complete" ? "Complete" : "With the seller"} tone={row.phase === "complete" ? "success" : "warning"} /></td>
-                    <td className="px-3 py-3 text-sales-text-secondary">{mandateWhen(row.kind, row.expiryDate)}</td>
-                    <td className="px-3 py-3" onClick={(event) => event.stopPropagation()}>
-                      <ReRowAction label="Open" srContext={row.property} onClick={() => void openForm(row)} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <ul className="divide-y divide-sales-border-subtle md:hidden">
+        <ReSection id="mandates" title="Mandates" count={visible.length} flush>
+          <ul>
             {visible.map((row) => (
-              <ReWorkItem
+              <WorkLine
                 key={row.id}
-                icon={<ScrollText />}
-                title={row.sellerName}
-                reason={`${row.property} · ${mandateKindLabel(row.kind)} · ${mandateWhen(row.kind, row.expiryDate)}`}
-                status={<ReStatusBadge label={row.phase === "complete" ? "Complete" : "With the seller"} tone={row.phase === "complete" ? "success" : "warning"} />}
-                action={<ReRowAction label="Open" srContext={row.property} onClick={() => void openForm(row)} />}
-                menu={
-                  <ReActionMenu
-                    label={`Actions for ${row.sellerName}`}
-                    sheetTitle={row.property}
-                    actions={[{ id: "open", label: "Open mandate", onSelect: () => void openForm(row) }]}
-                  />
-                }
+                name={row.sellerName}
+                meta={row.property}
+                detail={row.phase === "complete" ? `Accepted · ${mandateKindLabel(row.kind)} · ${mandateWhen(row.kind, row.expiryDate)}` : "Waiting for the form"}
+                action="Open"
+                onClick={() => void openForm(row)}
               />
             ))}
           </ul>

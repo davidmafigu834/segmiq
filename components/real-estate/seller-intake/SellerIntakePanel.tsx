@@ -161,11 +161,11 @@ export function SellerIntakePanel({
           <p className="text-[13px] leading-5 text-sales-text-secondary">Share this link with the seller. When they finish it, open the form in the list below. That opens their seller profile and a draft listing. Photos and the rest of the house are added on the listing, after the inspection.</p>
           {templates.length === 0 ? <p className="text-[13px] text-sales-text-secondary">No approved template yet. A manager approves the organisation&apos;s mandate wording first. Agents then choose that version here.</p> : (
             <div className="flex flex-wrap gap-2">
-              <select className="min-h-11 rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[14px]" value={templateId} onChange={(event) => setTemplateId(event.target.value)} aria-label="Seller form template">
+              <select className="h-11 rounded-[10px] border border-sales-border bg-sales-bg px-3 text-[14px]" value={templateId} onChange={(event) => setTemplateId(event.target.value)} aria-label="Seller form template">
                 <option value="">Choose a template</option>
                 {templates.map((template) => <option key={template.id} value={template.id}>{template.title} · {template.kind} · v{template.version}</option>)}
               </select>
-              <button type="button" disabled={busy || !templateId} onClick={() => void createLink()} className="min-h-11 rounded-[8px] bg-sales-text-primary px-3 text-[13px] font-semibold text-sales-surface disabled:opacity-50">Send seller form</button>
+              <button type="button" disabled={busy || !templateId} onClick={() => void createLink()} className="inline-flex h-11 items-center rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text disabled:opacity-50">Send seller form</button>
             </div>
           )}
         </div>

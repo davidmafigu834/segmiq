@@ -10,16 +10,15 @@ import { VIEWING_OUTCOMES } from "@/lib/real-estate/buyer-match";
 import { Button, salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import {
-  ReActionMenu,
   ReEmptyState,
   ReErrorState,
   RePageHeader,
   RePartialNotice,
+  ReSection,
   ReSheet,
   ReSkeletonRows,
-  ReStatusBadge,
 } from "@/components/real-estate/ui";
-import { acqFieldClass, acqLabelClass, asIsoTimestamp } from "@/components/real-estate/acquisition/acquisition-ui";
+import { acqFieldClass, acqLabelClass, asIsoTimestamp, FilterChips, WorkLine } from "@/components/real-estate/acquisition/acquisition-ui";
 
 type Viewing = {
   id: string;
@@ -61,7 +60,7 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
   const [error, setError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"upcoming" | "today" | "completed" | "cancelled" | "all">("upcoming");
+  const [filter, setFilter] = useState<"today" | "upcoming" | "completed" | "all">("today");
   const [selected, setSelected] = useState<Viewing | null>(null);
   const [reschedule, setReschedule] = useState<Viewing | null>(null);
   const [outcomeFor, setOutcomeFor] = useState<Viewing | null>(null);
@@ -98,7 +97,6 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
       if (filter === "all") return true;
       if (filter === "today") return sameDay(row.scheduled_at, now);
       if (filter === "completed") return row.status === "completed" || row.status === "no_show";
-      if (filter === "cancelled") return row.status === "cancelled";
       return row.status === "scheduled" && new Date(row.scheduled_at).getTime() >= now.getTime() - 60 * 60 * 1000;
     });
   }, [rows, filter]);
@@ -200,30 +198,22 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
   return (
     <div className={shell}>
       <RePageHeader
+        mobileTitle
+        context="Buyer and tenant sales"
         title="Viewings"
-        description="The date and time on a signed viewing form are booked here and on the agent calendar. The same form opens the buyer on that property."
-        actions={<Link href={buyersPath.replace("/buyers", "/calendar")} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Calendar</Link>}
+        description="Appointments today, and outcomes still to record."
       />
-      <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Viewing list">
-        {([
-          ["upcoming", "Upcoming"],
-          ["today", "Today"],
-          ["completed", "Completed"],
-          ["cancelled", "Cancelled"],
-          ["all", "All"],
-        ] as const).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={filter === id}
-            onClick={() => setFilter(id)}
-            className={cn("re-focus inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold", filter === id ? "border-sales-text-primary bg-sales-text-primary text-sales-surface" : "border-sales-border text-sales-text-secondary")}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <FilterChips
+        label="Viewing list"
+        value={filter}
+        options={[
+          { id: "today", label: "Today" },
+          { id: "upcoming", label: "Upcoming" },
+          { id: "completed", label: "Completed" },
+          { id: "all", label: "All" },
+        ]}
+        onChange={setFilter}
+      />
       {incomplete ? <RePartialNotice>This list did not include every viewing. Filters apply only to what loaded.</RePartialNotice> : null}
       {error ? <ReErrorState title="Viewings didn't load" description={error} onRetry={() => void load()} /> : null}
       {formError && !reschedule && !cancelFor && !outcomeFor ? <p className="text-[13px] text-sales-danger-fg" role="alert">{formError}</p> : null}
@@ -236,61 +226,44 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
               ? "No viewings today"
               : filter === "completed"
                 ? "No completed viewings"
-                : filter === "cancelled"
-                  ? "No cancelled viewings"
-                  : filter === "all"
-                    ? "No viewings yet"
-                    : "No upcoming viewings"
+                : filter === "all"
+                  ? "No viewings yet"
+                  : "No upcoming viewings"
           }
           description="Share a viewing form from the property. When the buyer signs it, the appointment appears here."
           action={<Link href={buyersPath.replace("/buyers", "/listings")} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open a property</Link>}
         />
       ) : null}
       {!loading && visible.length > 0 ? (
-        <ul className="space-y-2">
-          {visible.map((row) => {
-            const whenDate = row.scheduled_at ? new Date(row.scheduled_at) : null;
-            const time = whenDate ? whenDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Time open";
-            const place = row.listing?.suburb || row.listing?.address || "Property";
-            const full = row.access !== "listing_only";
-            return (
-              <li key={row.id} className="rounded-[12px] border border-sales-border-subtle bg-sales-surface px-3.5 py-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-display text-[22px] font-semibold leading-none tabular-nums">{time}</p>
-                    <p className="mt-1 text-[14px] font-semibold leading-snug [overflow-wrap:anywhere]">{place}</p>
-                  </div>
-                  <ReActionMenu
-                    label={`Actions for ${place}`}
-                    sheetTitle={place}
-                    actions={[
-                      { id: "open", label: "View details", onSelect: () => setSelected(row) },
-                      ...(full && row.status === "scheduled"
-                        ? [
-                            { id: "confirm", label: "Confirm", onSelect: () => void confirm(row) },
-                            { id: "move", label: "Reschedule", onSelect: () => { setWhen(""); setOverlap(null); setReschedule(row); } },
-                            { id: "cancel", label: "Cancel", destructive: true, onSelect: () => { setCancelReason(""); setCancelFor(row); } },
-                          ]
-                        : []),
-                      { id: "outcome", label: "Record outcome", onSelect: () => { setOutcome(""); setOutcomeFor(row); } },
-                    ]}
-                  />
-                </div>
-                <p className="mt-2 text-[13px] text-sales-text-secondary [overflow-wrap:anywhere]">
-                  {whenDate ? whenDate.toLocaleDateString() : ""}
-                  {" · "}
-                  {row.contact?.name || (row.access === "listing_only" ? "Customer hidden" : "Customer")}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <ReStatusBadge label={row.status.replaceAll("_", " ")} />
-                  {row.confirmation_status ? <ReStatusBadge label={row.confirmation_status.replaceAll("_", " ")} tone="info" /> : null}
-                  {row.outcome ? <ReStatusBadge label={OUTCOME_LABEL[row.outcome] ?? row.outcome.replaceAll("_", " ")} /> : null}
-                </div>
-                <button type="button" className="re-focus mt-2 min-h-11 text-[13px] font-semibold" onClick={() => setSelected(row)}>View details</button>
-              </li>
-            );
-          })}
-        </ul>
+        <ReSection id="viewings" title="Viewings" count={visible.length} flush>
+          <ul>
+            {visible.map((row) => {
+              const whenDate = row.scheduled_at ? new Date(row.scheduled_at) : null;
+              const place = row.listing?.suburb || row.listing?.address || "Property";
+              const who = row.contact?.name || (row.access === "listing_only" ? "Customer hidden" : "Customer");
+              const when = whenDate
+                ? whenDate.toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+                : "Time open";
+              const detail = row.outcome
+                ? (OUTCOME_LABEL[row.outcome] ?? row.outcome.replaceAll("_", " "))
+                : row.status === "cancelled"
+                  ? "Cancelled"
+                  : row.status === "completed" || row.status === "no_show"
+                    ? "Outcome recorded"
+                    : when;
+              return (
+                <WorkLine
+                  key={row.id}
+                  name={who}
+                  meta={place}
+                  detail={detail}
+                  action="Open"
+                  onClick={() => setSelected(row)}
+                />
+              );
+            })}
+          </ul>
+        </ReSection>
       ) : null}
 
       {selected ? (
@@ -302,6 +275,14 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
             {selected.access === "full" && selected.contact?.phone ? <div><dt className="text-[12px] text-sales-text-muted">Phone</dt><dd>{selected.contact.phone}</dd></div> : null}
           </dl>
           <div className="flex flex-wrap gap-2">
+            {selected.access !== "listing_only" && selected.status === "scheduled" ? (
+              <>
+                <button type="button" className="inline-flex h-11 items-center rounded-[10px] bg-sales-text-primary px-4 text-[14px] font-semibold text-sales-surface" onClick={() => void confirm(selected)}>Confirm</button>
+                <button type="button" className="inline-flex h-11 items-center rounded-[10px] border border-sales-border bg-sales-bg px-4 text-[14px] font-semibold" onClick={() => { setSelected(null); setWhen(""); setOverlap(null); setReschedule(selected); }}>Reschedule</button>
+                <button type="button" className="inline-flex h-11 items-center rounded-[10px] border border-sales-border bg-sales-bg px-4 text-[14px] font-semibold" onClick={() => { setSelected(null); setCancelReason(""); setCancelFor(selected); }}>Cancel</button>
+              </>
+            ) : null}
+            <button type="button" className="inline-flex h-11 items-center rounded-[10px] border border-sales-border bg-sales-bg px-4 text-[14px] font-semibold" onClick={() => { setSelected(null); setOutcome(""); setOutcomeFor(selected); }}>Record outcome</button>
             {selected.buyer_search_id ? <Link href={`${buyersPath}/${selected.buyer_search_id}`} className="inline-flex min-h-11 items-center rounded-[8px] bg-sales-text-primary px-3 text-[13px] font-semibold text-sales-surface">Open buyer</Link> : null}
             {selected.listing_id || selected.listing?.id ? <Link href={`${buyersPath.replace(/\/buyers$/, "/listings")}/${selected.listing_id || selected.listing?.id}`} className="inline-flex min-h-11 items-center rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold">Open property</Link> : null}
             {selected.outcome === "wants_offer" || selected.outcome === "interested" ? (

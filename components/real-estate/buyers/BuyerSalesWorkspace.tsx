@@ -2,23 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Users } from "lucide-react";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import {
-  ReActionMenu,
   ReEmptyState,
   ReErrorState,
   RePageHeader,
-  ReRowAction,
   ReSection,
   ReSkeletonRows,
-  ReStatusBadge,
-  ReWorkItem,
 } from "@/components/real-estate/ui";
-import { acqFieldClass } from "@/components/real-estate/acquisition/acquisition-ui";
+import { acqFieldClass, FilterChips, WorkLine } from "@/components/real-estate/acquisition/acquisition-ui";
 
 type SearchRow = {
   id: string;
@@ -63,14 +57,12 @@ function houseLabel(viewing: ViewingRow | undefined): { label: string; listingId
 }
 
 export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { clientId: string; basePath: string; framed?: boolean }) {
-  const router = useRouter();
   const [rows, setRows] = useState<PersonRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [query, setQuery] = useState("");
   const [intent, setIntent] = useState("");
-  const offersPath = basePath.replace(/\/buyers$/, "/offers");
   const listingsPath = basePath.replace(/\/buyers$/, "/listings");
 
   useEffect(() => {
@@ -119,33 +111,28 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
     void load();
   }, [load]);
 
-  const letterHref = (row: PersonRow) => {
-    if (row.offerId) return `${offersPath}?offerId=${row.offerId}`;
-    const params = new URLSearchParams();
-    if (row.listingId) params.set("listingId", row.listingId);
-    if (row.contact_id) params.set("contactId", row.contact_id);
-    params.set("buyerSearchId", row.id);
-    const query = params.toString();
-    return query ? `${offersPath}?${query}` : `${basePath}/${row.id}`;
-  };
-
   return (
     <div className={framed ? reEmbeddedShell : shell}>
       <RePageHeader
-        title="Buyers & tenants"
-        description="A signed viewing form opens a person here, linked to the house they asked to see. The offer letter starts from that person."
+        mobileTitle
+        context="Buyer and tenant sales"
+        title="Buyers"
+        description="People who want to buy or rent, and the search you are working."
       />
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        <label className="min-w-0 flex-1">
-          <span className="sr-only">Search buyers</span>
-          <input className={acqFieldClass} placeholder="Name or phone" value={q} onChange={(event) => setQ(event.target.value)} />
-        </label>
-        <select className={`${acqFieldClass} w-[160px]`} aria-label="Buying or renting" value={intent} onChange={(event) => setIntent(event.target.value)}>
-          <option value="">Buyer or tenant</option>
-          <option value="purchase">Buying</option>
-          <option value="rental">Renting</option>
-        </select>
-      </div>
+      <label>
+        <span className="sr-only">Search buyers</span>
+        <input className={acqFieldClass} placeholder="Name or phone" value={q} onChange={(event) => setQ(event.target.value)} />
+      </label>
+      <FilterChips
+        label="Buying or renting"
+        value={intent}
+        options={[
+          { id: "", label: "All" },
+          { id: "purchase", label: "Buying" },
+          { id: "rental", label: "Renting" },
+        ]}
+        onChange={setIntent}
+      />
       {error ? <ReErrorState title="Buyers didn't load" description={error} onRetry={() => void load()} /> : null}
       {loading ? <ReSkeletonRows rows={4} label="Loading buyers and tenants" /> : null}
       {!loading && !error && rows.length === 0 ? (
@@ -157,36 +144,19 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
         />
       ) : null}
       {!loading && !error && rows.length > 0 ? (
-        <ReSection id="buyers" title="Buyers and tenants" count={rows.length} flush>
-          <ul className="divide-y divide-sales-border-subtle">
+        <ReSection id="buyers" title="Searches" count={rows.length} flush>
+          <ul>
             {rows.map((row) => {
               const name = row.contact_name || "Unnamed customer";
               const role = row.intent === "rental" ? "Tenant" : "Buyer";
               return (
-                <ReWorkItem
+                <WorkLine
                   key={row.id}
-                  icon={<Users />}
-                  title={name}
-                  reason={`${role} · ${row.house}`}
-                  status={row.letter ? <ReStatusBadge label={row.letter} /> : <ReStatusBadge label="No letter yet" />}
-                  action={<ReRowAction label="Open buyer" srContext={name} href={`${basePath}/${row.id}`} />}
-                  menu={
-                    <ReActionMenu
-                      label={`Actions for ${name}`}
-                      sheetTitle={name}
-                      actions={[
-                        { id: "open", label: "Open buyer", onSelect: () => router.push(`${basePath}/${row.id}`) },
-                        { id: "house", label: "Open property", onSelect: () => router.push(row.listingId ? `${listingsPath}/${row.listingId}` : listingsPath) },
-                        { id: "letter", label: row.offerId ? "Open offer letter" : "Generate offer letter", onSelect: () => router.push(letterHref(row)) },
-                        ...(row.phone
-                          ? [
-                              { id: "call", label: "Call", onSelect: () => { window.location.href = `tel:${row.phone}`; } },
-                              { id: "wa", label: "WhatsApp", onSelect: () => { window.location.href = `https://wa.me/${String(row.phone).replace(/\D/g, "")}`; } },
-                            ]
-                          : []),
-                      ]}
-                    />
-                  }
+                  name={name}
+                  meta={`${role} · ${row.house}`}
+                  detail={row.letter || "No letter yet"}
+                  action="Open"
+                  href={`${basePath}/${row.id}`}
                 />
               );
             })}
