@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ContextCompliancePanel } from "@/components/real-estate/compliance/ContextCompliancePanel";
+import { Phone } from "lucide-react";
 import { evaluateMandateCompliance } from "@/lib/real-estate/seller-intake/compliance-checks";
-import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
-import { cn } from "@/lib/ui/cn";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
-import { ReEmptyState, ReErrorState, RePageHeader, ReSection, ReSkeletonRows, ReStatusBadge } from "@/components/real-estate/ui";
+import { ReErrorState } from "@/components/real-estate/ui";
 
 type Owner = {
   contactId: string;
@@ -148,7 +146,19 @@ export function SellerProfile({
     };
   }, [clientId, ownerId]);
 
-  if (loading) return <div className={rootClass}><ReSkeletonRows rows={5} label="Loading this seller" /></div>;
+  if (loading) {
+    return (
+      <div className={rootClass} aria-hidden>
+        <div className="space-y-2">
+          <span className="re-bone block h-3 w-16 rounded-[4px]" />
+          <span className="re-bone block h-8 w-56 rounded-[6px]" />
+          <span className="re-bone block h-3 w-72 rounded-[4px]" />
+        </div>
+        <div className="re-bone mt-4 h-36 rounded-[12px]" />
+        <div className="re-bone mt-4 h-28 rounded-[12px]" />
+      </div>
+    );
+  }
   if (!owner) {
     return (
       <div className={rootClass}>
@@ -161,149 +171,257 @@ export function SellerProfile({
   const listingId = opportunities.find((row) => row.converted_listing_id)?.converted_listing_id ?? "";
   const phone = shown(property?.owner_phone) || fieldValue(fields, "cell") || fieldValue(fields, "representativePhone");
   const address = property ? place(property, fields) : fieldValue(fields, "propertyAddress");
-  const companyName = fieldValue(fields, "companyName") || (owner.kind === "company" ? owner.name ?? "" : "");
-  const representative = fieldValue(fields, "representativeName") || owner.representatives?.[0] || "";
   const asking = fieldValue(fields, "askingPrice");
   const mandatePrice = fieldValue(fields, "mandatePrice");
   const openOffers = offers.filter((row) => !["Rejected", "Withdrawn", "Expired"].includes(row.statusLabel));
   const finishHref = listingId ? `${listingsPath}/${listingId}` : property ? `${inspectionsPath}/${property.id}#acq-inspection` : listingsPath;
-  const primaryHref = openOffers.length ? `${offersPath}?offerId=${openOffers[0].id}` : finishHref;
-  const primaryLabel = openOffers.length ? "Review offer" : "Finish the listing";
-  const contactId = property?.contact_id && !String(property.contact_id).startsWith("unlinked:") ? property.contact_id : owner.contactId.startsWith("unlinked:") || owner.contactId.startsWith("company:") ? "" : owner.contactId;
   const formAnswers: Record<string, string> = {};
   for (const field of fields) {
     if (field.value) formAnswers[field.key] = field.value;
   }
   const formCheck = request ? evaluateMandateCompliance(request.kind === "sole" ? "sole" : "open", formAnswers) : null;
   const sellerIsCompany = formAnswers.ownerKind === "Company" || owner.kind === "company";
+  const name = owner.name || fieldValue(fields, "registeredOwner") || "Seller";
+  const kindLabel = sellerIsCompany ? "Company" : "Individual";
+  const required = [
+    ...(formCheck?.notOnForm ?? []),
+    ...(formCheck?.missing.map((item) => item.label) ?? []),
+  ];
+  const start = fieldValue(fields, "mandateStartDate");
+  const end = fieldValue(fields, "mandateEndDate");
+  const mandateMeta = request ? (request.status === "complete" || request.status === "approved" ? "Accepted" : request.status.replaceAll("_", " ")) : "None";
+  const mandateLine = [start && end ? `${start} – ${end}` : start || end, mandatePrice ? priceLabel(mandatePrice) : ""].filter(Boolean).join(" · ");
+  const formHref = request ? `/api/clients/${clientId}/seller-intakes/${request.id}/record` : mandatesPath;
+  const digits = phone.replace(/\D/g, "");
 
   return (
-    <div className={rootClass}>
-      <RePageHeader
-        context={<Link href={basePath} className="re-focus rounded text-sales-text-secondary hover:text-sales-text-primary">Sellers</Link>}
-        title={owner.name || fieldValue(fields, "registeredOwner") || "Seller"}
-        description={address || "A completed mandate opens this seller and the property they are listing."}
-        actions={
+    <div className={`${rootClass} space-y-5`}>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[13px] font-medium text-sales-text-muted">
+            <Link href={basePath} className="re-focus rounded">Sellers</Link>
+          </p>
+          <h1 className="mt-1 break-words font-display text-[32px] font-semibold leading-none tracking-[-0.03em] text-sales-text-primary">{name}</h1>
+          <p className="mt-2 text-[14px] text-sales-text-secondary">{address || "Property address not recorded"}</p>
+          <p className="mt-1 text-[13px] text-sales-text-muted">{kindLabel}{phone ? ` · ${phone}` : ""}</p>
+        </div>
+        {phone ? (
           <div className="flex flex-wrap gap-2">
-            {request ? (
-              <a href={`/api/clients/${clientId}/seller-intakes/${request.id}/record`} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11 sm:h-10")}>
-                Download PDF
+            <a href={`tel:${phone}`} className="re-focus inline-flex h-11 items-center gap-2 rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[14px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover">
+              <Phone size={16} strokeWidth={1.75} aria-hidden />
+              Call
+            </a>
+            {digits ? (
+              <a href={`https://wa.me/${digits}`} className="re-focus inline-flex h-11 items-center rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[14px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover">
+                WhatsApp
               </a>
             ) : null}
-            <Link href={primaryHref} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11 sm:h-10")}>
-              {primaryLabel}
-            </Link>
           </div>
-        }
-      />
-      <div className="grid min-w-0 gap-4 layout:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.85fr)]">
-        <div className="flex min-w-0 flex-col gap-4">
-          <ReSection
-            id="property"
-            title="Property"
-            description="Taken from the mandate form. It stays incomplete until the inspection, the photos, and the remaining details are added."
-            action={<ReStatusBadge label={listingId ? "Draft listing" : "Incomplete"} tone="warning" />}
-          >
-            {address ? (
-              <dl className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <dt className="text-[12px] text-sales-text-muted">Address</dt>
-                  <dd className="text-[14px] text-sales-text-primary [overflow-wrap:anywhere]">
-                    {listingId ? <Link href={`${listingsPath}/${listingId}`} className="re-focus font-semibold underline-offset-2 hover:underline">{address}</Link> : address}
-                  </dd>
-                </div>
-                <Fact label="Type" value={fieldValue(fields, "propertyCategory") || "Not recorded"} />
-                <Fact label="Ownership" value={fieldValue(fields, "propertyRights") || "Not recorded"} />
-                <Fact label="Occupied by" value={fieldValue(fields, "occupation") || "Not recorded"} />
-                <Fact label="Asking price" value={asking ? money(asking) : "Not recorded"} />
-              </dl>
-            ) : (
-              <p className="text-[14px] text-sales-text-secondary">The property from the mandate is not on this seller yet.</p>
-            )}
-            {opportunities.length > 1 ? (
-              <ul className="mt-4 divide-y divide-sales-border-subtle">
-                {opportunities.slice(1).map((row) => (
-                  <li key={row.id} className="py-2">
-                    <Link href={row.converted_listing_id ? `${listingsPath}/${row.converted_listing_id}` : `${inspectionsPath}/${row.id}#acq-inspection`} className="re-focus text-[14px] font-semibold">{place(row, [])}</Link>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </ReSection>
+        ) : null}
+      </header>
 
-          <ReSection id="mandate" title="Mandate" description="The form this seller completed. The PDF lists every answer, under the agency name and logo." action={<Link href={mandatesPath} className="re-focus min-h-11 text-[13px] font-semibold">Mandates</Link>}>
-            {request ? (
-              <>
-                <dl className="grid gap-3 sm:grid-cols-2">
-                  <Fact label="Form" value={request.kind === "sole" ? "Sole mandate" : request.kind === "open" ? "Open mandate" : request.templateTitle || "Mandate form"} />
-                  <Fact label="Status" value={request.status.replaceAll("_", " ")} />
-                  <Fact label="Starts" value={fieldValue(fields, "mandateStartDate") || "Not set"} />
-                  <Fact label="Ends" value={fieldValue(fields, "mandateEndDate") || "Not set"} />
-                  <Fact label="Mandate price" value={mandatePrice ? money(mandatePrice) : "Not recorded"} />
-                </dl>
-                <a href={`/api/clients/${clientId}/seller-intakes/${request.id}/record`} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "mt-4 inline-flex min-h-11")}>
-                  Download PDF
-                </a>
-              </>
-            ) : (
-              <ReEmptyState compact title="No mandate on this seller yet" description="Send the seller form from Mandates. Opening the completed form keeps it here." />
-            )}
-          </ReSection>
+      <DiligenceScan sellerName={name} required={required} hasForm={Boolean(formCheck)} formHref={formHref} />
 
-          <ReSection id="offers" title="Offers" description="Offer letters for this house, for the seller to review.">
-            {offers.length === 0 ? (
-              <ReEmptyState compact title="No offer letters yet" description="After a viewing, the buyer's offer letter comes back to this seller." />
-            ) : (
-              <ul className="divide-y divide-sales-border-subtle">
-                {offers.map((offer) => (
-                  <li key={offer.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2.5">
-                    <Link href={`${offersPath}?offerId=${offer.id}`} className="re-focus text-[14px] font-semibold underline-offset-2 hover:underline">{offer.buyerName || "Buyer"} · {offer.currentAmountLabel}</Link>
-                    <ReStatusBadge label={offer.sellerLetter || offer.statusLabel} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </ReSection>
-        </div>
-
-        <aside className="flex min-w-0 flex-col gap-4">
-          <ReSection id="seller" title="Seller">
-            <p className="text-[16px] font-semibold [overflow-wrap:anywhere]">{owner.name || "Seller"}</p>
-            <p className="mt-1 text-[13px] text-sales-text-secondary">{owner.kind === "company" ? "Company" : "Individual"}</p>
-            {phone ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                <a className="re-focus inline-flex min-h-11 items-center rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold" href={`tel:${phone}`}>Call</a>
-                <a className="re-focus inline-flex min-h-11 items-center rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold" href={`https://wa.me/${phone.replace(/\D/g, "")}`}>WhatsApp</a>
-              </div>
-            ) : <p className="mt-2 text-[12px] text-sales-text-muted">No phone on this seller yet.</p>}
-            {companyName || representative ? (
-              <dl className="mt-4 grid gap-3">
-                {companyName ? <Fact label="Company" value={companyName} /> : null}
-                {representative ? <Fact label="Completed the form" value={representative} /> : null}
-              </dl>
-            ) : null}
-          </ReSection>
-          {contactId || formCheck ? (
-            <ContextCompliancePanel
-              clientId={clientId}
-              context="seller"
-              title="Seller verification"
-              contactId={contactId || null}
-              customerType={sellerIsCompany ? "company" : "individual"}
-              formCheck={formCheck}
+      <div className="grid items-start gap-4 layout:grid-cols-2">
+        <Record title="Property" meta={listingId ? "Listing open" : "In preparation"}>
+          <p className="px-4 pb-3 text-[13px] text-sales-text-secondary">
+            {listingId ? "The listing is open. Photos and the remaining details are added there." : "Inspection, photos, and the remaining details are still to add."}
+          </p>
+          {address ? (
+            <Facts
+              rows={[
+                ["Address", address],
+                ["Type", fieldValue(fields, "propertyCategory") || "Not recorded"],
+                ["Ownership", fieldValue(fields, "propertyRights") || "Not recorded"],
+                ["Occupied by", fieldValue(fields, "occupation") || "Not recorded"],
+                ["Asking price", asking ? priceLabel(asking) : "Not recorded"],
+              ]}
             />
+          ) : (
+            <p className="border-t border-sales-border-subtle px-4 py-3 text-[13px] text-sales-text-secondary">The property from the mandate is not on this seller yet.</p>
+          )}
+          {listingId ? (
+            <div className="border-t border-sales-border-subtle px-4 py-3">
+              <Link href={finishHref} className="re-focus inline-flex h-9 items-center rounded-[8px] border border-sales-border bg-sales-bg px-3 text-[13px] font-semibold">Open property</Link>
+            </div>
           ) : null}
-        </aside>
+          {opportunities.length > 1 ? (
+            <ul className="border-t border-sales-border-subtle">
+              {opportunities.slice(1).map((row) => (
+                <li key={row.id} className="px-4 py-2">
+                  <Link href={row.converted_listing_id ? `${listingsPath}/${row.converted_listing_id}` : `${inspectionsPath}/${row.id}#acq-inspection`} className="re-focus text-[14px] font-semibold">{place(row, [])}</Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </Record>
+        <div className="space-y-4">
+          <Record title="Mandate" meta={mandateMeta}>
+            <div className="flex items-center justify-between gap-3 border-t border-sales-border-subtle px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-[14px] font-semibold text-sales-text-primary">{request ? (request.kind === "sole" ? "Sole mandate" : request.kind === "open" ? "Open mandate" : request.templateTitle || "Mandate") : "No mandate yet"}</p>
+                <p className="mt-0.5 text-[13px] text-sales-text-secondary">{request ? mandateLine || "Dates are not on the form yet." : "Send the seller form from Mandates."}</p>
+              </div>
+              <a href={formHref} className="re-focus inline-flex h-11 shrink-0 items-center rounded-[8px] border border-sales-border bg-sales-bg px-3 text-[13px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover min-[480px]:h-9">
+                {request ? "Open the form" : "Mandates"}
+              </a>
+            </div>
+          </Record>
+          <Record title="Offers" meta={String(openOffers.length || offers.length)}>
+            {offers.length === 0 ? (
+              <p className="border-t border-sales-border-subtle px-4 py-3 text-[13px] text-sales-text-secondary">No offer on this house yet.</p>
+            ) : (
+              <ul>
+                {offers.map((offer) => {
+                  const unsent = (offer.sellerLetter ?? "").toLowerCase().includes("not been sent");
+                  return (
+                    <li key={offer.id} className="flex items-center justify-between gap-3 border-t border-sales-border-subtle px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-[14px] font-semibold text-sales-text-primary">{offer.buyerName || "Buyer"}</p>
+                        <p className="mt-0.5 truncate text-[13px] text-sales-text-secondary">{offer.currentAmountLabel} · {offer.sellerLetter || offer.statusLabel}</p>
+                      </div>
+                      <Link href={`${offersPath}?offerId=${offer.id}`} className="re-focus inline-flex h-11 shrink-0 items-center rounded-[8px] bg-sales-text-primary px-3 text-[13px] font-semibold text-sales-surface transition-opacity hover:opacity-90 min-[480px]:h-9">
+                        {unsent ? "Send letter" : "Open offer"}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Record>
+        </div>
       </div>
     </div>
   );
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+function DiligenceScan({
+  sellerName,
+  required,
+  hasForm,
+  formHref,
+}: {
+  sellerName: string;
+  required: string[];
+  hasForm: boolean;
+  formHref: string;
+}) {
+  const [phase, setPhase] = useState<"scanning" | "required">("scanning");
+  const [prepared, setPrepared] = useState(false);
+
+  useEffect(() => {
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (motion.matches) {
+      setPhase("required");
+      return;
+    }
+    const timer = window.setTimeout(() => setPhase("required"), 5000);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const scanning = phase === "scanning";
+  const count = required.length;
+
   return (
-    <div>
-      <dt className="text-[12px] text-sales-text-muted">{label}</dt>
-      <dd className="mt-0.5 text-[14px] font-medium text-sales-text-primary [overflow-wrap:anywhere]">{value}</dd>
-    </div>
+    <section className="dd overflow-hidden rounded-[16px] bg-[#101828] text-[#f7f9fc]" aria-live="polite">
+      <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-4">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#d4ff4f]">Due diligence</p>
+          <h2 className="mt-1 font-display text-[22px] font-semibold tracking-[-0.03em]">
+            {scanning ? "Scanning" : hasForm ? (count ? "Still required" : "Nothing else required") : "No form yet"}
+          </h2>
+        </div>
+        {scanning ? (
+          <p className="inline-flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.14em]">
+            <span className="dd-live h-1.5 w-1.5 rounded-full bg-[#d4ff4f]" aria-hidden />
+            Reading the form
+          </p>
+        ) : (
+          <p className="dd-dim text-[13px]">{hasForm ? `${count} ${count === 1 ? "check" : "checks"}` : "Waiting"}</p>
+        )}
+      </div>
+      {scanning ? (
+        <div className="dd-plate dd-line mx-4 mb-4 h-40 rounded-[12px] border" aria-hidden>
+          <span className="dd-corner left-2 top-2 border-l-2 border-t-2" />
+          <span className="dd-corner right-2 top-2 border-r-2 border-t-2" />
+          <span className="dd-corner bottom-2 left-2 border-b-2 border-l-2" />
+          <span className="dd-corner bottom-2 right-2 border-b-2 border-r-2" />
+          <div className="dd-beam" />
+          <div className="space-y-3 px-4 py-4">
+            <span className="dd-bar block w-4/5" />
+            <span className="dd-bar block w-3/5" />
+            <span className="dd-bar block w-2/3" />
+            <span className="dd-bar block w-1/2" />
+          </div>
+        </div>
+      ) : (
+        <div className="dd-in">
+          <p className="dd-dim px-4 pb-3 text-[13px]">
+            {hasForm
+              ? count
+                ? "The form has been read. These were not collected."
+                : "The form has been read. Nothing else is still required."
+              : "A completed seller form has not been opened for this person yet."}
+          </p>
+          {count ? (
+            <ul>
+              {required.map((item) => (
+                <li key={item} className="dd-line flex items-start justify-between gap-3 border-t px-4 py-3">
+                  <span className="min-w-0 flex-1 text-[14px] font-semibold">{item}</span>
+                  <span className="text-[13px] font-medium text-[#ff5d73]">Not collected</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <div className="dd-line border-t px-4 py-4">
+            {prepared ? (
+              <div>
+                <p className="text-[13px] font-medium text-[#d4ff4f]">Form prepared</p>
+                <p className="mt-1 text-[13px] text-[#f7f9fc]">It asks only for what is still missing for {sellerName}.</p>
+                <a href={formHref} className="re-focus mt-3 inline-flex h-11 items-center rounded-[10px] border border-[#f7f9fc]/30 px-4 text-[14px] font-semibold">
+                  {hasForm ? "Open the form" : "Open mandates"}
+                </a>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setPrepared(true)} className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[#d4ff4f] px-4 text-[14px] font-semibold text-[#101828]">
+                Prepare a form
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
+
+function Record({ title, meta, children }: { title: string; meta: string; children: ReactNode }) {
+  return (
+    <section className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
+      <div className="flex items-baseline justify-between px-4 pb-2 pt-4">
+        <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-sales-text-primary">{title}</h2>
+        <span className="text-[13px] text-sales-text-muted">{meta}</span>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Facts({ rows }: { rows: Array<[string, string]> }) {
+  return (
+    <dl className="grid gap-x-6 gap-y-3 border-t border-sales-border-subtle px-4 py-3 sm:grid-cols-2">
+      {rows.map(([label, value]) => (
+        <div key={label} className="min-w-0">
+          <dt className="text-[12px] text-sales-text-muted">{label}</dt>
+          <dd className="text-[14px] font-medium text-sales-text-primary [overflow-wrap:anywhere]">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function priceLabel(value: string): string {
+  const amount = money(value);
+  if (!amount || amount === value) return value;
+  return value.trim().startsWith("US$") || value.includes("$") ? value : `US$${amount}`;
+}
+

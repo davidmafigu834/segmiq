@@ -6151,3 +6151,43 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-wo
 @media (prefers-reduced-motion: reduce) {
   .re-bone { animation: none; }
 }
+
+.dd-plate { position: relative; overflow: hidden; }
+.dd-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 84px;
+  margin-top: -84px;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, #d4ff4f 18%, transparent) 55%, #d4ff4f);
+  animation: dd-beam 2.2s linear infinite;
+  pointer-events: none;
+}
+.dd-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: #d4ff4f;
+  border-style: solid;
+}
+.dd-bar {
+  height: 10px;
+  border-radius: 4px;
+  background: color-mix(in srgb, #f7f9fc 16%, transparent);
+}
+@keyframes dd-beam {
+  from { top: 0; }
+  to { top: 112%; }
+}
+@keyframes dd-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.dd-live { animation: dd-live 1.4s ease-in-out infinite; }
+.dd-dim { color: color-mix(in srgb, #f7f9fc 68%, transparent); }
+.dd-line { border-color: color-mix(in srgb, #f7f9fc 16%, transparent); }
+@keyframes dd-in { from { opacity: 0; } to { opacity: 1; } }
+.dd-in { animation: dd-in 180ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .dd-beam, .dd-live, .dd-in { animation: none; }
+}
