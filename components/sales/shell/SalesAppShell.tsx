@@ -33,7 +33,6 @@ import { GuidedCourseMount } from "@/components/sales/training/GuidedCourseMount
 import { useVisualViewportFrame } from "@/lib/shell/use-visual-viewport-frame";
 import { SalesHeaderQuickActions } from "@/components/sales/navigation/SalesHeaderQuickActions";
 import { PresenceHeartbeat } from "@/components/sales/PresenceHeartbeat";
-import { ImportantMessagesProvider, ImportantMessagesTrigger } from "@/components/important-messages/ImportantMessagesDock";
 import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
 import { cn } from "@/lib/ui/cn";
@@ -261,7 +260,6 @@ function SalesAppShellInner({
   );
 
   return (
-    <ImportantMessagesProvider enabled={!demoGuest}>
     <div
       ref={shellRef}
       className={cn(
@@ -347,7 +345,6 @@ function SalesAppShellInner({
         </main>
       </div>
 
-      {!hideMobileChrome && !hideBottomNav ? <ImportantMessagesTrigger floating /> : null}
       {!hideMobileChrome ? (
         <>
           <SalesBottomNav
@@ -376,7 +373,6 @@ function SalesAppShellInner({
 
       {hubSheet}
     </div>
-    </ImportantMessagesProvider>
   );
 }
 

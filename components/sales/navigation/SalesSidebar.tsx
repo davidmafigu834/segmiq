@@ -21,8 +21,6 @@ import { cn } from "@/lib/ui/cn";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { Tooltip } from "@/components/sales/ui/Tooltip";
 import { ReSidebarSections, ReWorkspaceContext } from "@/components/real-estate/navigation/ReSidebarSections";
-import { ImportantMessagesTrigger } from "@/components/important-messages/ImportantMessagesDock";
-
 export function SalesSidebar({
   userName,
   userRoleLabel = "Sales Executive",
@@ -240,12 +238,6 @@ export function SalesSidebar({
             </div>
           ))}
         </nav>
-        )}
-
-        {drawer ? null : (
-          <div className={cn("mt-auto shrink-0 border-t border-[var(--sales-sidebar-border)] py-2", collapsedMode ? "px-1" : "px-3")}>
-            <ImportantMessagesTrigger collapsed={collapsedMode} />
-          </div>
         )}
 
         {drawer ? (
