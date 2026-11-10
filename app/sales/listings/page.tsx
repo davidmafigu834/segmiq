@@ -6,6 +6,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
 import { ListingWorkList } from "@/components/real-estate/listings/ListingWorkList";
+import { RePageHeader } from "@/components/real-estate/ui";
+import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
+import { cn } from "@/lib/ui/cn";
+import Link from "next/link";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import { shouldRedirectFromRealEstateRoute } from "@/lib/real-estate/gating";
 
@@ -31,20 +35,32 @@ export default async function SalesListingsPage() {
 
   return (
     <SalesLayout
-      breadcrumb="Sales / LISTINGS"
-      pageTitle="Listings"
+      breadcrumb="Sales / PROPERTIES"
+      pageTitle="Properties"
       hideShellHeader
       hideShellSidebar
       contentFlush
     >
       <SalesAppShell
         {...shell}
-        breadcrumb="Sales / Listings"
-        title="Listings"
-        description="Houses opened from a completed seller form. Finish the ones that still need details or photos."
-        searchPlaceholder="Search listings..."
+        breadcrumb="Sales / Properties"
+        title="Properties"
+        toolbar
+        showQuickActions={false}
       >
-        <ListingWorkList clientId={session.clientId} surface="sales" />
+        <div className="space-y-5">
+          <RePageHeader
+            mobileTitle
+            title="Properties"
+            description="In preparation, on the market, and under offer."
+            actions={
+              <Link href="/sales/mandates" className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11 text-[14px] sm:h-11")}>
+                + New seller form
+              </Link>
+            }
+          />
+          <ListingWorkList clientId={session.clientId} surface="sales" />
+        </div>
       </SalesAppShell>
     </SalesLayout>
   );

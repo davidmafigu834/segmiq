@@ -138,7 +138,7 @@ export function ListingDetailView({
       <div>
         <Link href={`${root}/listings`} className="re-focus inline-flex min-h-11 items-center gap-1.5 text-[13px] font-semibold text-sales-text-secondary">
           <ArrowLeft size={16} strokeWidth={1.8} aria-hidden />
-          Listings
+          Properties
         </Link>
         <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">

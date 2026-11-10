@@ -75,7 +75,18 @@ export function listingLabel(listing: {
   suburb?: string | null;
   external_reference?: string | null;
 }): string {
-  const parts = [listing.address, listing.suburb].filter(Boolean);
+  const parts = (listing.address ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length >= 2 && parts[0]!.toLowerCase() === parts[parts.length - 1]!.toLowerCase()) {
+    parts.pop();
+  }
+  const suburb = (listing.suburb ?? "").trim();
+  const street = parts[0]?.toLowerCase();
+  if (suburb && suburb.toLowerCase() !== street && !parts.some((part) => part.toLowerCase() === suburb.toLowerCase())) {
+    parts.push(suburb);
+  }
   if (parts.length) return parts.join(", ");
   if (listing.external_reference) return listing.external_reference;
   return "Listing";

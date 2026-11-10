@@ -14,9 +14,9 @@ export function CompanyListingsPage({
   return (
     <CompanyRePageFrame
       chrome={chrome}
-      breadcrumb="Company / Listings"
-      title="Listings"
-      description="Houses opened from a completed seller form. Finish the ones that still need details or photos."
+      breadcrumb="Company / Properties"
+      title="Properties"
+      description="In preparation, on the market, and under offer."
       primaryAction={null}
     >
       <ListingWorkList clientId={clientId} surface="client" />

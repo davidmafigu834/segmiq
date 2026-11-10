@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { listingLabel } from "../lib/real-estate/helpers";
 import { listingWorkBadge, listingWorkCounts, listingWorkVisible, type ListingWorkRow } from "../lib/real-estate/listing-work";
 
 function row(overrides: Partial<ListingWorkRow> = {}): ListingWorkRow {
@@ -52,6 +53,14 @@ describe("listing work list", () => {
     assert.equal(listingWorkVisible(house, "all", "avondale"), false);
     assert.equal(listingWorkCounts(house), "2 viewings · 1 offer");
     assert.equal(listingWorkCounts(row()), "No viewings or offers yet");
+  });
+
+  it("does not repeat the street when the address already contains it", () => {
+    assert.equal(
+      listingLabel({ address: "2 Baines Avenue, Avondale, Harare, 2 Baines Avenue", suburb: "Avondale" }),
+      "2 Baines Avenue, Avondale, Harare"
+    );
+    assert.equal(listingLabel({ address: "12 Greendale Avenue", suburb: "Greendale" }), "12 Greendale Avenue, Greendale");
   });
 
   it("groups sold and rented houses together", () => {

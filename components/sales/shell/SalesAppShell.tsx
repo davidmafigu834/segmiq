@@ -169,6 +169,7 @@ function SalesAppShellInner({
   headerActions,
   titleActions,
   showDefaultHeader = true,
+  toolbar = false,
   showSearch = true,
   showQuickActions = true,
   onLogCall,
@@ -198,6 +199,8 @@ function SalesAppShellInner({
   headerActions?: ReactNode;
   titleActions?: ReactNode;
   showDefaultHeader?: boolean;
+  /** Breadcrumb row only. The page draws its own title. */
+  toolbar?: boolean;
   showSearch?: boolean;
   showQuickActions?: boolean;
   onLogCall?: () => void;
@@ -328,14 +331,15 @@ function SalesAppShellInner({
                   : "sales-page-stack relative space-y-4 layout:space-y-5"
             }
           >
-            {showDefaultHeader && title ? (
+            {showDefaultHeader && (toolbar || title) ? (
               <SalesPageHeader
                 breadcrumb={breadcrumb}
-                title={title}
+                title={title ?? ""}
                 description={description}
                 note={note}
                 actions={desktopActions}
                 titleActions={titleActions}
+                toolbar={toolbar}
               />
             ) : null}
             {children}

@@ -460,6 +460,7 @@ export function ReRowAction({
   href,
   disabled,
   srContext,
+  className,
 }: {
   label: string;
   onClick?: () => void;
@@ -467,10 +468,12 @@ export function ReRowAction({
   disabled?: boolean;
   /** Appended for screen readers, e.g. the record name. */
   srContext?: string;
+  className?: string;
 }) {
-  const className = cn(
+  const classes = cn(
     RE_FOCUS,
-    "inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[13px] font-semibold text-sales-text-primary transition-colors hover:border-sales-border-strong hover:bg-sales-surface-hover disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9"
+    "inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[13px] font-semibold text-sales-text-primary transition-colors hover:border-sales-border-strong hover:bg-sales-surface-hover disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9",
+    className
   );
   const content = (
     <>
@@ -480,13 +483,13 @@ export function ReRowAction({
   );
   if (href) {
     return (
-      <Link href={href} className={className}>
+      <Link href={href} className={classes}>
         {content}
       </Link>
     );
   }
   return (
-    <button type="button" className={className} onClick={onClick} disabled={disabled}>
+    <button type="button" className={classes} onClick={onClick} disabled={disabled}>
       {content}
     </button>
   );
