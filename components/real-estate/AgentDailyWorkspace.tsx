@@ -3,42 +3,18 @@
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 /* Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V4 */
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Building2, CalendarPlus, ClipboardList, ScrollText, UsersRound } from "lucide-react";
+import { useMemo } from "react";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import type { AgentReDashboard } from "@/lib/sales/get-agent-real-estate-dashboard";
-import { cn } from "@/lib/ui/cn";
 import {
-  ReActionMenu,
   ReEmptyState,
-  ReErrorState,
-  ReFigureList,
-  ReGroupLabel,
-  ReList,
-  ReMetricGrid,
-  ReMetricOverview,
   RePageHeader,
   RePartialNotice,
-  ReQuickActions,
-  ReRowAction,
   ReSection,
   ReSkeletonRows,
-  ReStatCard,
-  ReStatusBadge,
-  ReViewAll,
-  ReWorkItem,
   useReFetch,
-  type ReAction,
-  type ReUrgency,
 } from "@/components/real-estate/ui";
-
-const ATTENTION_PREVIEW = 8;
-const MOBILE_ATTENTION_PREVIEW = 3;
-const WITH_SELLER = "With the seller to approve";
-const BUYER_HAS_LETTER = "The buyer still has the letter";
-const LETTER_NOT_SENT = "The letter has not been sent to the seller";
-
-type BuyerPriority = { id: string; title: string; detail: string; action: string };
 
 type BuyerMetrics = {
   incomplete: boolean;
@@ -60,37 +36,24 @@ type MandateForm = {
   contactId: string | null;
 };
 
-type OfferLetter = {
-  id: string;
-  buyerName: string | null;
-  propertyLabel: string;
-  sellerLetter: string;
-};
+type Mark = "overdue" | "today" | "waiting";
 
-type AttentionGroup = "today" | "awaiting" | "opportunity";
-
-const GROUP_LABEL: Record<AttentionGroup, string> = {
-  today: "Due today",
-  awaiting: "Waiting on someone",
-  opportunity: "Opportunities",
-};
-
-const GROUP_ORDER: AttentionGroup[] = ["today", "awaiting", "opportunity"];
-
-const GROUP_URGENCY: Record<AttentionGroup, ReUrgency> = {
-  today: "today",
-  awaiting: "awaiting",
-  opportunity: "opportunity",
-};
-
-type AttentionEntry = {
+type NeedRow = {
   key: string;
-  group: AttentionGroup;
-  title: string;
-  reason: string;
-  statusLabel: string;
-  action: { label: string; onClick?: () => void; href?: string };
-  menu: ReAction[];
+  group: Mark;
+  name: string;
+  meta: string;
+  detail: string;
+  action: string;
+  href: string;
+};
+
+const GROUP_ORDER: Mark[] = ["overdue", "today", "waiting"];
+
+const GROUP_LABEL: Record<Mark, string> = {
+  overdue: "Overdue",
+  today: "Today",
+  waiting: "Waiting",
 };
 
 function timeLabel(iso: string): string {
@@ -101,39 +64,32 @@ function todayLabel(): string {
   return new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 }
 
-function withTheBuyer(letter: string): boolean {
-  return letter === BUYER_HAS_LETTER || letter === LETTER_NOT_SENT;
+function NeedMark({ mark }: { mark: Mark }) {
+  const tone = mark === "overdue" ? "bg-sales-danger" : mark === "today" ? "bg-sales-brand" : "bg-sales-border";
+  return <span className={`h-8 w-[3px] shrink-0 rounded-full ${tone}`} aria-hidden />;
 }
 
-function ActiveWorkTile({ title, detail, href }: { title: string; detail: string; href: string }) {
+function FilledAction({ href, label, name }: { href: string; label: string; name: string }) {
   return (
-    <article className="flex min-w-0 items-center justify-between gap-3 rounded-[var(--re-radius-card,12px)] border border-[var(--sales-card-border,var(--sales-border-subtle))] bg-sales-surface px-3 py-3">
-      <div className="min-w-0">
-        <h3 className="truncate text-[14px] font-semibold leading-tight text-sales-text-primary">{title}</h3>
-        <p className="mt-0.5 truncate text-[13px] leading-snug text-sales-text-secondary">{detail}</p>
-      </div>
-      <ReViewAll href={href} />
-    </article>
+    <Link
+      href={href}
+      className="re-focus inline-flex h-9 shrink-0 items-center rounded-[8px] bg-sales-text-primary px-3 text-[13px] font-semibold text-sales-surface transition-opacity hover:opacity-90"
+    >
+      {label}
+      <span className="sr-only">: {name}</span>
+    </Link>
   );
 }
 
-function AttentionCard({ entry, group, className }: { entry: AttentionEntry; group: AttentionGroup; className?: string }) {
+function LinedAction({ href, label, name }: { href: string; label: string; name: string }) {
   return (
-    <li className={cn("flex min-w-0 items-center gap-3 px-3 py-3 sm:px-[var(--re-card-pad,16px)]", className)}>
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="min-w-0 truncate text-[14px] font-semibold leading-snug text-sales-text-primary">{entry.title}</p>
-          <ReStatusBadge label={entry.statusLabel} urgency={GROUP_URGENCY[group]} />
-        </div>
-        <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary [overflow-wrap:anywhere]">{entry.reason}</p>
-      </div>
-      <div className="flex shrink-0 items-center gap-1">
-        <ReRowAction label={entry.action.label} srContext={entry.title} onClick={entry.action.onClick} href={entry.action.href} />
-        {entry.menu.length > 0 ? (
-          <ReActionMenu label={`More actions for ${entry.title}`} sheetTitle={entry.title} actions={entry.menu} />
-        ) : null}
-      </div>
-    </li>
+    <Link
+      href={href}
+      className="re-focus inline-flex h-9 shrink-0 items-center rounded-[8px] border border-sales-border bg-sales-bg px-3 text-[13px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
+    >
+      {label}
+      <span className="sr-only">: {name}</span>
+    </Link>
   );
 }
 
@@ -145,399 +101,221 @@ export function AgentDailyWorkspace({
   firstName?: string;
   data: AgentReDashboard;
 }) {
-  const router = useRouter();
-  const [showAllAttention, setShowAllAttention] = useState(false);
-
-  const buyerReports = useReFetch<{ priorities?: BuyerPriority[] }>(`/api/clients/${clientId}/buyer-reports`);
   const buyerMetrics = useReFetch<BuyerMetrics>(`/api/clients/${clientId}/buyer-searches?metrics=1`);
   const mandateForms = useReFetch<{ forms?: MandateForm[] }>(`/api/clients/${clientId}/mandate-forms`);
-  const offerLetters = useReFetch<{ offers?: OfferLetter[] }>(`/api/clients/${clientId}/offers?tab=all`);
 
-  const formRows = mandateForms.status === "ready" ? mandateForms.data.forms : undefined;
-  const offerRows = offerLetters.status === "ready" ? offerLetters.data.offers : undefined;
-  const matchRows = buyerReports.status === "ready" ? buyerReports.data.priorities : undefined;
-  const waitingForms = useMemo(() => (formRows ?? []).filter((form) => form.phase === "with_seller"), [formRows]);
-  const readyForms = useMemo(() => (formRows ?? []).filter((form) => form.phase === "complete" && !form.contactId), [formRows]);
-  const buyerLetters = useMemo(() => (offerRows ?? []).filter((offer) => withTheBuyer(offer.sellerLetter)), [offerRows]);
-  const sellerLetters = useMemo(() => (offerRows ?? []).filter((offer) => offer.sellerLetter === WITH_SELLER), [offerRows]);
-  const matches = useMemo(() => (matchRows ?? []).filter((item) => item.id.startsWith("match-")), [matchRows]);
-
-  const attention = useMemo<AttentionEntry[]>(() => {
-    const entries: AttentionEntry[] = [];
-    for (const viewing of data.viewingsToday) {
-      const buyerHref = viewing.buyerSearchId ? `/sales/buyers/${viewing.buyerSearchId}` : null;
-      const propertyHref = `/sales/listings/${viewing.listingId}`;
-      entries.push({
-        key: `viewing-${viewing.id}`,
-        group: "today",
-        title: viewing.contactName ?? "Buyer",
-        reason: `Viewing · ${viewing.listingLabel} · ${timeLabel(viewing.scheduledAt)}`,
-        statusLabel: "Viewing today",
-        action: buyerHref
-          ? { label: "Open buyer", href: buyerHref }
-          : { label: "Open property", href: propertyHref },
-        menu: [
-          ...(buyerHref
-            ? [{ id: "property", label: "Open property", onSelect: () => router.push(propertyHref) }]
-            : []),
-        ],
-      });
-    }
-    for (const form of readyForms) {
-      entries.push({
-        key: `form-ready-${form.id}`,
-        group: "today",
-        title: form.sellerName,
-        reason: `${form.property}. Opening the completed form creates the seller and a draft listing.`,
-        statusLabel: "Completed form",
-        action: { label: "Open", href: "/sales/mandates" },
-        menu: [],
-      });
-    }
-    for (const offer of buyerLetters) {
-      entries.push({
-        key: `letter-buyer-${offer.id}`,
-        group: "today",
-        title: offer.buyerName ?? "Buyer",
-        reason: `${offer.propertyLabel}. ${offer.sellerLetter}.`,
-        statusLabel: "With the buyer",
-        action: { label: "Open letter", href: `/sales/offers?offerId=${offer.id}` },
-        menu: [],
-      });
-    }
-    for (const form of waitingForms) {
-      entries.push({
-        key: `form-wait-${form.id}`,
-        group: "awaiting",
-        title: form.sellerName,
-        reason: `${form.property}. The form is still with the seller.`,
-        statusLabel: "With the seller",
-        action: { label: "Open", href: "/sales/mandates" },
-        menu: [],
-      });
-    }
-    for (const offer of sellerLetters) {
-      entries.push({
-        key: `letter-seller-${offer.id}`,
-        group: "awaiting",
-        title: offer.buyerName ?? "Buyer",
-        reason: `${offer.propertyLabel}. The seller has the letter to approve.`,
-        statusLabel: "With the seller",
-        action: { label: "Open letter", href: `/sales/offers?offerId=${offer.id}` },
-        menu: [],
-      });
-    }
-    for (const match of matches) {
-      entries.push({
-        key: `match-${match.id}`,
-        group: "opportunity",
-        title: match.title,
-        reason: match.detail,
-        statusLabel: "New matches",
-        action: { label: "Open buyer", href: `/sales/buyers/${match.id.slice("match-".length)}` },
-        menu: [],
-      });
-    }
-    return GROUP_ORDER.flatMap((group) => entries.filter((entry) => entry.group === group));
-  }, [buyerLetters, data.viewingsToday, matches, readyForms, router, sellerLetters, waitingForms]);
-
-  const shownAttention = showAllAttention ? attention : attention.slice(0, ATTENTION_PREVIEW);
-
-  const schedule = useMemo(() => {
-    return data.viewingsToday.map((viewing) => {
-      const buyerHref = viewing.buyerSearchId ? `/sales/buyers/${viewing.buyerSearchId}` : null;
-      const propertyHref = `/sales/listings/${viewing.listingId}`;
-      return {
-        key: `v-${viewing.id}`,
-        when: timeLabel(viewing.scheduledAt),
-        title: viewing.contactName ?? "Buyer",
-        detail: `Viewing · ${viewing.listingLabel}`,
-        action: buyerHref
-          ? { label: "Open buyer", href: buyerHref }
-          : { label: "Open property", href: propertyHref },
-        menu: buyerHref
-          ? [{ id: "property", label: "Open property", onSelect: () => router.push(propertyHref) }]
-          : [],
-      };
-    });
-  }, [data.viewingsToday, router]);
-
+  const forms = mandateForms.status === "ready" ? mandateForms.data.forms ?? [] : [];
   const metrics = buyerMetrics.status === "ready" ? buyerMetrics.data.metrics : null;
-  const extrasLoading = mandateForms.status === "loading" || offerLetters.status === "loading" || buyerReports.status === "loading";
 
-  const quickActions = {
-    primary: {
-      id: "mandate",
-      label: "New seller form",
-      description: "A completed form opens the seller and a draft listing",
-      icon: <ScrollText size={16} strokeWidth={1.8} />,
-      onSelect: () => router.push("/sales/mandates"),
-    },
-    secondary: [
-      {
-        id: "buyer",
-        label: "Add buyer",
-        description: "Open buyers and tenants to add someone",
-        icon: <UsersRound size={16} strokeWidth={1.8} />,
-        onSelect: () => router.push("/sales/buyers?new=1"),
-      },
-      {
-        id: "viewing",
-        label: "Viewing form",
-        description: "Copy a viewing form from a property",
-        icon: <CalendarPlus size={16} strokeWidth={1.8} />,
-        onSelect: () => router.push("/sales/listings"),
-      },
-    ],
-  };
+  const needs = useMemo<NeedRow[]>(() => {
+    const rows: NeedRow[] = [];
+    for (const item of data.followUps) {
+      rows.push({
+        key: `follow-${item.leadId}`,
+        group: item.overdue ? "overdue" : "today",
+        name: item.name,
+        meta: "Follow-up",
+        detail: item.note?.trim() || (item.overdue ? "Follow-up was due" : "Follow-up is due today"),
+        action: "Open",
+        href: "/sales/tasks",
+      });
+    }
+    for (const offer of data.offersNeedingAttention) {
+      const waiting = offer.reason === "awaiting_seller";
+      rows.push({
+        key: `offer-${offer.id}`,
+        group: waiting ? "waiting" : "today",
+        name: offer.buyerName ?? "Buyer",
+        meta: offer.amountLabel ? `Offer · ${offer.amountLabel}` : "Offer",
+        detail: offer.why,
+        action: "Open offer",
+        href: `/sales/offers?offerId=${offer.id}`,
+      });
+    }
+    for (const form of forms) {
+      const ready = form.phase === "complete" && !form.contactId;
+      rows.push({
+        key: `form-${form.id}`,
+        group: form.phase === "with_seller" ? "waiting" : "today",
+        name: form.sellerName,
+        meta: "Seller form",
+        detail: ready
+          ? `${form.property}. Opening the completed form creates the seller and a draft listing.`
+          : `${form.property}. The form is still with the seller.`,
+        action: "Open",
+        href: "/sales/mandates",
+      });
+    }
+    return GROUP_ORDER.flatMap((group) => rows.filter((row) => row.group === group));
+  }, [data.followUps, data.offersNeedingAttention, forms]);
 
-  const attentionCount = attention.length;
-  const daySummary =
-    attentionCount > 0
-      ? `${attentionCount} ${attentionCount === 1 ? "item needs" : "items need"} your next action`
-      : extrasLoading
-        ? "Checking seller forms, viewings, and offer letters"
-        : "Nothing needs your next action right now";
-
-  let mobileSeen = 0;
-  const attentionBlocks = GROUP_ORDER.flatMap((group) => {
-    const items = shownAttention.filter((entry) => entry.group === group);
-    if (items.length === 0) return [];
-    const cards = items.map((entry) => {
-      const extra = !showAllAttention && mobileSeen >= MOBILE_ATTENTION_PREVIEW;
-      mobileSeen += 1;
-      return { entry, extra };
-    });
-    return [{ group, total: attention.filter((entry) => entry.group === group).length, cards, labelExtra: cards.every((card) => card.extra) }];
+  const schedule = data.viewingsToday.map((viewing) => {
+    const buyerHref = viewing.buyerSearchId ? `/sales/buyers/${viewing.buyerSearchId}` : null;
+    return {
+      key: viewing.id,
+      time: timeLabel(viewing.scheduledAt),
+      name: viewing.contactName ?? "Buyer",
+      detail: `Viewing · ${viewing.listingLabel}`,
+      href: buyerHref ?? `/sales/listings/${viewing.listingId}`,
+    };
   });
 
+  const count = needs.length;
+  const summary =
+    mandateForms.status === "loading" && count === 0
+      ? "Checking seller forms, viewings, and offer letters."
+      : count === 0
+        ? "Nothing needs a next action."
+        : `${count} ${count === 1 ? "item needs" : "items need"} a next action.`;
+
+  const buyerDetail =
+    buyerMetrics.status === "loading"
+      ? "Loading buyers and tenants"
+      : buyerMetrics.status === "error"
+        ? "Buyers and tenants could not be counted"
+        : metrics
+          ? `${metrics.activeBuyers} buyers · ${metrics.activeTenants} tenants`
+          : "Buyers and tenants";
+  const sellerForms = forms.length;
+  const sellerDetail =
+    mandateForms.status === "loading"
+      ? "Loading seller forms"
+      : mandateForms.status === "error"
+        ? "Seller forms could not be counted"
+        : `${sellerForms} ${sellerForms === 1 ? "seller form" : "seller forms"}`;
+  const salesCount = data.summary.transactionsNeedingAttention;
+
   return (
-    <div className="space-y-3 layout:space-y-[var(--re-section-gap,16px)]">
-      <header className="layout:hidden">
-        <p className="text-[13px] font-medium leading-4 text-sales-text-muted">{todayLabel()}</p>
-        <div className="mt-1 flex items-center justify-between gap-3">
-          <h1 className="min-w-0 font-display text-[32px] font-semibold leading-none tracking-[-0.03em] text-sales-text-primary">Today</h1>
-          <div className="shrink-0">
-            <ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />
-          </div>
-        </div>
-        <p className="mt-2 text-[14px] leading-snug text-sales-text-secondary">{daySummary}</p>
-      </header>
+    <div className="space-y-5">
       <RePageHeader
-        className="hidden layout:flex"
+        mobileTitle
         context={todayLabel()}
         title="Today"
-        description={
-          attentionCount > 0
-            ? `${attentionCount} ${attentionCount === 1 ? "item needs" : "items need"} your next action.`
-            : extrasLoading
-              ? "Checking seller forms, viewings, and offer letters."
-              : "Nothing needs your next action right now."
+        description={summary}
+        actions={
+          <>
+            <Link
+              href="/sales/buyers?new=1"
+              className="re-focus inline-flex h-11 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface px-4 text-[14px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
+            >
+              Add buyer
+            </Link>
+            <Link
+              href="/sales/mandates"
+              className="re-focus inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text"
+            >
+              <Plus size={16} strokeWidth={1.75} aria-hidden />
+              New seller form
+            </Link>
+          </>
         }
-        actions={<ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />}
       />
 
-      <div className="grid grid-cols-1 items-start gap-3 layout:grid-cols-12 layout:gap-[var(--re-section-gap,16px)]">
-        <ReSection
-          id="re-agent-attention"
-          title="Needs your attention"
-          description="Seller forms, viewings today, and offer letters that need the next step."
-          hideMobileDescription
-          count={attentionCount}
-          className="order-1 layout:order-none layout:col-span-8"
-          flush
-        >
-          {mandateForms.status === "error" || offerLetters.status === "error" || buyerReports.status === "error" ? (
+      <div className="grid items-start gap-4 layout:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.85fr)]">
+        <ReSection id="re-agent-attention" title="Needs you" count={mandateForms.status === "loading" && count === 0 ? null : count} flush>
+          {mandateForms.status === "error" ? (
             <RePartialNotice>
-              Part of this list didn&apos;t load.{" "}
-              <button
-                type="button"
-                className="re-focus rounded-[4px] font-semibold underline"
-                onClick={() => {
-                  if (mandateForms.status === "error") mandateForms.reload();
-                  if (offerLetters.status === "error") offerLetters.reload();
-                  if (buyerReports.status === "error") buyerReports.reload();
-                }}
-              >
+              Seller forms didn&apos;t load.{" "}
+              <button type="button" className="re-focus rounded-[4px] font-semibold underline" onClick={mandateForms.reload}>
                 Try again
               </button>
             </RePartialNotice>
           ) : null}
-          {attention.length === 0 ? (
-            extrasLoading ? (
-              <ReSkeletonRows rows={1} label="Loading what needs your next action" />
-            ) : (
-              <ReEmptyState
-                title="Nothing needs your attention right now"
-                description="Seller forms still with the seller, viewings today, and letters with the buyer or the seller show here."
-              />
-            )
+          {mandateForms.status === "loading" && count === 0 ? (
+            <ReSkeletonRows rows={1} label="Loading what needs a next action" />
+          ) : count === 0 ? (
+            <ReEmptyState title="Nothing needs a next action" description="Overdue follow-ups, offers, and seller forms show here." />
           ) : (
-            <>
-              <ReList label="Items that need your attention">
-                {attentionBlocks.map((block) => [
-                  <ReGroupLabel key={`label-${block.group}`} count={block.total} className={block.labelExtra ? "max-[1099px]:hidden" : undefined}>
-                    {GROUP_LABEL[block.group]}
-                  </ReGroupLabel>,
-                  ...block.cards.map(({ entry, extra }) => (
-                    <AttentionCard key={entry.key} entry={entry} group={block.group} className={extra ? "max-[1099px]:hidden" : undefined} />
-                  )),
-                ])}
-              </ReList>
-              {attention.length > MOBILE_ATTENTION_PREVIEW ? (
-                <div className={cn("border-t border-sales-border-subtle px-[var(--re-card-pad,16px)] py-2", attention.length <= ATTENTION_PREVIEW && "layout:hidden")}>
-                  <button
-                    type="button"
-                    aria-expanded={showAllAttention}
-                    aria-controls="re-agent-attention"
-                    onClick={() => setShowAllAttention((value) => !value)}
-                    className="re-focus inline-flex min-h-11 items-center rounded-[var(--re-radius-control,8px)] px-2 text-[13px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover sm:min-h-9"
-                  >
-                    {showAllAttention ? "Show fewer" : `Show all ${attention.length}`}
-                  </button>
-                </div>
-              ) : null}
-            </>
+            <ul>
+              {GROUP_ORDER.map((group) => {
+                const rows = needs.filter((row) => row.group === group);
+                if (rows.length === 0) return null;
+                return (
+                  <li key={group} className="list-none">
+                    <p className="border-t border-sales-border-subtle bg-sales-bg px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-sales-text-muted">
+                      {GROUP_LABEL[group]}
+                    </p>
+                    <ul>
+                      {rows.map((row) => (
+                        <li key={row.key} className="flex items-center gap-3 border-t border-sales-border-subtle px-4 py-3">
+                          <NeedMark mark={row.group} />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[14px] font-semibold text-sales-text-primary">{row.name}</p>
+                            <p className="truncate text-[12px] text-sales-text-muted">{row.meta}</p>
+                            <p className="mt-0.5 truncate text-[13px] text-sales-text-secondary">{row.detail}</p>
+                          </div>
+                          <FilledAction href={row.href} label={row.action} name={row.name} />
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </ReSection>
 
-        <div className="order-3 layout:order-first layout:col-span-12">
-          <h2 className="sr-only">My sales snapshot</h2>
-          <ReMetricOverview label="My sales snapshot" quiet>
-            <ReMetricGrid label="My sales snapshot">
-              <ReStatCard
-                label="Seller forms"
-                value={mandateForms.status === "ready" ? waitingForms.length + readyForms.length : null}
-                supporting="With the seller, or ready to open"
-                href="/sales/mandates"
-                state={mandateForms.status}
-              />
-              <ReStatCard label="Viewings today" value={data.summary.viewingsToday} supporting="Scheduled" href="/sales/viewings" />
-              <ReStatCard
-                label="With the buyer"
-                value={offerLetters.status === "ready" ? buyerLetters.length : null}
-                supporting="The letter is still with the buyer"
-                href="/sales/offers"
-                state={offerLetters.status}
-              />
-              <ReStatCard
-                label="With the seller"
-                value={offerLetters.status === "ready" ? sellerLetters.length : null}
-                supporting="Waiting for the seller to approve"
-                href="/sales/offers"
-                state={offerLetters.status}
-              />
-            </ReMetricGrid>
-          </ReMetricOverview>
-        </div>
-
-        <ReSection
-          id="re-agent-schedule"
-          title="Today's schedule"
-          count={schedule.length}
-          className="order-2 layout:order-none layout:col-span-4"
-          flush
-          action={<ReViewAll href="/sales/calendar" label="Calendar" />}
-        >
+        <ReSection id="re-agent-schedule" title="Schedule" count={schedule.length} flush>
           {schedule.length === 0 ? (
-            <ReEmptyState
-              title="Nothing scheduled today"
-              description="A signed viewing form puts the appointment here and on the calendar."
-              compact
-            />
+            <ReEmptyState compact title="Nothing scheduled today" description="A signed viewing form puts the appointment here." />
           ) : (
-            <ul aria-label="Today's schedule" className="divide-y divide-sales-border-subtle">
+            <ul>
               {schedule.map((row) => (
-                <li key={row.key} className="flex min-w-0 items-center gap-3 px-3 py-2.5 sm:px-[var(--re-card-pad,16px)]">
-                  <span className="w-12 shrink-0 text-[13px] font-semibold tabular-nums text-sales-text-secondary">{row.when}</span>
+                <li key={row.key} className="flex items-center gap-3 border-t border-sales-border-subtle px-4 py-3">
+                  <span className="w-12 shrink-0 text-[13px] font-semibold tabular-nums text-sales-text-secondary">{row.time}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] font-semibold leading-snug text-sales-text-primary">{row.title}</p>
-                    <p className="truncate text-[12px] leading-snug text-sales-text-muted">{row.detail}</p>
+                    <p className="truncate text-[14px] font-semibold text-sales-text-primary">{row.name}</p>
+                    <p className="truncate text-[12px] text-sales-text-muted">{row.detail}</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <ReRowAction label={row.action.label} srContext={row.title} href={row.action.href} />
-                    {row.menu.length > 0 ? (
-                      <ReActionMenu label={`More actions for ${row.title}`} sheetTitle={row.title} actions={row.menu} />
-                    ) : null}
-                  </div>
+                  <LinedAction href={row.href} label="Open" name={row.name} />
                 </li>
               ))}
             </ul>
           )}
         </ReSection>
-
-        <div className="order-2 min-w-0 layout:order-none layout:col-span-12">
-          <h2 className="mb-2 text-[15px] font-semibold tracking-[-0.01em] text-sales-text-primary layout:mb-3">My active work</h2>
-          <div className="grid grid-cols-1 gap-2 layout:hidden">
-            <ActiveWorkTile
-              title="Buyers and tenants"
-              detail={
-                buyerMetrics.status === "loading"
-                  ? "Loading"
-                  : buyerMetrics.status === "error"
-                    ? "Could not load"
-                    : metrics
-                      ? `${metrics.activeBuyers} active buyers · ${metrics.activeTenants} active tenants`
-                      : "—"
-              }
-              href="/sales/buyers"
-            />
-            <ActiveWorkTile title="Seller mandates" detail="Form, inspection, then the listing" href="/sales/mandates" />
-          </div>
-          <div className="hidden items-start gap-[var(--re-section-gap,16px)] layout:grid layout:grid-cols-2">
-            <ReSection id="re-agent-buyers" title="Buyers & tenants" action={<ReViewAll href="/sales/buyers" />}>
-              {buyerMetrics.status === "loading" ? (
-                <div className="-mx-[var(--re-card-pad,16px)]">
-                  <ReSkeletonRows rows={3} variant="figure" label="Loading buyer searches" />
-                </div>
-              ) : buyerMetrics.status === "error" ? (
-                <div className="-mx-[var(--re-card-pad,16px)]">
-                  <ReErrorState onRetry={buyerMetrics.reload} />
-                </div>
-              ) : metrics ? (
-                <>
-                  <ReFigureList
-                    items={[
-                      { label: "Active buyers", value: metrics.activeBuyers, href: "/sales/buyers" },
-                      { label: "Active tenants", value: metrics.activeTenants, href: "/sales/buyers" },
-                      { label: "Viewings booked", value: metrics.viewingsScheduled, href: "/sales/viewings" },
-                    ]}
-                  />
-                  <p className="mt-3 text-[12px] leading-snug text-sales-text-muted">
-                    A signed viewing form opens the buyer on the property they asked to see.
-                  </p>
-                  {buyerMetrics.data.incomplete ? (
-                    <p className="mt-2 text-[12px] text-sales-warning-fg">Some searches could not be counted.</p>
-                  ) : null}
-                </>
-              ) : null}
-            </ReSection>
-
-            <ReSection id="re-agent-sellers" title="Seller mandates" flush action={<ReViewAll href="/sales/mandates" />}>
-              <ReList label="Seller workflow">
-                <ReWorkItem
-                  icon={<ScrollText />}
-                  title="Mandates"
-                  reason="Send the seller form and open a completed form as that seller."
-                  action={<ReRowAction label="Open" srContext="Mandates" href="/sales/mandates" />}
-                />
-                <ReWorkItem
-                  icon={<ClipboardList />}
-                  title="Inspections"
-                  reason="Visits still to record."
-                  action={<ReRowAction label="Open" srContext="Inspections" href="/sales/inspections" />}
-                />
-                <ReWorkItem
-                  icon={<Building2 />}
-                  title="Sellers"
-                  reason="People with a property on file."
-                  action={<ReRowAction label="Open" srContext="Sellers" href="/sales/owners" />}
-                />
-              </ReList>
-            </ReSection>
-          </div>
-        </div>
       </div>
+
+      <div className="grid grid-cols-2 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface sm:grid-cols-4">
+        <Metric label="New inquiries" value={data.summary.newInquiries} />
+        <Metric label="Follow-ups due" value={data.summary.followUpsDue} attention={data.summary.followUpsDue > 0} />
+        <Metric label="Viewings" value={data.summary.viewingsToday} />
+        <Metric label="Offers" value={metrics?.offersInProgress ?? data.offersNeedingAttention.length} />
+      </div>
+
+      <ReSection id="re-agent-work" title="My work" flush>
+        <ul>
+          <QuietRow name="Buyers and tenants" detail={buyerDetail} href="/sales/buyers" />
+          <QuietRow name="Sellers" detail={sellerDetail} href="/sales/owners" />
+          <QuietRow
+            name="Sales"
+            detail={`${salesCount} ${salesCount === 1 ? "sale is" : "sales are"} moving to completion`}
+            href="/sales/transactions"
+          />
+        </ul>
+      </ReSection>
     </div>
+  );
+}
+
+function Metric({ label, value, attention = false }: { label: string; value: number; attention?: boolean }) {
+  return (
+    <div className="border-b border-r border-sales-border-subtle px-4 py-3 last:border-r-0 sm:border-b-0">
+      <p className={`font-display text-[26px] font-semibold leading-none tabular-nums tracking-[-0.03em] ${attention ? "text-sales-danger-fg" : "text-sales-text-primary"}`}>
+        {value}
+      </p>
+      <p className="mt-1 text-[12px] text-sales-text-muted">{label}</p>
+    </div>
+  );
+}
+
+function QuietRow({ name, detail, href }: { name: string; detail: string; href: string }) {
+  return (
+    <li className="flex items-center justify-between gap-3 border-t border-sales-border-subtle px-4 py-3">
+      <div className="min-w-0">
+        <p className="truncate text-[14px] font-semibold text-sales-text-primary">{name}</p>
+        <p className="truncate text-[13px] text-sales-text-secondary">{detail}</p>
+      </div>
+      <LinedAction href={href} label="Open" name={name} />
+    </li>
   );
 }
