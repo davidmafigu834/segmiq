@@ -336,3 +336,65 @@ export class GeminiAgentProvider implements AgentModelProvider {
     throw lastError ?? new Error("Gemini API call failed");
   }
 }
+
+function geminiDocumentSchema(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(geminiDocumentSchema);
+  if (!value || typeof value !== "object") return value;
+  const input = value as Record<string, unknown>;
+  const next: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(input)) {
+    if (key === "additionalProperties") continue;
+    next[key] = geminiDocumentSchema(child);
+  }
+  if (Array.isArray(next.type)) {
+    const types = next.type.filter((item) => item !== "null");
+    next.nullable = next.type.includes("null");
+    next.type = types[0] ?? "string";
+  }
+  return next;
+}
+
+/** Reads one document with the same Gemini model the agent uses. */
+export async function generateGeminiDocument(args: {
+  apiKey: string;
+  model: string;
+  system: string;
+  parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }>;
+  responseSchema: Record<string, unknown>;
+  fetchImpl?: typeof fetch;
+}): Promise<{ ok: true; json: unknown; model: string } | { ok: false; error: string }> {
+  const fetchImpl = args.fetchImpl ?? fetch;
+  let response: Response;
+  try {
+    response = await fetchImpl(`${GEMINI_API_BASE}/${encodeURIComponent(args.model)}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": args.apiKey },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: args.system }] },
+        contents: [{ role: "user", parts: args.parts }],
+        generationConfig: {
+          temperature: 0,
+          maxOutputTokens: 2500,
+          responseMimeType: "application/json",
+          responseSchema: geminiDocumentSchema(args.responseSchema),
+        },
+      }),
+      signal: AbortSignal.timeout(45_000),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "request failed";
+    return { ok: false, error: message };
+  }
+  const payload = (await response.json().catch(() => null)) as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    error?: { message?: string };
+  } | null;
+  if (!response.ok) return { ok: false, error: payload?.error?.message || `Gemini API error ${response.status}` };
+  const text = payload?.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("").trim();
+  if (!text) return { ok: false, error: "Gemini returned an empty response." };
+  try {
+    return { ok: true, json: JSON.parse(text), model: args.model };
+  } catch {
+    return { ok: false, error: "Gemini did not return JSON." };
+  }
+}

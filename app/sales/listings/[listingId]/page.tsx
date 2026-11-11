@@ -18,8 +18,8 @@ export default async function SalesListingDetailPage({ params }: { params: { lis
   if (shouldRedirectFromRealEstateRoute(client?.business_type)) redirect("/sales/dashboard");
   const shell = await loadSalesShellProps(session);
   return (
-    <SalesLayout breadcrumb="Sales / LISTING" pageTitle="Listing" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Listings" title="Listing" description="Property details and your marketing link.">
+    <SalesLayout breadcrumb="Sales / PROPERTY" pageTitle="Property" hideShellHeader hideShellSidebar contentFlush>
+      <SalesAppShell {...shell} breadcrumb="Sales / Properties" title="Property" description="The seller, the viewing form, and the offers on this property.">
         <ListingDetailView clientId={session.clientId} listingId={params.listingId} analyticsBase="/sales/shared-listings" surface="sales" />
       </SalesAppShell>
     </SalesLayout>

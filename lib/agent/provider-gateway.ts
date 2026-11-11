@@ -6,6 +6,7 @@ import {
 } from "./provider";
 import {
   buildOpenAiChatBody,
+  generateJsonChat,
   mapOpenAiToolCalls,
   openAiStopReason,
   textFromOpenAiContent,
@@ -32,21 +33,25 @@ const GATEWAY_MODEL_ID = /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i;
 const REQUEST_TIMEOUT_MS = 45_000;
 const MAX_RETRIES = 2;
 
-export function getVercelGatewayApiKey(): string | undefined {
-  return process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim() || undefined;
+export function getVercelGatewayApiKey(env: Record<string, string | undefined> = process.env): string | undefined {
+  return env.AI_GATEWAY_API_KEY?.trim() || env.VERCEL_OIDC_TOKEN?.trim() || undefined;
 }
 
-export function getVercelGatewayModel(): string {
-  const configured = process.env.AI_GATEWAY_MODEL?.trim();
+export function getVercelGatewayModel(env: Record<string, string | undefined> = process.env): string {
+  const configured = env.AI_GATEWAY_MODEL?.trim();
   if (!configured || LEGACY_GATEWAY_MODELS.has(configured) || !GATEWAY_MODEL_ID.test(configured)) {
     return DEFAULT_GATEWAY_MODEL;
   }
   return configured;
 }
 
-function gatewayChatUrl(): string {
-  const base = (process.env.AI_GATEWAY_BASE_URL?.trim() || DEFAULT_GATEWAY_URL).replace(/\/+$/, "");
+export function getVercelGatewayChatUrl(env: Record<string, string | undefined> = process.env): string {
+  const base = (env.AI_GATEWAY_BASE_URL?.trim() || DEFAULT_GATEWAY_URL).replace(/\/+$/, "");
   return `${base}/chat/completions`;
+}
+
+function gatewayChatUrl(): string {
+  return getVercelGatewayChatUrl();
 }
 
 function sleep(ms: number): Promise<void> {
@@ -177,4 +182,35 @@ export class VercelGatewayAgentProvider implements AgentModelProvider {
     }
     throw lastError ?? new Error("Vercel AI Gateway call failed");
   }
+}
+
+/** Document JSON through the same gateway model the agent is configured to use. */
+export async function generateGatewayDocument(args: {
+  env?: Record<string, string | undefined>;
+  system: string;
+  userContent: string | Array<Record<string, unknown>>;
+  fetchImpl?: typeof fetch;
+}): Promise<{ ok: true; json: unknown; model: string } | { ok: false; error: string }> {
+  const env = args.env ?? process.env;
+  const apiKey = getVercelGatewayApiKey(env);
+  if (!apiKey) return { ok: false, error: "AI_GATEWAY_API_KEY is not configured." };
+  const model = getVercelGatewayModel(env);
+  return generateJsonChat({
+    url: getVercelGatewayChatUrl(env),
+    apiKey,
+    model,
+    system: args.system,
+    userContent: args.userContent,
+    fetchImpl: args.fetchImpl,
+    extra: {
+      reasoning: { enabled: false },
+      ...(model === DEFAULT_GATEWAY_MODEL
+        ? {
+            providerOptions: {
+              gateway: { order: ["reflection", "nvidia", "minimax"], models: [...DEFAULT_GATEWAY_FALLBACK_MODELS] },
+            },
+          }
+        : {}),
+    },
+  });
 }

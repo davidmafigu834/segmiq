@@ -14,9 +14,10 @@ import { PropertyRecord } from "./PropertyRecord";
 import { OfferRecord, type OfferId } from "./OfferRecord";
 import { CalendarRecord } from "./CalendarRecord";
 import { ActivitiesPage, BuyersPage, InboxPage, InquiriesPage, InspectionsPage, MandatesPage, PeoplePage, SalesPage, SellersPage, ViewingsPage } from "./WorkPages";
+import { DueDiligenceMock } from "./DueDiligenceMock";
 import "./mock.css";
 
-type Screen = "today" | "properties" | "calendar" | "people" | "sales" | "mandates" | "sellers" | "inspections" | "buyers" | "viewings" | "offers" | "inbox" | "activities" | "inquiries" | "seller" | "property" | "states";
+type Screen = "today" | "properties" | "calendar" | "people" | "sales" | "mandates" | "diligence" | "sellers" | "inspections" | "buyers" | "viewings" | "offers" | "inbox" | "activities" | "inquiries" | "seller" | "property" | "states";
 
 const SCREENS: Array<{ id: Screen; label: string }> = [
   { id: "today", label: "Today" },
@@ -25,6 +26,7 @@ const SCREENS: Array<{ id: Screen; label: string }> = [
   { id: "people", label: "People" },
   { id: "sales", label: "Sales" },
   { id: "mandates", label: "Mandates" },
+  { id: "diligence", label: "Due diligence" },
   { id: "sellers", label: "Sellers" },
   { id: "inspections", label: "Inspections" },
   { id: "buyers", label: "Buyers" },
@@ -143,6 +145,7 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
         {!offerId && screen === "people" ? <PeoplePage onOpen={openScreen} /> : null}
         {!offerId && screen === "sales" ? <SalesPage loading={loading} /> : null}
         {!offerId && screen === "mandates" ? <MandatesPage loading={loading} onOpenSeller={() => openScreen("sellers", "david")} /> : null}
+        {!offerId && screen === "diligence" ? <DueDiligenceMock /> : null}
         {!offerId && screen === "sellers" && focus === "david" ? (
           <div className="space-y-5">
             <button type="button" onClick={() => setFocus(null)} className="inline-flex h-9 items-center rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold transition-colors hover:bg-sales-surface-hover">Back</button>
@@ -207,6 +210,8 @@ function Today({ loading, onOpenOffer }: { loading: boolean; onOpenOffer: (id: O
         </Panel>
       </div>
 
+      <DiligenceDesk loading={loading} />
+
       <div className="grid grid-cols-2 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface sm:grid-cols-4">
         <Metric label="New inquiries" value="4" />
         <Metric label="Follow-ups due" value="3" attention />
@@ -224,6 +229,94 @@ function Today({ loading, onOpenOffer }: { loading: boolean; onOpenOffer: (id: O
         )}
       </Panel>
     </div>
+  );
+}
+
+/* Hallmark · pre-emit critique: P5 H4 E4 S4 R4 V4 */
+const CLEARED = [
+  { name: "David Mafigu", place: "2 Baines Avenue", held: "Identity, address, and the signed mandate." },
+  { name: "Rudo Ncube", place: "4 Borrowdale Brooke", held: "Identity, address, and the company resolution." },
+];
+
+const SHORT = [
+  { name: "Amina Cruz", place: "8 Stonechat Lane", missing: ["Proof of the residential address", "A copy of the identity document"] },
+  { name: "Tendai Moyo", place: "14 Kingsmead", missing: ["Date of birth"] },
+];
+
+function DiligenceDesk({ loading }: { loading: boolean }) {
+  return (
+    <section className="space-y-3" aria-labelledby="diligence-desk">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-sales-text-muted">Due diligence</p>
+          <h2 id="diligence-desk" className="mt-1 font-display text-[22px] font-semibold leading-none tracking-[-0.03em]">Mandates</h2>
+        </div>
+        <p className="text-[13px] text-sales-text-secondary">Sample records, so the desk can be judged.</p>
+      </div>
+      {loading ? (
+        <div className="grid gap-4 lg:grid-cols-2" aria-hidden>
+          <div className="re-bone h-52 rounded-[16px]" />
+          <div className="re-bone h-52 rounded-[16px]" />
+        </div>
+      ) : (
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <article className="dd relative overflow-hidden rounded-[16px] bg-sales-text-primary text-sales-surface">
+            <span className="dd-corner left-3 top-3 border-l-2 border-t-2" aria-hidden />
+            <span className="dd-corner right-3 top-3 border-r-2 border-t-2" aria-hidden />
+            <span className="dd-corner bottom-3 left-3 border-b-2 border-l-2" aria-hidden />
+            <span className="dd-corner bottom-3 right-3 border-b-2 border-r-2" aria-hidden />
+            <div className="px-5 pb-2 pt-5">
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-sales-brand">Still short</p>
+              <p className="mt-1 font-display text-[26px] font-semibold leading-none tracking-[-0.03em]">{SHORT.length}</p>
+            </div>
+            <ul className="pb-4">
+              {SHORT.map((row) => (
+                <li key={row.name} className="dd-line border-t px-5 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-[14px] font-semibold">{row.name}</p>
+                      <p className="dd-dim truncate text-[12px]">{row.place}</p>
+                    </div>
+                    <button type="button" className="inline-flex h-9 shrink-0 items-center rounded-[8px] border border-sales-surface px-3 text-[13px] font-semibold text-sales-surface transition-colors hover:bg-sales-surface hover:text-sales-text-primary">
+                      Open
+                    </button>
+                  </div>
+                  <ul className="mt-2 space-y-1">
+                    {row.missing.map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-[13px] leading-5">
+                        <span className="mt-2 h-[3px] w-3 shrink-0 rounded-full bg-sales-danger" aria-hidden />
+                        <span className="min-w-0">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          <article className="overflow-hidden rounded-[16px] border border-sales-border border-t-[3px] border-t-sales-brand bg-sales-surface">
+            <div className="px-5 pb-2 pt-4">
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-sales-text-muted">Cleared</p>
+              <p className="mt-1 font-display text-[26px] font-semibold leading-none tracking-[-0.03em] text-sales-text-primary">{CLEARED.length}</p>
+            </div>
+            <ul>
+              {CLEARED.map((row) => (
+                <li key={row.name} className="flex items-start justify-between gap-3 border-t border-sales-border-subtle px-5 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-[14px] font-semibold text-sales-text-primary">{row.name}</p>
+                    <p className="truncate text-[12px] text-sales-text-muted">{row.place}</p>
+                    <p className="mt-1 text-[13px] leading-5 text-sales-text-secondary">{row.held}</p>
+                  </div>
+                  <button type="button" className="inline-flex h-9 shrink-0 items-center rounded-[8px] border border-sales-border bg-sales-bg px-3 text-[13px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover">
+                    Open
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </article>
+        </div>
+      )}
+    </section>
   );
 }
 

@@ -28,6 +28,7 @@ import {
   Search,
   Settings,
   Shield,
+  ShieldCheck,
   Trophy,
   UserRound,
   Users,
@@ -66,6 +67,7 @@ export type CompanyNavIconId =
   | "owners"
   | "inspections"
   | "mandates"
+  | "dueDiligence"
   | "buyers"
   | "matching"
   | "commissions"
@@ -152,6 +154,7 @@ export const COMPANY_NAV_LUCIDE: Record<Exclude<CompanyNavIconId, "whatsapp">, L
   owners: UserRound,
   inspections: ClipboardList,
   mandates: KeyRound,
+  dueDiligence: ShieldCheck,
   buyers: UsersRound,
   matching: Search,
   commissions: Wallet,
@@ -213,7 +216,7 @@ const REAL_ESTATE_COMPANY_ACTIVE_ON: Partial<Record<string, (pathname: string) =
 
 const REAL_ESTATE_COMPANY_ITEM_ORDER: Partial<Record<CompanyNavSectionId, string[]>> = {
   main: ["overview", "listings", "calendar", "people", "transactions", "review"],
-  acquisition: ["mandates", "owners", "inspections"],
+  acquisition: ["mandates", "dueDiligence", "owners", "inspections"],
   buyer_sales: ["buyers", "viewings", "offers"],
   follow_up: ["whatsapp", "inquiries", "socialInbox"],
   agency: [
@@ -650,6 +653,15 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     section: "acquisition",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/mandates"),
+  },
+  {
+    id: "dueDiligence",
+    label: "Due diligence",
+    href: "/client/due-diligence",
+    icon: "dueDiligence",
+    section: "acquisition",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/due-diligence"),
   },
   {
     id: "listings",

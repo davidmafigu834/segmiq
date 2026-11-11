@@ -4,7 +4,7 @@ import { useState } from "react";
 
 type Share = { id: string; publicUrl?: string; status?: string; campaignLabel?: string | null };
 
-export function MarketThisProperty({ clientId, listingId, analyticsBase = "/sales/shared-listings" }: { clientId: string; listingId: string; analyticsBase?: string }) {
+export function MarketThisProperty({ clientId, listingId, analyticsBase = "/sales/shared-listings", presentation = "card" }: { clientId: string; listingId: string; analyticsBase?: string; presentation?: "card" | "record" }) {
   const [share, setShare] = useState<Share | null>(null);
   const [caption, setCaption] = useState("");
   const [campaign, setCampaign] = useState("");
@@ -59,14 +59,24 @@ export function MarketThisProperty({ clientId, listingId, analyticsBase = "/sale
     }
   }
 
+  const title = presentation === "record" ? "Public page" : "Market this property";
+  const detail = presentation === "record"
+    ? "Your link for this property. The agency keeps the listing."
+    : "Create your personal link. The agency keeps the listing. You keep the attribution.";
+
   return (
-    <section className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-5">
-      <h2 className="text-[18px] font-semibold text-sales-text-primary">Market this property</h2>
-      <p className="mt-1 text-[13px] text-sales-text-secondary">Create your personal link. The agency keeps the listing. You keep the attribution.</p>
+    <section className={presentation === "record" ? "rounded-[12px] border border-sales-border bg-sales-surface px-4 py-3" : "workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-5"}>
+      <div className={presentation === "record" ? "flex flex-wrap items-center justify-between gap-3" : undefined}>
+      <div>
+      <h2 className={presentation === "record" ? "text-[15px] font-semibold tracking-[-0.01em] text-sales-text-primary" : "text-[18px] font-semibold text-sales-text-primary"}>{title}</h2>
+      <p className="mt-0.5 text-[13px] text-sales-text-secondary">{detail}</p>
+      </div>
       {!share ? (
-        <button type="button" disabled={pending} className="mt-3 inline-flex h-10 items-center rounded-[10px] bg-sales-brand px-4 text-[13px] font-semibold text-sales-brand-text" onClick={() => void generate()}>
-          {pending ? "Preparing" : "Generate my listing link"}
+        <button type="button" disabled={pending} className={`${presentation === "record" ? "h-9 shrink-0" : "mt-3 h-10"} inline-flex items-center rounded-[10px] bg-sales-brand px-4 text-[13px] font-semibold text-sales-brand-text`} onClick={() => void generate()}>
+          {pending ? "Preparing" : presentation === "record" ? "Create link" : "Generate my listing link"}
         </button>
+      ) : presentation === "record" ? (
+        <button type="button" className="inline-flex h-9 shrink-0 items-center rounded-[8px] border border-sales-border bg-sales-bg px-3 text-[13px] font-semibold" onClick={() => void copy()}>Copy link</button>
       ) : (
         <div className="mt-3 space-y-3">
           <p className="break-all text-[13px] text-sales-text-primary">{share.publicUrl}</p>
@@ -84,6 +94,23 @@ export function MarketThisProperty({ clientId, listingId, analyticsBase = "/sale
           </form>
         </div>
       )}
+      </div>
+      {presentation === "record" && share ? (
+        <div className="mt-3 space-y-3 border-t border-sales-border-subtle pt-3">
+          <p className="break-all text-[13px] text-sales-text-primary">{share.publicUrl}</p>
+          {caption ? <p className="text-[13px] text-sales-text-secondary">{caption}</p> : null}
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="inline-flex h-9 items-center rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold" onClick={() => void shareNative()}>Share</button>
+            <a className="inline-flex h-9 items-center rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold" href={`${analyticsBase}/${share.id}`}>Analytics</a>
+            {share.status !== "revoked" ? <a className="inline-flex h-9 items-center px-2 text-[13px]" href={`/api/clients/${clientId}/listing-shares/${share.id}/qr`}>QR code</a> : null}
+            {share.status !== "revoked" ? <button type="button" className="inline-flex h-9 items-center px-2 text-[13px] text-sales-text-secondary" onClick={() => void revoke()}>Revoke link</button> : null}
+          </div>
+          <form className="flex flex-wrap gap-2" onSubmit={(event) => { event.preventDefault(); void generate(campaign); }}>
+            <input value={campaign} onChange={(event) => setCampaign(event.target.value)} maxLength={40} placeholder="Campaign label, optional" className="h-9 min-w-0 flex-1 rounded-[8px] border border-sales-border bg-transparent px-3 text-[13px]" />
+            <button type="submit" className="h-9 rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold">Add campaign link</button>
+          </form>
+        </div>
+      ) : null}
       {message ? <p className="mt-3 text-[13px] text-sales-text-secondary">{message}</p> : null}
     </section>
   );

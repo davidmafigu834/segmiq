@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Search,
   Shield,
+  ShieldCheck,
   Target,
   Trophy,
   UserRound,
@@ -53,6 +54,7 @@ export type SalesNavIconId =
   | "owners"
   | "inspections"
   | "mandates"
+  | "dueDiligence"
   | "buyers"
   | "matching"
   | "viewings"
@@ -124,6 +126,7 @@ export const SALES_NAV_LUCIDE: Record<Exclude<SalesNavIconId, "whatsapp">, Lucid
   owners: UserRound,
   inspections: ClipboardList,
   mandates: KeyRound,
+  dueDiligence: ShieldCheck,
   buyers: UsersRound,
   matching: Search,
   viewings: CalendarCheck,
@@ -480,6 +483,15 @@ export function resolveSalesNavItems(
       mobileSlot: "more",
       match: (p) => exactOrChild(p, "/sales/mandates"),
     },
+    {
+      id: "dueDiligence",
+      label: "Due diligence",
+      href: "/sales/due-diligence",
+      icon: "dueDiligence",
+      section: "sales",
+      mobileSlot: "more",
+      match: (p) => exactOrChild(p, "/sales/due-diligence"),
+    },
   ];
   const listingsItem: SalesNavItemConfig = {
     id: "listings",
@@ -618,6 +630,7 @@ const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
   owners: "acquisition",
   inspections: "acquisition",
   mandates: "acquisition",
+  dueDiligence: "acquisition",
   buyers: "buyer_sales",
   introductions: "more_tools",
   matching: "more_tools",
@@ -645,7 +658,7 @@ const REAL_ESTATE_AGENT_LABELS: Record<string, { label: string; mobileLabel: str
 
 const REAL_ESTATE_ITEM_ORDER: Partial<Record<SalesNavSectionId, string[]>> = {
   main: ["dashboard", "listings", "calendar", "people", "transactions"],
-  acquisition: ["mandates", "owners", "inspections"],
+  acquisition: ["mandates", "dueDiligence", "owners", "inspections"],
   buyer_sales: ["buyers", "viewings", "offers"],
   follow_up: ["whatsapp", "tasks", "leads", "socialInbox"],
 };

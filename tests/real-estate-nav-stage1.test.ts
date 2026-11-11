@@ -49,7 +49,7 @@ describe("real estate stage 1 navigation", () => {
     );
     assert.deepEqual(
       salesNavItemsBySection(agent, "acquisition").map((item) => item.id),
-      ["mandates", "owners", "inspections"]
+      ["mandates", "dueDiligence", "owners", "inspections"]
     );
     assert.deepEqual(
       salesNavItemsBySection(agent, "buyer_sales").map((item) => item.id),
@@ -93,7 +93,7 @@ describe("real estate stage 1 navigation", () => {
     assert.deepEqual(getCompanyNavSectionOrder("real_estate"), ["main", "acquisition", "buyer_sales", "follow_up", "agency"]);
     assert.deepEqual(
       companyNavBySection(manager, "acquisition").map((item) => item.id),
-      ["mandates", "owners", "inspections"]
+      ["mandates", "dueDiligence", "owners", "inspections"]
     );
     assert.deepEqual(
       companyNavBySection(manager, "buyer_sales").map((item) => item.id),

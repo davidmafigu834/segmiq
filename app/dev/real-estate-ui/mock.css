@@ -1,4 +1,10 @@
 .re-mock {
+  --sales-bg: #e4e9f2;
+  --sales-bg-subtle: #dce3ee;
+  --sales-surface: #f7f9fc;
+  --sales-surface-subtle: #eef2f8;
+  --sales-surface-hover: #e6ecf5;
+  --sales-surface-active: #dde5f1;
   --sales-border-subtle: #eef1f6;
   --sales-border: #667085;
   --sales-border-strong: #475467;
