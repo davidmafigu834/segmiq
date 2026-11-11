@@ -16,9 +16,9 @@ export function CompanyListingDetailPage({
   return (
     <CompanyRePageFrame
       chrome={chrome}
-      breadcrumb="Company / Listing"
-      title="Listing"
-      description="Finish this house, then share a viewing form."
+      breadcrumb="Company / Properties"
+      title="Property"
+      description="The seller, the viewing form, and the offers on this property."
       hideTitleBlock
     >
       <ListingDetailView clientId={clientId} listingId={listingId} surface="client" framed />

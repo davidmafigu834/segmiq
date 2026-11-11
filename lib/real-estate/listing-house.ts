@@ -44,6 +44,6 @@ export function sellerLetterLabel(input: {
 }
 
 export type ListingHouseContext = {
-  seller: { contactId: string | null; name: string } | null;
+  seller: { contactId: string | null; name: string; phone: string | null } | null;
   opportunityId: string | null;
 };

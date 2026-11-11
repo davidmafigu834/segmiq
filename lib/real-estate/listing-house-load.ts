@@ -19,9 +19,10 @@ async function ownerParty(
   if (party.error) return { seller: null, opportunityId };
   const contactId = (party.data?.[0]?.contact_id as string | null) ?? null;
   if (!contactId) return { seller: null, opportunityId };
-  const contact = await supabase.from("contacts").select("name").eq("id", contactId).eq("client_id", clientId).maybeSingle();
+  const contact = await supabase.from("contacts").select("name, phone").eq("id", contactId).eq("client_id", clientId).maybeSingle();
   const name = ((contact.data?.name as string | null) ?? "").trim() || "Seller";
-  return { seller: { contactId, name }, opportunityId };
+  const phone = ((contact.data?.phone as string | null) ?? "").trim() || null;
+  return { seller: { contactId, name, phone }, opportunityId };
 }
 
 /** Seller and inspection already linked to this listing. A missing link stays empty. */
@@ -56,11 +57,13 @@ export async function loadListingHouse(clientId: string, listingId: string): Pro
   opportunityId = row.id ?? opportunityId;
   const contactId = row.contact_id ?? null;
   let name = row.owner_name?.trim() || null;
+  let phone: string | null = null;
   if (contactId) {
-    const contact = await supabase.from("contacts").select("name").eq("id", contactId).eq("client_id", clientId).maybeSingle();
+    const contact = await supabase.from("contacts").select("name, phone").eq("id", contactId).eq("client_id", clientId).maybeSingle();
     const contactName = ((contact.data?.name as string | null) ?? "").trim();
     if (contactName) name = contactName;
+    phone = ((contact.data?.phone as string | null) ?? "").trim() || null;
   }
   if (!contactId && !name) return ownerParty(supabase, clientId, listingId, opportunityId);
-  return { seller: { contactId, name: name ?? "Seller" }, opportunityId };
+  return { seller: { contactId, name: name ?? "Seller", phone }, opportunityId };
 }

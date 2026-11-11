@@ -2,19 +2,18 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Phone } from "lucide-react";
 import { acqFieldClass, acqLabelClass, formatWhen } from "@/components/real-estate/acquisition/acquisition-ui";
+import { MarketThisProperty } from "@/components/real-estate/listing-pages/MarketThisProperty";
 import { OfferDetailPanel } from "@/components/real-estate/offers/OfferDetailPanel";
-import { ReErrorState, ReSection, ReSheet, ReSkeletonRows, ReStatusBadge } from "@/components/real-estate/ui";
+import { ReErrorState, ReSkeletonRows } from "@/components/real-estate/ui";
 import { JourneySharePanel } from "@/components/real-estate/workflow/JourneySharePanel";
-import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { listingLabel } from "@/lib/real-estate/helpers";
 import { listingAsksForRooms, listingFinishGaps, type ListingHouseContext } from "@/lib/real-estate/listing-house";
 import { LISTING_STATUS_LABEL, LISTING_TYPE_LABEL } from "@/lib/real-estate/listings";
 import { PROPERTY_CATEGORY_LABEL } from "@/lib/real-estate/buyer-match";
-import { cn } from "@/lib/ui/cn";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
-import type { ListingRow } from "@/types";
+import type { ListingRow, ListingStatus, ListingTransactionType } from "@/types";
 
 type OfferRow = {
   id: string;
@@ -31,7 +30,6 @@ type ViewingRow = {
   buyer_search_id?: string | null;
   contact?: { name?: string | null } | null;
 };
-const shellClass = reSalesShell;
 
 function categoryLabel(value: string | null | undefined): string | null {
   if (!value) return null;
@@ -47,6 +45,27 @@ function money(value: number | null): string {
   return value == null ? "" : String(value);
 }
 
+function usd(value: number | null): string {
+  return value == null ? "" : `US$${Number(value).toLocaleString()}`;
+}
+
+function dealLabel(type: ListingTransactionType): string {
+  if (type === "sale") return "For sale";
+  if (type === "rental") return "To rent";
+  return LISTING_TYPE_LABEL[type];
+}
+
+function marketStatus(status: ListingStatus): string {
+  if (status === "available") return "On the market";
+  return LISTING_STATUS_LABEL[status];
+}
+
+function whatsAppHref(phone: string): string | null {
+  const digits = phone.replace(/\D/g, "");
+  const normalized = digits.startsWith("0") ? `263${digits.slice(1)}` : digits;
+  return normalized.length >= 9 ? `https://wa.me/${normalized}` : null;
+}
+
 export function ListingDetailView({
   clientId,
   listingId,
@@ -59,7 +78,7 @@ export function ListingDetailView({
   framed?: boolean;
 }) {
   const root = surface === "sales" ? "/sales" : "/client";
-  const rootClass = framed ? reEmbeddedShell : shellClass;
+  const rootClass = framed ? reEmbeddedShell : reSalesShell;
   const [listing, setListing] = useState<ListingDetail | null>(null);
   const [house, setHouse] = useState<ListingHouseContext | null>(null);
   const [viewings, setViewings] = useState<ViewingRow[]>([]);
@@ -100,8 +119,6 @@ export function ListingDetailView({
     };
   }, [clientId, listingId, reloadKey]);
 
-  const opportunityId = house?.opportunityId ?? null;
-
   if (loading) {
     return (
       <div className={rootClass}>
@@ -117,72 +134,73 @@ export function ListingDetailView({
     );
   }
 
-  const title = listingLabel(listing);
-  const gaps = listingFinishGaps(listing);
   const seller = house?.seller ?? null;
-  const sellerId = seller?.contactId ?? opportunityId;
+  const sellerId = seller?.contactId ?? house?.opportunityId ?? null;
   const sellerHref = seller && sellerId ? `${root}/owners/${sellerId}` : null;
-  const inspectionHref = opportunityId ? `${root}/acquisitions/${opportunityId}#acq-inspection` : null;
-  const facts = [
-    LISTING_TYPE_LABEL[listing.transaction_type],
-    LISTING_STATUS_LABEL[listing.status],
-    categoryLabel(listing.property_category),
-    listing.price != null ? `$${Number(listing.price).toLocaleString()}` : null,
+  const inspectionHref = house?.opportunityId ? `${root}/acquisitions/${house.opportunityId}#acq-inspection` : null;
+  const category = categoryLabel(listing.property_category);
+  const place = [listing.suburb, category, dealLabel(listing.transaction_type)].filter(Boolean).join(" · ");
+  const statusLine = [
+    marketStatus(listing.status),
+    usd(listing.price),
     listing.bedrooms != null ? `${listing.bedrooms} bed` : null,
     listing.bathrooms != null ? `${listing.bathrooms} bath` : null,
     listing.size_sqm != null ? `${listing.size_sqm} m²` : null,
-  ].filter(Boolean);
+  ].filter(Boolean).join(" · ");
+  const gaps = listingFinishGaps(listing);
+  const phone = seller?.phone ?? null;
+  const whatsApp = phone ? whatsAppHref(phone) : null;
 
   return (
     <div className={rootClass}>
-      <div>
+      <header>
         <Link href={`${root}/listings`} className="re-focus inline-flex min-h-11 items-center gap-1.5 text-[13px] font-semibold text-sales-text-secondary">
           <ArrowLeft size={16} strokeWidth={1.8} aria-hidden />
           Properties
         </Link>
-        <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="font-display text-[24px] font-semibold leading-[1.15] tracking-[-0.02em] text-sales-text-primary [overflow-wrap:anywhere] layout:text-[28px]">{title}</h1>
-            <p className="mt-2 text-[13px] text-sales-text-secondary">{facts.join(" · ")}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <ReStatusBadge label={gaps.length ? "Still to finish" : "Ready"} tone={gaps.length ? "warning" : "success"} />
-              {sellerHref ? <Link href={sellerHref} className="re-focus text-[13px] font-semibold text-sales-text-secondary">{seller?.name || "Seller"}</Link> : <span className="text-[13px] text-sales-text-muted">{seller?.name || "Seller not linked yet"}</span>}
+        <p className="mt-2 text-[13px] font-medium text-sales-text-muted">{seller?.name || "Seller not linked yet"}</p>
+        <h1 className="mt-1 font-display text-[32px] font-semibold leading-none tracking-[-0.03em] text-sales-text-primary [overflow-wrap:anywhere]">{listing.address?.trim() || listingLabel(listing)}</h1>
+        {place ? <p className="mt-2 text-[14px] text-sales-text-secondary">{place}</p> : null}
+        {statusLine ? <p className="mt-1 text-[13px] text-sales-text-muted">{statusLine}</p> : null}
+        {gaps.length ? <p className="mt-2 text-[13px] text-sales-text-secondary">{gaps.join(" ")}</p> : null}
+      </header>
+
+      <FinishForm key={listing.updated_at} clientId={clientId} listing={listing} onSaved={() => setReloadKey((value) => value + 1)}>
+        <section className="rounded-[12px] border border-sales-border bg-sales-surface px-4 py-4">
+          <h2 className="text-[15px] font-semibold tracking-[-0.01em]">Viewing form</h2>
+          <div className="mt-3">
+            <JourneySharePanel clientId={clientId} listingId={listingId} />
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
+          <div className="px-4 pb-2 pt-4">
+            <h2 className="text-[15px] font-semibold tracking-[-0.01em]">Seller</h2>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-sales-border-subtle px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-[14px] font-semibold">{seller?.name || "Seller not linked yet"}</p>
+              {phone ? <p className="mt-0.5 text-[13px] text-sales-text-secondary">{phone}</p> : null}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {phone ? <RowLink href={`tel:${phone}`} label="Call" icon /> : null}
+              {whatsApp ? <RowLink href={whatsApp} label="WhatsApp" external /> : null}
+              {sellerHref ? <RowLink href={sellerHref} label="Open seller" /> : null}
+              {inspectionHref ? <RowLink href={inspectionHref} label="Open inspection" /> : null}
             </div>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {sellerHref ? <Link href={sellerHref} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open seller</Link> : null}
-            {inspectionHref ? <Link href={inspectionHref} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open inspection</Link> : null}
-          </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="grid grid-cols-1 items-start gap-[var(--re-section-gap,16px)] layout:grid-cols-12">
-        <div className="flex min-w-0 flex-col gap-[var(--re-section-gap,16px)] layout:col-span-8">
-          <FinishForm
-            key={listing.updated_at}
-            clientId={clientId}
-            listing={listing}
-            onSaved={() => setReloadKey((value) => value + 1)}
-          />
-          <ViewingsSection viewings={viewings} buyersRoot={`${root}/buyers`} />
-          <OffersSection offers={offers} buyersRoot={`${root}/buyers`} onOpen={setOpenOfferId} />
-        </div>
-        <aside className="flex min-w-0 flex-col gap-[var(--re-section-gap,16px)] layout:col-span-4">
-          <ReSection id="listing-gaps" title="Still to add">
-            {gaps.length ? (
-              <ul className="space-y-1.5 text-[13px] text-sales-text-secondary">
-                {gaps.map((item) => <li key={item}>{item}</li>)}
-              </ul>
-            ) : (
-              <p className="text-[13px] text-sales-text-secondary">The details and photos are on the listing.</p>
-            )}
-            {!listing.permittedActions?.edit ? <p className="mt-3 text-[13px] text-sales-text-muted">A manager can still change a published listing.</p> : null}
-          </ReSection>
-          <ReSection id="listing-viewing-form" title="Viewing form">
-            <JourneySharePanel clientId={clientId} listingId={listingId} />
-          </ReSection>
-        </aside>
-      </div>
+        <OffersSection offers={offers} buyersRoot={`${root}/buyers`} onOpen={setOpenOfferId} />
+        <ViewingsSection viewings={viewings} buyersRoot={`${root}/buyers`} />
+      </FinishForm>
+
+      <MarketThisProperty
+        clientId={clientId}
+        listingId={listingId}
+        analyticsBase={surface === "sales" ? "/sales/shared-listings" : "/client/listing-pages"}
+        presentation="record"
+      />
 
       {openOfferId ? (
         <OfferDetailPanel
@@ -197,6 +215,23 @@ export function ListingDetailView({
   );
 }
 
+function RowLink({ href, label, icon = false, external = false }: { href: string; label: string; icon?: boolean; external?: boolean }) {
+  const className = "inline-flex h-11 items-center gap-2 rounded-[8px] border border-sales-border bg-sales-bg px-3 text-[13px] font-semibold transition-colors hover:bg-sales-surface-hover min-[480px]:h-9";
+  if (external) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className={className}>
+        {label}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className}>
+      {icon ? <Phone size={16} strokeWidth={1.75} aria-hidden /> : null}
+      {label}
+    </Link>
+  );
+}
+
 function Field({ label, name, children }: { label: string; name: string; children: ReactNode }) {
   return (
     <label htmlFor={name}>
@@ -206,21 +241,21 @@ function Field({ label, name, children }: { label: string; name: string; childre
   );
 }
 
-function ListingPhotoTile({
+function ShownPhoto({
   clientId,
   listingId,
   src,
   serverIndex,
-  onOpen,
+  className,
 }: {
   clientId: string;
   listingId: string;
   src: string;
   serverIndex: number;
-  onOpen: (src: string) => void;
+  className: string;
 }) {
   const direct = photoSrc(src);
-  const [signed, setSigned] = useState<string | null>(null);
+  const [signed, setSigned] = useState<string | null>(direct);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (direct || serverIndex < 0) return;
@@ -239,15 +274,16 @@ function ListingPhotoTile({
       cancelled = true;
     };
   }, [clientId, listingId, serverIndex, direct]);
-  const shown = direct ?? signed;
-  if (!shown) {
-    return <p className="rounded-[10px] border border-sales-border-subtle px-2 py-3 text-[12px] text-sales-text-muted">{failed || serverIndex < 0 ? "Photo unavailable" : "Loading photo"}</p>;
+  if (!signed) {
+    return (
+      <div className={`${className} grid place-items-center bg-sales-surface-subtle text-[12px] text-sales-text-muted`}>
+        {failed ? "Photo unavailable" : ""}
+      </div>
+    );
   }
   return (
-    <button type="button" className="re-focus block w-full overflow-hidden rounded-[10px] border border-sales-border-subtle" onClick={() => onOpen(shown)}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={shown} alt="" className="aspect-[4/3] w-full object-cover" />
-    </button>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={signed} alt="" className={className} />
   );
 }
 
@@ -255,10 +291,12 @@ function FinishForm({
   clientId,
   listing,
   onSaved,
+  children,
 }: {
   clientId: string;
   listing: ListingDetail;
   onSaved: () => void;
+  children: ReactNode;
 }) {
   const editable = Boolean(listing.permittedActions?.edit);
   const askRooms = listingAsksForRooms(listing.property_category);
@@ -268,51 +306,28 @@ function FinishForm({
   const photosRef = useRef(photos);
   photosRef.current = photos;
   const removeChain = useRef(Promise.resolve());
-  const [pending, setPending] = useState<Array<{ id: string; file: File; previewUrl: string }>>([]);
+  const [photo, setPhoto] = useState(0);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [preview, setPreview] = useState<{ src: string; caption: string } | null>(null);
-  const pendingRef = useRef(pending);
-  pendingRef.current = pending;
-  useEffect(() => () => {
-    pendingRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
-  }, []);
+  const index = photos.length ? Math.min(photo, photos.length - 1) : 0;
 
   async function save(form: HTMLFormElement) {
     setBusy(true);
     setNotice(null);
     const data = new FormData(form);
-    let nextPhotos = photosRef.current;
-    const storedIds: string[] = [];
-    const alreadySaved = new Set(savedPhotos);
+    const body: Record<string, unknown> = {
+      address: String(data.get("address") ?? "").trim() || null,
+      suburb: String(data.get("suburb") ?? "").trim() || null,
+      price: data.get("price") ? Number(data.get("price")) : null,
+      size_sqm: data.get("size_sqm") ? Number(data.get("size_sqm")) : null,
+      description: String(data.get("description") ?? "").trim() || null,
+      photos: photosRef.current,
+    };
+    if (askRooms) {
+      body.bedrooms = data.get("bedrooms") ? Number(data.get("bedrooms")) : null;
+      body.bathrooms = data.get("bathrooms") ? Number(data.get("bathrooms")) : null;
+    }
     try {
-      for (const item of pending) {
-        const body = new FormData();
-        body.set("file", item.file);
-        const uploaded = await fetch(`/api/clients/${clientId}/listings/${listing.id}/images`, { method: "POST", body });
-        const uploadedJson = (await uploaded.json().catch(() => ({}))) as { error?: string; listing?: { photos?: unknown } };
-        if (!uploaded.ok) throw new Error(uploadedJson.error ?? "The photo could not be stored.");
-        const serverPhotos = Array.isArray(uploadedJson.listing?.photos)
-          ? uploadedJson.listing.photos.filter((value): value is string => typeof value === "string")
-          : [];
-        const fresh = serverPhotos.filter((value) => !alreadySaved.has(value));
-        if (!fresh.length) throw new Error("The photo was stored. Reload this page to see it.");
-        fresh.forEach((value) => alreadySaved.add(value));
-        nextPhotos = [...nextPhotos, ...fresh];
-        storedIds.push(item.id);
-      }
-      const body: Record<string, unknown> = {
-        address: String(data.get("address") ?? "").trim() || null,
-        suburb: String(data.get("suburb") ?? "").trim() || null,
-        price: data.get("price") ? Number(data.get("price")) : null,
-        size_sqm: data.get("size_sqm") ? Number(data.get("size_sqm")) : null,
-        description: String(data.get("description") ?? "").trim() || null,
-        photos: nextPhotos,
-      };
-      if (askRooms) {
-        body.bedrooms = data.get("bedrooms") ? Number(data.get("bedrooms")) : null;
-        body.bathrooms = data.get("bathrooms") ? Number(data.get("bathrooms")) : null;
-      }
       const response = await fetch(`/api/clients/${clientId}/listings/${listing.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -322,13 +337,6 @@ function FinishForm({
       if (!response.ok) throw new Error(json.error ?? "The listing could not be saved.");
       onSaved();
     } catch (error) {
-      if (storedIds.length) {
-        setPhotos(nextPhotos);
-        setPending((current) => {
-          current.filter((item) => storedIds.includes(item.id)).forEach((item) => URL.revokeObjectURL(item.previewUrl));
-          return current.filter((item) => !storedIds.includes(item.id));
-        });
-      }
       setNotice(error instanceof Error ? error.message : "The listing could not be saved.");
       setBusy(false);
     }
@@ -359,111 +367,164 @@ function FinishForm({
     });
   }
 
+  async function addPhotos(files: File[]) {
+    if (!files.length) return;
+    setBusy(true);
+    setNotice(null);
+    const alreadySaved = new Set(photosRef.current);
+    let nextPhotos = photosRef.current;
+    try {
+      for (const file of files) {
+        const body = new FormData();
+        body.set("file", file);
+        const uploaded = await fetch(`/api/clients/${clientId}/listings/${listing.id}/images`, { method: "POST", body });
+        const uploadedJson = (await uploaded.json().catch(() => ({}))) as { error?: string; listing?: { photos?: unknown } };
+        if (!uploaded.ok) throw new Error(uploadedJson.error ?? "The photo could not be stored.");
+        const serverPhotos = Array.isArray(uploadedJson.listing?.photos)
+          ? uploadedJson.listing.photos.filter((value): value is string => typeof value === "string")
+          : [];
+        const fresh = serverPhotos.filter((value) => !alreadySaved.has(value));
+        if (!fresh.length) throw new Error("The photo was stored. Reload this page to see it.");
+        fresh.forEach((value) => alreadySaved.add(value));
+        nextPhotos = [...nextPhotos, ...fresh];
+      }
+      photosRef.current = nextPhotos;
+      setPhotos(nextPhotos);
+      setSavedPhotos(nextPhotos);
+      setPhoto(nextPhotos.length - 1);
+    } catch (error) {
+      if (nextPhotos !== photosRef.current || nextPhotos.length !== photos.length) {
+        photosRef.current = nextPhotos;
+        setPhotos(nextPhotos);
+        setSavedPhotos(nextPhotos);
+      }
+      setNotice(error instanceof Error ? error.message : "The photo could not be stored.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const current = photos[index];
+
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (!editable || busy) return;
-        void save(event.currentTarget);
-      }}
-    >
-      <ReSection id="listing-details" title="Listing details" description="These came from the seller's mandate. Add the description, photos, and anything the form left blank.">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Address" name="address"><input id="address" name="address" defaultValue={listing.address ?? ""} disabled={!editable} className={acqFieldClass} /></Field>
-          <Field label="Suburb" name="suburb"><input id="suburb" name="suburb" defaultValue={listing.suburb ?? ""} disabled={!editable} className={acqFieldClass} /></Field>
-          <Field label="Price" name="price"><input id="price" name="price" type="number" inputMode="decimal" min="0" step="0.01" defaultValue={money(listing.price)} disabled={!editable} className={acqFieldClass} /></Field>
-          <Field label="Size (m²)" name="size_sqm"><input id="size_sqm" name="size_sqm" type="number" inputMode="decimal" min="0" step="0.01" defaultValue={money(listing.size_sqm)} disabled={!editable} className={acqFieldClass} /></Field>
-          {askRooms ? (
-            <>
-              <Field label="Bedrooms" name="bedrooms"><input id="bedrooms" name="bedrooms" type="number" inputMode="numeric" min="0" defaultValue={money(listing.bedrooms)} disabled={!editable} className={acqFieldClass} /></Field>
-              <Field label="Bathrooms" name="bathrooms"><input id="bathrooms" name="bathrooms" type="number" inputMode="numeric" min="0" defaultValue={money(listing.bathrooms)} disabled={!editable} className={acqFieldClass} /></Field>
-            </>
-          ) : null}
-          <label className="sm:col-span-2" htmlFor="description">
-            <span className={acqLabelClass}>Description</span>
-            <textarea id="description" name="description" rows={4} defaultValue={listing.description ?? ""} disabled={!editable} className={acqFieldClass} />
-          </label>
+    <>
+      <section>
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-[15px] font-semibold tracking-[-0.01em]">Photographs</h2>
+          <div className="flex items-center gap-3">
+            {photos.length ? <p className="text-[13px] tabular-nums text-sales-text-muted">{index + 1} / {photos.length}</p> : null}
+            {editable ? (
+              <label className="inline-flex h-9 cursor-pointer items-center text-[13px] font-semibold text-sales-text-secondary">
+                Add photos
+                <input
+                  className="sr-only"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  multiple
+                  disabled={busy}
+                  onChange={(event) => {
+                    const files = Array.from(event.target.files ?? []);
+                    event.target.value = "";
+                    void addPhotos(files);
+                  }}
+                />
+              </label>
+            ) : null}
+          </div>
         </div>
-
-        <div className="mt-4 border-t border-sales-border-subtle pt-4">
-          <h3 className="text-[14px] font-semibold">Photos</h3>
-          <p className="mt-1 text-[13px] text-sales-text-secondary">Photographs from the inspection and photographs added here are one set. They appear on the viewing form.</p>
-          {photos.length || pending.length ? (
-            <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {photos.map((src, index) => (
-                  <li key={`${src}-${index}`} className="min-w-0">
-                    <ListingPhotoTile
-                      clientId={clientId}
-                      listingId={listing.id}
-                      src={src}
-                      serverIndex={savedPhotos.indexOf(src)}
-                      onOpen={(shown) => setPreview({ src: shown, caption: "Listing photo" })}
-                    />
-                    {editable ? <button type="button" className="mt-1 min-h-11 text-[12px] font-semibold text-sales-text-secondary" disabled={busy} onClick={() => removePhoto(src)}>Remove</button> : null}
-                  </li>
+        {current ? (
+          <>
+            <div className="relative mt-3 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
+              <ShownPhoto clientId={clientId} listingId={listing.id} src={current} serverIndex={savedPhotos.indexOf(current)} className="aspect-[16/10] w-full object-cover" />
+              {photos.length > 1 ? (
+                <div className="absolute bottom-3 right-3 hidden gap-2 min-[480px]:flex">
+                  <button type="button" aria-label="Previous photograph" onClick={() => setPhoto((value) => (value + photos.length - 1) % photos.length)} className="h-9 rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold">Previous</button>
+                  <button type="button" aria-label="Next photograph" onClick={() => setPhoto((value) => (value + 1) % photos.length)} className="h-9 rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold">Next</button>
+                </div>
+              ) : null}
+            </div>
+            {photos.length > 1 ? (
+              <div className="mt-2 flex gap-2 min-[480px]:hidden">
+                <button type="button" aria-label="Previous photograph" onClick={() => setPhoto((value) => (value + photos.length - 1) % photos.length)} className="h-11 flex-1 rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold">Previous</button>
+                <button type="button" aria-label="Next photograph" onClick={() => setPhoto((value) => (value + 1) % photos.length)} className="h-11 flex-1 rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold">Next</button>
+              </div>
+            ) : null}
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {photos.map((src, itemIndex) => (
+                <button key={`${src}-${itemIndex}`} type="button" aria-label={`Photograph ${itemIndex + 1}`} aria-current={itemIndex === index ? "true" : undefined} onClick={() => setPhoto(itemIndex)} className={`overflow-hidden rounded-[8px] border-2 ${itemIndex === index ? "border-sales-text-primary" : "border-sales-border"}`}>
+                  <ShownPhoto clientId={clientId} listingId={listing.id} src={src} serverIndex={savedPhotos.indexOf(src)} className="aspect-[16/10] w-full object-cover" />
+                </button>
               ))}
-              {pending.map((item) => (
-                <li key={item.id}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.previewUrl} alt="" className="aspect-[4/3] w-full rounded-[10px] object-cover" />
-                  <button type="button" className="mt-1 min-h-11 text-[12px] font-semibold text-sales-text-secondary" onClick={() => {
-                    URL.revokeObjectURL(item.previewUrl);
-                    setPending((current) => current.filter((photo) => photo.id !== item.id));
-                  }}>Remove</button>
-                </li>
-              ))}
-            </ul>
-          ) : <p className="mt-2 text-[13px] text-sales-text-muted">No photos yet.</p>}
-          {editable ? (
-            <label className="mt-3 inline-flex min-h-11 cursor-pointer items-center rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[14px] font-semibold">
-              Add photos
-              <input
-                className="sr-only"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/avif"
-                multiple
-                disabled={busy}
-                onChange={(event) => {
-                  const files = Array.from(event.target.files ?? []);
-                  event.target.value = "";
-                  setPending((current) => [...current, ...files.map((file) => ({ id: crypto.randomUUID(), file, previewUrl: URL.createObjectURL(file) }))]);
-                }}
-              />
-            </label>
-          ) : null}
-        </div>
-
-        {editable ? <button type="submit" disabled={busy} className="mt-4 min-h-11 rounded-[var(--re-radius-control,8px)] border border-sales-border px-3 text-[14px] font-semibold">{busy ? "Saving…" : "Save listing"}</button> : null}
+            </div>
+            {editable ? (
+              <button type="button" className="mt-2 min-h-11 text-[13px] font-semibold text-sales-text-secondary" disabled={busy} onClick={() => removePhoto(current)}>
+                Remove this photograph
+              </button>
+            ) : null}
+          </>
+        ) : <p className="mt-3 text-[13px] text-sales-text-muted">No photographs yet. They appear here and on the viewing form.</p>}
         {notice ? <p className="mt-2 text-[13px] text-sales-danger-fg" role="alert">{notice}</p> : null}
-      </ReSection>
-      {preview ? (
-        <ReSheet title={preview.caption} onClose={() => setPreview(null)}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview.src} alt={preview.caption} className="max-h-[70vh] w-full object-contain" />
-        </ReSheet>
-      ) : null}
-    </form>
+      </section>
+
+      {children}
+
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!editable || busy) return;
+          void save(event.currentTarget);
+        }}
+      >
+        <section className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
+          <div className="px-4 pb-2 pt-4">
+            <h2 className="text-[15px] font-semibold tracking-[-0.01em]">Property</h2>
+          </div>
+          <div className="grid gap-3 border-t border-sales-border-subtle px-4 py-3 sm:grid-cols-2">
+            <label className="sm:col-span-2" htmlFor="description">
+              <span className={acqLabelClass}>Description</span>
+              <textarea id="description" name="description" rows={4} defaultValue={listing.description ?? ""} disabled={!editable} className={acqFieldClass} />
+            </label>
+            <Field label="Address" name="address"><input id="address" name="address" defaultValue={listing.address ?? ""} disabled={!editable} className={acqFieldClass} /></Field>
+            <Field label="Suburb" name="suburb"><input id="suburb" name="suburb" defaultValue={listing.suburb ?? ""} disabled={!editable} className={acqFieldClass} /></Field>
+            <Field label="Type" name="type"><input id="type" value={categoryLabel(listing.property_category) ?? dealLabel(listing.transaction_type)} readOnly className={acqFieldClass} /></Field>
+            <Field label="Asking price" name="price"><input id="price" name="price" type="number" inputMode="decimal" min="0" step="0.01" defaultValue={money(listing.price)} disabled={!editable} className={acqFieldClass} /></Field>
+            {askRooms ? (
+              <>
+                <Field label="Bedrooms" name="bedrooms"><input id="bedrooms" name="bedrooms" type="number" inputMode="numeric" min="0" defaultValue={money(listing.bedrooms)} disabled={!editable} className={acqFieldClass} /></Field>
+                <Field label="Bathrooms" name="bathrooms"><input id="bathrooms" name="bathrooms" type="number" inputMode="numeric" min="0" defaultValue={money(listing.bathrooms)} disabled={!editable} className={acqFieldClass} /></Field>
+              </>
+            ) : null}
+            <Field label="Size (m²)" name="size_sqm"><input id="size_sqm" name="size_sqm" type="number" inputMode="decimal" min="0" step="0.01" defaultValue={money(listing.size_sqm)} disabled={!editable} className={acqFieldClass} /></Field>
+          </div>
+          {editable ? <div className="border-t border-sales-border-subtle px-4 py-3"><button type="submit" disabled={busy} className="inline-flex h-11 items-center rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text">{busy ? "Saving" : "Save listing"}</button></div> : null}
+        </section>
+      </form>
+    </>
   );
 }
 
 function ViewingsSection({ viewings, buyersRoot }: { viewings: ViewingRow[]; buyersRoot: string }) {
   return (
-    <ReSection id="listing-viewings" title="Viewings" count={viewings.length} description="Signed viewing forms for this house.">
+    <section className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
+      <div className="flex items-baseline justify-between px-4 pb-2 pt-4">
+        <h2 className="text-[15px] font-semibold tracking-[-0.01em]">Viewings</h2>
+        <span className="text-[13px] text-sales-text-muted">{viewings.length}</span>
+      </div>
       {viewings.length ? (
-        <ul className="divide-y divide-sales-border-subtle">
-          {viewings.map((viewing) => {
-            const name = viewing.contact?.name?.trim() || "Buyer";
-            const href = viewing.buyer_search_id ? `${buyersRoot}/${viewing.buyer_search_id}` : null;
-            return (
-              <li key={viewing.id} className="flex items-center justify-between gap-3 py-2 text-[13px]">
-                {href ? <Link href={href} className="re-focus font-semibold">{name}</Link> : <span className="font-semibold">{name}</span>}
-                <span className="text-sales-text-muted">{formatWhen(viewing.scheduled_at) ?? "Time not recorded"}</span>
-              </li>
-            );
-          })}
-        </ul>
-      ) : <p className="text-[13px] text-sales-text-muted">No viewing has been signed for this house yet.</p>}
-    </ReSection>
+        viewings.map((viewing) => {
+          const name = viewing.contact?.name?.trim() || "Buyer";
+          const href = viewing.buyer_search_id ? `${buyersRoot}/${viewing.buyer_search_id}` : null;
+          return (
+            <div key={viewing.id} className="flex flex-wrap items-center justify-between gap-3 border-t border-sales-border-subtle px-4 py-3">
+              <div className="min-w-0">
+                {href ? <Link href={href} className="text-[14px] font-semibold">{name}</Link> : <p className="text-[14px] font-semibold">{name}</p>}
+                <p className="mt-0.5 text-[13px] text-sales-text-secondary">{formatWhen(viewing.scheduled_at) ?? "Time not recorded"}</p>
+              </div>
+            </div>
+          );
+        })
+      ) : <p className="border-t border-sales-border-subtle px-4 py-3 text-[13px] text-sales-text-muted">No viewing has been signed for this house yet.</p>}
+    </section>
   );
 }
 
@@ -477,23 +538,27 @@ function OffersSection({
   onOpen: (id: string) => void;
 }) {
   return (
-    <ReSection id="property-offers" title="Offers" count={offers.length} description="Letters already raised for this house. A new letter is created on the buyer after a viewing.">
+    <section className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
+      <div className="flex items-baseline justify-between px-4 pb-2 pt-4">
+        <h2 className="text-[15px] font-semibold tracking-[-0.01em]">Offers</h2>
+        <span className="text-[13px] text-sales-text-muted">{offers.length}</span>
+      </div>
       {offers.length ? (
-        <ul className="space-y-2">
-          {offers.map((offer) => {
-            const href = offer.buyerSearchId ? `${buyersRoot}/${offer.buyerSearchId}` : null;
-            return (
-              <li key={offer.id} className="flex items-center justify-between gap-3 rounded-[10px] border border-sales-border-subtle px-3 py-2">
-                <div className="min-w-0">
-                  {href ? <Link href={href} className="re-focus truncate text-[13px] font-semibold">{offer.buyerName || "Buyer"}</Link> : <p className="truncate text-[13px] font-semibold">{offer.buyerName || "Buyer"}</p>}
-                  <p className="text-[12px] text-sales-text-secondary">{offer.currentAmountLabel} · {offer.sellerLetter || "The letter has not been sent to the seller"}</p>
-                </div>
-                <button type="button" className="min-h-11 shrink-0 text-[13px] font-semibold" onClick={() => onOpen(offer.id)}>Open offer</button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : <p className="text-[13px] text-sales-text-muted">No offers on this house yet.</p>}
-    </ReSection>
+        offers.map((offer) => {
+          const href = offer.buyerSearchId ? `${buyersRoot}/${offer.buyerSearchId}` : null;
+          return (
+            <div key={offer.id} className="flex flex-wrap items-center justify-between gap-3 border-t border-sales-border-subtle px-4 py-3">
+              <div className="min-w-0">
+                {href ? <Link href={href} className="text-[14px] font-semibold">{offer.buyerName || "Buyer"}</Link> : <p className="text-[14px] font-semibold">{offer.buyerName || "Buyer"}</p>}
+                <p className="mt-0.5 text-[13px] text-sales-text-secondary">{offer.currentAmountLabel} · {offer.sellerLetter || "The letter has not been sent to the seller"}</p>
+              </div>
+              <button type="button" className="h-11 shrink-0 rounded-[8px] bg-sales-text-primary px-3 text-[13px] font-semibold text-sales-surface min-[480px]:h-9" onClick={() => onOpen(offer.id)}>
+                Open offer
+              </button>
+            </div>
+          );
+        })
+      ) : <p className="border-t border-sales-border-subtle px-4 py-3 text-[13px] text-sales-text-muted">No offers on this house yet.</p>}
+    </section>
   );
 }
