@@ -85,8 +85,7 @@ export function missingDocumentLabels(input: EvaluationInput): string[] {
 export function buildRecommendations(
   input: EvaluationInput,
   checks: DueDiligenceCheck[],
-  status: Evaluation["status"],
-  _score: number
+  status: Evaluation["status"]
 ): string[] {
   const notes: string[] = [];
   const tenure = input.property.tenureType;
@@ -153,7 +152,7 @@ export function summarise(input: EvaluationInput, checks: DueDiligenceCheck[]): 
     reasons,
     status,
     summary: buildSummary(input.seller.fullName, status, score),
-    recommendations: buildRecommendations(input, checks, status, score),
+    recommendations: buildRecommendations(input, checks, status),
     missingDocuments: missingDocumentLabels(input),
     comparison: buildComparison(input),
     redFlags,

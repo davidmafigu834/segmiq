@@ -210,7 +210,8 @@ export function ListingDetailView({
         </div>
         {matches.length === 0 ? (
           <p className="border-t border-sales-border-subtle px-4 py-3 text-[13px] text-sales-text-muted">No matching buyers yet.</p>
-        ) : matches.map((m) => (
+        ) : (
+          matches.map((m) => (
             <div
               key={m.id}
               className="flex flex-wrap items-center justify-between gap-3 border-t border-sales-border-subtle px-4 py-3"
