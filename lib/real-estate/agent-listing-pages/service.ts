@@ -1062,7 +1062,7 @@ export async function loadMarketingDesk(db: Db, clientId: string, userId: string
     const toDay = range.to.toISOString().slice(0, 10);
     const { data, error: countError } = await db
       .from("re_listing_marketing_daily")
-      .select("share_id, event_type, bot_class, event_count")
+      .select("share_id, day, event_type, bot_class, event_count")
       .eq("client_id", clientId)
       .in("share_id", shareIds)
       .gte("day", fromDay)
@@ -1074,6 +1074,7 @@ export async function loadMarketingDesk(db: Db, clientId: string, userId: string
       eventType: String(row.event_type),
       botClass: String(row.bot_class),
       count: Number(row.event_count ?? 0),
+      day: String(row.day),
     }));
   }
   const { data: listings, error: listingError } = await db
@@ -1089,6 +1090,7 @@ export async function loadMarketingDesk(db: Db, clientId: string, userId: string
     return approval == null || approval === "approved";
   });
   return buildMarketingDesk({
+    range: { from: range.from.toISOString(), to: range.to.toISOString() },
     shares: shareRows.map((row) => {
       const listing = (row.listings ?? {}) as Record<string, unknown>;
       return {

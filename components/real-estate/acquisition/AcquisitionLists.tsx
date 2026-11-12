@@ -79,7 +79,10 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
   }, [load]);
 
   useEffect(() => {
-    const id = new URL(window.location.href).searchParams.get("contactId");
+    const params = new URL(window.location.href).searchParams;
+    const search = params.get("q");
+    if (search) setQ(search);
+    const id = params.get("contactId");
     if (!id || id.startsWith("company:")) return;
     const profileId = id.startsWith("unlinked:") ? id.slice("unlinked:".length) : id;
     router.replace(`${basePath}/${profileId}`);

@@ -86,6 +86,22 @@ export function RePageHeader({
   );
 }
 
+/** Count beside a section title: a quiet pill, muted when nothing is waiting. */
+export function ReCountBadge({ count }: { count: number }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex h-[22px] min-w-[22px] shrink-0 items-center justify-center rounded-full border px-1.5 font-sans text-[12px] font-semibold leading-none tabular-nums tracking-normal",
+        count === 0
+          ? "border-sales-border-subtle text-sales-text-muted"
+          : "border-sales-border bg-sales-surface text-sales-text-primary"
+      )}
+    >
+      {count}
+    </span>
+  );
+}
+
 export function ReSection({
   id,
   title,
@@ -97,6 +113,8 @@ export function ReSection({
   bodyClassName,
   flush = false,
   hideMobileDescription = false,
+  titleOutside = false,
+  headingLevel = 2,
 }: {
   id?: string;
   title: string;
@@ -111,8 +129,45 @@ export function ReSection({
   flush?: boolean;
   /** Keep a longer explanation on desktop and drop it on a phone. */
   hideMobileDescription?: boolean;
+  /** Title, count and action sit above the card; the card holds only the content. */
+  titleOutside?: boolean;
+  headingLevel?: 2 | 3;
 }) {
   const headingId = id ? `${id}-title` : undefined;
+  if (titleOutside) {
+    const Heading = headingLevel === 3 ? "h3" : "h2";
+    return (
+      <section id={id} aria-labelledby={headingId} className={cn("min-w-0", className)}>
+        <div className="mb-3 flex min-w-0 items-end justify-between gap-3">
+          <div className="min-w-0">
+            <Heading
+              id={headingId}
+              className={cn(
+                "flex min-w-0 items-center gap-2 font-display font-semibold leading-tight text-sales-text-primary",
+                headingLevel === 3 ? "text-[15px] tracking-[-0.01em]" : "text-[18px] tracking-[-0.02em]"
+              )}
+            >
+              <span className="min-w-0 truncate">{title}</span>
+              {count != null ? <ReCountBadge count={count} /> : null}
+            </Heading>
+            {description ? (
+              <p className={cn("mt-1 text-[12px] leading-snug text-sales-text-secondary sm:text-[13px]", hideMobileDescription && "hidden layout:block")}>{description}</p>
+            ) : null}
+          </div>
+          {action ? <div className="flex shrink-0 items-center gap-2">{action}</div> : null}
+        </div>
+        <div
+          className={cn(
+            "min-w-0 overflow-hidden rounded-[var(--re-radius-card,12px)] border border-[var(--sales-card-border,var(--sales-border-subtle))] bg-sales-surface",
+            flush ? "py-1" : "p-[var(--re-card-pad,16px)]",
+            bodyClassName
+          )}
+        >
+          {children}
+        </div>
+      </section>
+    );
+  }
   return (
     <section
       id={id}

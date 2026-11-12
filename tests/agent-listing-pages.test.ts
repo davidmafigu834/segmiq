@@ -296,6 +296,32 @@ test("the desk names links with visits and no enquiry, and listings with no link
   assert.equal(desk.unlinked[0]?.line, "No personal link yet.");
   assert.equal(desk.unlinked[1]?.title, "Hillside");
   assert.equal(desk.unlinked[1]?.meta, "On the market");
+  assert.equal(desk.quiet[0]?.action, "Analytics");
+  assert.equal(desk.unlinked[0]?.action, "Open property");
+});
+
+test("the desk day line fills quiet days and counts only human visits on active links", () => {
+  const desk = buildMarketingDesk({
+    range: { from: "2026-11-07T00:00:00.000Z", to: "2026-11-10T00:00:00.000Z" },
+    shares: [
+      { id: "s1", listingId: "l1", status: "active", address: "14 Kingsmead", suburb: "Borrowdale" },
+      { id: "s2", listingId: "l2", status: "revoked", address: "8 Stonechat Lane", suburb: "Borrowdale" },
+    ],
+    counts: [
+      { shareId: "s1", eventType: "page_view", botClass: "human", count: 2, day: "2026-11-08" },
+      { shareId: "s1", eventType: "page_view", botClass: "preview", count: 5, day: "2026-11-08" },
+      { shareId: "s1", eventType: "whatsapp_click", botClass: "human", count: 1, day: "2026-11-09" },
+      { shareId: "s2", eventType: "page_view", botClass: "human", count: 7, day: "2026-11-09" },
+    ],
+    listings: [],
+  });
+  assert.deepEqual(desk.series, [
+    { day: "2026-11-07", visits: 0 },
+    { day: "2026-11-08", visits: 2 },
+    { day: "2026-11-09", visits: 0 },
+  ]);
+  assert.equal(desk.whatsappClicks, 1);
+  assert.deepEqual(desk.quiet[0]?.series, [0, 2, 0]);
 });
 
 test("attribution keeps marketing separate from operational ownership", () => {

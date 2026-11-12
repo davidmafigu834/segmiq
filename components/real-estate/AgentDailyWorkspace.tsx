@@ -5,13 +5,12 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
 import type { AgentReDashboard } from "@/lib/sales/get-agent-real-estate-dashboard";
 import { MarketingDeskCard } from "@/components/real-estate/MarketingDeskCard";
+import { TodayCommandBar } from "@/components/real-estate/TodayCommandBar";
 import { marketingDeskHasContent } from "@/lib/real-estate/agent-listing-pages/desk";
 import {
   ReEmptyState,
-  RePageHeader,
   RePartialNotice,
   ReSection,
   ReSkeletonRows,
@@ -59,10 +58,6 @@ const GROUP_LABEL: Record<Mark, string> = {
 
 function timeLabel(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-}
-
-function todayLabel(): string {
-  return new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 }
 
 function NeedMark({ mark }: { mark: Mark }) {
@@ -151,14 +146,6 @@ export function AgentDailyWorkspace({
   });
 
   const count = needs.length;
-  const toOpen = needs.filter((row) => row.group === "today").length;
-  const waiting = needs.filter((row) => row.group === "waiting").length;
-  const summary =
-    mandateForms.status === "loading" && count === 0
-      ? "Checking offers and seller forms."
-      : count === 0
-        ? "No offers or seller forms to open."
-        : [toOpen ? `${toOpen} to open today.` : null, waiting ? `${waiting} waiting.` : null].filter(Boolean).join(" ");
 
   const buyerDetail =
     buyerMetrics.status === "loading"
@@ -178,33 +165,18 @@ export function AgentDailyWorkspace({
   const salesCount = data.summary.transactionsNeedingAttention;
 
   return (
-    <div className="space-y-5">
-      <RePageHeader
-        mobileTitle
-        context={todayLabel()}
-        title="Today"
-        description={summary}
-        actions={
-          <>
-            <Link
-              href="/sales/listings/viewing"
-              className="re-focus inline-flex h-11 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface px-4 text-[14px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
-            >
-              Add buyer
-            </Link>
-            <Link
-              href="/sales/listings/mandate"
-              className="re-focus inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text"
-            >
-              <Plus size={16} strokeWidth={1.75} aria-hidden />
-              New seller form
-            </Link>
-          </>
-        }
-      />
+    <div className="space-y-7 layout:space-y-8">
+      <TodayCommandBar clientId={clientId} />
 
-      <div className="grid items-start gap-4 layout:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.85fr)]">
-        <ReSection id="re-agent-attention" title="Needs you" count={mandateForms.status === "loading" && count === 0 ? null : count} flush>
+      <div className="grid items-start gap-x-4 gap-y-7 layout:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.85fr)] layout:gap-y-8">
+        <ReSection
+          id="re-agent-attention"
+          title="Needs you"
+          titleOutside
+          count={mandateForms.status === "loading" && count === 0 ? null : count}
+          flush
+          bodyClassName="pt-0 [&>ul>li:first-child>p]:border-t-0"
+        >
           {mandateForms.status === "error" ? (
             <RePartialNotice>
               Seller forms didn&apos;t load.{" "}
@@ -247,7 +219,7 @@ export function AgentDailyWorkspace({
           )}
         </ReSection>
 
-        <ReSection id="re-agent-schedule" title="Schedule" count={schedule.length} flush>
+        <ReSection id="re-agent-schedule" title="Schedule" titleOutside count={schedule.length} flush bodyClassName="[&>ul>li:first-child]:border-t-0">
           {schedule.length === 0 ? (
             <ReEmptyState compact title="Nothing scheduled today" description="A signed viewing form puts the appointment here." />
           ) : (
@@ -276,7 +248,7 @@ export function AgentDailyWorkspace({
         <Metric label="Offers" value={metrics?.offersInProgress ?? data.offersNeedingAttention.length} />
       </div>
 
-      <ReSection id="re-agent-work" title="My work" flush>
+      <ReSection id="re-agent-work" title="My work" titleOutside flush bodyClassName="[&>ul>li:first-child]:border-t-0">
         <ul>
           <QuietRow name="Buyers and tenants" detail={buyerDetail} href="/sales/buyers" />
           <QuietRow name="Sellers" detail={sellerDetail} href="/sales/owners" />

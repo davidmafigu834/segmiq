@@ -1,3 +1,5 @@
+import { fillVisitDays, type DailyPoint } from "@/lib/real-estate/agent-listing-pages/analytics";
+
 export type DeskShare = {
   id: string;
   listingId: string;
@@ -11,6 +13,7 @@ export type DeskCount = {
   eventType: string;
   botClass: string;
   count: number;
+  day?: string;
 };
 
 export type DeskListing = {
@@ -26,14 +29,19 @@ export type MarketingDeskRow = {
   meta: string | null;
   line: string;
   href: string;
+  action: string;
   attention: boolean;
+  visits: number | null;
+  series: number[];
 };
 
 export type MarketingDesk = {
   visits: number;
   enquiries: number;
   viewingRequests: number;
+  whatsappClicks: number;
   activeLinks: number;
+  series: DailyPoint[];
   quiet: MarketingDeskRow[];
   unlinked: MarketingDeskRow[];
 };
@@ -42,15 +50,31 @@ function propertyTitle(address: string | null, suburb: string | null): string {
   return address?.trim() || suburb?.trim() || "Listing";
 }
 
-/** Last-30-day desk: totals, links with visits and no enquiry, and marketable listings with no active link. */
-export function buildMarketingDesk(input: { shares: DeskShare[]; counts: DeskCount[]; listings: DeskListing[] }): MarketingDesk {
+function humanVisitDays(counts: DeskCount[]): DailyPoint[] {
+  const map = new Map<string, number>();
+  for (const row of counts) {
+    if (!row.day || row.eventType !== "page_view" || row.botClass !== "human") continue;
+    const day = row.day.slice(0, 10);
+    map.set(day, (map.get(day) ?? 0) + (Number.isFinite(row.count) ? row.count : 0));
+  }
+  return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([day, visits]) => ({ day, visits }));
+}
+
+/** Last-30-day desk: totals, the day line, links with visits and no enquiry, and marketable listings with no active link. */
+export function buildMarketingDesk(input: {
+  shares: DeskShare[];
+  counts: DeskCount[];
+  listings: DeskListing[];
+  range?: { from: string; to: string };
+}): MarketingDesk {
   const activeIds = new Set(input.shares.filter((share) => share.status === "active").map((share) => share.id));
   const byShare = new Map<string, { visits: number; enquiries: number }>();
+  const activeCounts = input.counts.filter((row) => activeIds.has(row.shareId));
   let visits = 0;
   let enquiries = 0;
   let viewingRequests = 0;
-  for (const row of input.counts) {
-    if (!activeIds.has(row.shareId)) continue;
+  let whatsappClicks = 0;
+  for (const row of activeCounts) {
     const count = Number.isFinite(row.count) ? row.count : 0;
     if (row.eventType === "page_view" && row.botClass === "human") {
       visits += count;
@@ -64,8 +88,16 @@ export function buildMarketingDesk(input: { shares: DeskShare[]; counts: DeskCou
       byShare.set(row.shareId, current);
     } else if (row.eventType === "viewing_request") {
       viewingRequests += count;
+    } else if (row.eventType === "whatsapp_click") {
+      whatsappClicks += count;
     }
   }
+
+  const series = fillVisitDays(input.range?.from, input.range?.to, humanVisitDays(activeCounts));
+  const shareLine = (shareId: string) => {
+    const own = new Map(humanVisitDays(activeCounts.filter((row) => row.shareId === shareId)).map((point) => [point.day, point.visits]));
+    return series.map((point) => own.get(point.day) ?? 0);
+  };
 
   const active = input.shares.filter((share) => share.status === "active");
   const linked = new Set(active.map((share) => share.listingId));
@@ -81,7 +113,10 @@ export function buildMarketingDesk(input: { shares: DeskShare[]; counts: DeskCou
       meta: row.share.address?.trim() ? row.share.suburb?.trim() || null : null,
       line: `${row.stats.visits} ${row.stats.visits === 1 ? "visit" : "visits"}. No enquiry yet.`,
       href: `/sales/shared-listings/${row.share.id}`,
+      action: "Analytics",
       attention: true,
+      visits: row.stats.visits,
+      series: shareLine(row.share.id),
     }));
 
   const unlinked = input.listings
@@ -94,10 +129,13 @@ export function buildMarketingDesk(input: { shares: DeskShare[]; counts: DeskCou
       meta: listing.address?.trim() ? listing.suburb?.trim() || null : "On the market",
       line: "No personal link yet.",
       href: `/sales/listings/${listing.id}`,
+      action: "Open property",
       attention: false,
+      visits: null,
+      series: [],
     }));
 
-  return { visits, enquiries, viewingRequests, activeLinks: active.length, quiet, unlinked };
+  return { visits, enquiries, viewingRequests, whatsappClicks, activeLinks: active.length, series, quiet, unlinked };
 }
 
 export function marketingDeskHasContent(desk: MarketingDesk | null): boolean {
