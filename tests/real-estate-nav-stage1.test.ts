@@ -45,7 +45,7 @@ describe("real estate stage 1 navigation", () => {
     assert.deepEqual(salesNavSectionOrder("real_estate"), ["main", "acquisition", "buyer_sales", "follow_up"]);
     assert.deepEqual(
       salesNavItemsBySection(agent, "main").map((item) => item.id),
-      ["dashboard", "listings", "calendar", "people", "transactions"]
+      ["dashboard", "listings", "calendar", "transactions"]
     );
     assert.deepEqual(
       salesNavItemsBySection(agent, "acquisition").map((item) => item.id),
@@ -67,7 +67,7 @@ describe("real estate stage 1 navigation", () => {
     assert.equal(agent.find((item) => item.id === "whatsapp")?.label, "Sales Inbox");
     assert.deepEqual(
       salesMobilePrimaryItems(agent, "real_estate").map((item) => item.id),
-      ["dashboard", "listings", "calendar", "people", "transactions"]
+      ["dashboard", "listings", "calendar", "transactions"]
     );
     for (const id of HIDDEN_AGENT_IDS) {
       const item = agent.find((entry) => entry.id === id);
@@ -80,8 +80,7 @@ describe("real estate stage 1 navigation", () => {
     assert.equal(salesNavIsActive(agent.find((item) => item.id === "viewings")!, "/sales/viewings"), true);
     assert.equal(salesNavIsActive(agent.find((item) => item.id === "calendar")!, "/sales/viewings"), false);
     assert.equal(salesNavIsActive(agent.find((item) => item.id === "owners")!, "/sales/owners"), true);
-    assert.equal(salesNavIsActive(agent.find((item) => item.id === "people")!, "/sales/owners"), false);
-    assert.equal(salesNavIsActive(agent.find((item) => item.id === "people")!, "/sales/buyers/introductions"), true);
+    assert.equal(agent.some((item) => item.id === "people" || item.id === "mandateLink" || item.id === "viewingLink"), false);
     assert.equal(salesNavIsActive(agent.find((item) => item.id === "transactions")!, "/sales/compliance"), true);
     assert.equal(salesNavIsActive(agent.find((item) => item.id === "dashboard")!, "/sales/inbox"), false);
     assert.equal(agent.find((item) => item.id === "viewings")!.match("/sales/viewings"), true);
@@ -103,11 +102,11 @@ describe("real estate stage 1 navigation", () => {
     assert.equal(manager.find((item) => item.id === "offers")?.label, "Offers");
     assert.deepEqual(
       companyNavBySection(manager, "main").map((item) => item.id),
-      ["overview", "listings", "calendar", "people", "transactions", "review"]
+      ["overview", "listings", "calendar", "transactions", "review"]
     );
     assert.deepEqual(
       companyMobilePrimaryItems(manager).map((item) => item.id),
-      ["overview", "listings", "calendar", "people", "transactions"]
+      ["overview", "listings", "calendar", "transactions"]
     );
     assert.equal(manager.find((item) => item.id === "overview")?.label, "Today");
     assert.equal(manager.find((item) => item.id === "calendar")?.label, "Calendar");
@@ -127,8 +126,7 @@ describe("real estate stage 1 navigation", () => {
     assert.equal(companyNavIsActive(manager.find((item) => item.id === "viewings")!, "/client/viewings"), true);
     assert.equal(companyNavIsActive(manager.find((item) => item.id === "calendar")!, "/client/viewings"), false);
     assert.equal(companyNavIsActive(manager.find((item) => item.id === "buyers")!, "/client/buyers"), true);
-    assert.equal(companyNavIsActive(manager.find((item) => item.id === "people")!, "/client/buyers"), false);
-    assert.equal(companyNavIsActive(manager.find((item) => item.id === "people")!, "/client/customers"), false);
+    assert.equal(manager.some((item) => item.id === "people"), false);
   });
 
   it("leaves trades and solar menus on their own destinations", () => {
