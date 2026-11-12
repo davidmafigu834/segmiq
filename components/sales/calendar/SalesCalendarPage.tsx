@@ -43,6 +43,9 @@ import {
   shouldApplyViewingLoad,
   viewingWindowCovers,
 } from "@/lib/real-estate/viewing-calendar";
+import { RealEstateCalendar } from "@/components/real-estate/calendar/RealEstateCalendar";
+import { salesAppointments } from "@/components/real-estate/calendar/appointments";
+import { calendarDateKey } from "@/lib/sales/company-calendar/format";
 
 const DEFAULT_ENABLED = new Set<CalendarEventKind>(SUPPORTED_EVENT_KINDS);
 
@@ -155,6 +158,14 @@ export function SalesCalendarPage({
   }
 
   useEffect(() => {
+    if (!includeViewings) return;
+    const key = calendarDateKey(new Date(), timezone);
+    const next = parseISO(`${key}T12:00:00`);
+    if (!Number.isNaN(next.getTime())) setViewMonth(startOfMonth(next));
+    setSelectedDateKey(key);
+  }, [includeViewings, timezone]);
+
+  useEffect(() => {
     if (!includeViewings || !clientId) return;
     const needed = neededViewingWindow();
     if (loadedWindow && viewingWindowCovers(loadedWindow, needed)) return;
@@ -264,6 +275,49 @@ export function SalesCalendarPage({
       <AvailabilityCard />
     </>
   );
+
+  if (includeViewings) {
+    const todayKey = calendarDateKey(new Date(), timezone);
+    return (
+      <div className="space-y-5">
+        {viewingsPartial ? (
+          <div className="flex min-h-[48px] items-center justify-between gap-3 rounded-[12px] border border-sales-warning/30 bg-sales-warning-soft px-3.5 py-2.5 text-sales-warning-fg">
+            <p className="text-[13px] text-sales-warning-fg">
+              Viewings could not all be loaded. Follow-ups and other events are still shown.
+            </p>
+            <button
+              type="button"
+              className="shrink-0 text-[13px] font-semibold underline-offset-2 hover:underline"
+              onClick={() => void loadViewingWindow(neededViewingWindow())}
+            >
+              Retry
+            </button>
+          </div>
+        ) : null}
+        <RealEstateCalendar
+          items={salesAppointments(events, timezone)}
+          todayKey={todayKey}
+          bookHref="/sales/listings/viewing"
+          onSelectDate={(key) => {
+            setSelectedDateKey(key);
+            const next = parseISO(`${key}T12:00:00`);
+            if (!Number.isNaN(next.getTime())) setViewMonth(startOfMonth(next));
+          }}
+        />
+        {addOpen ? (
+          <AddEventSheet
+            leads={scheduleableLeads}
+            deals={scheduleableDeals}
+            initialDealId={presetDealId}
+            initialLeadId={presetLeadId}
+            defaultDateKey={selectedDateKey}
+            onClose={closeAdd}
+            onCreated={onEventCreated}
+          />
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="calendar-premium space-y-3">

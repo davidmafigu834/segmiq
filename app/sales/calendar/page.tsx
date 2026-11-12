@@ -374,6 +374,7 @@ export default async function SalesCalendarRoutePage({
         title="Calendar"
         description={realEstateCalendar ? "Plan follow-ups, viewings, calls, and quote meetings." : "Plan follow-ups, site visits, calls, and quote meetings."}
         dense
+        toolbar={realEstateCalendar}
       >
         <SalesCalendarPage
           initialEvents={initialEvents}

@@ -200,6 +200,8 @@ function SalesAppShellInner({
   headerActions?: ReactNode;
   titleActions?: ReactNode;
   showDefaultHeader?: boolean;
+  /** Desktop breadcrumb and actions only. The page supplies its own heading. */
+  toolbar?: boolean;
   showSearch?: boolean;
   showQuickActions?: boolean;
   onLogCall?: () => void;
@@ -338,6 +340,7 @@ function SalesAppShellInner({
                 note={note}
                 actions={desktopActions}
                 titleActions={titleActions}
+                toolbar={toolbar}
               />
             ) : null}
             {realEstateWorkspace ? <RealEstateWorkspaceLinks scope="agent" /> : null}
