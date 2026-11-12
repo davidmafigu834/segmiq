@@ -6129,6 +6129,35 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-wo
   background-image: none;
 }
 
+html:has(.sales-dashboard-premium[data-re-form="dark"]),
+html:has(.sales-dashboard-premium[data-re-form="dark"]) body {
+  background-color: #04050c;
+  color-scheme: dark;
+}
+
+.sales-dashboard-premium[data-re-form="dark"] {
+  color-scheme: dark;
+  --sales-bg: #04050c;
+  --sales-bg-subtle: #070410;
+  --sales-surface: #081018;
+  --sales-surface-subtle: #0a121c;
+  --sales-surface-hover: #101824;
+  --sales-surface-active: #141c2e;
+  --sales-text-primary: #f7f9fc;
+  --sales-text-secondary: #d5deee;
+  --sales-text-muted: #aebbd4;
+  --sales-border: #8b9cc0;
+  --sales-border-strong: #aebbd4;
+  --sales-border-subtle: #243044;
+  --sales-card-border: #8b9cc0;
+  --sales-brand: #d4ff4f;
+  --sales-brand-text: #101828;
+  --sales-danger-fg: #ff8a9a;
+  background-color: #04050c;
+  background-image: none;
+  color: #f7f9fc;
+}
+
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas,
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas > .sales-mobile-scroll,
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .sales-mobile-scroll {

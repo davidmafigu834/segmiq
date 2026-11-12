@@ -43,7 +43,7 @@ const STEPS: Step[] = ["time", "who", "confirm"];
 
 export function PublicJourneyShell({ children }: { children: ReactNode }) {
   return (
-    <main className="sales-dashboard-premium h-dvh overflow-y-auto overscroll-y-contain bg-sales-bg px-4 py-6 text-sales-text-primary sm:px-6 sm:py-8">
+    <main className="sales-dashboard-premium h-dvh overflow-y-auto overscroll-y-contain bg-sales-bg px-4 py-6 text-sales-text-primary sm:px-6 sm:py-8" data-re-workspace="true" data-re-form="dark">
       <div className="mx-auto max-w-5xl">{children}</div>
     </main>
   );

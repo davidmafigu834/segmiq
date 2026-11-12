@@ -1,15 +1,16 @@
 .page {
-  --paper: #f7f4ef;
-  --ink: #171916;
-  --muted: #5c6158;
-  --line: rgba(23, 25, 22, 0.12);
-  --card: #ffffff;
+  --paper: #04050c;
+  --ink: #f4f6fb;
+  --muted: #aebbd4;
+  --line: rgba(255, 255, 255, 0.14);
+  --card: #081018;
   --accent: #2f3a32;
   --accent-ink: #f7f4ef;
-  --soft: #ece7df;
+  --soft: #141c2e;
   min-height: 100dvh;
-  background: linear-gradient(180deg, #fbf9f6 0%, var(--paper) 220px);
+  background: var(--paper);
   color: var(--ink);
+  color-scheme: dark;
   font-family: var(--font-dm-sans), "Segoe UI", sans-serif;
 }
 
@@ -272,14 +273,14 @@
   padding: 10px 14px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: #101824;
   text-align: left;
   cursor: pointer;
 }
 
 .time[aria-pressed="true"] {
   border: 2px solid var(--accent);
-  background: #f3f5f2;
+  background: #141c2e;
 }
 
 .time strong {
@@ -318,7 +319,7 @@
   min-height: 48px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: #101824;
   padding: 10px 12px;
   font-weight: 400;
   font-size: 16px;
@@ -343,7 +344,7 @@
   width: 100%;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: #101824;
   padding: 10px 12px;
   font: inherit;
   font-weight: 400;
@@ -459,7 +460,7 @@
   min-height: 52px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: #101824;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;

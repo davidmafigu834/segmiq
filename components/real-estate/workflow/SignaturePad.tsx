@@ -50,7 +50,7 @@ export function SignaturePad({ onChange }: { onChange: (dataUrl: string) => void
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
-    ctx.fillStyle = "#1c1917";
+    ctx.fillStyle = "#f4f6fb";
     ctx.beginPath();
     ctx.arc(point.x, point.y, Math.max(1.3, canvas.width / 480), 0, Math.PI * 2);
     ctx.fill();
@@ -64,7 +64,7 @@ export function SignaturePad({ onChange }: { onChange: (dataUrl: string) => void
     const from = last.current;
     if (!canvas || !ctx || !from) return;
     const to = pointerPos(event);
-    ctx.strokeStyle = "#1c1917";
+    ctx.strokeStyle = "#f4f6fb";
     ctx.lineWidth = Math.max(2.2, canvas.width / 280);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -87,10 +87,9 @@ export function SignaturePad({ onChange }: { onChange: (dataUrl: string) => void
       onChange("");
       return;
     }
-    const url = canvas.toDataURL("image/png");
-    ink.current = url;
+    ink.current = canvas.toDataURL("image/png");
     setHasInk(true);
-    onChange(url);
+    onChange(exportDarkInk(canvas));
   }
 
   function clearPad() {
@@ -116,7 +115,7 @@ export function SignaturePad({ onChange }: { onChange: (dataUrl: string) => void
           Clear
         </button>
       </div>
-      <div className="relative mt-1 overflow-hidden rounded-[10px] border border-sales-border bg-white">
+      <div className="relative mt-1 overflow-hidden rounded-[10px] border border-sales-border bg-[#101824]">
         <canvas
           ref={canvasRef}
           aria-label="Draw your signature"
@@ -127,9 +126,9 @@ export function SignaturePad({ onChange }: { onChange: (dataUrl: string) => void
           onPointerUp={endStroke}
           onPointerCancel={endStroke}
         />
-        <div className="pointer-events-none absolute inset-x-4 bottom-8 border-b border-neutral-300" aria-hidden />
+        <div className="pointer-events-none absolute inset-x-4 bottom-8 border-b border-white/20" aria-hidden />
         {hasInk ? null : (
-          <p className="pointer-events-none absolute inset-x-4 bottom-10 text-[13px] text-neutral-400">Sign here</p>
+          <p className="pointer-events-none absolute inset-x-4 bottom-10 text-[13px] text-[#aebbd4]">Sign here</p>
         )}
       </div>
     </div>
@@ -144,6 +143,19 @@ function fitCanvas(canvas: HTMLCanvasElement) {
   canvas.width = width;
   canvas.height = height;
   return true;
+}
+
+function exportDarkInk(canvas: HTMLCanvasElement) {
+  const copy = document.createElement("canvas");
+  copy.width = canvas.width;
+  copy.height = canvas.height;
+  const ctx = copy.getContext("2d");
+  if (!ctx) return canvas.toDataURL("image/png");
+  ctx.drawImage(canvas, 0, 0);
+  ctx.globalCompositeOperation = "source-in";
+  ctx.fillStyle = "#1c1917";
+  ctx.fillRect(0, 0, copy.width, copy.height);
+  return copy.toDataURL("image/png");
 }
 
 function paintImage(canvas: HTMLCanvasElement, dataUrl: string) {
