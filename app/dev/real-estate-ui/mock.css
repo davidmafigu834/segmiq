@@ -15,10 +15,10 @@
   color-scheme: dark;
   --sales-bg: #070814;
   --sales-bg-subtle: #0c0718;
-  --sales-surface: #081a35;
-  --sales-surface-subtle: #12131f;
-  --sales-surface-hover: #18132a;
-  --sales-surface-active: #1c1630;
+  --sales-surface: #0a1220;
+  --sales-surface-subtle: #0c1424;
+  --sales-surface-hover: #121a2c;
+  --sales-surface-active: #182236;
   --sales-neutral-900: #f7f9fc;
   --sales-neutral-700: #c5d0e6;
   --sales-neutral-500: #9aabc8;
@@ -37,6 +37,10 @@
   --sales-brand-text: #101828;
   --sales-danger: #ff5d73;
   --sales-danger-fg: #ff8a9a;
+}
+.re-mock [class*="rounded-[12px]"],
+.re-mock [class*="rounded-[16px]"] {
+  border-radius: 6px;
 }
 .re-mock[data-theme=dark] .dd {
   --sales-text-primary: #101828;

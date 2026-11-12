@@ -6096,10 +6096,10 @@ html[data-crm-theme="light"] .sales-dashboard-premium[data-re-workspace="true"] 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] {
   --sales-bg: #070814;
   --sales-bg-subtle: #0c0718;
-  --sales-surface: #081a35;
-  --sales-surface-subtle: #12131f;
-  --sales-surface-hover: #18132a;
-  --sales-surface-active: #1c1630;
+  --sales-surface: #0a1220;
+  --sales-surface-subtle: #0c1424;
+  --sales-surface-hover: #121a2c;
+  --sales-surface-active: #182236;
   --segmiq-canvas: none;
   --sales-text-primary: #f7f9fc;
   --sales-text-secondary: #d5deee;
@@ -6123,6 +6123,12 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-wo
 
 .sales-dashboard-premium[data-re-workspace="true"] .segmiq-dot-wave {
   display: none;
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] [class*="rounded-[12px]"],
+.sales-dashboard-premium[data-re-workspace="true"] [class*="rounded-[14px]"],
+.sales-dashboard-premium[data-re-workspace="true"] [class*="rounded-[16px]"] {
+  border-radius: 6px;
 }
 
 @media (max-width: 479px) {

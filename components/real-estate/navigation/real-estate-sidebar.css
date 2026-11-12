@@ -192,18 +192,35 @@ html[data-crm]:not([data-crm-theme="light"]) .re-sb {
 @supports not selector(::-webkit-scrollbar) {
   .re-sb-nav { scrollbar-color: var(--sb-thumb) transparent; scrollbar-width: thin; }
 }
-.re-sb-nav::-webkit-scrollbar { width: 14px; background: transparent; }
-.re-sb-nav::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-.re-sb-nav::-webkit-scrollbar-track,
-.re-sb-nav::-webkit-scrollbar-track-piece,
-.re-sb-nav::-webkit-scrollbar-corner { background: transparent; border: 0; }
-.re-sb-nav::-webkit-scrollbar-thumb {
+html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+  background: transparent;
+}
+html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar-track,
+html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar-track-piece,
+html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar-corner {
+  background: transparent;
+  border: 0;
+}
+html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar-thumb {
   border: 5px solid transparent;
   border-radius: 999px;
   background-color: var(--sb-thumb);
   background-clip: padding-box;
+  transition: border-width 180ms var(--sb-ease), background-color 180ms var(--sb-ease);
 }
-.re-sb-nav::-webkit-scrollbar-thumb:hover { border-width: 2px; background-color: var(--sb-thumb-hot); }
+html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar-thumb:hover,
+html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar-thumb:active {
+  border-width: 2px;
+  background-color: var(--sb-thumb-hot);
+}
 .re-sb-children { display: flex; flex-direction: column; }
 .re-sb-foot { flex: none; padding-bottom: 6px; }
 .re-sb-foot::before {
@@ -413,6 +430,9 @@ html[data-crm]:not([data-crm-theme="light"]) .re-sb {
   flex: none;
   border-radius: 999px;
   background: var(--sales-success, #16a34a);
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar-thumb { transition: none; }
 }
 aside.re-sb-frame {
   border-right-color: var(--sb-note);
