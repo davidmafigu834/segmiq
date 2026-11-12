@@ -235,9 +235,13 @@ html[data-crm]:not([data-crm-theme="light"]) .re-sb {
   height: 22px;
   flex: none;
   place-items: center;
-  border: 1px solid var(--sb-danger);
+  border: 1px solid var(--sb-line);
   border-radius: 6px;
   background: var(--sb-bg);
+  color: var(--sb-text);
+}
+.re-sb-note[data-tone="danger"] .re-sb-note-icon {
+  border-color: var(--sb-danger);
   color: var(--sb-danger-ink);
 }
 .re-sb-note-title { font-size: 14px; font-weight: 500; line-height: 20px; }
