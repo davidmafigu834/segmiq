@@ -14,6 +14,7 @@ import {
   COMPANY_NAV_LUCIDE,
   COMPANY_NAV_SECTION_LABEL,
   companyNavBySection,
+  companyNavIsActive,
   getCompanyNavigation,
   getCompanyNavSectionOrder,
   type CompanyNavBadgeKey,
@@ -70,6 +71,14 @@ function CompanyNavItem({
   studio?: boolean;
 }) {
   if (studio) {
+    if (item.icon === "whatsapp") {
+      return (
+        <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className="re-sb-item">
+          <SiWhatsapp size={18} aria-hidden />
+          <span className="re-sb-label">{item.label}</span>
+        </Link>
+      );
+    }
     const Icon = COMPANY_NAV_LUCIDE[item.icon];
     return (
       <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className="re-sb-item">
