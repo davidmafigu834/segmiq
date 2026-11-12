@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, Check, ChevronsUpDown, Home, Plus, Search, ShieldCheck } from "lucide-react";
+import { Building2, Check, ChevronsUpDown, Plus, Search, ShieldCheck } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import type { UserRole } from "@/types";
@@ -20,12 +20,10 @@ function listingIdFromPath(pathname: string, base: string) {
 
 export function RealEstateTopBar({
   scope,
-  onOpenMenu,
   unreadNotifications = 0,
   notificationRole,
 }: {
   scope: "agent" | "manager";
-  onOpenMenu?: () => void;
   unreadNotifications?: number;
   notificationRole: UserRole;
 }) {
@@ -114,13 +112,6 @@ export function RealEstateTopBar({
 
   return (
     <header className="re-top">
-      {onOpenMenu ? (
-        <button type="button" className="re-top-mark layout:hidden" aria-label="Open menu" onClick={onOpenMenu}>
-          <span className="re-top-mark-icon" aria-hidden>
-            <Home size={14} strokeWidth={2} />
-          </span>
-        </button>
-      ) : null}
       <button
         type="button"
         className="re-top-btn re-top-property"

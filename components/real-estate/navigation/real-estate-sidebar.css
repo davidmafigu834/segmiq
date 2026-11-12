@@ -94,15 +94,14 @@ html[data-crm]:not([data-crm-theme="light"]) .re-sb {
   outline-offset: 1px;
 }
 .re-sb-mark {
-  display: grid;
+  display: block;
   width: 26px;
   height: 26px;
   flex: none;
-  place-items: center;
-  border-radius: 999px;
-  background: var(--sales-brand, #d4ff4f);
-  color: var(--sales-brand-text, #101828);
+  overflow: hidden;
+  border-radius: 8px;
 }
+.re-sb-mark svg { display: block; width: 26px; height: 26px; }
 .re-sb-switch-name,
 .re-sb-label,
 .re-sb-handle,
@@ -123,6 +122,10 @@ html[data-crm]:not([data-crm-theme="light"]) .re-sb {
   font-size: 12px;
   font-weight: 500;
   line-height: 16px;
+}
+.re-sb-pill.is-plan {
+  background: var(--sb-hover);
+  color: var(--sb-text);
 }
 .re-sb-chev {
   flex: none;
@@ -295,9 +298,11 @@ html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar-thumb:active {
   border-radius: 999px;
   background: var(--sb-avatar);
   color: var(--sb-avatar-ink);
+  overflow: hidden;
   font-size: 12px;
   font-weight: 500;
 }
+.re-sb-avatar svg { display: block; }
 .re-sb-handle { flex: 1; padding-right: 4px; }
 .re-sb-icon-btn {
   position: relative;

@@ -318,7 +318,6 @@ function SalesAppShellInner({
         {realEstateWorkspace ? (
           <RealEstateTopBar
             scope="agent"
-            onOpenMenu={!hideMobileChrome ? () => setMobileNavOpen(true) : undefined}
             unreadNotifications={unreadNotifications}
             notificationRole={notificationRole}
           />

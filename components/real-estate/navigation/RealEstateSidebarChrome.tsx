@@ -3,18 +3,13 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Check, ChevronDown, CircleHelp, Home, Lightbulb, LogOut, Moon, MoreHorizontal, Plus, Search, Sun, TriangleAlert, Users, X } from "lucide-react";
+import type { WorkspacePlanBadge } from "@/lib/billing/workspace-plan-badge";
+import { AbstractMark, PixelPortrait } from "@/components/real-estate/navigation/workspace-marks";
 import { NotificationBell } from "@/components/NotificationBell";
 import { secureSignOut } from "@/components/auth/SessionLifecycle";
 import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import type { UserRole } from "@/types";
 import "./real-estate-sidebar.css";
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "·";
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return `${parts[0]![0] ?? ""}${parts[parts.length - 1]![0] ?? ""}`.toUpperCase();
-}
 
 function handleFrom(name: string) {
   return (name.trim().split(/\s+/)[0] ?? "account").toLowerCase();
@@ -74,6 +69,9 @@ function workspaceTips(homeHref: string): SidebarTip[] {
 
 export function RealEstateSidebarChrome({
   name,
+  personName,
+  userId,
+  planBadge = null,
   role,
   homeHref,
   helpHref,
@@ -87,6 +85,9 @@ export function RealEstateSidebarChrome({
   children,
 }: {
   name: string;
+  personName?: string;
+  userId?: string | null;
+  planBadge?: WorkspacePlanBadge | null;
   role: string;
   homeHref: string;
   helpHref: string;
@@ -109,6 +110,8 @@ export function RealEstateSidebarChrome({
   const teamsId = useId();
   const accountId = useId();
   const teamVisible = name.toLowerCase().includes(teamQuery.trim().toLowerCase());
+  const person = personName?.trim() || name;
+  const portraitSeed = userId?.trim() || person;
   const tips = workspaceTips(homeHref);
   const [tipIndex, setTipIndex] = useState(() => Math.floor(Date.now() / (3 * 60 * 60 * 1000)) % tips.length);
   const tip = tips[tipIndex % tips.length] ?? tips[0]!;
@@ -188,11 +191,9 @@ export function RealEstateSidebarChrome({
           aria-controls={teamsId}
           onClick={() => setPanel((current) => (current === "teams" ? null : "teams"))}
         >
-          <span className="re-sb-mark" aria-hidden>
-            <Home size={14} strokeWidth={2} />
-          </span>
+          <AbstractMark seed={name} />
           <span className="re-sb-switch-name">{name}</span>
-          {attention > 0 ? <span className="re-sb-pill">Overdue</span> : null}
+          {planBadge ? <span className={planBadge.overdue ? "re-sb-pill" : "re-sb-pill is-plan"}>{planBadge.label}</span> : null}
           <ChevronDown size={16} strokeWidth={2} aria-hidden className={panel === "teams" ? "re-sb-chev is-open" : "re-sb-chev"} />
         </button>
         <button type="button" className="re-sb-close" aria-label="Close menu" onClick={onClose}>
@@ -207,13 +208,11 @@ export function RealEstateSidebarChrome({
             </label>
             {teamVisible ? (
               <button type="button" className="re-sb-team" aria-current="page">
-                <span className="re-sb-mark" aria-hidden>
-                  <Home size={14} strokeWidth={2} />
-                </span>
+                <AbstractMark seed={name} />
                 <span className="re-sb-team-copy">
                   <span className="re-sb-team-name">{name}</span>
                 </span>
-                {attention > 0 ? <span className="re-sb-pill">Overdue</span> : null}
+                {planBadge ? <span className={planBadge.overdue ? "re-sb-pill" : "re-sb-pill is-plan"}>{planBadge.label}</span> : null}
                 <Check size={14} strokeWidth={2} aria-hidden />
               </button>
             ) : (
@@ -304,11 +303,9 @@ export function RealEstateSidebarChrome({
           </section>
         )}
         <div className="re-sb-user">
-          <span className="re-sb-avatar" aria-hidden>
-            {initials(name)}
-          </span>
-          <span className="re-sb-handle" title={handleFrom(name)}>
-            {handleFrom(name)}
+          <PixelPortrait seed={portraitSeed} />
+          <span className="re-sb-handle" title={handleFrom(person)}>
+            {handleFrom(person)}
           </span>
           <button
             type="button"

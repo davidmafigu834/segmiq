@@ -52,7 +52,7 @@ export function SalesSidebar({
   unreadNotifications?: number;
   notificationRole?: UserRole;
 }) {
-  const { businessType, solarWorkflow } = useCompanyWorkspace();
+  const { businessType, solarWorkflow, userId, planBadge } = useCompanyWorkspace();
   const pathname = usePathname();
   const crmTheme = useCrmThemeOptional();
   const wordmarkSrc =
@@ -93,6 +93,9 @@ export function SalesSidebar({
       return (
         <RealEstateSidebarChrome
           name={userName}
+          personName={userName}
+          userId={userId}
+          planBadge={planBadge}
           role={userRoleLabel}
           homeHref={dashboardHref}
           helpHref="/sales/training"

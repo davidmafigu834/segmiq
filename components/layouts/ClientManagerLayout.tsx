@@ -6,6 +6,7 @@ import { AppShell } from "@/components/shell/AppShell";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { CompanyWorkspaceProvider } from "@/components/company/CompanyWorkspaceContext";
+import { loadWorkspacePlanBadge } from "@/lib/billing/workspace-plan";
 import { getTerminology, isRealEstate, normalizeBusinessType } from "@/lib/terminology";
 import { isSalesWorkflowPreset } from "@/lib/sales/solar-workflow/types";
 
@@ -178,8 +179,9 @@ export async function ClientManagerLayout({
     { href: "/client/settings", label: "Settings", icon: "settings" as const },
   ];
 
+  const planBadge = await loadWorkspacePlanBadge(session?.clientId ?? navClientId ?? null);
   const pageContent = workspaceShell ? (
-    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={solarWorkflow} clientId={session?.clientId ?? navClientId ?? null}>
+    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={solarWorkflow} clientId={session?.clientId ?? navClientId ?? null} userId={session?.userId ?? null} planBadge={planBadge}>
       <CompanyWorkspaceShell
       companyName={clientName ?? undefined}
       companyLogoUrl={logoUrl}

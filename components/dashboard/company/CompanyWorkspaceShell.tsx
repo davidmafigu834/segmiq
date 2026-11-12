@@ -95,7 +95,6 @@ export function CompanyWorkspaceShell({
         {realEstateShell ? (
           <RealEstateTopBar
             scope="manager"
-            onOpenMenu={!hideMobileChrome ? () => setMobileNavOpen(true) : undefined}
             unreadNotifications={unreadNotifications}
             notificationRole={notificationRole}
           />
@@ -134,7 +133,7 @@ export function CompanyWorkspaceShell({
 
   if (businessType == null) return shell;
   return (
-    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={resolvedSolarWorkflow} clientId={parentWorkspace.clientId}>
+    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={resolvedSolarWorkflow} clientId={parentWorkspace.clientId} userId={parentWorkspace.userId} planBadge={parentWorkspace.planBadge}>
       {shell}
     </CompanyWorkspaceProvider>
   );

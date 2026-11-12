@@ -172,7 +172,7 @@ export function CompanySidebar({
 }) {
   const pathname = usePathname();
   const crmTheme = useCrmThemeOptional();
-  const { businessType, solarWorkflow } = useCompanyWorkspace();
+  const { businessType, solarWorkflow, userId, planBadge } = useCompanyWorkspace();
   const wordmarkSrc =
     crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
   const navigation = getCompanyNavigation(businessType, { solarWorkflow });
@@ -201,6 +201,9 @@ export function CompanySidebar({
       return (
         <RealEstateSidebarChrome
           name={companyName?.trim() || userName}
+          personName={userName}
+          userId={userId}
+          planBadge={planBadge}
           role={userRoleLabel}
           homeHref="/client/dashboard"
           helpHref="/client/settings/profile"

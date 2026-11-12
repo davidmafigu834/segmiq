@@ -2,6 +2,7 @@ import { getOperationalSession } from "@/lib/auth/operational-session";
 import { readPinnedDemoWorkspace } from "@/lib/demo/workspace-lookup";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CompanyWorkspaceProvider } from "@/components/company/CompanyWorkspaceContext";
+import { loadWorkspacePlanBadge } from "@/lib/billing/workspace-plan";
 import { isSalesWorkflowPreset } from "@/lib/sales/solar-workflow/types";
 
 export const dynamic = "force-dynamic";
@@ -25,8 +26,9 @@ export default async function SalesRootLayout({ children }: { children: React.Re
     const preset = (data as { sales_workflow_preset?: string | null } | null)?.sales_workflow_preset;
     solarWorkflow = isSalesWorkflowPreset(preset) && preset === "SOLAR_INSTALLATION";
   }
+  const planBadge = await loadWorkspacePlanBadge(session?.clientId);
   return (
-    <CompanyWorkspaceProvider businessType={businessType} solarWorkflow={solarWorkflow} clientId={session?.clientId ?? null}>
+    <CompanyWorkspaceProvider businessType={businessType} solarWorkflow={solarWorkflow} clientId={session?.clientId ?? null} userId={session?.userId ?? null} planBadge={planBadge}>
       {children}
     </CompanyWorkspaceProvider>
   );

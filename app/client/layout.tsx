@@ -2,6 +2,7 @@ import { getOperationalSession } from "@/lib/auth/operational-session";
 import { readPinnedDemoWorkspace } from "@/lib/demo/workspace-lookup";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CompanyWorkspaceProvider } from "@/components/company/CompanyWorkspaceContext";
+import { loadWorkspacePlanBadge } from "@/lib/billing/workspace-plan";
 import { CompanyClientProviders } from "@/components/dashboard/company/CompanyClientProviders";
 import { normalizeBusinessType } from "@/lib/terminology";
 import { isSalesWorkflowPreset } from "@/lib/sales/solar-workflow/types";
@@ -28,8 +29,9 @@ export default async function ClientRootLayout({ children }: { children: React.R
     solarWorkflow = isSalesWorkflowPreset(preset) && preset === "SOLAR_INSTALLATION";
   }
 
+  const planBadge = await loadWorkspacePlanBadge(session?.clientId);
   return (
-    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={solarWorkflow} clientId={session?.clientId ?? null}>
+    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={solarWorkflow} clientId={session?.clientId ?? null} userId={session?.userId ?? null} planBadge={planBadge}>
       <CompanyClientProviders>{children}</CompanyClientProviders>
     </CompanyWorkspaceProvider>
   );
