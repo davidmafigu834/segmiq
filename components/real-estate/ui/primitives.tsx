@@ -209,7 +209,7 @@ export function ReStatCard({
         <span className="min-w-0 truncate text-[12px] font-medium text-sales-text-secondary">{label}</span>
       </span>
       {state === "loading" ? (
-        <span className="mt-2 block h-7 w-12 animate-pulse rounded-[6px] bg-sales-surface-hover motion-reduce:animate-none" aria-hidden />
+        <span className="re-bone mt-2 block h-7 w-12 rounded-[6px]" aria-hidden />
       ) : (
         <span className="mt-1 block truncate font-display text-[22px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-sales-text-primary sm:text-[24px]">
           {state === "error" || value == null ? "—" : value}
@@ -592,16 +592,17 @@ export function RePartialNotice({ children }: { children: ReactNode }) {
 
 export function ReSkeletonRows({ rows = 3, label = "Loading" }: { rows?: number; label?: string }) {
   return (
-    <div role="status" aria-label={label} className="divide-y divide-sales-border-subtle">
+    <ul role="status" aria-label={label}>
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex items-center gap-3 px-[var(--re-card-pad,16px)] py-3.5">
-          <span className="h-9 w-9 shrink-0 animate-pulse rounded-[10px] bg-sales-surface-hover motion-reduce:animate-none" />
-          <span className="min-w-0 flex-1 space-y-2">
-            <span className="block h-3.5 w-2/5 animate-pulse rounded bg-sales-surface-hover motion-reduce:animate-none" />
-            <span className="block h-3 w-3/5 animate-pulse rounded bg-sales-surface-hover motion-reduce:animate-none" />
-          </span>
-        </div>
+        <li key={i} className="flex items-center gap-3 border-t border-sales-border-subtle px-4 py-3 first:border-t-0">
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <span className="re-bone block h-3.5 w-36 max-w-[46%] rounded-[4px]" />
+            <span className="re-bone block h-3 w-28 max-w-[36%] rounded-[4px]" />
+            <span className="re-bone block h-3 w-52 max-w-[62%] rounded-[4px]" />
+          </div>
+          <span className="re-bone h-9 w-16 shrink-0 rounded-[8px]" />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

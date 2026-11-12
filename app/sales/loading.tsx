@@ -1,8 +1,34 @@
+"use client";
+
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { RealEstatePageBones } from "@/components/real-estate/ui/RealEstatePageBones";
+import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
+
 function SkeletonBlock({ className }: { className: string }) {
   return <div className={`shimmer rounded-[12px] ${className}`} aria-hidden="true" />;
 }
 
+function RealEstateSalesLoading() {
+  return (
+    <SalesAppShell
+      userName=""
+      unreadNotifications={0}
+      notificationRole="SALESPERSON"
+      whatsappBadge={0}
+      tasksBadge={0}
+      isSolo={false}
+      showDefaultHeader={false}
+      realEstate
+    >
+      <RealEstatePageBones label="Loading" />
+    </SalesAppShell>
+  );
+}
+
 export default function SalesLoading() {
+  const { isRealEstate } = useCompanyWorkspace();
+  if (isRealEstate) return <RealEstateSalesLoading />;
+
   return (
     <div
       className="sales-dashboard-premium dashboard-shell flex min-h-[100dvh] w-full bg-sales-bg text-sales-text-primary"

@@ -1,4 +1,29 @@
+"use client";
+
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { RealEstatePageBones } from "@/components/real-estate/ui/RealEstatePageBones";
+import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
+
 export default function SalesDashboardSkeleton() {
+  const { isRealEstate } = useCompanyWorkspace();
+  if (!isRealEstate) return <TradesDashboardSkeleton />;
+  return (
+    <SalesAppShell
+      userName=""
+      unreadNotifications={0}
+      notificationRole="SALESPERSON"
+      whatsappBadge={0}
+      tasksBadge={0}
+      isSolo={false}
+      showDefaultHeader={false}
+      realEstate
+    >
+      <RealEstatePageBones label="Loading today" />
+    </SalesAppShell>
+  );
+}
+
+function TradesDashboardSkeleton() {
   return (
     <div className="sales-dashboard-premium min-h-[100dvh] bg-sales-bg p-4 layout:pl-[228px] layout:p-6">
       <div className="shimmer mb-5 h-20 rounded-[14px]" />

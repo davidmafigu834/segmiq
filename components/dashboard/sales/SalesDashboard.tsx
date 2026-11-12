@@ -17,6 +17,7 @@ import { LeadDealFunnelCard } from "./LeadDealFunnelCard";
 import { ActivityTodayCard } from "./ActivityTodayCard";
 import { PipelineSnapshotCard } from "./PipelineSnapshotCard";
 import { AgentDailyWorkspace } from "@/components/real-estate/AgentDailyWorkspace";
+import { RealEstatePageBones } from "@/components/real-estate/ui/RealEstatePageBones";
 import { SalesCopilotDailyWorkspace } from "./SalesCopilotDailyWorkspace";
 
 /** Action-oriented KPIs stay elevated; the rest demote to a dense strip. */
@@ -78,6 +79,26 @@ function SalesDashboardInner({
       : data.kpis.slice(3);
 
   if (!mounted) {
+    if (isRealEstate) {
+      return (
+        <SalesAppShell
+          userName={fullName}
+          userRoleLabel={roleLabel}
+          avatarUrl={avatarUrl}
+          unreadNotifications={unreadNotifications}
+          notificationRole={notificationRole}
+          whatsappBadge={whatsappBadge}
+          tasksBadge={tasksBadge}
+          isSolo={isSolo}
+          assignmentMode={legacy.assignmentMode ?? "direct"}
+          showDefaultHeader={false}
+          realEstate
+          demoGuest={demoGuest}
+        >
+          <RealEstatePageBones label="Loading today" />
+        </SalesAppShell>
+      );
+    }
     return <SalesDashboardSkeletonShell />;
   }
 

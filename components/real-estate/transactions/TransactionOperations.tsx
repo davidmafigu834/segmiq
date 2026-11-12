@@ -161,9 +161,9 @@ export function TransactionOperations({
       <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p>
     ) : (
       <div className="space-y-2" role="status" aria-label="Loading transaction work">
-        <div className="h-10 animate-pulse rounded-[8px] bg-sales-surface-hover motion-reduce:animate-none" />
-        <div className="h-16 animate-pulse rounded-[8px] bg-sales-surface-hover motion-reduce:animate-none" />
-        <div className="h-16 animate-pulse rounded-[8px] bg-sales-surface-hover motion-reduce:animate-none" />
+        <div className="re-bone h-10 rounded-[8px]" />
+        <div className="re-bone h-16 rounded-[8px]" />
+        <div className="re-bone h-16 rounded-[8px]" />
       </div>
     );
   }
@@ -172,7 +172,7 @@ export function TransactionOperations({
 
   return (
     <div className="space-y-3">
-      <ContextCompliancePanel clientId={clientId} context="transaction" title="Transaction compliance" transactionId={transactionId} />
+      <ContextCompliancePanel clientId={clientId} context="transaction" title="Documents" transactionId={transactionId} />
       {error ? <p className="text-[12px] text-sales-danger-fg" role="alert">{error}</p> : null}
       {notice ? <p className="text-[12px] text-sales-text-secondary" role="status">{notice}</p> : null}
       {tab === "milestones" ? (

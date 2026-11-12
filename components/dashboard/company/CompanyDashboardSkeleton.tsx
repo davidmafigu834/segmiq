@@ -1,5 +1,7 @@
 "use client";
 
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { RealEstatePageBones } from "@/components/real-estate/ui/RealEstatePageBones";
 import {
   CompanyPageSkeletonShell,
   KpiRowSkeleton,
@@ -9,6 +11,14 @@ import {
 import { COMPANY_KPI_COUNTS, COMPANY_KPI_GRID } from "@/lib/sales/company-skeleton-grids";
 
 export default function CompanyDashboardSkeleton() {
+  const { isRealEstate } = useCompanyWorkspace();
+  if (isRealEstate) {
+    return (
+      <CompanyPageSkeletonShell label="Loading company dashboard">
+        <RealEstatePageBones label="Loading company dashboard" />
+      </CompanyPageSkeletonShell>
+    );
+  }
   return (
     <CompanyPageSkeletonShell label="Loading company dashboard">
       <div className="space-y-4 sm:space-y-5">
