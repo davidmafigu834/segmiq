@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import type { AgentReDashboard } from "@/lib/sales/get-agent-real-estate-dashboard";
 import { MarketingDeskCard } from "@/components/real-estate/MarketingDeskCard";
-import { TodayCommandBar } from "@/components/real-estate/TodayCommandBar";
+import { TodayCommandBar, useTodayView } from "@/components/real-estate/TodayCommandBar";
 import { marketingDeskHasContent } from "@/lib/real-estate/agent-listing-pages/desk";
 import {
   ReEmptyState,
@@ -97,6 +97,7 @@ export function AgentDailyWorkspace({
   firstName?: string;
   data: AgentReDashboard;
 }) {
+  const [view, setView] = useTodayView();
   const buyerMetrics = useReFetch<BuyerMetrics>(`/api/clients/${clientId}/buyer-searches?metrics=1`);
   const mandateForms = useReFetch<{ forms?: MandateForm[] }>(`/api/clients/${clientId}/mandate-forms`);
 
@@ -166,9 +167,9 @@ export function AgentDailyWorkspace({
 
   return (
     <div className="space-y-7 layout:space-y-8">
-      <TodayCommandBar clientId={clientId} />
+      <TodayCommandBar clientId={clientId} view={view} onViewChange={setView} />
 
-      <div className="grid items-start gap-x-4 gap-y-7 layout:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.85fr)] layout:gap-y-8">
+      <div className={`grid items-start gap-x-4 gap-y-7 layout:gap-y-8 ${view === "stacked" ? "" : "layout:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.85fr)]"}`}>
         <ReSection
           id="re-agent-attention"
           title="Needs you"
