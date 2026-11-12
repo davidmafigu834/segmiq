@@ -304,7 +304,7 @@ export function salesMobilePrimaryItems(
   businessType?: BusinessType | string | null
 ): SalesNavItemConfig[] {
   const order = isRealEstate(businessType)
-    ? (["dashboard", "listings", "calendar", "people", "transactions"] as const)
+    ? (["dashboard", "listings", "calendar", "transactions"] as const)
     : SALES_MOBILE_PRIMARY_IDS;
   return order
     .map((id) => items.find((i) => i.id === id))
@@ -506,34 +506,6 @@ export function resolveSalesNavItems(
       !p.startsWith("/sales/listings/mandate") &&
       !p.startsWith("/sales/listings/viewing"),
   };
-  const mandateLinkItem: SalesNavItemConfig = {
-    id: "mandateLink",
-    label: "Mandate link",
-    href: "/sales/listings/mandate",
-    icon: "mandates",
-    section: "sales",
-    mobileSlot: "more",
-    match: (p) => exactOrChild(p, "/sales/listings/mandate"),
-  };
-  const viewingLinkItem: SalesNavItemConfig = {
-    id: "viewingLink",
-    label: "Viewing link",
-    href: "/sales/listings/viewing",
-    icon: "viewings",
-    section: "sales",
-    mobileSlot: "more",
-    match: (p) => exactOrChild(p, "/sales/listings/viewing"),
-  };
-  const peopleItem: SalesNavItemConfig = {
-    id: "people",
-    label: "People",
-    href: "/sales/people",
-    icon: "buyers",
-    section: "sales",
-    mobileSlot: "primary",
-    mobileLabel: "People",
-    match: (p) => p === "/sales/people" || p.startsWith("/sales/people/"),
-  };
   const offersItem: SalesNavItemConfig = {
     id: "offers",
       label: "Offers & Deals",
@@ -590,9 +562,6 @@ export function resolveSalesNavItems(
         ...buyerItems,
         ...acquisitionItems,
         listingsItem,
-        mandateLinkItem,
-        viewingLinkItem,
-        peopleItem,
         sharedListingsItem,
         offersItem,
         transactionsItem,
@@ -636,7 +605,6 @@ const REAL_ESTATE_ACTIVE_ON: Partial<Record<string, (pathname: string) => boolea
   listings: (pathname) =>
     !covers(pathname, ["/sales/listings/mandate", "/sales/listings/viewing"]) &&
     covers(pathname, ["/sales/listings", "/sales/acquisitions", "/sales/shared-listings", "/sales/matching"]),
-  people: (pathname) => covers(pathname, ["/sales/people", "/sales/buyers/introductions"]),
   transactions: (pathname) => covers(pathname, ["/sales/transactions", "/sales/compliance"]),
 };
 
@@ -644,7 +612,6 @@ const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
   dashboard: "main",
   listings: "main",
   calendar: "main",
-  people: "main",
   transactions: "main",
   whatsapp: "follow_up",
   tasks: "follow_up",
@@ -654,13 +621,11 @@ const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
   owners: "acquisition",
   inspections: "acquisition",
   mandates: "acquisition",
-  mandateLink: "acquisition",
   dueDiligence: "acquisition",
   buyers: "buyer_sales",
   introductions: "more_tools",
   matching: "more_tools",
   viewings: "buyer_sales",
-  viewingLink: "buyer_sales",
   offers: "buyer_sales",
   sharedListings: "agency",
   compliance: "agency",
@@ -684,9 +649,9 @@ const REAL_ESTATE_AGENT_LABELS: Record<string, { label: string; mobileLabel: str
 };
 
 const REAL_ESTATE_ITEM_ORDER: Partial<Record<SalesNavSectionId, string[]>> = {
-  main: ["dashboard", "listings", "calendar", "people", "transactions"],
-  acquisition: ["mandates", "mandateLink", "dueDiligence", "owners", "inspections"],
-  buyer_sales: ["buyers", "viewings", "viewingLink", "offers"],
+  main: ["dashboard", "listings", "calendar", "transactions"],
+  acquisition: ["mandates", "dueDiligence", "owners", "inspections"],
+  buyer_sales: ["buyers", "viewings", "offers"],
   follow_up: ["whatsapp", "tasks", "leads", "socialInbox"],
 };
 

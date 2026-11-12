@@ -209,13 +209,12 @@ function covers(pathname: string, hrefs: readonly string[]): boolean {
 
 const REAL_ESTATE_COMPANY_ACTIVE_ON: Partial<Record<string, (pathname: string) => boolean>> = {
   listings: (pathname) => covers(pathname, ["/client/listings", "/client/acquisitions", "/client/matching"]),
-  people: (pathname) => covers(pathname, ["/client/people", "/client/buyers/introductions"]),
   review: (pathname) => covers(pathname, ["/client/review", "/client/compliance"]),
   transactions: (pathname) => covers(pathname, ["/client/transactions"]),
 };
 
 const REAL_ESTATE_COMPANY_ITEM_ORDER: Partial<Record<CompanyNavSectionId, string[]>> = {
-  main: ["overview", "listings", "calendar", "people", "transactions", "review"],
+  main: ["overview", "listings", "calendar", "transactions", "review"],
   acquisition: ["mandates", "dueDiligence", "owners", "inspections"],
   buyer_sales: ["buyers", "viewings", "offers"],
   follow_up: ["whatsapp", "inquiries", "socialInbox"],
@@ -804,16 +803,6 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     section: "agency",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/billing"),
-  },
-  {
-    id: "people",
-    label: "People",
-    href: "/client/people",
-    icon: "buyers",
-    section: "main",
-    mobileSlot: "primary",
-    mobileLabel: "People",
-    match: (p) => p === "/client/people" || p.startsWith("/client/people/"),
   },
   {
     id: "review",
