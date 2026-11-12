@@ -1,9 +1,8 @@
 "use client";
 
-import { ViewingRequestForm, type ViewingFormPreview } from "@/components/real-estate/workflow/ViewingRequestForm";
-import { OfferLetterForm, type OfferLetterPreview } from "@/components/real-estate/workflow/OfferLetterForm";
 import { useEffect, useState } from "react";
-import styles from "@/components/real-estate/workflow/viewing-request-form.module.css";
+import { OfferLetterForm, type OfferLetterPreview } from "@/components/real-estate/workflow/OfferLetterForm";
+import { PublicJourneyShell, ViewingAcknowledgementForm } from "@/components/real-estate/workflow/ViewingAcknowledgementForm";
 
 export default function JourneyFormPage({ params }: { params: { token: string } }) {
   const [preview, setPreview] = useState<OfferLetterPreview | null>(null);
@@ -16,11 +15,9 @@ export default function JourneyFormPage({ params }: { params: { token: string } 
 
   if (!preview) {
     return (
-      <main className={styles.page}>
-        <div className={styles.wrap}>
-          <p className={styles.lead}>Loading</p>
-        </div>
-      </main>
+      <PublicJourneyShell>
+        <p className="text-[15px] text-sales-text-secondary">Loading the form.</p>
+      </PublicJourneyShell>
     );
   }
 
@@ -28,5 +25,16 @@ export default function JourneyFormPage({ params }: { params: { token: string } 
     return <OfferLetterForm token={params.token} preview={preview} />;
   }
 
-  return <ViewingRequestForm token={params.token} preview={preview as ViewingFormPreview} />;
+  if (preview.error) {
+    return (
+      <PublicJourneyShell>
+        <section className="max-w-lg rounded-[12px] border border-sales-border bg-sales-surface px-5 py-5">
+          <h1 className="font-display text-[28px] font-semibold leading-[1.1] tracking-[-0.03em]">This form is not available</h1>
+          <p className="mt-3 text-[15px] leading-relaxed text-sales-text-secondary">{preview.error}</p>
+        </section>
+      </PublicJourneyShell>
+    );
+  }
+
+  return <ViewingAcknowledgementForm token={params.token} preview={preview} />;
 }

@@ -2,7 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 import { SignaturePad } from "@/components/real-estate/workflow/SignaturePad";
-import { VIEWING_PARTIES, formatViewingSlot, type ViewingFormCard, type ViewingParty } from "@/lib/real-estate/workflow/viewing-form";
+import { VIEWING_PARTIES, formatViewingSlot, type ViewingFormCard, type ViewingParty, type ViewingPropertyCard } from "@/lib/real-estate/workflow/viewing-form";
+
+type PropertyPreview = Partial<ViewingFormCard> & Partial<ViewingPropertyCard> & { photoCount?: number };
 
 export type ViewingFormPreview = {
   purpose?: string;
@@ -16,8 +18,24 @@ export type ViewingFormPreview = {
     contactEmail?: string | null;
     contactPhone?: string | null;
   };
-  property?: ViewingFormCard & { photoCount?: number };
+  property?: PropertyPreview;
 };
+
+function cardFacts(property: PropertyPreview | undefined): Array<{ label: string; value: string }> {
+  if (property?.facts?.length) return property.facts;
+  return [
+    property?.priceLabel ? { label: "Asking", value: property.priceLabel } : null,
+    property?.bedrooms != null ? { label: "Beds", value: String(property.bedrooms) } : null,
+    property?.bathrooms != null ? { label: "Baths", value: String(property.bathrooms) } : null,
+  ].filter((item): item is { label: string; value: string } => item != null);
+}
+
+function cardPlace(property: PropertyPreview | undefined): string | null {
+  if (property?.placeLine) return property.placeLine;
+  const kind = [property?.categoryLabel, property?.transactionLabel?.toLowerCase()].filter(Boolean).join(" ");
+  const line = [property?.place, kind || null].filter(Boolean).join(". ");
+  return line || null;
+}
 
 type Step = "time" | "who" | "confirm" | "sent";
 
@@ -36,7 +54,14 @@ export function ViewingAcknowledgementForm({ token, preview }: { token: string; 
   const heading = property?.heading ?? "Property";
   const agent = preview.brand?.contactName?.trim() || preview.brand?.agencyName?.trim() || "The agency";
   const contactLine = [preview.brand?.contactPhone, preview.brand?.contactEmail].filter(Boolean).join(" · ");
-  const photos = Array.from({ length: Math.min(4, preview.property?.photoCount ?? 0) }, (_, index) => index);
+  const photoSources = property?.photoUrls?.length
+    ? property.photoUrls
+    : property?.photoUrl
+      ? [property.photoUrl]
+      : Array.from({ length: Math.min(4, property?.photoCount ?? 0) }, (_, index) => `/api/public/journey/${token}/photos/${index}`);
+  const facts = cardFacts(property);
+  const placeLine = cardPlace(property);
+  const note = property?.note ?? property?.description ?? null;
   const [step, setStep] = useState<Step>("time");
   const [slotId, setSlotId] = useState("");
   const [other, setOther] = useState("");
@@ -47,16 +72,16 @@ export function ViewingAcknowledgementForm({ token, preview }: { token: string; 
   const [signature, setSignature] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const [photo, setPhoto] = useState(0);
-  const [hiddenPhotos, setHiddenPhotos] = useState<number[]>([]);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [hiddenPhotos, setHiddenPhotos] = useState<string[]>([]);
   const [outcome, setOutcome] = useState<"booking" | "request">("request");
   const [copy, setCopy] = useState("");
 
   const offered = (preview.slots ?? []).filter((slot) => Number.isFinite(Date.parse(slot)));
   const when = slotId ? formatViewingSlot(slotId).label : other ? formatViewingSlot(other).label : "";
   const index = Math.max(0, STEPS.indexOf(step));
-  const visiblePhotos = photos.filter((item) => !hiddenPhotos.includes(item));
-  const activePhoto = visiblePhotos.includes(photo) ? photo : visiblePhotos[0];
+  const visiblePhotos = photoSources.filter((item) => !hiddenPhotos.includes(item));
+  const activePhoto = photo && visiblePhotos.includes(photo) ? photo : visiblePhotos[0];
 
   function pickSlot(id: string) {
     setSlotId(id);
@@ -132,12 +157,12 @@ export function ViewingAcknowledgementForm({ token, preview }: { token: string; 
 
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <aside className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface lg:sticky lg:top-6">
-            {activePhoto != null ? (
+            {activePhoto ? (
               <div className="relative">
                 {/* Public photos are served from this form's own link, so next/image host allowlists do not apply. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`/api/public/journey/${token}/photos/${activePhoto}`}
+                  src={activePhoto}
                   alt=""
                   className="h-44 w-full object-cover lg:aspect-[16/10] lg:h-auto"
                   onError={() => setHiddenPhotos((current) => current.includes(activePhoto) ? current : [...current, activePhoto])}
@@ -154,7 +179,7 @@ export function ViewingAcknowledgementForm({ token, preview }: { token: string; 
                         className={`h-10 w-14 overflow-hidden rounded-[6px] ring-2 ring-offset-1 ring-offset-transparent ${activePhoto === item ? "ring-sales-brand" : "ring-transparent opacity-80"}`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`/api/public/journey/${token}/photos/${item}`} alt="" className="h-full w-full object-cover" />
+                        <img src={item} alt="" className="h-full w-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -165,11 +190,11 @@ export function ViewingAcknowledgementForm({ token, preview }: { token: string; 
               <p className="text-[13px] font-medium text-sales-text-muted">{property?.sentBy ?? `${agent} sent this`}</p>
               {contactLine ? <p className="mt-1 text-[13px] text-sales-text-secondary">{contactLine}</p> : null}
               <h1 className="mt-2 font-display text-[32px] font-semibold leading-[1.05] tracking-[-0.03em]">{heading}</h1>
-              {property?.placeLine ? <p className="mt-2 text-[15px] text-sales-text-secondary">{property.placeLine}</p> : null}
+              {placeLine ? <p className="mt-2 text-[15px] text-sales-text-secondary">{placeLine}</p> : null}
             </div>
-            {property?.facts.length ? (
+            {facts.length ? (
               <dl className="grid grid-cols-2 gap-x-4 gap-y-4 px-5 py-5">
-                {property.facts.map((fact) => (
+                {facts.map((fact) => (
                   <div key={fact.label}>
                     <dt className="text-[12px] text-sales-text-muted">{fact.label}</dt>
                     <dd className="mt-0.5 text-[16px] font-semibold">{fact.value}</dd>
@@ -177,8 +202,8 @@ export function ViewingAcknowledgementForm({ token, preview }: { token: string; 
                 ))}
               </dl>
             ) : null}
-            {property?.note ? (
-              <p className="border-t border-sales-border-subtle px-5 py-4 text-[13px] leading-relaxed text-sales-text-secondary">{property.note}</p>
+            {note ? (
+              <p className="border-t border-sales-border-subtle px-5 py-4 text-[13px] leading-relaxed text-sales-text-secondary">{note}</p>
             ) : null}
           </aside>
 
