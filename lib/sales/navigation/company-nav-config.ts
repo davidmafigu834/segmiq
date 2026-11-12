@@ -216,12 +216,11 @@ const REAL_ESTATE_COMPANY_ACTIVE_ON: Partial<Record<string, (pathname: string) =
 const REAL_ESTATE_COMPANY_ITEM_ORDER: Partial<Record<CompanyNavSectionId, string[]>> = {
   main: ["overview", "listings", "calendar", "transactions", "review", "whatsapp", "socialInbox"],
   acquisition: ["mandates", "dueDiligence", "owners", "inspections"],
-  buyer_sales: ["inquiries", "buyers", "viewings", "offers"],
+  buyer_sales: ["inquiries", "buyers", "viewings", "offers", "marketing"],
   agency: [
     "agents",
     "commissions",
     "reports",
-    "marketing",
     "lead-sources",
     "listing-pages",
     "website-leads",
@@ -553,7 +552,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Marketing",
     href: "/client/marketing",
     icon: "marketing",
-    section: "agency",
+    section: "buyer_sales",
     mobileSlot: "more",
     match: (p) =>
       p === "/client/marketing" ||
