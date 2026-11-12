@@ -429,7 +429,6 @@ export function MockFrame({
                 </button>
               );
             }
-            const childCurrent = item.children.some((child) => screenOn(child.screen, screen));
             return (
               <div key={item.id} className="re-sb-group">
                 <button
