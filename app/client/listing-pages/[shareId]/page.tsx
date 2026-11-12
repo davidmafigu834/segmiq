@@ -22,7 +22,7 @@ export default async function ManagerLinkAnalyticsPage({ params }: { params: { s
     <ClientManagerLayout breadcrumbPage="LINK" pageTitle="Link analytics" hideShellHeader hideShellSidebar>
       <Suspense>
         <CompanyRePageFrame chrome={chrome} breadcrumb="Company / Listing pages" title="Link analytics" description="Performance for one agent marketing link.">
-          <LinkAnalyticsView clientId={session.clientId} shareId={params.shareId} />
+          <LinkAnalyticsView clientId={session.clientId} shareId={params.shareId} homeHref="/client/listing-pages" listingBase="/client/listings" />
         </CompanyRePageFrame>
       </Suspense>
     </ClientManagerLayout>

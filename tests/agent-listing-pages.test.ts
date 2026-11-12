@@ -31,7 +31,7 @@ import {
   whatsAppLink,
   whatsAppPrefill,
 } from "../lib/real-estate/agent-listing-pages/policy";
-import { dealOutcomeNote, factualInsights, totalsFromCounts, visitSeries } from "../lib/real-estate/agent-listing-pages/analytics";
+import { dealOutcomeNote, factualInsights, fillVisitDays, totalsFromCounts, visitSeries } from "../lib/real-estate/agent-listing-pages/analytics";
 import { buildMarketingDesk } from "../lib/real-estate/agent-listing-pages/desk";
 
 const org = "org-a";
@@ -205,6 +205,12 @@ test("preview fetches are not human visits and WhatsApp clicks are not leads", (
   assert.equal(totals.confirmedWhatsappLeads, 0);
   assert.equal(totals.enquiries, 1);
   assert.deepEqual(visitSeries([{ day: "2026-11-02", eventType: "page_view", botClass: "preview", count: 9 }]), []);
+  const filled = fillVisitDays("2026-11-08T00:00:00.000Z", "2026-11-11T00:00:00.000Z", [{ day: "2026-11-09", visits: 2 }]);
+  assert.deepEqual(filled, [
+    { day: "2026-11-08", visits: 0 },
+    { day: "2026-11-09", visits: 2 },
+    { day: "2026-11-10", visits: 0 },
+  ]);
 });
 
 test("insights are omitted when there is no supporting count", () => {

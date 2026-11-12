@@ -87,6 +87,8 @@ html[data-crm]:not([data-crm-theme="light"]) .re-sb {
 .re-sb-item:focus-visible,
 .re-sb-menu-row:focus-visible,
 .re-sb-note-action:focus-visible,
+.re-sb-notice:focus-visible,
+.re-sb-pop-title button:focus-visible,
 .re-sb-icon-btn:focus-visible,
 .re-sb-close:focus-visible,
 .re-sb-theme button:focus-visible {
@@ -327,8 +329,20 @@ html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar-thumb:active {
   color: var(--sb-muted);
   cursor: pointer;
 }
+.re-sb-user .re-sb-icon-btn {
+  border-radius: 999px;
+  background: var(--sb-card);
+  color: var(--sb-text);
+  box-shadow: inset 0 0 0 1px var(--sb-note);
+}
 .re-sb-icon-btn:hover,
 .re-sb-icon-btn[aria-expanded="true"] { background: var(--sb-hover); color: var(--sb-text); }
+.re-sb-user .re-sb-icon-btn:hover,
+.re-sb-user .re-sb-icon-btn[aria-expanded="true"] {
+  background: var(--sb-card);
+  color: var(--sb-text);
+  box-shadow: inset 0 0 0 1px var(--sb-action-line);
+}
 .re-sb-dot {
   position: absolute;
   top: 6px;
@@ -348,7 +362,7 @@ html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar-thumb:active {
   box-shadow: var(--sb-shadow);
   color: var(--sb-text);
 }
-.re-sb-teams { top: 46px; left: 8px; width: 292px; padding: 8px; }
+.re-sb-teams { top: 46px; right: 8px; left: 8px; width: auto; padding: 8px; }
 .re-sb-teams .re-sb-search { margin: 0 0 8px; }
 .re-sb-team {
   display: flex;
@@ -398,11 +412,64 @@ html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar-thumb:active {
 .re-sb-create-copy { display: flex; min-width: 0; flex-direction: column; }
 .re-sb-create-title { font-size: 14px; font-weight: 500; }
 .re-sb-create-sub { color: var(--sb-muted); font-size: 13px; }
-.re-sb-account {
+.re-sb-account,
+.re-sb-notices {
   right: 8px;
   bottom: 48px;
   left: 8px;
   padding: 6px;
+}
+.re-sb-notices {
+  display: flex;
+  max-height: min(360px, 60vh);
+  flex-direction: column;
+  overflow: auto;
+}
+.re-sb-pop-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 4px;
+  color: var(--sb-muted);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.re-sb-pop-title button {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--sb-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.re-sb-notice {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 8px;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.re-sb-notice:hover { background: var(--sb-hover); }
+.re-sb-notice.is-unread { background: var(--sb-hover); }
+.re-sb-notice-title { font-size: 14px; font-weight: 500; line-height: 20px; }
+.re-sb-notice-body { color: var(--sb-muted); font-size: 13px; font-weight: 400; line-height: 20px; }
+.re-sb-notice-empty { padding: 8px; color: var(--sb-muted); font-size: 13px; }
+.re-sb-notice-empty button {
+  border: 0;
+  background: transparent;
+  color: var(--sb-text);
+  font: inherit;
+  cursor: pointer;
 }
 .re-sb-menu-id { padding: 8px 8px 6px; }
 .re-sb-menu-name { font-size: 14px; font-weight: 500; }
@@ -552,7 +619,7 @@ html[data-crm]:not([data-crm-theme="light"]) .re-top {
   z-index: 40;
   top: calc(100% + 6px);
   left: 8px;
-  width: 220px;
+  width: min(272px, calc(100% - 16px));
   border: 1px solid var(--sb-line);
   border-radius: 10px;
   background: var(--sb-pop);
@@ -560,7 +627,7 @@ html[data-crm]:not([data-crm-theme="light"]) .re-top {
   color: var(--sb-text);
   box-shadow: var(--sb-shadow);
 }
-.re-top-stock { width: min(280px, calc(100vw - 16px)); padding: 8px; }
+.re-top-stock { width: min(272px, calc(100% - 16px)); padding: 8px; }
 .re-top-stock .re-sb-search { margin: 0 0 6px; }
 .re-top kbd {
   border: 1px solid var(--sb-line);
@@ -570,7 +637,7 @@ html[data-crm]:not([data-crm-theme="light"]) .re-top {
   color: var(--sb-muted);
   font-size: 11px;
 }
-.re-top-pop-end { right: 8px; left: auto; }
+.re-top-pop-end { right: 8px; left: auto; width: min(272px, calc(100% - 16px)); }
 .re-prop {
   display: flex;
   width: 100%;

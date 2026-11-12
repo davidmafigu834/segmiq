@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Check, ChevronDown, CircleHelp, Home, Lightbulb, LogOut, Moon, MoreHorizontal, Plus, Search, Sun, TriangleAlert, Users, X } from "lucide-react";
+import { Check, ChevronDown, CircleHelp, Home, Lightbulb, LogOut, Moon, MoreHorizontal, Plus, Search, Settings, Sun, TriangleAlert, UserRound, Users, X } from "lucide-react";
 import type { WorkspacePlanBadge } from "@/lib/billing/workspace-plan-badge";
 import { sidebarDangerNote } from "@/lib/real-estate/sidebar-note";
 import { AbstractMark, PixelPortrait } from "@/components/real-estate/navigation/workspace-marks";
@@ -103,7 +103,7 @@ export function RealEstateSidebarChrome({
 }) {
   const theme = useCrmThemeOptional();
   const dark = theme?.theme === "dark";
-  const [panel, setPanel] = useState<"teams" | "account" | null>(null);
+  const [panel, setPanel] = useState<"teams" | "account" | "notices" | null>(null);
   const [teamQuery, setTeamQuery] = useState("");
   const [covered, setCovered] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -117,6 +117,16 @@ export function RealEstateSidebarChrome({
   const [tipIndex, setTipIndex] = useState(() => Math.floor(Date.now() / (3 * 60 * 60 * 1000)) % tips.length);
   const tip = tips[tipIndex % tips.length] ?? tips[0]!;
   const danger = sidebarDangerNote({ overdue: planBadge?.overdue === true, attention, homeHref });
+  const manager = homeHref.startsWith("/client");
+  const accountLinks = manager
+    ? [
+        { href: "/client/settings", label: "Settings", icon: Settings },
+        { href: "/client/settings/profile", label: "Profile", icon: UserRound },
+      ]
+    : [
+        { href: "/sales/profile", label: "My profile", icon: UserRound },
+        { href: helpHref, label: "Help & Support", icon: CircleHelp },
+      ];
 
   useEffect(() => {
     const windowMs = 3 * 60 * 60 * 1000;
@@ -322,7 +332,13 @@ export function RealEstateSidebarChrome({
           >
             <MoreHorizontal size={16} strokeWidth={1.8} aria-hidden />
           </button>
-          <NotificationBell initialUnread={unread} role={notificationRole} variant="sidebar" />
+          <NotificationBell
+            initialUnread={unread}
+            role={notificationRole}
+            variant="sidebar"
+            open={panel === "notices"}
+            onOpenChange={(next) => setPanel(next ? "notices" : null)}
+          />
           {panel === "account" ? (
             <div id={accountId} role="dialog" aria-label="Account" data-panel="account" className="re-sb-pop re-sb-account">
               <div className="re-sb-menu-id">
@@ -344,10 +360,15 @@ export function RealEstateSidebarChrome({
                 <Home size={15} strokeWidth={1.7} aria-hidden />
                 <span className="re-sb-label">Home</span>
               </Link>
-              <Link href={helpHref} className="re-sb-menu-row" onClick={() => { setPanel(null); onClose?.(); }}>
-                <CircleHelp size={15} strokeWidth={1.7} aria-hidden />
-                <span className="re-sb-label">Help</span>
-              </Link>
+              {accountLinks.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link key={item.href} href={item.href} className="re-sb-menu-row" onClick={() => { setPanel(null); onClose?.(); }}>
+                    <Icon size={15} strokeWidth={1.7} aria-hidden />
+                    <span className="re-sb-label">{item.label}</span>
+                  </Link>
+                );
+              })}
               <button
                 type="button"
                 className="re-sb-menu-row"

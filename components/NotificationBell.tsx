@@ -47,13 +47,22 @@ export function NotificationBell({
   initialUnread = 0,
   role,
   variant = "default",
+  open: openProp,
+  onOpenChange,
 }: {
   initialUnread?: number;
   role: UserRole;
   variant?: "default" | "sidebar";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = openProp ?? uncontrolledOpen;
+  function setOpen(next: boolean) {
+    onOpenChange?.(next);
+    if (openProp === undefined) setUncontrolledOpen(next);
+  }
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -175,11 +184,12 @@ export function NotificationBell({
   const sidebar = variant === "sidebar";
 
   return (
-    <div ref={ref} className="relative z-40 shrink-0">
+    <div ref={ref} className={sidebar ? "shrink-0" : "relative z-40 shrink-0"}>
       <button
         type="button"
         onClick={() => (open ? setOpen(false) : void handleOpen())}
         className={sidebar ? "re-sb-icon-btn" : "relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-sales-text-secondary transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"}
+        data-panel-trigger={sidebar ? "notices" : undefined}
         aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
         aria-expanded={sidebar ? open : undefined}
       >
@@ -195,8 +205,36 @@ export function NotificationBell({
         ) : null}
       </button>
 
-      {open ? (
-        <div className={sidebar ? "absolute bottom-10 right-0 z-50 flex max-h-[min(70vh,420px)] w-[min(280px,70vw)] flex-col overflow-hidden rounded-[10px] border border-[var(--sb-line)] bg-[var(--sb-pop)] text-[var(--sb-text)] shadow-[var(--sb-shadow)]" : "fixed inset-0 z-50 flex flex-col overflow-hidden bg-surface-card md:absolute md:inset-auto md:right-0 md:top-11 md:h-auto md:max-h-[min(90vh,520px)] md:w-[360px] md:rounded-lg md:border md:border-border md:shadow-lg"}>
+      {open && sidebar ? (
+        <div role="dialog" aria-label="Notifications" data-panel="notices" className="re-sb-pop re-sb-notices">
+          <div className="re-sb-pop-title">
+            Notifications
+            {unreadCount > 0 && !loading ? (
+              <button type="button" onClick={() => void markAllRead()}>Mark all read</button>
+            ) : null}
+          </div>
+          {loading ? <p className="re-sb-notice-empty">Loading…</p> : null}
+          {loadError ? (
+            <p className="re-sb-notice-empty">
+              {loadError}{" "}
+              <button type="button" onClick={() => void loadNotifications()}>Retry</button>
+            </p>
+          ) : null}
+          {!loading && !loadError && items.length === 0 ? <p className="re-sb-notice-empty">No notifications yet.</p> : null}
+          {!loading && !loadError
+            ? items.map((n) => (
+                <Link key={n.id} href={leadHref(n)} onClick={() => setOpen(false)} className={n.read ? "re-sb-notice" : "re-sb-notice is-unread"}>
+                  <span className="re-sb-notice-title">{labelForType(n.type)}</span>
+                  <span className="re-sb-notice-body">{n.message}</span>
+                  <span className="re-sb-notice-body">{formatTimeAgo(n.created_at)}</span>
+                </Link>
+              ))
+            : null}
+        </div>
+      ) : null}
+
+      {open && !sidebar ? (
+        <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-surface-card md:absolute md:inset-auto md:right-0 md:top-11 md:h-auto md:max-h-[min(90vh,520px)] md:w-[360px] md:rounded-lg md:border md:border-border md:shadow-lg">
           <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-3 md:px-4">
             <button
               type="button"

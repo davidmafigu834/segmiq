@@ -44,7 +44,7 @@ import {
   type EnquiryRouting,
   type ShareActor,
 } from "@/lib/real-estate/agent-listing-pages/policy";
-import { dealOutcomeNote, factualInsights, totalsFromCounts, visitSeries, type CountedEvent } from "@/lib/real-estate/agent-listing-pages/analytics";
+import { dealOutcomeNote, factualInsights, sourceLabel, totalsFromCounts, visitSeries, type CountedEvent } from "@/lib/real-estate/agent-listing-pages/analytics";
 
 type Db = SupabaseClient;
 type Fail = { ok: false; status: number; error: string; code: string };
@@ -856,8 +856,8 @@ export async function shareAnalytics(
   clientId: string,
   shareId: string,
   range: { from: Date; to: Date }
-): Promise<Ok<{ totals: ReturnType<typeof totalsFromCounts>; series: ReturnType<typeof visitSeries>; insights: string[]; outcomeNote: string | null }> | Fail> {
-  const { data: share, error } = await db.from("re_agent_listing_shares").select("id, client_id, agent_id, listing_id, campaign_label, status").eq("id", shareId).eq("client_id", clientId).maybeSingle();
+): Promise<Ok<{ totals: ReturnType<typeof totalsFromCounts>; series: ReturnType<typeof visitSeries>; insights: string[]; outcomeNote: string | null; sources: Array<{ source: string; label: string; visits: number }>; link: { address: string | null; suburb: string | null; listingId: string; campaignLabel: string | null; status: string; publicUrl: string | null } }> | Fail> {
+  const { data: share, error } = await db.from("re_agent_listing_shares").select("id, client_id, agent_id, listing_id, token, campaign_label, status, listings(address, suburb, public_slug)").eq("id", shareId).eq("client_id", clientId).maybeSingle();
   if (error) return fail(503, "Analytics lookup failed", "SERVICE_UNAVAILABLE");
   if (!share) return fail(404, "Link not found", "NOT_FOUND");
   if (!canReadShareAnalytics(actor, { clientId, agentId: String((share as { agent_id: string }).agent_id) })) return fail(403, "Forbidden", "FORBIDDEN");
@@ -887,10 +887,34 @@ export async function shareAnalytics(
       break;
     }
   }
-  return { ok: true, totals, series: visitSeries(counts.series), insights: factualInsights(totals, sources), outcomeNote };
+  const row = share as Record<string, unknown>;
+  const listingRaw = row.listings;
+  const listing = (Array.isArray(listingRaw) ? listingRaw[0] : listingRaw ?? null) as Record<string, unknown> | null;
+  const slug = text(listing?.public_slug);
+  const token = text(row.token);
+  return {
+    ok: true,
+    totals,
+    series: visitSeries(counts.series),
+    insights: factualInsights(totals, sources),
+    outcomeNote,
+    sources: Object.entries(sources)
+      .filter(([, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([source, visits]) => ({ source, label: sourceLabel(source), visits })),
+    link: {
+      address: text(listing?.address),
+      suburb: text(listing?.suburb),
+      listingId: String(row.listing_id),
+      campaignLabel: text(row.campaign_label),
+      status: String(row.status ?? ""),
+      publicUrl: slug && token ? absoluteListingUrl(getPublicBaseUrl(), slug, token) : null,
+    },
+  };
 }
 
-async function countRange(db: Db, clientId: string, range: { from: Date; to: Date }, scope: { shareId?: string; agentId?: string }) {
+async function countRange(db: Db, clientId: string, range: { from: Date; to: Date }, scope: { shareId?: string; shareIds?: string[]; agentId?: string }) {
+  if (scope.shareIds && scope.shareIds.length === 0) return { events: [] as CountedEvent[], series: [] as Array<{ day: string; eventType: string; botClass: string; count: number; shareId: string }> };
   let request = db
     .from("re_listing_marketing_daily")
     .select("day, event_type, bot_class, event_count, share_id")
@@ -898,6 +922,7 @@ async function countRange(db: Db, clientId: string, range: { from: Date; to: Dat
     .gte("day", range.from.toISOString().slice(0, 10))
     .lte("day", range.to.toISOString().slice(0, 10));
   if (scope.shareId) request = request.eq("share_id", scope.shareId);
+  if (scope.shareIds) request = request.in("share_id", scope.shareIds);
   const { data } = await request.limit(5000);
   const rows = (data ?? []) as Array<Record<string, unknown>>;
   const events: CountedEvent[] = rows.map((row) => ({
@@ -910,6 +935,7 @@ async function countRange(db: Db, clientId: string, range: { from: Date; to: Dat
     eventType: String(row.event_type),
     botClass: String(row.bot_class),
     count: Number(row.event_count ?? 0),
+    shareId: String(row.share_id ?? ""),
   }));
   return { events, series };
 }
@@ -958,21 +984,52 @@ export async function marketingSummary(db: Db, actor: ShareActor, clientId: stri
   if (error) return fail(503, "Could not load marketing summary", "SERVICE_UNAVAILABLE");
   const rows = (shares ?? []) as Array<Record<string, unknown>>;
   const shareIds = rows.map((row) => String(row.id));
-  const events = manager
-    ? (await countRange(db, clientId, range, {})).events
-    : await agentDailyCounts(db, clientId, range, shareIds);
-  const totals = totalsFromCounts(events, null);
+  const counted = await countRange(db, clientId, range, manager ? {} : { shareIds });
+  const totals = totalsFromCounts(counted.events, null);
+  const byShare = shareIds.map((shareId) => {
+    const mine = counted.series.filter((row) => row.shareId === shareId);
+    const shareTotals = totalsFromCounts(mine, null);
+    return {
+      shareId,
+      visits: shareTotals.visits,
+      enquiries: shareTotals.enquiries,
+      viewingRequests: shareTotals.viewingRequests,
+      whatsappClicks: shareTotals.whatsappClicks,
+      series: visitSeries(mine),
+    };
+  });
   const activeLinks = rows.filter((row) => row.status === "active").length;
   const listings = new Set(rows.filter((row) => row.status === "active").map((row) => String(row.listing_id))).size;
   const names = manager ? await agentNames(db, clientId, rows.map((row) => String(row.agent_id))) : new Map<string, string>();
   return {
     ok: true as const,
     totals,
+    series: visitSeries(counted.series),
+    byShare,
+    unlinked: manager ? [] : await unlinkedListings(db, clientId, actor.userId, rows),
     activeLinks,
     listingsMarketed: listings,
     insights: factualInsights(totals, {}),
     byAgent: manager ? groupAgents(rows, names) : [],
   };
+}
+
+async function unlinkedListings(db: Db, clientId: string, userId: string, shares: Array<Record<string, unknown>>) {
+  const linked = new Set(shares.filter((row) => row.status === "active").map((row) => String(row.listing_id)));
+  const { data, error } = await db
+    .from("listings")
+    .select("id, address, suburb, approval_status")
+    .eq("client_id", clientId)
+    .eq("agent_id", userId)
+    .eq("status", "available")
+    .limit(40);
+  if (error) return [] as Array<{ id: string; address: string | null; suburb: string | null }>;
+  return ((data ?? []) as Array<Record<string, unknown>>)
+    .filter((row) => {
+      const approval = row.approval_status;
+      return (approval == null || approval === "approved") && !linked.has(String(row.id));
+    })
+    .map((row) => ({ id: String(row.id), address: text(row.address), suburb: text(row.suburb) }));
 }
 
 async function agentNames(db: Db, clientId: string, ids: string[]): Promise<Map<string, string>> {
@@ -1049,23 +1106,6 @@ export async function loadMarketingDesk(db: Db, clientId: string, userId: string
       suburb: text(row.suburb),
     })),
   });
-}
-
-async function agentDailyCounts(db: Db, clientId: string, range: { from: Date; to: Date }, shareIds: string[]): Promise<CountedEvent[]> {
-  if (!shareIds.length) return [];
-  const { data } = await db
-    .from("re_listing_marketing_daily")
-    .select("event_type, bot_class, event_count")
-    .eq("client_id", clientId)
-    .in("share_id", shareIds)
-    .gte("day", range.from.toISOString().slice(0, 10))
-    .lte("day", range.to.toISOString().slice(0, 10))
-    .limit(5000);
-  return ((data ?? []) as Array<Record<string, unknown>>).map((row) => ({
-    eventType: String(row.event_type),
-    botClass: String(row.bot_class),
-    count: Number(row.event_count ?? 0),
-  }));
 }
 
 function groupAgents(rows: Array<Record<string, unknown>>, names: Map<string, string>) {
