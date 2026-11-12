@@ -9,6 +9,7 @@ import { DemoWorkspaceChip } from "@/components/demo/DemoWorkspaceChip";
 import { useCompanySidebarCollapsed } from "@/lib/sales/navigation/use-company-sidebar-collapsed";
 import { PresenceHeartbeat } from "@/components/sales/PresenceHeartbeat";
 import { CompanyWorkspaceProvider, useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { RealEstateTopBar } from "@/components/real-estate/navigation/RealEstateTopBar";
 import { isRealEstate, normalizeBusinessType, type BusinessType } from "@/lib/terminology";
 import type { UserRole } from "@/types";
 
@@ -79,7 +80,7 @@ export function CompanyWorkspaceShell({
         />
       </div>
 
-      {!hideMobileChrome ? (
+      {!hideMobileChrome && !realEstateShell ? (
         <CompanyMobileTopBar
           userName={userName}
           userRoleLabel="Company Manager"
@@ -91,6 +92,14 @@ export function CompanyWorkspaceShell({
       ) : null}
 
       <div className="dashboard-canvas min-h-0 min-w-0 flex-1 transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
+        {realEstateShell ? (
+          <RealEstateTopBar
+            scope="manager"
+            onOpenMenu={!hideMobileChrome ? () => setMobileNavOpen(true) : undefined}
+            unreadNotifications={unreadNotifications}
+            notificationRole={notificationRole}
+          />
+        ) : null}
         <div
           className={
             immersive
@@ -125,7 +134,7 @@ export function CompanyWorkspaceShell({
 
   if (businessType == null) return shell;
   return (
-    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={resolvedSolarWorkflow}>
+    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={resolvedSolarWorkflow} clientId={parentWorkspace.clientId}>
       {shell}
     </CompanyWorkspaceProvider>
   );

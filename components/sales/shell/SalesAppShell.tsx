@@ -37,6 +37,7 @@ import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
 import { cn } from "@/lib/ui/cn";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { RealEstateTopBar } from "@/components/real-estate/navigation/RealEstateTopBar";
 import type { UserRole } from "@/types";
 
 export function SalesPageHeader({
@@ -300,7 +301,7 @@ function SalesAppShellInner({
         />
       </div>
 
-      {!hideMobileChrome && !hideBottomNav ? (
+      {!hideMobileChrome && !hideBottomNav && !realEstateWorkspace ? (
         <SalesMobileTopBar
           isSolo={isSolo}
           userName={userName}
@@ -314,6 +315,14 @@ function SalesAppShellInner({
       ) : null}
 
       <div className="dashboard-canvas flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
+        {realEstateWorkspace ? (
+          <RealEstateTopBar
+            scope="agent"
+            onOpenMenu={!hideMobileChrome ? () => setMobileNavOpen(true) : undefined}
+            unreadNotifications={unreadNotifications}
+            notificationRole={notificationRole}
+          />
+        ) : null}
         <main
           id="sales-main-content"
           tabIndex={-1}

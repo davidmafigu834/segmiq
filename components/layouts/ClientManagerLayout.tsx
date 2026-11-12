@@ -179,7 +179,7 @@ export async function ClientManagerLayout({
   ];
 
   const pageContent = workspaceShell ? (
-    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={solarWorkflow}>
+    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={solarWorkflow} clientId={session?.clientId ?? navClientId ?? null}>
       <CompanyWorkspaceShell
       companyName={clientName ?? undefined}
       companyLogoUrl={logoUrl}

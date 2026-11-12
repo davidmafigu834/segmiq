@@ -29,7 +29,7 @@ export default async function ClientRootLayout({ children }: { children: React.R
   }
 
   return (
-    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={solarWorkflow}>
+    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)} solarWorkflow={solarWorkflow} clientId={session?.clientId ?? null}>
       <CompanyClientProviders>{children}</CompanyClientProviders>
     </CompanyWorkspaceProvider>
   );

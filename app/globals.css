@@ -4574,7 +4574,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
   html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas > .sales-mobile-scroll,
   html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .sales-mobile-scroll {
     background-image: none;
-    background-color: #050F22;
+    background-color: #04050c;
   }
 
   .sales-dashboard-premium[data-re-workspace="true"] .sales-page-content,
@@ -6094,13 +6094,27 @@ html[data-crm-theme="light"] .sales-dashboard-premium[data-re-workspace="true"] 
 .sales-dashboard-premium[data-re-workspace="true"] .text-\[24px\],
 .sales-dashboard-premium[data-re-workspace="true"] .text-\[26px\] { font-size: 24px; line-height: 32px; letter-spacing: -0.04em; }
 
+html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium[data-re-workspace="true"]),
+html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium[data-re-workspace="true"]) body,
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"].dashboard-shell,
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas,
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .sales-mobile-scroll {
+  --segmiq-canvas: none;
+  background-color: #04050c;
+  background-image: none;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .crm-shell-main:has(.sales-dashboard-premium[data-re-workspace="true"]) {
+  background-color: #04050c !important;
+}
+
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] {
-  --sales-bg: #070814;
-  --sales-bg-subtle: #0c0718;
-  --sales-surface: #0a1220;
-  --sales-surface-subtle: #0c1424;
-  --sales-surface-hover: #121a2c;
-  --sales-surface-active: #182236;
+  --sales-bg: #04050c;
+  --sales-bg-subtle: #070410;
+  --sales-surface: #081018;
+  --sales-surface-subtle: #0a121c;
+  --sales-surface-hover: #101824;
+  --sales-surface-active: #141c2e;
   --segmiq-canvas: none;
   --sales-text-primary: #f7f9fc;
   --sales-text-secondary: #d5deee;
@@ -6111,14 +6125,14 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-wo
   --sales-card-border: #8b9cc0;
   --sales-brand: #d4ff4f;
   --sales-brand-text: #101828;
-  background-color: #070814;
+  background-color: #04050c;
   background-image: none;
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas,
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .dashboard-canvas > .sales-mobile-scroll,
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] .sales-mobile-scroll {
-  background-color: #070814;
+  background-color: #04050c;
   background-image: none;
 }
 

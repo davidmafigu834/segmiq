@@ -26,7 +26,7 @@ export default async function SalesRootLayout({ children }: { children: React.Re
     solarWorkflow = isSalesWorkflowPreset(preset) && preset === "SOLAR_INSTALLATION";
   }
   return (
-    <CompanyWorkspaceProvider businessType={businessType} solarWorkflow={solarWorkflow}>
+    <CompanyWorkspaceProvider businessType={businessType} solarWorkflow={solarWorkflow} clientId={session?.clientId ?? null}>
       {children}
     </CompanyWorkspaceProvider>
   );
