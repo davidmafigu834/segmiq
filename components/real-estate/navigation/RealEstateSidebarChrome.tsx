@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Check, ChevronDown, CircleHelp, Home, LogOut, Moon, MoreHorizontal, Plus, Search, Sun, TriangleAlert, Users, X } from "lucide-react";
+import { Check, ChevronDown, CircleHelp, Home, Lightbulb, LogOut, Moon, MoreHorizontal, Plus, Search, Sun, TriangleAlert, Users, X } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { secureSignOut } from "@/components/auth/SessionLifecycle";
 import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
@@ -18,6 +18,58 @@ function initials(name: string) {
 
 function handleFrom(name: string) {
   return (name.trim().split(/\s+/)[0] ?? "account").toLowerCase();
+}
+
+type SidebarTip = {
+  title: string;
+  body: string;
+  action: string;
+  href?: string;
+  focusSearch?: boolean;
+};
+
+function workspaceTips(homeHref: string): SidebarTip[] {
+  const manager = homeHref.startsWith("/client");
+  const root = manager ? "/client" : "/sales";
+  return [
+    {
+      title: "Find a screen",
+      body: "Press F, then type the name of the page you need.",
+      action: "Try Find",
+      focusSearch: true,
+    },
+    {
+      title: "Start from Today",
+      body: manager ? "Today shows what the agency still needs to do." : "Add a buyer or send a seller form from the top of Today.",
+      action: "Open Today",
+      href: homeHref,
+    },
+    {
+      title: "The week is on Calendar",
+      body: "Viewings for the week sit on Calendar.",
+      action: "Open Calendar",
+      href: `${root}/calendar`,
+    },
+    manager
+      ? {
+          title: "Files waiting on you",
+          body: "Review is where a file waits for a manager decision.",
+          action: "Open Review",
+          href: "/client/review",
+        }
+      : {
+          title: "Reply from Sales Inbox",
+          body: "WhatsApp conversations for this agency wait in Sales Inbox.",
+          action: "Open inbox",
+          href: "/sales/inbox",
+        },
+    {
+      title: "Stock is Properties",
+      body: "Search an address before you book a viewing or send a form.",
+      action: "Open Properties",
+      href: `${root}/listings`,
+    },
+  ];
 }
 
 export function RealEstateSidebarChrome({
@@ -57,6 +109,20 @@ export function RealEstateSidebarChrome({
   const teamsId = useId();
   const accountId = useId();
   const teamVisible = name.toLowerCase().includes(teamQuery.trim().toLowerCase());
+  const tips = workspaceTips(homeHref);
+  const [tipIndex, setTipIndex] = useState(0);
+  const [tipPaused, setTipPaused] = useState(false);
+  const tip = tips[tipIndex % tips.length] ?? tips[0]!;
+
+  useEffect(() => {
+    if (attention > 0 || tipPaused) return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (media.matches) return;
+    const timer = window.setInterval(() => {
+      setTipIndex((current) => (current + 1) % tips.length);
+    }, 8000);
+    return () => window.clearInterval(timer);
+  }, [attention, tipPaused, tips.length]);
 
   useEffect(() => {
     const el = navRef.current;
@@ -207,7 +273,41 @@ export function RealEstateSidebarChrome({
               Review today
             </Link>
           </section>
-        ) : null}
+        ) : (
+          <section
+            className="re-sb-note"
+            data-tone="tip"
+            aria-label={tip.title}
+            onMouseEnter={() => setTipPaused(true)}
+            onMouseLeave={() => setTipPaused(false)}
+            onFocus={() => setTipPaused(true)}
+            onBlur={() => setTipPaused(false)}
+          >
+            <div className="re-sb-note-head">
+              <span className="re-sb-note-icon" aria-hidden>
+                <Lightbulb size={13} strokeWidth={1.8} />
+              </span>
+              <p className="re-sb-note-title">{tip.title}</p>
+            </div>
+            <p className="re-sb-note-body">{tip.body}</p>
+            {tip.focusSearch ? (
+              <button
+                type="button"
+                className="re-sb-note-action"
+                onClick={() => {
+                  searchRef.current?.focus();
+                  onClose?.();
+                }}
+              >
+                {tip.action}
+              </button>
+            ) : (
+              <Link href={tip.href ?? homeHref} className="re-sb-note-action" onClick={onClose}>
+                {tip.action}
+              </Link>
+            )}
+          </section>
+        )}
         <div className="re-sb-user">
           <span className="re-sb-avatar" aria-hidden>
             {initials(name)}
