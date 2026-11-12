@@ -153,10 +153,10 @@ export function DevelopmentsManager({
       <div className="space-y-4" aria-busy>
         <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="shimmer h-[118px] rounded-[14px]" />
+            <div key={i} className="re-bone h-[118px] rounded-[14px]" />
           ))}
         </div>
-        <div className="shimmer h-[280px] rounded-[14px]" />
+        <div className="re-bone h-[280px] rounded-[14px]" />
       </div>
     );
   }

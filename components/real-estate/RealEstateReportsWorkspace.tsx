@@ -47,10 +47,10 @@ export function RealEstateReportsWorkspace({ clientId }: { clientId: string }) {
       <div className="space-y-3" aria-busy>
         <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 md:grid-cols-[repeat(3,minmax(0,1fr))] layout:grid-cols-[repeat(6,minmax(0,1fr))]">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="shimmer h-[96px] rounded-[14px]" />
+            <div key={i} className="re-bone h-[96px] rounded-[14px]" />
           ))}
         </div>
-        <div className="shimmer h-[240px] rounded-[14px]" />
+        <div className="re-bone h-[240px] rounded-[14px]" />
       </div>
     );
   }

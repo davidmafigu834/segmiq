@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { ReSkeletonRows } from "@/components/real-estate/ui/primitives";
 import { Skeleton } from "@/components/sales/ui";
 import { cn } from "@/lib/ui/cn";
 
@@ -115,6 +117,7 @@ export function TableCardSkeleton({
   rows?: number;
   showToolbar?: boolean;
 }) {
+  const { isRealEstate } = useCompanyWorkspace();
   return (
     <div className="sd-card overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sales-border-subtle px-4 py-3.5 sm:px-5">
@@ -130,24 +133,30 @@ export function TableCardSkeleton({
           </div>
         ) : null}
       </div>
-      <div className="hidden grid-cols-6 gap-3 border-b border-sales-border-subtle px-5 py-2.5 md:grid">
-        {Array.from({ length: 6 }, (_, index) => (
-          <Skeleton key={index} className="h-3 w-16" />
-        ))}
-      </div>
-      <div className="divide-y divide-sales-border-subtle">
-        {Array.from({ length: rows }, (_, index) => (
-          <div key={index} className="flex items-center gap-3 px-4 py-3 sm:px-5">
-            <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-3 w-[42%]" />
-              <Skeleton className="h-3 w-[28%]" />
-            </div>
-            <Skeleton className="hidden h-3 w-16 md:block" />
-            <Skeleton className="hidden h-6 w-16 rounded-full md:block" />
+      {isRealEstate ? (
+        <ReSkeletonRows rows={rows} label="Loading" />
+      ) : (
+        <>
+          <div className="hidden grid-cols-6 gap-3 border-b border-sales-border-subtle px-5 py-2.5 md:grid">
+            {Array.from({ length: 6 }, (_, index) => (
+              <Skeleton key={index} className="h-3 w-16" />
+            ))}
           </div>
-        ))}
-      </div>
+          <div className="divide-y divide-sales-border-subtle">
+            {Array.from({ length: rows }, (_, index) => (
+              <div key={index} className="flex items-center gap-3 px-4 py-3 sm:px-5">
+                <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-3 w-[42%]" />
+                  <Skeleton className="h-3 w-[28%]" />
+                </div>
+                <Skeleton className="hidden h-3 w-16 md:block" />
+                <Skeleton className="hidden h-6 w-16 rounded-full md:block" />
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

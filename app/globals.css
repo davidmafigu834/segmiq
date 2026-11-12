@@ -4922,6 +4922,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-icon-b
   .sales-modal-surface,
   .sales-toast-item,
   .sales-skeleton,
+  .re-bone,
   .sales-menu-surface {
     animation: none !important;
   }
@@ -6129,6 +6130,30 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-wo
 .sales-dashboard-premium[data-re-workspace="true"] [class*="rounded-[14px]"],
 .sales-dashboard-premium[data-re-workspace="true"] [class*="rounded-[16px]"] {
   border-radius: 6px;
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] {
+  --re-bone-edge: #d0d5dd;
+  --re-bone-mid: #eaecf0;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] {
+  --re-bone-edge: #3d4d6e;
+  --re-bone-mid: #2a3854;
+}
+
+.sales-dashboard-premium[data-re-workspace="true"] .re-bone,
+.sales-dashboard-premium[data-re-workspace="true"] .sales-skeleton {
+  background-color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--re-bone-edge) 70%, var(--sales-surface)) 0%,
+    var(--re-bone-mid) 42%,
+    color-mix(in srgb, var(--re-bone-edge) 70%, var(--sales-surface)) 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 220% 100%;
+  animation: re-shimmer 1.35s ease-in-out infinite;
 }
 
 @media (max-width: 479px) {
