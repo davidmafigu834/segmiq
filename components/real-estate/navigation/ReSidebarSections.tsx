@@ -83,6 +83,7 @@ export function ReSidebarSections<T extends { id: string }>({
   collapsedMode,
   storageKey,
   ariaLabel,
+  appearance = "default",
 }: {
   groups: Group<T>[];
   isActive: (item: T) => boolean;
@@ -90,9 +91,40 @@ export function ReSidebarSections<T extends { id: string }>({
   collapsedMode: boolean;
   storageKey: string;
   ariaLabel: string;
+  appearance?: "default" | "studio";
 }) {
   const activeGroup = groups.find((g) => g.items.some(isActive))?.id ?? null;
   const { isOpen, toggle } = useReNavGroups(storageKey, activeGroup);
+
+  if (appearance === "studio") {
+    return (
+      <div>
+        {groups.map((group, index) => {
+          if (group.items.length === 0) return null;
+          const isMain = index === 0;
+          const open = isMain || isOpen(group.id);
+          const panelId = `re-nav-${storageKey}-${group.id}`;
+          return (
+            <div key={group.id} className="re-sb-group">
+              {isMain ? (
+                <span className="sr-only">{group.label}</span>
+              ) : (
+                <button type="button" className="re-sb-item" aria-expanded={open} aria-controls={panelId} onClick={() => toggle(group.id)}>
+                  <span className="re-sb-label">{group.label}</span>
+                  <ChevronDown size={16} strokeWidth={2} aria-hidden className={open ? "re-sb-chev is-open" : "re-sb-chev"} />
+                </button>
+              )}
+              {open ? (
+                <div id={panelId} className={isMain ? undefined : "re-sb-children"}>
+                  {group.items.map(renderItem)}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pb-3" aria-label={ariaLabel}>

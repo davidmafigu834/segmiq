@@ -6043,6 +6043,12 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   --sales-border-strong: #475467;
   --sales-border-subtle: #eef1f6;
   --sales-card-border: #667085;
+  font-family: var(--font-geist-sans), Geist, ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: 0;
+  font-feature-settings: "rlig" 1, "ss11" 1, "calt" 0;
 }
 
 html[data-crm-theme="light"] .sales-dashboard-premium[data-re-workspace="true"] {
@@ -6063,13 +6069,29 @@ html[data-crm-theme="light"] .sales-dashboard-premium[data-re-workspace="true"] 
   background-image: none;
 }
 
-.sales-dashboard-premium[data-re-workspace="true"] .font-semibold {
-  font-weight: 700;
-}
+.sales-dashboard-premium[data-re-workspace="true"] button,
+.sales-dashboard-premium[data-re-workspace="true"] input,
+.sales-dashboard-premium[data-re-workspace="true"] textarea,
+.sales-dashboard-premium[data-re-workspace="true"] select { font-family: inherit; }
 
-.sales-dashboard-premium[data-re-workspace="true"] .font-bold {
-  font-weight: 800;
-}
+.sales-dashboard-premium[data-re-workspace="true"] .font-medium,
+.sales-dashboard-premium[data-re-workspace="true"] .font-semibold,
+.sales-dashboard-premium[data-re-workspace="true"] strong,
+.sales-dashboard-premium[data-re-workspace="true"] .uppercase { font-weight: 500; }
+.sales-dashboard-premium[data-re-workspace="true"] .uppercase { letter-spacing: 0.04em; }
+.sales-dashboard-premium[data-re-workspace="true"] .font-bold,
+.sales-dashboard-premium[data-re-workspace="true"] .font-display { font-weight: 600; letter-spacing: -0.04em; }
+.sales-dashboard-premium[data-re-workspace="true"] .text-\[10px\],
+.sales-dashboard-premium[data-re-workspace="true"] .text-\[11px\] { font-size: 12px; line-height: 16px; }
+.sales-dashboard-premium[data-re-workspace="true"] .text-\[12px\] { font-size: 12px; line-height: 16px; }
+.sales-dashboard-premium[data-re-workspace="true"] .text-\[13px\] { font-size: 13px; line-height: 20px; }
+.sales-dashboard-premium[data-re-workspace="true"] .text-\[14px\],
+.sales-dashboard-premium[data-re-workspace="true"] .text-\[15px\] { font-size: 14px; line-height: 20px; }
+.sales-dashboard-premium[data-re-workspace="true"] .text-\[18px\],
+.sales-dashboard-premium[data-re-workspace="true"] .text-\[20px\],
+.sales-dashboard-premium[data-re-workspace="true"] .text-\[22px\] { font-size: 20px; line-height: 28px; letter-spacing: -0.03em; }
+.sales-dashboard-premium[data-re-workspace="true"] .text-\[24px\],
+.sales-dashboard-premium[data-re-workspace="true"] .text-\[26px\] { font-size: 24px; line-height: 32px; letter-spacing: -0.04em; }
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium[data-re-workspace="true"] {
   --sales-bg: #070814;

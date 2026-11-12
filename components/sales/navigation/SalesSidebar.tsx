@@ -23,6 +23,8 @@ import { cn } from "@/lib/ui/cn";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { Tooltip } from "@/components/sales/ui/Tooltip";
 import { ReSidebarSections } from "@/components/real-estate/navigation/ReSidebarSections";
+import { RealEstateSidebarChrome } from "@/components/real-estate/navigation/RealEstateSidebarChrome";
+import type { UserRole } from "@/types";
 export function SalesSidebar({
   userName,
   userRoleLabel = "Sales Executive",
@@ -34,6 +36,8 @@ export function SalesSidebar({
   onCloseMobile,
   collapsed = false,
   onToggleCollapsed,
+  unreadNotifications = 0,
+  notificationRole = "SALESPERSON",
 }: {
   userName: string;
   userRoleLabel?: string;
@@ -45,6 +49,8 @@ export function SalesSidebar({
   onCloseMobile?: () => void;
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
+  unreadNotifications?: number;
+  notificationRole?: UserRole;
 }) {
   const { businessType, solarWorkflow } = useCompanyWorkspace();
   const pathname = usePathname();
@@ -83,6 +89,44 @@ export function SalesSidebar({
 
   function body(opts: { drawer: boolean; collapsedMode: boolean }) {
     const { drawer, collapsedMode } = opts;
+    if (realEstate) {
+      return (
+        <RealEstateSidebarChrome
+          name={userName}
+          role={userRoleLabel}
+          homeHref={dashboardHref}
+          helpHref="/sales/training"
+          notificationRole={notificationRole}
+          unread={unreadNotifications}
+          attention={tasksBadge}
+          drawer={drawer}
+          onClose={onCloseMobile}
+          query={find}
+          onQuery={setFind}
+        >
+          {visibleGroups.length === 0 ? <p className="re-sb-soon-block">No matches.</p> : (
+            <ReSidebarSections
+              appearance="studio"
+              groups={visibleGroups}
+              isActive={(item) => salesNavIsActive(item, pathname)}
+              collapsedMode={false}
+              storageKey={drawer ? "segmiq-re-nav-groups-sales-drawer" : "segmiq-re-nav-groups-sales"}
+              ariaLabel="Sales navigation"
+              renderItem={(item) => (
+                <SalesNavItem
+                  key={item.id}
+                  item={item}
+                  active={salesNavIsActive(item, pathname)}
+                  badge={item.badgeKey ? badges[item.badgeKey] : undefined}
+                  studio
+                  onNavigate={onCloseMobile}
+                />
+              )}
+            />
+          )}
+        </RealEstateSidebarChrome>
+      );
+    }
     return (
       <div className="relative flex h-full min-h-0 flex-col bg-[var(--sales-sidebar-bg)]">
         <div
@@ -304,11 +348,12 @@ export function SalesSidebar({
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 hidden border-r border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-bg)] transition-[width] duration-200 ease-out layout:block",
-          collapsed ? "w-[68px]" : realEstate ? "w-[272px]" : "w-[228px]"
+          realEstate && "re-sb-frame",
+          collapsed && !realEstate ? "w-[68px]" : realEstate ? "w-[272px]" : "w-[228px]"
         )}
         data-collapsed={collapsed ? "true" : "false"}
       >
-        {body({ drawer: false, collapsedMode: collapsed })}
+        {body({ drawer: false, collapsedMode: realEstate ? false : collapsed })}
       </aside>
 
       {mobileOpen ? (
@@ -319,7 +364,7 @@ export function SalesSidebar({
             aria-label="Close menu"
             onClick={onCloseMobile}
           />
-          <aside className="fixed inset-y-0 left-0 z-50 w-[min(88vw,280px)] border-r border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-bg)] shadow-[0_8px_30px_rgba(17,19,24,0.12)] layout:hidden">
+          <aside className={cn("fixed inset-y-0 left-0 z-50 w-[min(88vw,280px)] border-r border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-bg)] shadow-[0_8px_30px_rgba(17,19,24,0.12)] layout:hidden", realEstate && "re-sb-frame w-[272px]")}>
             {body({ drawer: true, collapsedMode: false })}
           </aside>
         </>
