@@ -4,6 +4,7 @@
 /* Hallmark · pre-emit critique: P5 H4 E4 S4 R4 V4 */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { FileText, History, SearchX, ShieldCheck } from "lucide-react";
 import { ReEmptyState, ReErrorState, RePageHeader, ReSkeletonRows, ReStatusBadge } from "@/components/real-estate/ui";
 import { caseTypeLabel, invitationStatusLabel, requirementStateLabel, requirementTone, scanStatusLabel, waitingLabel, words } from "@/components/real-estate/compliance/copy";
 
@@ -324,7 +325,7 @@ export function ComplianceCentre({
             </div>
 
             {rows.length === 0 ? (
-              <ReEmptyState title={pending === 0 && !query ? "You're up to date" : "No matching requirements"} description={pending === 0 && !query ? "There are no cases awaiting your review." : "Try another filter or search."} />
+              <ReEmptyState icon={pending === 0 && !query ? <ShieldCheck /> : <SearchX />} title={pending === 0 && !query ? "You're up to date" : "No matching requirements"} description={pending === 0 && !query ? "There are no cases awaiting your review." : "Try another filter or search."} />
             ) : (
               <>
                 <ul className="divide-y divide-sales-border md:hidden">
@@ -449,7 +450,7 @@ export function ComplianceCentre({
         <section>
           <h2 className="font-display text-[17px] font-semibold">Document requests</h2>
           <p className="mt-1 max-w-[62ch] text-[13px] text-sales-text-secondary">A link is created before it is sent. Delivery is recorded only when Resend accepts the message. The customer still enters a code before the form opens.</p>
-          {(data?.requests?.length ?? 0) === 0 ? <div className="mt-4"><ReEmptyState title="No document requests yet" description="Request documents from a buyer, seller or transaction." /></div> : (
+          {(data?.requests?.length ?? 0) === 0 ? <div className="mt-4"><ReEmptyState icon={<FileText />} title="No document requests yet" description="Request documents from a buyer, seller or transaction." /></div> : (
             <>
             <ul className="mt-3 divide-y divide-sales-border md:hidden">
               {data?.requests?.map((request) => (
@@ -525,7 +526,7 @@ export function ComplianceCentre({
         <section>
           <h2 className="font-display text-[17px] font-semibold">Audit log</h2>
           <p className="mt-1 max-w-[62ch] text-[13px] text-sales-text-secondary">Entries describe the action. They do not copy identity numbers or document contents.</p>
-          {(data?.events?.length ?? 0) === 0 ? <div className="mt-4"><ReEmptyState title="No compliance events yet" description="Decisions and document requests will appear here." /></div> : (
+          {(data?.events?.length ?? 0) === 0 ? <div className="mt-4"><ReEmptyState icon={<History />} title="No compliance events yet" description="Decisions and document requests will appear here." /></div> : (
             <ul className="mt-3 divide-y divide-sales-border">
               {data?.events?.map((event) => (
                 <li key={event.id} className="flex flex-col gap-0.5 py-2.5 text-[13px] sm:flex-row sm:items-baseline sm:justify-between">

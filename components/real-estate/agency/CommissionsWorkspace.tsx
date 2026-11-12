@@ -4,6 +4,7 @@
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { Wallet } from "lucide-react";
 import { allocateCommission, decimalToCents, grossCommissionCents, type AllocationLine } from "@/lib/real-estate/agency-operations";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import {
@@ -199,7 +200,8 @@ export function CommissionsWorkspace({ clientId, mineOnly = false, framed = fals
           <li>
             <ReSection id="commissions-empty" title={ownView ? "No commission records" : "No commission records"}>
               <ReEmptyState
-                title={ownView ? "No commission records" : "No commission records"}
+                icon={<Wallet />}
+                title="No commission records"
                 description={ownView ? "Your commission allocations will appear here when they are recorded." : "Record a commission from a transaction when the agency is ready to track it."}
               />
             </ReSection>

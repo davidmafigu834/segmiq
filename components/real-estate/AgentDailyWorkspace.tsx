@@ -5,6 +5,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { CalendarClock, CircleCheck } from "lucide-react";
 import type { AgentReDashboard } from "@/lib/sales/get-agent-real-estate-dashboard";
 import { MarketingDeskCard } from "@/components/real-estate/MarketingDeskCard";
 import { TodayCommandBar, useTodayView } from "@/components/real-estate/TodayCommandBar";
@@ -189,7 +190,7 @@ export function AgentDailyWorkspace({
           {mandateForms.status === "loading" && count === 0 ? (
             <ReSkeletonRows rows={1} label="Loading offers and seller forms" />
           ) : count === 0 ? (
-            <ReEmptyState title="Nothing to open" description="Offers and seller forms show here." />
+            <ReEmptyState icon={<CircleCheck />} title="You're all caught up" description="Offers and seller forms that need you show here." />
           ) : (
             <ul>
               {GROUP_ORDER.map((group) => {
@@ -222,7 +223,16 @@ export function AgentDailyWorkspace({
 
         <ReSection id="re-agent-schedule" title="Schedule" titleOutside count={schedule.length} flush bodyClassName="[&>ul>li:first-child]:border-t-0">
           {schedule.length === 0 ? (
-            <ReEmptyState compact title="Nothing scheduled today" description="A signed viewing form puts the appointment here." />
+            <ReEmptyState
+              icon={<CalendarClock />}
+              title="Your day is clear"
+              description="A signed viewing form puts the appointment here."
+              action={
+                <Link href="/sales/calendar" className="re-focus inline-flex min-h-11 items-center rounded-[8px] border border-sales-border px-3 text-[13px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover layout:min-h-9">
+                  Open calendar
+                </Link>
+              }
+            />
           ) : (
             <ul>
               {schedule.map((row) => (

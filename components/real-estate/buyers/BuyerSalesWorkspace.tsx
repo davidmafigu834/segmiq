@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { UsersRound } from "lucide-react";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
@@ -138,6 +139,7 @@ export function BuyerSalesWorkspace({ clientId, basePath, framed = false }: { cl
       {!loading && !error && rows.length === 0 ? (
         <ReEmptyState
           framed
+          icon={<UsersRound />}
           title="No buyers or tenants yet"
           description="A profile is created when someone signs a viewing form for a property."
           action={<Link href={listingsPath} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>Open a property</Link>}

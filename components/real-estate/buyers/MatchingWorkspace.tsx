@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import Link from "next/link";
+import { House, UsersRound } from "lucide-react";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
 import {
@@ -260,7 +261,7 @@ export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { cl
       {listings ? (
         <ReSection id="property-matches" title="Matching properties" count={listings.length}>
           {listings.length === 0 ? (
-            <ReEmptyState title="No suitable properties found" description="Review the search requirements, or look through available listings." action={<Link className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")} href={listingsPath}>Open listings</Link>} />
+            <ReEmptyState icon={<House />} title="No suitable properties found" description="Review the search requirements, or look through available listings." action={<Link className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")} href={listingsPath}>Open listings</Link>} />
           ) : (
             <ul className="grid gap-3 md:grid-cols-2">
               {listings.map((match) => {
@@ -295,7 +296,7 @@ export function MatchingWorkspace({ clientId, buyersPath, framed = false }: { cl
 
       {buyers ? (
         <ReSection id="buyer-matches" title="Matching buyer searches" count={buyers.length} description="Contact details appear only when this account is allowed to see them.">
-          {buyers.length === 0 ? <ReEmptyState title="No matching buyer searches" description="No active search matched this listing." /> : (
+          {buyers.length === 0 ? <ReEmptyState icon={<UsersRound />} title="No matching buyer searches" description="No active search matched this listing." /> : (
             <ul className="space-y-2">
               {buyers.map((match) => (
                 <li key={match.searchId} className="rounded-[12px] border border-sales-border-subtle px-3 py-3">

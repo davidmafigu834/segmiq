@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { House, SearchX } from "lucide-react";
 import { ReEmptyState, ReErrorState, ReRowAction, ReSection, ReSkeletonRows } from "@/components/real-estate/ui";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { listingLabel } from "@/lib/real-estate/helpers";
@@ -117,6 +118,7 @@ export function ListingWorkList({
         {loading ? <ReSkeletonRows rows={1} label="Loading properties" /> : rows.length === 0 ? (
           <div className="px-4 pb-4">
             <ReEmptyState
+              icon={<House />}
               title="No properties yet"
               description="A house appears here after the seller's mandate is approved."
               action={<Link href={`${root}/mandates`} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open mandates</Link>}
@@ -124,7 +126,7 @@ export function ListingWorkList({
           </div>
         ) : visible.length === 0 ? (
           <div className="px-4 pb-4">
-            <ReEmptyState title="Nothing in this view" description="No properties match this filter." />
+            <ReEmptyState icon={<SearchX />} title="Nothing in this view" description="Pick another filter to see more properties." />
           </div>
         ) : (
           <>

@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { ClipboardList, ScrollText, SearchX, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { mandateFormVisible, mandateKindLabel, type MandateFormFilter } from "@/lib/real-estate/mandate-form";
 import { salesMenuTriggerClass } from "@/components/sales/ui/Button";
@@ -118,6 +119,7 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
       {!loading && !error && visible.length === 0 ? (
         <ReEmptyState
           framed
+          icon={<UserRound />}
           title="No sellers yet"
           description="A seller profile is created when a mandate form is completed."
           action={<Link href={mandatesPath} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>Send a mandate form</Link>}
@@ -208,6 +210,7 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
       {!loading && !error && visible.length === 0 ? (
         <ReEmptyState
           framed
+          icon={filter === "all" ? <ClipboardList /> : <SearchX />}
           title={filter === "all" ? "No inspections yet" : "No inspections in this view"}
           description={filter === "all" ? "Open a house from a seller and record the visit there." : "Nothing in this filter."}
           action={<Link href={opportunityBase.replace("/acquisitions", "/owners")} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open sellers</Link>}
@@ -343,6 +346,7 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
       {!loading && !error && visible.length === 0 ? (
         <ReEmptyState
           framed
+          icon={rows.length === 0 ? <ScrollText /> : <SearchX />}
           title={rows.length === 0 ? "No seller forms yet" : "Nothing in this view"}
           description={rows.length === 0 ? "Send the form above. It stays here until the seller finishes it." : "Try another filter or a different seller or property."}
         />

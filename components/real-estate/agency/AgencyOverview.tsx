@@ -6,7 +6,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Landmark, MapPin } from "lucide-react";
+import { CircleCheck, Landmark, MapPin, UsersRound } from "lucide-react";
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { CompanyTeamCalendarCard } from "@/components/dashboard/company/CompanyTeamCalendarCard";
 import { CompanyFocusAreasCard } from "@/components/dashboard/company/CompanyFocusAreasCard";
@@ -246,7 +246,7 @@ export function AgencyOverview({
           ) : transactions.status === "error" ? (
             <ReErrorState onRetry={transactions.reload} />
           ) : txnRows.length === 0 ? (
-            <ReEmptyState title="No transactions in progress" description="Accepted offers move here once a transaction is opened." />
+            <ReEmptyState icon={<Landmark />} title="No transactions in progress" description="Accepted offers move here once a transaction is opened." />
           ) : (
             <>
               <div className="hidden md:block">
@@ -438,7 +438,7 @@ export function AgencyOverview({
           ) : operations.status === "error" ? (
             <ReErrorState onRetry={operations.reload} />
           ) : workload.length === 0 ? (
-            <ReEmptyState compact title="No active buyer searches assigned yet" />
+            <ReEmptyState icon={<UsersRound />} title="No active buyer searches assigned yet" />
           ) : (
             <table className="w-full table-fixed text-left">
               <caption className="sr-only">Active buyer searches per agent, in name order</caption>
@@ -485,7 +485,7 @@ export function AgencyOverview({
           ) : demand.status === "error" ? (
             <ReErrorState onRetry={demand.reload} />
           ) : gaps.length === 0 ? (
-            <ReEmptyState compact title="Every active search has matching stock" description={demand.data.definition} />
+            <ReEmptyState icon={<CircleCheck />} title="Every active search has matching stock" description={demand.data.definition} />
           ) : (
             <>
               {demand.data.incomplete ? <RePartialNotice>Some searches or listings could not be included.</RePartialNotice> : null}

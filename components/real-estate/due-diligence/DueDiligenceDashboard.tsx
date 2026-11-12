@@ -4,6 +4,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { Button } from "@/components/sales/ui/Button";
 import { ReEmptyState, ReErrorState, RePageHeader, ReSection, ReSkeletonRows, ReStatusBadge } from "@/components/real-estate/ui";
 import { acqFieldClass, acqLabelClass } from "@/components/real-estate/acquisition/acquisition-ui";
@@ -141,6 +142,7 @@ export function DueDiligenceDashboard({
       {state === "ready" && rows.length === 0 ? (
         <ReEmptyState
           framed
+          icon={<ShieldCheck />}
           title="No mandates yet"
           description="Open a mandate when a seller is ready to be checked."
           action={<Link href={`${basePath}/new`} className="inline-flex"><Button type="button">New mandate</Button></Link>}

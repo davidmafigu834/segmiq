@@ -4,6 +4,7 @@
 /* Hallmark · pre-emit critique: P4 H5 E4 S4 R4 V4 */
 
 import { useEffect, useState } from "react";
+import { Handshake } from "lucide-react";
 import { Button } from "@/components/sales/ui";
 import {
   ReEmptyState,
@@ -135,7 +136,7 @@ export function IntroductionQueue({
       {!items && !error ? <ReSkeletonRows rows={3} label="Loading introduction requests" /> : null}
       {error ? <ReErrorState title="Introductions could not be loaded" description={error} onRetry={() => void load()} /> : null}
       {items && pending.length === 0 && decided.length === 0 ? (
-        <ReEmptyState title="No introduction requests" description="Requests appear here when an agent asks to be introduced to a buyer." framed />
+        <ReEmptyState icon={<Handshake />} title="No introduction requests" description="Requests appear here when an agent asks to be introduced to a buyer." framed />
       ) : null}
       {pending.length ? (
         <ReSection id="pending-introductions" title="Pending introductions" count={pending.length}>

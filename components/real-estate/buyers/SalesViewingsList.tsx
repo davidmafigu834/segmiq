@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import Link from "next/link";
+import { CalendarClock } from "lucide-react";
 import { VIEWING_OUTCOMES } from "@/lib/real-estate/buyer-match";
 import { Button, salesMenuTriggerClass } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
@@ -221,6 +222,7 @@ export function SalesViewingsList({ clientId, buyersPath = "/sales/buyers" }: { 
       {!loading && !error && visible.length === 0 ? (
         <ReEmptyState
           framed
+          icon={<CalendarClock />}
           title={
             filter === "today"
               ? "No viewings today"

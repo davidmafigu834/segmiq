@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { reEmbeddedShell, reSalesShell } from "@/components/real-estate/ui/workspace-shell";
 import Link from "next/link";
+import { House } from "lucide-react";
 import { ContextCompliancePanel } from "@/components/real-estate/compliance/ContextCompliancePanel";
 import {
   PROPERTY_CATEGORIES,
@@ -360,6 +361,7 @@ export function BuyerSearchDetail({
             {matchNotice ? <p className="mb-3 rounded-[8px] border border-sales-warning/30 bg-sales-warning-soft px-3 py-2 text-[12px] text-sales-warning-fg">{matchNotice}</p> : null}
             {matches.length === 0 ? (
               <ReEmptyState
+                icon={<House />}
                 title="No suitable properties found"
                 description="Try reviewing the search requirements or checking available listings."
                 action={<Link href={listingsPath} className="re-focus inline-flex min-h-11 items-center text-[13px] font-semibold">Open listings</Link>}

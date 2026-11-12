@@ -581,6 +581,7 @@ export function ReEmptyState({
   action,
   compact = false,
   framed = false,
+  icon,
 }: {
   title: string;
   description?: string;
@@ -588,7 +589,30 @@ export function ReEmptyState({
   compact?: boolean;
   /** Standalone empty result. Do not also put the same title on a surrounding section. */
   framed?: boolean;
+  /** Centred presentation with the icon in an empty slot. Sections side by side keep one height. */
+  icon?: ReactNode;
 }) {
+  if (icon) {
+    return (
+      <div
+        className={cn(
+          "flex min-h-[188px] flex-col items-center justify-center px-6 py-8 text-center",
+          framed && "rounded-[var(--re-radius-card,12px)] border border-sales-border-subtle bg-sales-surface"
+        )}
+      >
+        <span className="rounded-full border border-dashed border-sales-border p-1.5" aria-hidden>
+          <span className="flex h-11 w-11 items-center justify-center rounded-full border border-sales-border-subtle bg-sales-bg text-sales-text-secondary [&>svg]:h-5 [&>svg]:w-5 [&>svg]:stroke-[1.75]">
+            {icon}
+          </span>
+        </span>
+        <p className="mt-4 text-[15px] font-semibold text-sales-text-primary">{title}</p>
+        {description ? (
+          <p className="mt-1 max-w-[36ch] text-[13px] leading-snug text-sales-text-secondary">{description}</p>
+        ) : null}
+        {action ? <div className="mt-4">{action}</div> : null}
+      </div>
+    );
+  }
   return (
     <div
       className={cn(

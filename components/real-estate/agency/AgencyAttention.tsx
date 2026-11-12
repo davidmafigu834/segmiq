@@ -3,7 +3,7 @@
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 
 import { useMemo, useState } from "react";
-import { FileWarning, Handshake, KeyRound, Landmark, UserRoundCog, Wallet } from "lucide-react";
+import { CircleCheck, FileWarning, Handshake, KeyRound, Landmark, UserRoundCog, Wallet } from "lucide-react";
 import {
   ReEmptyState,
   ReErrorState,
@@ -125,6 +125,7 @@ export function AgencyAttentionPanel({
         <ReErrorState onRetry={state.reload} />
       ) : rows.length === 0 ? (
         <ReEmptyState
+          icon={<CircleCheck />}
           title="Nothing is waiting on a manager"
           description="Mandate and listing approvals, unverified payments, stalled transactions and unfinished handovers will appear here."
         />

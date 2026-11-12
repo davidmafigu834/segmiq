@@ -340,6 +340,7 @@ export function AcquisitionWorkspace({
       {!loading && !error && rows.length === 0 ? (
         <ReEmptyState
           framed
+          icon={<Building2 />}
           title="No property opportunities yet"
           description="Start by recording a property owner who may want to sell or rent. Price and documents can wait."
           action={
