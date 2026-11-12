@@ -284,7 +284,7 @@ export function ListingsManager({
     const underOffer = listings.filter((l) => l.status === "under_offer").length;
     const reserved = listings.filter((l) => l.status === "reserved").length;
     const management = listings.filter((l) => isManagedListing(l)).length;
-    const approval = listings.filter((l) => l.approval_status === "pending_approval").length;
+    const approval = listings.filter((l) => l.approval_status === "draft" || l.approval_status === "pending_approval").length;
     const closed = listings.filter((l) => isClosedListingStatus(l.status)).length;
     return { available, underOffer, reserved, management, approval, closed, total: listings.length };
   }, [listings]);
@@ -296,7 +296,7 @@ export function ListingsManager({
       if (statusTab === "under_offer" && l.status !== "under_offer") return false;
       if (statusTab === "reserved" && l.status !== "reserved") return false;
       if (statusTab === "management" && !isManagedListing(l)) return false;
-      if (statusTab === "approval" && l.approval_status !== "pending_approval") return false;
+      if (statusTab === "approval" && l.approval_status !== "draft" && l.approval_status !== "pending_approval") return false;
       if (statusTab === "closed" && !isClosedListingStatus(l.status)) return false;
       if (typeFilter !== "all" && l.transaction_type !== typeFilter) return false;
       if (!q) return true;
@@ -434,7 +434,7 @@ export function ListingsManager({
       setToast(j.error ?? "Approval failed");
       return;
     }
-    setToast(approval_status === "approved" ? "Listing approved" : "Listing rejected");
+    setToast(approval_status === "approved" ? "Listing approved" : approval_status === "pending_approval" ? "Submitted for approval" : "Listing rejected");
     await load();
   }
 
@@ -710,6 +710,15 @@ export function ListingsManager({
                     <DataTableTd className="text-right">
                       {readOnly ? null : (
                         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          {listing.approval_status === "draft" ? (
+                            <button
+                              type="button"
+                              className="rounded-[8px] px-2 py-1 text-[11px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
+                              onClick={() => void setApproval(listing.id, "pending_approval")}
+                            >
+                              Submit
+                            </button>
+                          ) : null}
                           {canApprove && listing.approval_status === "pending_approval" ? (
                             <button
                               type="button"

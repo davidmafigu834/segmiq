@@ -1329,6 +1329,46 @@ export async function prepareListingFromAcquisition(input: {
   return { ok: true as const, listingId, alreadyConverted: false };
 }
 
+export async function markAcquisitionSubmittedFromListing(input: {
+  clientId: string;
+  listingId: string;
+  actorId: string;
+}) {
+  const supabase = createAdminClient();
+  const { data: listing } = await supabase
+    .from("listings")
+    .select("acquisition_opportunity_id")
+    .eq("id", input.listingId)
+    .eq("client_id", input.clientId)
+    .maybeSingle();
+  const opportunityId = listing?.acquisition_opportunity_id as string | null;
+  if (!opportunityId) return;
+  const { data: opp } = await supabase
+    .from("real_estate_acquisition_opportunities")
+    .select("stage, status")
+    .eq("id", opportunityId)
+    .eq("client_id", input.clientId)
+    .maybeSingle();
+  if (!opp || opp.stage !== "listing_preparation") return;
+  if (opp.status === "lost" || opp.status === "converted" || opp.status === "not_interested") return;
+  const { data: updated } = await supabase
+    .from("real_estate_acquisition_opportunities")
+    .update({ stage: "submitted_for_approval", updated_at: new Date().toISOString() })
+    .eq("id", opportunityId)
+    .eq("client_id", input.clientId)
+    .eq("stage", "listing_preparation")
+    .select("id");
+  if (!updated?.length) return;
+  await event({
+    clientId: input.clientId,
+    opportunityId,
+    eventType: "stage_changed",
+    actorId: input.actorId,
+    fromValue: "listing_preparation",
+    toValue: "submitted_for_approval",
+  });
+}
+
 export async function markAcquisitionConvertedFromListing(input: {
   clientId: string;
   listingId: string;

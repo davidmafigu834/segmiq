@@ -667,30 +667,30 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
 }
 
 html[data-crm-theme="light"] .sales-dashboard-premium .sales-mobile-scroll,
-html[data-crm-theme="light"] .sales-dashboard-premium aside nav {
+html[data-crm-theme="light"] .sales-dashboard-premium aside nav:not(.re-sb-nav) {
   scrollbar-width: thin;
   scrollbar-color: rgba(16, 24, 40, 0.35) transparent;
 }
 
 html[data-crm-theme="light"] .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar,
-html[data-crm-theme="light"] .sales-dashboard-premium aside nav::-webkit-scrollbar {
+html[data-crm-theme="light"] .sales-dashboard-premium aside nav:not(.re-sb-nav)::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 html[data-crm-theme="light"] .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-track,
-html[data-crm-theme="light"] .sales-dashboard-premium aside nav::-webkit-scrollbar-track {
+html[data-crm-theme="light"] .sales-dashboard-premium aside nav:not(.re-sb-nav)::-webkit-scrollbar-track {
   background: transparent;
 }
 
 html[data-crm-theme="light"] .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-thumb,
-html[data-crm-theme="light"] .sales-dashboard-premium aside nav::-webkit-scrollbar-thumb {
+html[data-crm-theme="light"] .sales-dashboard-premium aside nav:not(.re-sb-nav)::-webkit-scrollbar-thumb {
   background: rgba(16, 24, 40, 0.28);
   border-radius: 999px;
 }
 
 html[data-crm-theme="light"] .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-thumb:hover,
-html[data-crm-theme="light"] .sales-dashboard-premium aside nav::-webkit-scrollbar-thumb:hover {
+html[data-crm-theme="light"] .sales-dashboard-premium aside nav:not(.re-sb-nav)::-webkit-scrollbar-thumb:hover {
   background: rgba(16, 24, 40, 0.48);
 }
 

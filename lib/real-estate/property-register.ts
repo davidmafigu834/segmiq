@@ -109,7 +109,7 @@ export function listingNextAction(input: {
     return input.canApprove ? "Approve listing" : "Waiting for listing approval";
   }
   if (input.approvalStatus === "rejected") return "Open the listing";
-  if (input.approvalStatus === "draft") return "Complete listing details";
+  if (input.approvalStatus === "draft") return "Submit for approval";
   if (input.status === "under_offer") return "Open offers";
   return "Open the listing";
 }

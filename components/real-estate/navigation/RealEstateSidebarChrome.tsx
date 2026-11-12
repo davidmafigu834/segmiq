@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Check, ChevronDown, CircleHelp, Home, Lightbulb, LogOut, Moon, MoreHorizontal, Plus, Search, Sun, TriangleAlert, Users, X } from "lucide-react";
 import type { WorkspacePlanBadge } from "@/lib/billing/workspace-plan-badge";
+import { sidebarDangerNote } from "@/lib/real-estate/sidebar-note";
 import { AbstractMark, PixelPortrait } from "@/components/real-estate/navigation/workspace-marks";
 import { NotificationBell } from "@/components/NotificationBell";
 import { secureSignOut } from "@/components/auth/SessionLifecycle";
@@ -115,6 +116,7 @@ export function RealEstateSidebarChrome({
   const tips = workspaceTips(homeHref);
   const [tipIndex, setTipIndex] = useState(() => Math.floor(Date.now() / (3 * 60 * 60 * 1000)) % tips.length);
   const tip = tips[tipIndex % tips.length] ?? tips[0]!;
+  const danger = sidebarDangerNote({ overdue: planBadge?.overdue === true, attention, homeHref });
 
   useEffect(() => {
     const windowMs = 3 * 60 * 60 * 1000;
@@ -262,18 +264,20 @@ export function RealEstateSidebarChrome({
       </nav>
 
       <div className={covered ? "re-sb-foot is-covered" : "re-sb-foot"}>
-        {attention > 0 ? (
-          <section className="re-sb-note" data-tone="danger" aria-label="Action required">
+        {danger ? (
+          <section className="re-sb-note" data-tone="danger" aria-label={danger.title}>
             <div className="re-sb-note-head">
               <span className="re-sb-note-icon" aria-hidden>
                 <TriangleAlert size={13} strokeWidth={1.8} />
               </span>
-              <p className="re-sb-note-title">Action required</p>
+              <p className="re-sb-note-title">{danger.title}</p>
             </div>
-            <p className="re-sb-note-body">{homeHref.startsWith("/client") ? "A message is waiting for a reply." : "A viewing follow-up was due yesterday."}</p>
-            <Link href={homeHref} className="re-sb-note-action" onClick={onClose}>
-              Review today
-            </Link>
+            <p className="re-sb-note-body">{danger.body}</p>
+            {danger.href && danger.action ? (
+              <Link href={danger.href} className="re-sb-note-action" onClick={onClose}>
+                {danger.action}
+              </Link>
+            ) : null}
           </section>
         ) : (
           <section className="re-sb-note" data-tone="tip" aria-label={tip.title}>

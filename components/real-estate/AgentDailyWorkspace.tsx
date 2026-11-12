@@ -7,6 +7,8 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import type { AgentReDashboard } from "@/lib/sales/get-agent-real-estate-dashboard";
+import { MarketingDeskCard } from "@/components/real-estate/MarketingDeskCard";
+import { marketingDeskHasContent } from "@/lib/real-estate/agent-listing-pages/desk";
 import {
   ReEmptyState,
   RePageHeader,
@@ -264,6 +266,8 @@ export function AgentDailyWorkspace({
           )}
         </ReSection>
       </div>
+
+      {marketingDeskHasContent(data.marketing) ? <MarketingDeskCard desk={data.marketing} /> : null}
 
       <div className="grid grid-cols-2 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface sm:grid-cols-4">
         <Metric label="New inquiries" value={data.summary.newInquiries} />

@@ -145,6 +145,14 @@ export async function PATCH(
   if (!manager && (body.approval_status === "approved" || body.approval_status === "rejected")) {
     return NextResponse.json({ error: "Only managers can approve listings" }, { status: 403 });
   }
+  if (
+    body.approval_status === "pending_approval" &&
+    existing.approval_status !== "draft" &&
+    existing.approval_status !== "pending_approval" &&
+    existing.approval_status !== "rejected"
+  ) {
+    return NextResponse.json({ error: "Only a draft can be submitted for approval" }, { status: 409 });
+  }
   if (body.status) {
     const [reserving, activeTxns, completed] = await Promise.all([
       listReservingOfferIds(params.clientId, params.listingId),
@@ -207,6 +215,17 @@ export async function PATCH(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const submitted =
+    body.approval_status === "pending_approval" &&
+    (existing.approval_status === "draft" || existing.approval_status === "rejected");
+  if (submitted) {
+    const { markAcquisitionSubmittedFromListing } = await import("@/lib/real-estate/acquisition-service");
+    await markAcquisitionSubmittedFromListing({
+      clientId: params.clientId,
+      listingId: params.listingId,
+      actorId: session.userId,
+    });
+  }
   if (body.approval_status === "approved" || body.approval_status === "rejected") {
     const { markAcquisitionConvertedFromListing } = await import("@/lib/real-estate/acquisition-service");
     await markAcquisitionConvertedFromListing({

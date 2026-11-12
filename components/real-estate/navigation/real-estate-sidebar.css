@@ -192,8 +192,18 @@ html[data-crm]:not([data-crm-theme="light"]) .re-sb {
   overflow: auto;
   padding: 0 8px 8px;
 }
+/* The CRM page sets scrollbar-color on the document, and that value is inherited.
+   A non-auto value makes Chromium ignore the inset thumb below and draw the ordinary bar. */
+html[data-crm] .re-sb .re-sb-nav {
+  scrollbar-color: auto;
+  scrollbar-width: auto;
+}
 @supports not selector(::-webkit-scrollbar) {
-  .re-sb-nav { scrollbar-color: var(--sb-thumb) transparent; scrollbar-width: thin; }
+  .re-sb-nav,
+  html[data-crm] .re-sb .re-sb-nav {
+    scrollbar-color: var(--sb-thumb) transparent;
+    scrollbar-width: thin;
+  }
 }
 html[data-crm] .re-sb .re-sb-nav::-webkit-scrollbar {
   width: 14px;

@@ -6,6 +6,7 @@ import { appendInterestedListingIds } from "@/lib/real-estate/helpers";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { checkDbRateLimit } from "@/lib/auth/db-rate-limit";
 import { getPublicBaseUrl } from "@/lib/constants";
+import { buildMarketingDesk, type DeskCount, type MarketingDesk } from "@/lib/real-estate/agent-listing-pages/desk";
 import { listingCompliancePublication } from "@/lib/real-estate/compliance-management/publication";
 import {
   absoluteListingUrl,
@@ -26,6 +27,7 @@ import {
   normaliseCampaignLabel,
   phoneHash,
   projectPublicProperty,
+  rangeForPreset,
   safeAgencyHttpUrl,
   shareAcceptsAttribution,
   shareCaption,
@@ -982,6 +984,71 @@ async function agentNames(db: Db, clientId: string, ids: string[]): Promise<Map<
     if (row.name?.trim()) names.set(row.id, row.name.trim());
   }
   return names;
+}
+
+/** The agent's own last 30 days, for the Today desk. Null when marketing storage is unavailable. */
+export async function loadMarketingDesk(db: Db, clientId: string, userId: string): Promise<MarketingDesk | null> {
+  const range = rangeForPreset("30d", new Date(), "UTC");
+  if (!range) return null;
+  const { data: shares, error } = await db
+    .from("re_agent_listing_shares")
+    .select("id, listing_id, status, listings!inner(address, suburb)")
+    .eq("client_id", clientId)
+    .eq("agent_id", userId)
+    .limit(200);
+  if (error) return null;
+  const shareRows = (shares ?? []) as Array<Record<string, unknown>>;
+  const shareIds = shareRows.map((row) => String(row.id));
+  let counts: DeskCount[] = [];
+  if (shareIds.length) {
+    const fromDay = range.from.toISOString().slice(0, 10);
+    const toDay = range.to.toISOString().slice(0, 10);
+    const { data, error: countError } = await db
+      .from("re_listing_marketing_daily")
+      .select("share_id, event_type, bot_class, event_count")
+      .eq("client_id", clientId)
+      .in("share_id", shareIds)
+      .gte("day", fromDay)
+      .lte("day", toDay)
+      .limit(5000);
+    if (countError) return null;
+    counts = ((data ?? []) as Array<Record<string, unknown>>).map((row) => ({
+      shareId: String(row.share_id),
+      eventType: String(row.event_type),
+      botClass: String(row.bot_class),
+      count: Number(row.event_count ?? 0),
+    }));
+  }
+  const { data: listings, error: listingError } = await db
+    .from("listings")
+    .select("id, address, suburb, approval_status")
+    .eq("client_id", clientId)
+    .eq("agent_id", userId)
+    .eq("status", "available")
+    .limit(40);
+  if (listingError) return null;
+  const marketable = ((listings ?? []) as Array<Record<string, unknown>>).filter((row) => {
+    const approval = row.approval_status;
+    return approval == null || approval === "approved";
+  });
+  return buildMarketingDesk({
+    shares: shareRows.map((row) => {
+      const listing = (row.listings ?? {}) as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        listingId: String(row.listing_id),
+        status: String(row.status),
+        address: text(listing.address),
+        suburb: text(listing.suburb),
+      };
+    }),
+    counts,
+    listings: marketable.map((row) => ({
+      id: String(row.id),
+      address: text(row.address),
+      suburb: text(row.suburb),
+    })),
+  });
 }
 
 async function agentDailyCounts(db: Db, clientId: string, range: { from: Date; to: Date }, shareIds: string[]): Promise<CountedEvent[]> {

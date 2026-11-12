@@ -16,6 +16,8 @@ import {
 } from "@/lib/real-estate/offers";
 import { listAgentComplianceActions } from "@/lib/real-estate/compliance-service";
 import { listAgentTransactionActions } from "@/lib/real-estate/transaction-service";
+import { loadMarketingDesk } from "@/lib/real-estate/agent-listing-pages/service";
+import type { MarketingDesk } from "@/lib/real-estate/agent-listing-pages/desk";
 
 export type AgentReDashboard = {
   summary: {
@@ -65,6 +67,7 @@ export type AgentReDashboard = {
     status: string;
     leadId: string | null;
   }>;
+  marketing: MarketingDesk | null;
 };
 
 export async function getAgentRealEstateDashboard(opts: {
@@ -284,6 +287,13 @@ export async function getAgentRealEstateDashboard(opts: {
     userId: opts.userId,
   });
 
+  let marketing: MarketingDesk | null = null;
+  try {
+    marketing = await loadMarketingDesk(supabase, opts.clientId, opts.userId);
+  } catch {
+    marketing = null;
+  }
+
   return {
     summary: {
       newInquiries,
@@ -302,5 +312,6 @@ export async function getAgentRealEstateDashboard(opts: {
     offersNeedingAttention,
     complianceActions,
     transactionsNeedingAttention,
+    marketing,
   };
 }

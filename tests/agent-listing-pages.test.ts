@@ -32,6 +32,7 @@ import {
   whatsAppPrefill,
 } from "../lib/real-estate/agent-listing-pages/policy";
 import { dealOutcomeNote, factualInsights, totalsFromCounts, visitSeries } from "../lib/real-estate/agent-listing-pages/analytics";
+import { buildMarketingDesk } from "../lib/real-estate/agent-listing-pages/desk";
 
 const org = "org-a";
 const approved = {
@@ -254,6 +255,41 @@ test("WhatsApp prefill uses the public slug rather than an internal id", () => {
   assert.equal(text.includes(org), false);
   assert.equal(whatsAppLink("263771234567", text)?.startsWith("https://wa.me/263771234567?text="), true);
   assert.equal(whatsAppLink("077", text), null);
+});
+
+test("the desk names links with visits and no enquiry, and listings with no link", () => {
+  const desk = buildMarketingDesk({
+    shares: [
+      { id: "s1", listingId: "l1", status: "active", address: "14 Kingsmead", suburb: "Borrowdale" },
+      { id: "s2", listingId: "l2", status: "active", address: "8 Stonechat Lane", suburb: "Borrowdale" },
+      { id: "s3", listingId: "l3", status: "revoked", address: "Flat 4B Kensington", suburb: "Avondale" },
+    ],
+    counts: [
+      { shareId: "s1", eventType: "page_view", botClass: "human", count: 6 },
+      { shareId: "s1", eventType: "page_view", botClass: "preview", count: 4 },
+      { shareId: "s2", eventType: "page_view", botClass: "human", count: 8 },
+      { shareId: "s2", eventType: "enquiry_submit", botClass: "human", count: 1 },
+      { shareId: "s2", eventType: "viewing_request", botClass: "human", count: 1 },
+      { shareId: "s3", eventType: "page_view", botClass: "human", count: 9 },
+    ],
+    listings: [
+      { id: "l1", address: "14 Kingsmead", suburb: "Borrowdale" },
+      { id: "l4", address: "2 Baines Avenue", suburb: "Avondale" },
+      { id: "l5", address: null, suburb: "Hillside" },
+    ],
+  });
+  assert.equal(desk.visits, 14);
+  assert.equal(desk.enquiries, 1);
+  assert.equal(desk.viewingRequests, 1);
+  assert.equal(desk.activeLinks, 2);
+  assert.equal(desk.quiet.length, 1);
+  assert.equal(desk.quiet[0]?.title, "14 Kingsmead");
+  assert.equal(desk.quiet[0]?.line, "6 visits. No enquiry yet.");
+  assert.equal(desk.unlinked.length, 2);
+  assert.equal(desk.unlinked[0]?.title, "2 Baines Avenue");
+  assert.equal(desk.unlinked[0]?.line, "No personal link yet.");
+  assert.equal(desk.unlinked[1]?.title, "Hillside");
+  assert.equal(desk.unlinked[1]?.meta, "On the market");
 });
 
 test("attribution keeps marketing separate from operational ownership", () => {
