@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { SellerRecord } from "./SellerRecord";
 import { PropertyRecord } from "./PropertyRecord";
+import { listingIdForAddress } from "./marketing-links";
 import { OfferRecord, type OfferId } from "./OfferRecord";
 import { CalendarRecord } from "./CalendarRecord";
 import { ActivitiesPage, BuyersPage, InboxPage, InquiriesPage, InspectionsPage, MandatesPage, PeoplePage, SalesPage, SellersPage, ViewingsPage } from "./WorkPages";
@@ -20,6 +21,9 @@ import { MandateFormMock } from "./MandateFormMock";
 import { MandateChoice } from "./MandateChoice";
 import { OpenMandateFormMock } from "./OpenMandateFormMock";
 import { asMockScreen, MockFrame, type MockScreen } from "./MockSidebar";
+import { SignInMock } from "./SignInMock";
+import { MarketingMock } from "./MarketingMock";
+import { PublicListingMock } from "./PublicListingMock";
 import "./mock.css";
 
 type Screen = MockScreen;
@@ -88,6 +92,7 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
             onSelect={setBuyerFlow}
             onBack={() => { setBuyerFlow(null); setScreen("today"); }}
             onNewMandate={() => openScreen("mandateChoice")}
+            onOpenListing={(id) => openScreen("property", id)}
           />
         ) : null}
         {!offerId && screen === "offers" ? <Offers loading={loading} onOpenOffer={setOfferId} /> : null}
@@ -112,9 +117,12 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
         {!offerId && screen === "inbox" ? <InboxPage loading={loading} /> : null}
         {!offerId && screen === "activities" ? <ActivitiesPage loading={loading} /> : null}
         {!offerId && screen === "inquiries" ? <InquiriesPage loading={loading} onOpenBuyer={() => openScreen("buyers")} onOpenSeller={() => openScreen("sellers")} /> : null}
+        {!offerId && screen === "marketing" ? <MarketingMock loading={loading} onOpenListing={(id) => openScreen("property", id)} onPreview={(id) => openScreen("listing", id)} /> : null}
         {!offerId && screen === "seller" ? <SellerRecord loading={loading} /> : null}
-        {!offerId && screen === "property" ? <PropertyRecord loading={loading} /> : null}
+        {!offerId && screen === "property" ? <PropertyRecord loading={loading} listingId={focus ?? "baines"} onOpenMarketing={() => openScreen("marketing")} onPreview={() => openScreen("listing", focus ?? "baines")} /> : null}
+        {!offerId && screen === "listing" ? <PublicListingMock listingId={focus ?? "baines"} onBack={() => openScreen("marketing")} onOpen={(id) => openScreen("listing", id)} /> : null}
         {!offerId && screen === "states" ? <States /> : null}
+        {!offerId && screen === "signin" ? <SignInMock dark={dark} onToggleDark={toggleDark} onEnter={() => openScreen("today")} /> : null}
     </MockFrame>
   );
 }
@@ -278,6 +286,16 @@ const STOCK = [
   { address: "Flat 4B, Kensington", seller: "Rudo Ncube", status: "Under offer", action: "Open offer", offer: "kensington" as OfferId },
 ] as const;
 
+function PropertyName({ address, selecting, onOpenListing }: { address: string; selecting: boolean; onOpenListing?: (id: string) => void }) {
+  const id = listingIdForAddress(address);
+  if (selecting || !onOpenListing || !id) return <p className="text-[14px] font-semibold">{address}</p>;
+  return (
+    <button type="button" onClick={() => onOpenListing(id)} className="text-left text-[14px] font-semibold underline-offset-2 hover:underline">
+      {address}
+    </button>
+  );
+}
+
 function Properties({
   loading,
   onOpenOffer,
@@ -286,6 +304,7 @@ function Properties({
   onSelect,
   onBack,
   onNewMandate,
+  onOpenListing,
 }: {
   loading: boolean;
   onOpenOffer: (id: OfferId) => void;
@@ -294,6 +313,7 @@ function Properties({
   onSelect?: (address: string) => void;
   onBack?: () => void;
   onNewMandate?: () => void;
+  onOpenListing?: (id: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const needle = query.trim().toLowerCase();
@@ -352,7 +372,7 @@ function Properties({
               const label = selecting ? (chosen ? "Selected" : "Create viewing form") : row.action;
               return (
                 <li key={row.address} className="re-in border-t border-sales-border-subtle px-4 py-3" style={{ animationDelay: `${index * 40}ms` }}>
-                  <p className="text-[14px] font-semibold">{row.address}</p>
+                  <PropertyName address={row.address} selecting={selecting} onOpenListing={onOpenListing} />
                   <p className="mt-0.5 text-[13px] text-sales-text-secondary">{row.seller} · {row.status}</p>
                   <button
                     type="button"
@@ -383,7 +403,7 @@ function Properties({
                 const label = selecting ? (chosen ? "Selected" : "Create viewing form") : row.action;
                 return (
                   <tr key={row.address} className="re-in border-b border-sales-border-subtle last:border-0" style={{ animationDelay: `${index * 40}ms` }}>
-                    <td className="px-4 py-3 text-[14px] font-semibold">{row.address}</td>
+                    <td className="px-4 py-3"><PropertyName address={row.address} selecting={selecting} onOpenListing={onOpenListing} /></td>
                     <td className="px-3 py-3 text-[13px] text-sales-text-secondary">{row.seller}</td>
                     <td className="px-3 py-3 text-[13px] text-sales-text-secondary">{row.status}</td>
                     <td className="px-3 py-3 text-right">

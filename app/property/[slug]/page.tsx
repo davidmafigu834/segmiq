@@ -41,7 +41,7 @@ export default async function PropertyMarketingPage({ params, searchParams }: { 
   const loaded = await loadPublicListingPage(createAdminClient(), params.slug, searchParams.ref ?? null, requestContext(true));
   if (loaded.state !== "ready") {
     return (
-      <main className={styles.page}>
+      <main className={`${styles.page} sales-dashboard-premium`} data-re-form="dark">
         <section className={styles.unavailable}>
           <h1>This property link is unavailable</h1>
           <p className={styles.prose}>The listing is not being marketed on this link. No private property details are shown.</p>

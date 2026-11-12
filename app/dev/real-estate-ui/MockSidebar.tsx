@@ -7,12 +7,14 @@ import {
   CalendarDays,
   Check,
   ChevronDown,
+  ChevronsUpDown,
   Handshake,
   Home,
   Inbox,
   Info,
   KeyRound,
   LayoutDashboard,
+  LogIn,
   LogOut,
   Menu,
   Moon,
@@ -20,6 +22,7 @@ import {
   Plus,
   RotateCcw,
   Search,
+  ShieldCheck,
   Sun,
   TriangleAlert,
   Users,
@@ -27,6 +30,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import { AbstractMark, PixelPortrait } from "@/components/real-estate/navigation/workspace-marks";
 
 export type MockScreen =
   | "today"
@@ -48,9 +52,12 @@ export type MockScreen =
   | "inbox"
   | "activities"
   | "inquiries"
+  | "marketing"
+  | "listing"
   | "seller"
   | "property"
-  | "states";
+  | "states"
+  | "signin";
 
 const SCREENS: MockScreen[] = [
   "today",
@@ -72,9 +79,12 @@ const SCREENS: MockScreen[] = [
   "inbox",
   "activities",
   "inquiries",
+  "marketing",
+  "listing",
   "seller",
   "property",
   "states",
+  "signin",
 ];
 
 export function asMockScreen(value: string | undefined): MockScreen {
@@ -160,8 +170,10 @@ const NAV: Item[] = [
       { id: "inbox", label: "Inbox", screen: "inbox" },
       { id: "activities", label: "Activities", screen: "activities" },
       { id: "inquiries", label: "Inquiries", screen: "inquiries" },
+      { id: "marketing", label: "Marketing", screen: "marketing" },
     ],
   },
+  { id: "signin", label: "Sign in", icon: LogIn, screen: "signin" },
 ];
 
 function screenOn(item: MockScreen, current: MockScreen) {
@@ -176,19 +188,21 @@ function groupFor(screen: MockScreen) {
   return NAV.find((item) => item.children?.some((child) => screenOn(child.screen, screen)))?.id ?? null;
 }
 
-const DOCK = NAV.filter((item): item is Item & { screen: MockScreen } => Boolean(item.screen));
+const DOCK = NAV.filter((item): item is Item & { screen: MockScreen } => Boolean(item.screen) && item.screen !== "signin");
 
-function screenTitle(screen: MockScreen) {
-  for (const item of NAV) {
-    if (item.screen && screenOn(item.screen, screen)) return item.label;
-    const child = item.children?.find((entry) => screenOn(entry.screen, screen));
-    if (child) return child.label;
-  }
-  if (screen === "states") return "Screen states";
-  return "Today";
-}
+type Panel = "teams" | "account" | "notices" | "properties" | "create" | null;
 
-type Panel = "teams" | "account" | "notices" | null;
+const PROPERTIES = [
+  { id: "kingsmead", address: "14 Kingsmead" },
+  { id: "stonechat", address: "8 Stonechat Lane" },
+  { id: "kensington", address: "Flat 4B, Kensington" },
+];
+
+const STARTS: Array<{ label: string; screen: MockScreen }> = [
+  { label: "Seller form", screen: "mandateChoice" },
+  { label: "Buyer", screen: "properties" },
+  { label: "Viewing", screen: "viewingForm" },
+];
 
 export function MockFrame({
   screen,
@@ -209,6 +223,8 @@ export function MockFrame({
   const [panel, setPanel] = useState<Panel>(null);
   const [query, setQuery] = useState("");
   const [teamQuery, setTeamQuery] = useState("");
+  const [propertyQuery, setPropertyQuery] = useState("");
+  const [propertyId, setPropertyId] = useState(PROPERTIES[0].id);
   const [unread, setUnread] = useState(true);
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
     const group = groupFor(screen);
@@ -216,11 +232,14 @@ export function MockFrame({
   });
   const searchRef = useRef<HTMLInputElement>(null);
   const teamSearchRef = useRef<HTMLInputElement>(null);
+  const propertySearchRef = useRef<HTMLInputElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const [menuBehind, setMenuBehind] = useState(false);
   const teamsId = useId();
   const accountId = useId();
   const noticesId = useId();
+  const propertiesId = useId();
+  const createId = useId();
 
   useEffect(() => {
     const el = navRef.current;
@@ -253,6 +272,7 @@ export function MockFrame({
 
   useEffect(() => {
     if (panel === "teams") teamSearchRef.current?.focus();
+    if (panel === "properties") propertySearchRef.current?.focus();
   }, [panel]);
 
   useEffect(() => {
@@ -296,6 +316,13 @@ export function MockFrame({
   function togglePanel(next: Exclude<Panel, null>) {
     setPanel((current) => (current === next ? null : next));
     if (next === "notices") setUnread(false);
+    if (next === "properties") setPropertyQuery("");
+  }
+
+  function chooseProperty(id: string) {
+    setPropertyId(id);
+    setPanel(null);
+    setPropertyQuery("");
   }
 
   function toggleGroup(id: string) {
@@ -317,6 +344,17 @@ export function MockFrame({
     return [];
   });
   const teamVisible = AGENT.name.toLowerCase().includes(teamQuery.trim().toLowerCase());
+  const propertyNeedle = propertyQuery.trim().toLowerCase();
+  const propertyRows = PROPERTIES.filter((item) => item.address.toLowerCase().includes(propertyNeedle));
+  const currentProperty = PROPERTIES.find((item) => item.id === propertyId) ?? PROPERTIES[0];
+
+  if (screen === "signin" || screen === "listing") {
+    return (
+      <div data-theme={screen === "listing" || dark ? "dark" : "light"} className="re-mock re-frame sales-dashboard-premium bg-sales-bg text-sales-text-primary">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div data-theme={dark ? "dark" : "light"} className="re-mock re-frame sales-dashboard-premium bg-sales-bg text-sales-text-primary">
@@ -333,11 +371,9 @@ export function MockFrame({
             aria-controls={teamsId}
             onClick={() => togglePanel("teams")}
           >
-            <span className="re-sb-mark" aria-hidden>
-              <Home size={14} strokeWidth={2} />
-            </span>
+            <AbstractMark seed={AGENT.name} />
             <span className="re-sb-switch-name">{AGENT.name}</span>
-            {ANNOUNCEMENT.tone === "danger" ? <span className="re-sb-pill">Overdue</span> : null}
+            <span className="re-sb-pill is-plan">Growth</span>
             <ChevronDown size={16} strokeWidth={2} aria-hidden className={panel === "teams" ? "re-sb-chev is-open" : "re-sb-chev"} />
           </button>
           <button type="button" className="re-sb-close" aria-label="Close menu" onClick={() => setMobileOpen(false)}>
@@ -358,13 +394,11 @@ export function MockFrame({
               </label>
               {teamVisible ? (
                 <button type="button" className="re-sb-team is-current" aria-current="true">
-                  <span className="re-sb-mark" aria-hidden>
-                    <Home size={14} strokeWidth={2} />
-                  </span>
+                  <AbstractMark seed={AGENT.name} />
                   <span className="re-sb-team-copy">
                     <span className="re-sb-team-name">{AGENT.name}</span>
                   </span>
-                  {ANNOUNCEMENT.tone === "danger" ? <span className="re-sb-pill">Overdue</span> : null}
+                  <span className="re-sb-pill is-plan">Growth</span>
                   <Check size={14} strokeWidth={2} aria-hidden className="re-sb-check" />
                 </button>
               ) : (
@@ -480,9 +514,7 @@ export function MockFrame({
           </section>
 
           <div className="re-sb-user">
-            <span className="re-sb-avatar" aria-hidden>
-              {AGENT.initials}
-            </span>
+            <PixelPortrait seed={AGENT.name} />
             <span className="re-sb-handle" title={AGENT.handle}>
               {AGENT.handle}
             </span>
@@ -546,7 +578,7 @@ export function MockFrame({
                   <RotateCcw size={15} strokeWidth={1.7} aria-hidden />
                   <span className="re-sb-label">Replay loading</span>
                 </button>
-                <button type="button" className="re-sb-menu-row" onClick={() => setPanel(null)}>
+                <button type="button" className="re-sb-menu-row" onClick={() => go("signin")}>
                   <LogOut size={15} strokeWidth={1.7} aria-hidden />
                   <span className="re-sb-label">Sign out</span>
                 </button>
@@ -573,24 +605,92 @@ export function MockFrame({
       </aside>
 
       <div className="re-frame-main">
-        <div className="re-sb-bar">
+        <header className="re-top">
           <button
             type="button"
-            className="re-sb-bar-mark"
-            aria-label="Open menu"
-            onClick={() => {
-              setPanel(null);
-              setMobileOpen(true);
-            }}
+            className="re-top-btn re-top-property"
+            data-panel-trigger="properties"
+            aria-expanded={panel === "properties"}
+            aria-controls={propertiesId}
+            aria-label={`Current property, ${currentProperty.address}`}
+            onClick={() => togglePanel("properties")}
           >
-            <span className="re-sb-mark" aria-hidden>
-              <Home size={14} strokeWidth={2} />
-            </span>
+            <Building2 size={14} strokeWidth={2} aria-hidden className="re-top-property-icon" />
+            <span className="re-top-screen">{currentProperty.address}</span>
+            <ChevronsUpDown size={14} strokeWidth={2} aria-hidden className="re-top-swap" />
           </button>
-          <span className="re-sb-bar-name">{screenTitle(screen)}</span>
+          {panel === "properties" ? (
+            <div id={propertiesId} role="dialog" aria-label="Properties" data-panel="properties" className="re-sb-pop re-top-pop re-top-stock">
+              <label className="re-sb-search">
+                <Search size={16} strokeWidth={2} aria-hidden />
+                <input
+                  ref={propertySearchRef}
+                  value={propertyQuery}
+                  onChange={(event) => setPropertyQuery(event.target.value)}
+                  placeholder="Find a property"
+                  aria-label="Find a property"
+                />
+                <kbd>Esc</kbd>
+              </label>
+              {propertyRows.length > 0 ? (
+                propertyRows.map((item) => {
+                  const current = item.id === currentProperty.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={current ? "re-prop is-current" : "re-prop"}
+                      aria-current={current ? "true" : undefined}
+                      onClick={() => chooseProperty(item.id)}
+                    >
+                      <Building2 size={14} strokeWidth={2} aria-hidden />
+                      <span className="re-prop-name">{item.address}</span>
+                      {current ? <Check size={14} strokeWidth={2} aria-hidden className="re-sb-check" /> : null}
+                    </button>
+                  );
+                })
+              ) : (
+                <p className="re-sb-empty-line">No properties match.</p>
+              )}
+              <button type="button" className="re-top-add" onClick={() => go("mandateChoice")}>
+                <Plus size={15} strokeWidth={2} aria-hidden />
+                Add a property
+              </button>
+            </div>
+          ) : null}
+          <span className="re-top-gap" />
           <button
             type="button"
-            className="re-sb-icon-btn"
+            className="re-top-btn"
+            data-panel-trigger="create"
+            aria-expanded={panel === "create"}
+            aria-controls={createId}
+            onClick={() => togglePanel("create")}
+          >
+            <Plus size={15} strokeWidth={2} aria-hidden />
+            <span className="re-top-new-label">Create new</span>
+          </button>
+          {panel === "create" ? (
+            <div id={createId} role="dialog" aria-label="Start something" data-panel="create" className="re-sb-pop re-top-pop re-top-pop-end">
+              {STARTS.map((item) => (
+                <button key={item.screen} type="button" className="re-sb-menu-row" onClick={() => go(item.screen)}>
+                  <span className="re-sb-label">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            className="re-top-btn"
+            aria-current={screen === "diligence" ? "page" : undefined}
+            onClick={() => go("diligence")}
+          >
+            <ShieldCheck size={15} strokeWidth={2} aria-hidden />
+            <span>Due diligence</span>
+          </button>
+          <button
+            type="button"
+            className="re-sb-icon-btn re-top-bell"
             data-panel-trigger="notices"
             aria-label={unread ? "Notifications, unread" : "Notifications"}
             aria-expanded={panel === "notices"}
@@ -611,7 +711,7 @@ export function MockFrame({
               ))}
             </div>
           ) : null}
-        </div>
+        </header>
         <main className="re-scroll">
           <div className="mx-auto max-w-[1120px] px-4 py-6 min-[480px]:px-5 min-[480px]:py-8">{children}</div>
         </main>

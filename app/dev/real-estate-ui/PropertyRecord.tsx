@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Phone } from "lucide-react";
+import { ListingLinks } from "./ListingLinks";
+import { listingById } from "./marketing-links";
 
 function frame(body: string) {
   return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">${body}</svg>`)}`;
@@ -22,7 +24,7 @@ const PHOTOS = [
   },
 ];
 
-export function PropertyRecord({ loading }: { loading: boolean }) {
+export function PropertyRecord({ loading, listingId = "baines", onOpenMarketing, onPreview }: { loading: boolean; listingId?: string; onOpenMarketing: () => void; onPreview: () => void }) {
   const [slot, setSlot] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [photo, setPhoto] = useState(0);
@@ -37,12 +39,28 @@ export function PropertyRecord({ loading }: { loading: boolean }) {
     setNotice(`Viewing form copied for ${when}. Send it to the buyer.`);
   }
 
-  if (loading) {
+  const listing = listingById(listingId) ?? listingById("baines");
+
+  if (loading || !listing) {
     return (
       <div className="space-y-4" aria-hidden>
         <span className="re-bone block h-8 w-64 rounded-[6px]" />
         <span className="re-bone block h-40 rounded-[12px]" />
         <span className="re-bone block h-24 rounded-[12px]" />
+      </div>
+    );
+  }
+
+  if (listing.id !== "baines") {
+    return (
+      <div className="re-in space-y-5">
+        <button type="button" onClick={onOpenMarketing} className="inline-flex h-9 items-center rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold transition-colors hover:bg-sales-surface-hover">All links</button>
+        <header>
+          <p className="text-[13px] font-medium text-sales-text-muted">{listing.seller ?? listing.suburb}</p>
+          <h1 className="mt-1 font-display text-[32px] font-semibold leading-none tracking-[-0.03em]">{listing.address}</h1>
+          <p className="mt-2 text-[14px] text-sales-text-secondary">{[listing.suburb, listing.status].join(" · ")}</p>
+        </header>
+        <ListingLinks listingId={listing.id} onOpenMarketing={onOpenMarketing} onPreview={onPreview} />
       </div>
     );
   }
@@ -182,15 +200,7 @@ export function PropertyRecord({ loading }: { loading: boolean }) {
         </div>
       </section>
 
-      <section className="re-split flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-sales-border bg-sales-surface px-4 py-3">
-        <div>
-          <h2 className="text-[15px] font-semibold tracking-[-0.01em]">Public page</h2>
-          <p className="mt-0.5 text-[13px] text-sales-text-secondary">Your link for this property. The agency keeps the listing.</p>
-        </div>
-        <button type="button" className="h-9 shrink-0 rounded-[8px] border border-sales-border bg-sales-bg px-3 text-[13px] font-semibold transition-colors hover:bg-sales-surface-hover">
-          Copy link
-        </button>
-      </section>
+      <ListingLinks listingId={listing.id} onOpenMarketing={onOpenMarketing} onPreview={onPreview} />
     </div>
   );
 }
