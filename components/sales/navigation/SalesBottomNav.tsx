@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Ellipsis } from "lucide-react";
+import { Ellipsis, Menu } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { useSalesMobileChrome } from "@/components/sales/navigation/SalesMobileChromeContext";
 import {
@@ -63,10 +63,14 @@ export function SalesBottomNav({
   isSolo,
   whatsappBadge,
   tasksBadge,
+  onOpenMenu,
+  menuOpen = false,
 }: {
   isSolo: boolean;
   whatsappBadge: number;
   tasksBadge: number;
+  onOpenMenu?: () => void;
+  menuOpen?: boolean;
 }) {
   const pathname = usePathname();
   const { setMoreOpen, moreOpen } = useSalesMobileChrome();
@@ -136,33 +140,46 @@ export function SalesBottomNav({
           className={cn(
             "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 font-medium transition-colors",
             items.length > 4 ? "gap-1 text-[10px]" : realEstate ? "gap-1 text-[11px]" : "text-[10px]",
-            moreOpen ? "text-sales-text-primary" : "text-sales-text-secondary"
+            (onOpenMenu ? menuOpen : moreOpen) ? "text-sales-text-primary" : "text-sales-text-secondary"
           )}
-          aria-label={realEstate ? "Menu" : "More"}
-          aria-haspopup="dialog"
-          aria-expanded={moreOpen}
-          data-course-target="sales-mobile-nav-more"
-          onClick={() => {
-            setMoreOpen(true);
-            void import("@/lib/sales/training/course-events").then(({ emitCourseEvent }) => {
-              emitCourseEvent("MOBILE_MORE_OPENED");
-            });
-          }}
-        >
-          <span
-            className={cn(
-              "flex h-8 w-11 items-center justify-center rounded-[10px] transition-colors",
-              moreOpen && "bg-[var(--sales-sidebar-active)]"
-            )}
+            aria-label="More"
+            aria-haspopup="dialog"
+            aria-expanded={onOpenMenu ? menuOpen : moreOpen}
+            data-course-target="sales-mobile-nav-more"
+            onClick={() => {
+              if (onOpenMenu) {
+                onOpenMenu();
+                return;
+              }
+              setMoreOpen(true);
+              void import("@/lib/sales/training/course-events").then(({ emitCourseEvent }) => {
+                emitCourseEvent("MOBILE_MORE_OPENED");
+              });
+            }}
           >
-            <Ellipsis
-              size={20}
-              strokeWidth={moreOpen ? 2 : 1.75}
-              className={moreOpen ? "text-[var(--sales-sidebar-icon-active)]" : "text-sales-text-secondary"}
-              aria-hidden
-            />
-          </span>
-          <span className="leading-none">{realEstate ? "Menu" : "More"}</span>
+            <span
+              className={cn(
+                "flex h-8 w-11 items-center justify-center rounded-[10px] transition-colors",
+                (onOpenMenu ? menuOpen : moreOpen) && "bg-[var(--sales-sidebar-active)]"
+              )}
+            >
+              {realEstate ? (
+                <Menu
+                  size={20}
+                  strokeWidth={(onOpenMenu ? menuOpen : moreOpen) ? 2 : 1.75}
+                  className={(onOpenMenu ? menuOpen : moreOpen) ? "text-[var(--sales-sidebar-icon-active)]" : "text-sales-text-secondary"}
+                  aria-hidden
+                />
+              ) : (
+              <Ellipsis
+                size={20}
+                strokeWidth={moreOpen ? 2 : 1.75}
+                className={moreOpen ? "text-[var(--sales-sidebar-icon-active)]" : "text-sales-text-secondary"}
+                aria-hidden
+              />
+              )}
+            </span>
+            <span className="leading-none">More</span>
         </button>
       </div>
     </nav>

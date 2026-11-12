@@ -98,30 +98,13 @@ function SalesDashboardInner({
       demoGuest={demoGuest}
     >
       {isRealEstate ? (
-        <>
-          <DashboardHeader
-            firstName={firstName}
-            userName={fullName}
-            avatarUrl={avatarUrl}
-            unreadNotifications={unreadNotifications}
-            notificationRole={notificationRole}
-            onOpenLog={() => openLogSheet("")}
-            onAddLead={openAddHubSheet}
-            description="Here's what needs attention across your inquiries and viewings today."
-            userRoleLabel={roleLabel}
-            realEstate
-            toolbar
-            showQuickActions={false}
-            demoGuest={demoGuest}
-          />
-          <AgentDailyWorkspace
+        <AgentDailyWorkspace
             clientId={data.clientId!}
             data={data.realEstate!}
             onAddInquiry={demoGuest ? undefined : openAddHubSheet}
             onLogCall={demoGuest ? undefined : () => openLogSheet("")}
             copilot={<SalesCopilotDailyWorkspace firstName={firstName} embedded />}
           />
-        </>
       ) : (
         <>
           <DashboardHeader

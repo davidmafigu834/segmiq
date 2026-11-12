@@ -19,40 +19,13 @@ import { ViewingFormMock } from "./ViewingFormMock";
 import { MandateFormMock } from "./MandateFormMock";
 import { MandateChoice } from "./MandateChoice";
 import { OpenMandateFormMock } from "./OpenMandateFormMock";
+import { asMockScreen, MockFrame, type MockScreen } from "./MockSidebar";
 import "./mock.css";
 
-type Screen = "today" | "properties" | "calendar" | "people" | "sales" | "mandates" | "diligence" | "sellers" | "inspections" | "buyers" | "viewings" | "viewingForm" | "mandateChoice" | "mandateForm" | "openMandate" | "offers" | "inbox" | "activities" | "inquiries" | "seller" | "property" | "states";
-
-const SCREENS: Array<{ id: Screen; label: string }> = [
-  { id: "today", label: "Today" },
-  { id: "properties", label: "Properties" },
-  { id: "calendar", label: "Calendar" },
-  { id: "people", label: "People" },
-  { id: "sales", label: "Sales" },
-  { id: "mandates", label: "Mandates" },
-  { id: "diligence", label: "Due diligence" },
-  { id: "sellers", label: "Sellers" },
-  { id: "inspections", label: "Inspections" },
-  { id: "buyers", label: "Buyers" },
-  { id: "viewings", label: "Viewings" },
-  { id: "viewingForm", label: "Viewing link" },
-  { id: "mandateChoice", label: "Mandate link" },
-  { id: "offers", label: "Offers" },
-  { id: "inbox", label: "Inbox" },
-  { id: "activities", label: "Activities" },
-  { id: "inquiries", label: "Inquiries" },
-  { id: "seller", label: "Seller" },
-  { id: "property", label: "Property" },
-  { id: "states", label: "States" },
-];
-
-function asScreen(value: string | undefined): Screen {
-  if (value === "mandateForm" || value === "openMandate" || value === "mandateChoice") return value;
-  return SCREENS.some((item) => item.id === value) ? (value as Screen) : "today";
-}
+type Screen = MockScreen;
 
 export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }) {
-  const [screen, setScreen] = useState<Screen>(asScreen(initialScreen));
+  const [screen, setScreen] = useState<Screen>(asMockScreen(initialScreen));
   const [loading, setLoading] = useState(true);
   const [offerId, setOfferId] = useState<OfferId | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
@@ -91,7 +64,7 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
       url.searchParams.set("screen", screen);
       window.history.replaceState(null, "", url.toString());
     }
-    document.querySelector(".re-mock")?.scrollTo({ top: 0 });
+    document.querySelector(".re-scroll")?.scrollTo({ top: 0 });
     const timer = window.setTimeout(() => setLoading(false), 1400);
     return () => window.clearTimeout(timer);
   }, [screen]);
@@ -102,57 +75,7 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
   }
 
   return (
-    <div data-theme={dark ? "dark" : "light"} className="re-mock sales-dashboard-premium h-screen overflow-y-auto bg-sales-bg text-sales-text-primary">
-      <header className="sticky top-0 z-10 border-b border-sales-border-subtle bg-sales-bg">
-        <div className="mx-auto flex max-w-[1120px] flex-col gap-3 px-4 py-3 min-[480px]:px-5">
-          <div className="flex flex-col gap-3 min-[480px]:flex-row min-[480px]:items-center min-[480px]:justify-between">
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-sales-text-muted">SegmiQ · Proposal</p>
-            <p className="truncate font-display text-[15px] font-semibold tracking-[-0.02em]">Real estate workspace</p>
-          </div>
-          <div className="re-actions flex items-center gap-2">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={dark}
-              onClick={toggleDark}
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-[8px] border border-sales-border bg-sales-surface px-2.5 text-[13px] font-medium text-sales-text-secondary transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary"
-            >
-              Dark
-              <span className={`relative h-5 w-9 rounded-full ${dark ? "bg-sales-text-primary" : "bg-sales-border"}`} aria-hidden>
-                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-sales-surface ${dark ? "left-4" : "left-0.5"}`} />
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={replay}
-              className="h-9 rounded-[8px] border border-sales-border px-3 text-[13px] font-medium text-sales-text-secondary transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary"
-            >
-              Replay loading
-            </button>
-          </div>
-          </div>
-          <nav className="re-nav flex flex-wrap items-center gap-1" aria-label="Screens">
-            {SCREENS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                aria-current={screen === item.id || (item.id === "mandateChoice" && (screen === "mandateForm" || screen === "openMandate")) ? "page" : undefined}
-                onClick={() => openScreen(item.id)}
-                className={`h-9 shrink-0 rounded-[8px] px-3 text-[13px] font-medium transition-colors ${
-                  screen === item.id || (item.id === "mandateChoice" && (screen === "mandateForm" || screen === "openMandate"))
-                    ? "bg-sales-text-primary text-sales-surface"
-                    : "text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-[1120px] px-4 py-6 min-[480px]:px-5 min-[480px]:py-8">
+    <MockFrame screen={screen} dark={dark} onNavigate={openScreen} onToggleDark={toggleDark} onReplay={replay}>
         {offerId ? <OfferRecord id={offerId} onClose={() => setOfferId(null)} /> : null}
         {!offerId && screen === "today" ? <Today loading={loading} onOpenOffer={setOfferId} onAddBuyer={startAddBuyer} onNewMandate={() => openScreen("mandateChoice")} /> : null}
         {!offerId && screen === "calendar" ? <CalendarRecord loading={loading} /> : null}
@@ -192,8 +115,7 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
         {!offerId && screen === "seller" ? <SellerRecord loading={loading} /> : null}
         {!offerId && screen === "property" ? <PropertyRecord loading={loading} /> : null}
         {!offerId && screen === "states" ? <States /> : null}
-      </main>
-    </div>
+    </MockFrame>
   );
 }
 

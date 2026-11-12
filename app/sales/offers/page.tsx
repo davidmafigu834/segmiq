@@ -41,12 +41,12 @@ export default async function SalesOffersPage() {
         {...shell}
         breadcrumb="Sales / Offers"
         title="Offers"
-        description="Track negotiations and progress property offers. An accepted offer is not a completed sale."
+        description="Offers waiting on you, the seller, or a revision."
       >
         <OffersWorkspace
           clientId={session.clientId}
           variant="agent"
-          inquiriesHref="/sales/pipeline"
+          inquiriesHref="/sales/buyers"
           complianceHref={null}
         />
       </SalesAppShell>

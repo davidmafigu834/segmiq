@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Building2,
@@ -226,6 +226,8 @@ function SalesAppShellInner({
   const { quickActionsOpen, setQuickActionsOpen, hideBottomNav } = useSalesMobileChrome();
   const workspace = useCompanyWorkspace();
   const realEstateWorkspace = realEstate || workspace.isRealEstate;
+  const sidebarWidth = realEstateWorkspace && !collapsed ? 272 : width;
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -275,7 +277,7 @@ function SalesAppShellInner({
       data-mobile-full-bleed={mobileFullBleed || realEstateWorkspace ? "true" : "false"}
       data-sales-portal="true"
       data-re-workspace={realEstateWorkspace ? "true" : undefined}
-      style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
+      style={{ ["--sales-sidebar-current-width" as string]: `${sidebarWidth}px` } as CSSProperties}
     >
       <a
         href="#sales-main-content"
@@ -284,8 +286,7 @@ function SalesAppShellInner({
         Skip to main content
       </a>
       <PresenceHeartbeat />
-      {/* Desktop sidebar only — mobile uses bottom nav */}
-      <div className="hidden layout:contents">
+      <div className="contents">
         <SalesSidebar
           userName={userName}
           userRoleLabel={userRoleLabel}
@@ -295,6 +296,8 @@ function SalesAppShellInner({
           tasksBadge={tasksBadge}
           collapsed={collapsed}
           onToggleCollapsed={toggleCollapsed}
+          mobileOpen={realEstateWorkspace && mobileNavOpen}
+          onCloseMobile={() => setMobileNavOpen(false)}
         />
       </div>
 
@@ -307,6 +310,7 @@ function SalesAppShellInner({
           unreadNotifications={unreadNotifications}
           notificationRole={notificationRole}
           demoGuest={demoGuest}
+          onOpenMenu={() => setMobileNavOpen(true)}
         />
       ) : null}
 
@@ -356,6 +360,8 @@ function SalesAppShellInner({
             isSolo={isSolo}
             whatsappBadge={whatsappBadge}
             tasksBadge={tasksBadge}
+            onOpenMenu={realEstateWorkspace ? () => setMobileNavOpen(true) : undefined}
+            menuOpen={mobileNavOpen}
           />
           <SalesMoreSheet
             isSolo={isSolo}

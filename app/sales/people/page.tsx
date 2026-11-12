@@ -21,10 +21,10 @@ export default async function Page() {
   const shell = await loadSalesShellProps(session);
   return (
     <SalesLayout breadcrumb="Sales / PEOPLE" pageTitle="People" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / People" title="People" description="Sellers from mandates, and buyers from viewing forms." showDefaultHeader={false}>
+      <SalesAppShell {...shell} breadcrumb="Sales / People" title="People" description="Sellers, buyers, and tenants." showDefaultHeader={false}>
         <RealEstateLinkDirectory
           title="People"
-          description="A completed mandate opens a seller. A signed viewing form opens a buyer on that property."
+          description="Sellers, and buyers and tenants."
           links={AGENT_PEOPLE_LINKS}
         />
       </SalesAppShell>

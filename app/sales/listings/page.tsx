@@ -5,7 +5,6 @@ import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
-import { ListingsManager } from "@/components/real-estate/ListingsManager";
 import { PropertyRegister } from "@/components/real-estate/properties/PropertyRegister";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import { shouldRedirectFromRealEstateRoute } from "@/lib/real-estate/gating";
@@ -42,13 +41,10 @@ export default async function SalesListingsPage() {
         {...shell}
         breadcrumb="Sales / Properties"
         title="Properties"
-        description="Seller opportunities and listings you can work with."
+        description="Properties in preparation and properties on the market."
         searchPlaceholder="Search properties..."
       >
-        <div className="space-y-4">
-          <PropertyRegister clientId={session.clientId} surface="sales" />
-          <ListingsManager clientId={session.clientId} canApprove={false} listingPath="/sales/listings" />
-        </div>
+        <PropertyRegister clientId={session.clientId} surface="sales" />
       </SalesAppShell>
     </SalesLayout>
   );

@@ -7,13 +7,12 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
-  CalendarPlus,
   ClipboardList,
   FileCheck2,
   Handshake,
   Landmark,
   MessageSquareText,
-  PhoneCall,
+  Plus,
   ScrollText,
   Search,
   ShieldCheck,
@@ -41,7 +40,6 @@ import {
   ReMetricOverview,
   RePageHeader,
   RePartialNotice,
-  ReQuickActions,
   ReRowAction,
   ReSection,
   ReSkeletonRows,
@@ -177,8 +175,6 @@ function AttentionCard({ entry, group, className }: { entry: AttentionEntry; gro
 export function AgentDailyWorkspace({
   clientId,
   data,
-  onAddInquiry,
-  onLogCall,
   copilot,
 }: {
   clientId: string;
@@ -408,54 +404,6 @@ export function AgentDailyWorkspace({
   const txnRows = transactions.status === "ready" ? transactions.data.rows ?? [] : [];
   const txnTotal = transactions.status === "ready" ? transactions.data.counts?.active ?? txnRows.length : null;
 
-  const quickActions = {
-    primary: {
-      id: "mandate",
-      label: "New seller form",
-      description: "Choose a sole or open mandate and send the link",
-      icon: <ScrollText size={16} strokeWidth={1.8} />,
-      onSelect: () => router.push("/sales/listings/mandate"),
-    },
-    secondary: [
-      {
-        id: "buyer",
-        label: "Add buyer",
-        description: "Search a property and create a viewing form",
-        icon: <UsersRound size={16} strokeWidth={1.8} />,
-        onSelect: () => router.push("/sales/listings/viewing"),
-      },
-      ...(onAddInquiry
-        ? [
-            {
-              id: "inquiry",
-              label: "Add inquiry",
-              description: "Capture a new property inquiry",
-              icon: <MessageSquareText size={16} strokeWidth={1.8} />,
-              onSelect: onAddInquiry,
-            },
-          ]
-        : []),
-      {
-        id: "viewing",
-        label: "Viewing form",
-        description: "Copy a viewing form from a property",
-        icon: <CalendarPlus size={16} strokeWidth={1.8} />,
-        onSelect: () => router.push("/sales/listings/viewing"),
-      },
-      ...(onLogCall
-        ? [
-            {
-              id: "call",
-              label: "Log call",
-              description: "Record a call against an inquiry",
-              icon: <PhoneCall size={16} strokeWidth={1.8} />,
-              onSelect: onLogCall,
-            },
-          ]
-        : []),
-    ],
-  };
-
   const attentionCount = attention.length;
   const daySummary =
     attentionCount > 0
@@ -482,8 +430,14 @@ export function AgentDailyWorkspace({
         <p className="text-[12px] font-medium leading-4 text-sales-text-muted">{todayLabel()}</p>
         <div className="mt-1 flex items-center justify-between gap-3">
           <h1 className="min-w-0 font-display text-[24px] font-semibold leading-none tracking-[-0.02em] text-sales-text-primary">Today</h1>
-          <div className="shrink-0">
-            <ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />
+          <div className="flex shrink-0 gap-2">
+            <button type="button" onClick={() => router.push("/sales/listings/viewing")} className="inline-flex h-11 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface px-4 text-[14px] font-medium text-sales-text-primary hover:bg-sales-surface-hover">
+              Add buyer
+            </button>
+            <button type="button" onClick={() => router.push("/sales/listings/mandate")} className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-medium text-sales-brand-text">
+              <Plus size={16} strokeWidth={1.75} aria-hidden />
+              New seller form
+            </button>
           </div>
         </div>
         <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary">{daySummary}</p>
@@ -499,7 +453,17 @@ export function AgentDailyWorkspace({
               ? "Checking what needs your next action."
               : "Nothing needs your next action right now."
         }
-        actions={<ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => router.push("/sales/listings/viewing")} className="inline-flex h-11 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface px-4 text-[14px] font-medium text-sales-text-primary hover:bg-sales-surface-hover">
+              Add buyer
+            </button>
+            <button type="button" onClick={() => router.push("/sales/listings/mandate")} className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-medium text-sales-brand-text">
+              <Plus size={16} strokeWidth={1.75} aria-hidden />
+              New seller form
+            </button>
+          </div>
+        }
       />
 
       <div className="grid grid-cols-1 items-start gap-3 layout:grid-cols-12 layout:gap-[var(--re-section-gap,16px)]">

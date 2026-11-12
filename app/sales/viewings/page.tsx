@@ -20,7 +20,7 @@ export default async function Page() {
   const shell = await loadSalesShellProps(session);
   return (
     <SalesLayout breadcrumb="Sales / VIEWINGS" pageTitle="Viewings" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Viewings" title="Viewings" description="Manage appointments, property visits and customer feedback." showDefaultHeader={false}>
+      <SalesAppShell {...shell} breadcrumb="Sales / Viewings" title="Viewings" description="Appointments today, and outcomes still to record." showDefaultHeader={false}>
         <SalesViewingsList clientId={session.clientId} />
       </SalesAppShell>
     </SalesLayout>

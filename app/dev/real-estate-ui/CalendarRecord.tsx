@@ -62,7 +62,7 @@ export function CalendarRecord({ loading }: { loading: boolean }) {
 
   useEffect(() => {
     if (!openId) return;
-    document.querySelector(".re-mock")?.scrollTo({ top: 0 });
+    document.querySelector(".re-scroll")?.scrollTo({ top: 0 });
   }, [openId]);
 
   function book(event: FormEvent<HTMLFormElement>) {

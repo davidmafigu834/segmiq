@@ -6,7 +6,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, CalendarPlus, Landmark, MapPin, MessageSquareText, UserPlus, Users } from "lucide-react";
+import { Landmark, MapPin } from "lucide-react";
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { CompanyTeamCalendarCard } from "@/components/dashboard/company/CompanyTeamCalendarCard";
 import { CompanyFocusAreasCard } from "@/components/dashboard/company/CompanyFocusAreasCard";
@@ -34,7 +34,6 @@ import {
   ReList,
   ReMetricGrid,
   RePartialNotice,
-  ReQuickActions,
   ReRowAction,
   ReSection,
   ReSheet,
@@ -170,48 +169,6 @@ export function AgencyOverview({
       .sort((a, b) => (a.agentId === "unassigned" ? 1 : b.agentId === "unassigned" ? -1 : a.name.localeCompare(b.name)));
   }, [operations.status, operations.data, names]);
 
-  const quickActions = live
-    ? {
-        primary: {
-          id: "inquiry",
-          label: "Add inquiry",
-          description: "Capture a new property inquiry",
-          icon: <MessageSquareText size={16} strokeWidth={1.8} />,
-          onSelect: openAddHubSheet,
-        },
-        secondary: [
-          {
-            id: "mandate",
-            label: "Send seller form",
-            description: "Choose a sole or open mandate and send the link",
-            icon: <Building2 size={16} strokeWidth={1.8} />,
-            onSelect: () => router.push("/client/listings/mandate"),
-          },
-          {
-            id: "buyer",
-            label: "Buyers and tenants",
-            description: "Profiles opened when a viewing form is signed",
-            icon: <UserPlus size={16} strokeWidth={1.8} />,
-            onSelect: () => router.push("/client/buyers"),
-          },
-          {
-            id: "viewing",
-            label: "Viewings",
-            description: "Appointments booked from a signed viewing form",
-            icon: <CalendarPlus size={16} strokeWidth={1.8} />,
-            onSelect: () => router.push("/client/viewings"),
-          },
-          {
-            id: "team",
-            label: "Add team member",
-            description: "Invite an agent to the workspace",
-            icon: <Users size={16} strokeWidth={1.8} />,
-            onSelect: () => router.push("/client/team?invite=1"),
-          },
-        ],
-      }
-    : null;
-
   return (
     <>
       <CompanyDashboardHeader
@@ -226,8 +183,15 @@ export function AgencyOverview({
         description={`${data.clientName} · ${todayLabel()}`}
         primaryAction={null}
         titleActions={
-          quickActions ? (
-            <ReQuickActions primary={quickActions.primary} secondary={quickActions.secondary} sheetTitle="New" />
+          live ? (
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={openAddHubSheet} className="inline-flex h-11 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface px-4 text-[14px] font-medium text-sales-text-primary hover:bg-sales-surface-hover">
+                Add inquiry
+              </button>
+              <button type="button" onClick={() => router.push("/client/listings/mandate")} className="inline-flex h-11 items-center justify-center rounded-[10px] bg-sales-brand px-4 text-[14px] font-medium text-sales-brand-text">
+                Send seller form
+              </button>
+            </div>
           ) : null
         }
       />

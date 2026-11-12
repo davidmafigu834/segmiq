@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { CompanySidebar } from "@/components/company/navigation/CompanySidebar";
 import { CompanyMobileTopBar } from "@/components/company/navigation/CompanyMobileTopBar";
 import { CompanyBottomNav } from "@/components/company/navigation/CompanyBottomNav";
@@ -51,6 +51,9 @@ export function CompanyWorkspaceShell({
   const { collapsed, toggleCollapsed, width } = useCompanySidebarCollapsed({
     preferCollapsedOnFirstVisit: preferCollapsedSidebar,
   });
+  const realEstateShell = isRealEstate(businessType ?? parentWorkspace.businessType);
+  const sidebarWidth = realEstateShell && !collapsed ? 272 : width;
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const shell = (
     <ImportantMessagesProvider>
@@ -59,10 +62,10 @@ export function CompanyWorkspaceShell({
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideMobileChrome ? "true" : "false"}
       data-re-workspace={isRealEstate(businessType) ? "true" : undefined}
-      style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
+      style={{ ["--sales-sidebar-current-width" as string]: `${sidebarWidth}px` } as CSSProperties}
     >
       <PresenceHeartbeat />
-      <div className="hidden layout:contents">
+      <div className="contents">
         <CompanySidebar
           companyName={companyName}
           companyLogoUrl={companyLogoUrl}
@@ -72,6 +75,8 @@ export function CompanyWorkspaceShell({
           whatsappBadge={whatsappBadge}
           collapsed={collapsed}
           onToggleCollapsed={toggleCollapsed}
+          mobileOpen={realEstateShell && mobileNavOpen}
+          onCloseMobile={() => setMobileNavOpen(false)}
         />
       </div>
 
@@ -82,6 +87,7 @@ export function CompanyWorkspaceShell({
           avatarUrl={avatarUrl}
           unreadNotifications={unreadNotifications}
           notificationRole={notificationRole}
+          onOpenMenu={() => setMobileNavOpen(true)}
         />
       ) : null}
 
@@ -112,7 +118,13 @@ export function CompanyWorkspaceShell({
       </div>
 
       {!hideMobileChrome ? <ImportantMessagesTrigger floating /> : null}
-      {!hideMobileChrome ? <CompanyBottomNav whatsappBadge={whatsappBadge} /> : null}
+      {!hideMobileChrome ? (
+        <CompanyBottomNav
+          whatsappBadge={whatsappBadge}
+          onOpenMenu={realEstateShell ? () => setMobileNavOpen(true) : undefined}
+          menuOpen={mobileNavOpen}
+        />
+      ) : null}
     </div>
     </ImportantMessagesProvider>
   );

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleHelp, Ellipsis, X } from "lucide-react";
+import { CircleHelp, Ellipsis, Menu, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import {
   COMPANY_NAV_LUCIDE,
@@ -103,7 +103,15 @@ function MenuIcon({ icon }: { icon: CompanyNavIconId }) {
   return <Icon size={18} strokeWidth={1.75} aria-hidden />;
 }
 
-export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number }) {
+export function CompanyBottomNav({
+  whatsappBadge = 0,
+  onOpenMenu,
+  menuOpen = false,
+}: {
+  whatsappBadge?: number;
+  onOpenMenu?: () => void;
+  menuOpen?: boolean;
+}) {
   const pathname = usePathname();
   const { businessType, solarWorkflow } = useCompanyWorkspace();
   const navigation = getCompanyNavigation(businessType, { solarWorkflow });
@@ -172,17 +180,28 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
               items.length > 4 ? "gap-1 text-[10px]" : realEstate ? "gap-1 text-[11px]" : "text-[10px]",
               moreOpen ? "text-sales-text-primary" : "text-sales-text-secondary"
             )}
-            aria-label={realEstate ? "Menu" : "More"}
+            aria-label="More"
             aria-haspopup="dialog"
-            aria-expanded={moreOpen}
-            onClick={() => setMoreOpen(true)}
+            aria-expanded={onOpenMenu ? menuOpen : moreOpen}
+            onClick={() => {
+              if (onOpenMenu) onOpenMenu();
+              else setMoreOpen(true);
+            }}
           >
             <span
               className={cn(
                 "flex h-8 w-11 items-center justify-center rounded-[10px] transition-colors",
-                moreOpen && "bg-[var(--sales-sidebar-active)]"
+                (onOpenMenu ? menuOpen : moreOpen) && "bg-[var(--sales-sidebar-active)]"
               )}
             >
+              {realEstate ? (
+                <Menu
+                  size={20}
+                  strokeWidth={(onOpenMenu ? menuOpen : moreOpen) ? 2 : 1.75}
+                  className={(onOpenMenu ? menuOpen : moreOpen) ? "text-[var(--sales-sidebar-icon-active)]" : "text-sales-text-secondary"}
+                  aria-hidden
+                />
+              ) : (
               <Ellipsis
                 size={20}
                 strokeWidth={moreOpen ? 2 : 1.75}
@@ -191,8 +210,9 @@ export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number
                 }
                 aria-hidden
               />
+              )}
             </span>
-            <span className="leading-none">{realEstate ? "Menu" : "More"}</span>
+            <span className="leading-none">More</span>
           </button>
         </div>
       </nav>

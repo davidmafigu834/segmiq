@@ -15,7 +15,7 @@ const field = "mt-1.5 h-11 w-full min-w-0 max-w-full rounded-[10px] border borde
 function useTop(key: string | null) {
   useEffect(() => {
     if (!key) return;
-    document.querySelector(".re-mock")?.scrollTo({ top: 0 });
+    document.querySelector(".re-scroll")?.scrollTo({ top: 0 });
   }, [key]);
 }
 
