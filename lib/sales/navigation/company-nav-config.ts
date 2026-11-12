@@ -28,6 +28,7 @@ import {
   Search,
   Settings,
   Shield,
+  ShieldCheck,
   Trophy,
   UserRound,
   Users,
@@ -66,6 +67,7 @@ export type CompanyNavIconId =
   | "owners"
   | "inspections"
   | "mandates"
+  | "dueDiligence"
   | "buyers"
   | "matching"
   | "commissions"
@@ -92,6 +94,7 @@ export type CompanyNavSectionId =
   | "buyer_sales"
   | "agency"
   | "more_tools"
+  | "follow_up"
   | "properties"
   | "team"
   | "compliance"
@@ -113,7 +116,13 @@ export type CompanyNavItemConfig = {
   mobileSlot?: CompanyNavMobileSlot;
   mobileLabel?: string;
   match: (pathname: string) => boolean;
+  /** Highlights this destination while a related compatibility route is open. */
+  activeOn?: (pathname: string) => boolean;
 };
+
+export function companyNavIsActive(item: CompanyNavItemConfig, pathname: string): boolean {
+  return (item.activeOn ?? item.match)(pathname);
+}
 
 /** Match salesperson sidebar width exactly. */
 export const COMPANY_SIDEBAR_WIDTH_EXPANDED = 228;
@@ -145,6 +154,7 @@ export const COMPANY_NAV_LUCIDE: Record<Exclude<CompanyNavIconId, "whatsapp">, L
   owners: UserRound,
   inspections: ClipboardList,
   mandates: KeyRound,
+  dueDiligence: ShieldCheck,
   buyers: UsersRound,
   matching: Search,
   commissions: Wallet,
@@ -171,8 +181,9 @@ export const COMPANY_NAV_SECTION_LABEL: Record<CompanyNavSectionId, string> = {
   marketing: "Marketing",
   acquisition: "Property acquisition",
   buyer_sales: "Buyer and tenant sales",
-  agency: "Agency operations",
+  agency: "Agency tools",
   more_tools: "More tools",
+  follow_up: "Follow-up",
   properties: "Properties",
   team: "Team",
   compliance: "Compliance",
@@ -185,18 +196,63 @@ export const COMPANY_NAV_SECTION_LABEL: Record<CompanyNavSectionId, string> = {
 
 export const COMPANY_NAV_SECTION_ORDER: Record<BusinessType, CompanyNavSectionId[]> = {
   trades: ["company", "products", "tools"],
-  real_estate: [
-    "main",
-    "acquisition",
-    "buyer_sales",
-    "agency",
-    "more_tools",
-    "system",
-  ],
+  real_estate: ["main", "acquisition", "buyer_sales", "follow_up", "agency"],
 };
 
 function exactOrChild(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function covers(pathname: string, hrefs: readonly string[]): boolean {
+  return hrefs.some((href) => exactOrChild(pathname, href));
+}
+
+const REAL_ESTATE_COMPANY_ACTIVE_ON: Partial<Record<string, (pathname: string) => boolean>> = {
+  listings: (pathname) => covers(pathname, ["/client/listings", "/client/acquisitions", "/client/matching"]),
+  people: (pathname) => covers(pathname, ["/client/people", "/client/buyers/introductions"]),
+  review: (pathname) => covers(pathname, ["/client/review", "/client/compliance"]),
+  transactions: (pathname) => covers(pathname, ["/client/transactions"]),
+};
+
+const REAL_ESTATE_COMPANY_ITEM_ORDER: Partial<Record<CompanyNavSectionId, string[]>> = {
+  main: ["overview", "listings", "calendar", "people", "transactions", "review"],
+  acquisition: ["mandates", "dueDiligence", "owners", "inspections"],
+  buyer_sales: ["buyers", "viewings", "offers"],
+  follow_up: ["whatsapp", "inquiries", "socialInbox"],
+  agency: [
+    "agents",
+    "commissions",
+    "reports",
+    "marketing",
+    "lead-sources",
+    "listing-pages",
+    "website-leads",
+    "developments",
+    "documents",
+    "customers",
+    "feedback",
+    "agent-performance",
+    "settings",
+    "billing",
+  ],
+};
+
+function presentRealEstateCompanyNavigation(items: CompanyNavItemConfig[]): CompanyNavItemConfig[] {
+  const sectionRank = new Map(COMPANY_NAV_SECTION_ORDER.real_estate.map((id, index) => [id, index]));
+  const itemRank = new Map<string, number>();
+  COMPANY_NAV_SECTION_ORDER.real_estate.forEach((section) => {
+    (REAL_ESTATE_COMPANY_ITEM_ORDER[section] ?? []).forEach((id, index) => itemRank.set(id, index));
+  });
+  return [...items]
+    .map((item) => {
+      const activeOn = REAL_ESTATE_COMPANY_ACTIVE_ON[item.id];
+      return activeOn ? { ...item, activeOn } : item;
+    })
+    .sort((a, b) => {
+      const sectionDelta = (sectionRank.get(a.section) ?? 50) - (sectionRank.get(b.section) ?? 50);
+      if (sectionDelta !== 0) return sectionDelta;
+      return (itemRank.get(a.id) ?? 50) - (itemRank.get(b.id) ?? 50);
+    });
 }
 
 /**
@@ -412,12 +468,12 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
 export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
   {
     id: "overview",
-    label: "Dashboard",
+    label: "Today",
     href: "/client/dashboard",
     icon: "dashboard",
     section: "main",
     mobileSlot: "primary",
-    mobileLabel: "Home",
+    mobileLabel: "Today",
     match: (p) => p === "/client/dashboard",
   },
   {
@@ -425,7 +481,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Inquiries",
     href: "/client/leads",
     icon: "leads",
-    section: "more_tools",
+    section: "follow_up",
     mobileSlot: "more",
     mobileLabel: "Inquiries",
     match: (p) =>
@@ -458,8 +514,9 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Transactions",
     href: "/client/transactions",
     icon: "transactions",
-    section: "agency",
-    mobileSlot: "more",
+    section: "main",
+    mobileSlot: "primary",
+    mobileLabel: "Transactions",
     match: (p) => exactOrChild(p, "/client/transactions"),
   },
   {
@@ -477,9 +534,9 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Sales Inbox",
     href: "/client/inbox",
     icon: "whatsapp",
-    section: "main",
+    section: "follow_up",
     badgeKey: "whatsapp",
-    mobileSlot: "primary",
+    mobileSlot: "more",
     mobileLabel: "Inbox",
     match: (p) => exactOrChild(p, "/client/inbox"),
   },
@@ -488,7 +545,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Social Inbox",
     href: "/client/social-inbox",
     icon: "socialInbox",
-    section: "more_tools",
+    section: "follow_up",
     mobileSlot: "more",
     mobileLabel: "Social",
     match: (p) => exactOrChild(p, "/client/social-inbox"),
@@ -498,7 +555,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Marketing",
     href: "/client/marketing",
     icon: "marketing",
-    section: "more_tools",
+    section: "agency",
     mobileSlot: "more",
     match: (p) =>
       p === "/client/marketing" ||
@@ -511,7 +568,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Lead Sources",
     href: "/client/marketing/sources",
     icon: "sources",
-    section: "more_tools",
+    section: "agency",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/marketing/sources"),
   },
@@ -520,7 +577,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Listing pages",
     href: "/client/listing-pages",
     icon: "marketing",
-    section: "more_tools",
+    section: "agency",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/listing-pages"),
   },
@@ -529,7 +586,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Website Leads",
     href: "/client/marketing/website-leads",
     icon: "website",
-    section: "more_tools",
+    section: "agency",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/marketing/website-leads"),
   },
@@ -548,7 +605,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Introductions",
     href: "/client/buyers/introductions",
     icon: "buyers",
-    section: "overview",
+    section: "more_tools",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/buyers/introductions"),
   },
@@ -557,7 +614,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Property Matching",
     href: "/client/matching",
     icon: "matching",
-    section: "overview",
+    section: "more_tools",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/matching"),
   },
@@ -566,7 +623,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Property Opportunities",
     href: "/client/acquisitions",
     icon: "opportunities",
-    section: "overview",
+    section: "more_tools",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/acquisitions"),
   },
@@ -598,11 +655,20 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     match: (p) => exactOrChild(p, "/client/mandates"),
   },
   {
+    id: "dueDiligence",
+    label: "Due diligence",
+    href: "/client/due-diligence",
+    icon: "dueDiligence",
+    section: "acquisition",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/due-diligence"),
+  },
+  {
     id: "listings",
-    label: "Property Listings",
+    label: "Properties",
     href: "/client/listings",
     icon: "listings",
-    section: "agency",
+    section: "main",
     mobileSlot: "primary",
     mobileLabel: "Properties",
     match: (p) => exactOrChild(p, "/client/listings"),
@@ -612,13 +678,13 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Developments",
     href: "/client/developments",
     icon: "developments",
-    section: "more_tools",
+    section: "agency",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/developments"),
   },
   {
     id: "agents",
-    label: "Team Management",
+    label: "Team",
     href: "/client/team",
     icon: "team",
     section: "agency",
@@ -632,7 +698,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Agent Performance",
     href: "/client/agents/performance",
     icon: "performance",
-    section: "more_tools",
+    section: "agency",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/agents/performance"),
   },
@@ -668,18 +734,18 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Documents",
     href: "/client/documents",
     icon: "documents",
-    section: "more_tools",
+    section: "agency",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/documents"),
   },
   {
     id: "calendar",
-    label: "My Activities",
+    label: "Calendar",
     href: "/client/calendar",
     icon: "calendar",
     section: "main",
     mobileSlot: "primary",
-    mobileLabel: "Activities",
+    mobileLabel: "Calendar",
     match: (p) => exactOrChild(p, "/client/calendar"),
   },
   {
@@ -693,7 +759,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
   },
   {
     id: "reports",
-    label: "Reports & Analytics",
+    label: "Reports",
     href: "/client/reports",
     icon: "reports",
     section: "agency",
@@ -705,7 +771,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Feedback",
     href: "/client/feedback",
     icon: "feedback",
-    section: "more_tools",
+    section: "agency",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/feedback"),
   },
@@ -714,7 +780,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Customers",
     href: "/client/customers",
     icon: "customers",
-    section: "more_tools",
+    section: "agency",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/customers"),
   },
@@ -723,7 +789,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Settings",
     href: "/client/settings",
     icon: "settings",
-    section: "system",
+    section: "agency",
     mobileSlot: "more",
     match: (p) =>
       exactOrChild(p, "/client/settings") ||
@@ -735,9 +801,29 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Billing",
     href: "/client/billing",
     icon: "billing",
-    section: "system",
+    section: "agency",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/billing"),
+  },
+  {
+    id: "people",
+    label: "People",
+    href: "/client/people",
+    icon: "buyers",
+    section: "main",
+    mobileSlot: "primary",
+    mobileLabel: "People",
+    match: (p) => p === "/client/people" || p.startsWith("/client/people/"),
+  },
+  {
+    id: "review",
+    label: "Review",
+    href: "/client/review",
+    icon: "reviews",
+    section: "main",
+    mobileSlot: "more",
+    mobileLabel: "Review",
+    match: (p) => p === "/client/review" || p.startsWith("/client/review/"),
   },
 ];
 
@@ -842,7 +928,7 @@ export function getCompanyNavigation(
   businessType?: BusinessType | string | null,
   options?: { solarWorkflow?: boolean }
 ): CompanyNavItemConfig[] {
-  if (isRealEstate(businessType)) return REAL_ESTATE_COMPANY_NAVIGATION;
+  if (isRealEstate(businessType)) return presentRealEstateCompanyNavigation(REAL_ESTATE_COMPANY_NAVIGATION);
   if (!options?.solarWorkflow) {
     return COMPANY_NAVIGATION.filter((item) => !SOLAR_COMPANY_NAV_IDS.has(item.id));
   }

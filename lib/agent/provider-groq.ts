@@ -27,8 +27,12 @@ const MAX_RETRIES = 2;
 export type GroqChatMessage = OpenAiChatMessage;
 export const toGroqMessages = toOpenAiChatMessages;
 
-export function getGroqModel(): string {
-  return process.env.GROQ_MODEL?.trim() || DEFAULT_GROQ_MODEL;
+export function getGroqModel(env: Record<string, string | undefined> = process.env): string {
+  return env.GROQ_MODEL?.trim() || DEFAULT_GROQ_MODEL;
+}
+
+export function getGroqChatUrl(): string {
+  return GROQ_API_URL;
 }
 
 function sleep(ms: number): Promise<void> {

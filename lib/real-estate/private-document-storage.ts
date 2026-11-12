@@ -5,7 +5,7 @@ export function isPrivateDocumentStorageConfigured(): boolean {
  return Boolean(b&&b!==process.env.CLOUDFLARE_R2_BUCKET_NAME&&process.env.CLOUDFLARE_R2_ACCOUNT_ID&&process.env.CLOUDFLARE_R2_ACCESS_KEY_ID&&process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY);
 }
 function storage(key:string) {
- if(!isPrivateDocumentStorageConfigured()||!/^clients\/[^/]+\/(compliance|transactions|seller-intake)\//.test(key)||key.includes("..")||key.includes("\\"))throw new Error("Private document storage unavailable");
+ if(!isPrivateDocumentStorageConfigured()||!/^clients\/[^/]+\/(compliance|transactions|seller-intake|due-diligence)\//.test(key)||key.includes("..")||key.includes("\\"))throw new Error("Private document storage unavailable");
  return {Bucket:process.env.CLOUDFLARE_R2_PRIVATE_DOCUMENT_BUCKET_NAME!,client:new S3Client({region:"auto",endpoint:`https://${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,credentials:{accessKeyId:process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,secretAccessKey:process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!}})};
 }
 export async function putPrivateDocument(key:string,body:Buffer,contentType:string,options?:{contentDisposition?:string;cacheControl?:string}) {

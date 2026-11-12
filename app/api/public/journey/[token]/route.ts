@@ -18,6 +18,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
     name?: string;
     phone?: string;
     signature?: string;
+    party?: string;
     amount?: number;
     conditions?: string;
     letter?: Record<string, unknown> | null;

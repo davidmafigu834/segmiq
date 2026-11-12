@@ -2,12 +2,12 @@ import Link from "next/link";
 
 const STEPS = {
   sales: [
-    { href: "/sales/mandates", title: "1. Mandate", detail: "Send the seller form. Opening a completed form goes to that seller and a draft listing." },
+    { href: "/sales/listings/mandate", title: "1. Mandate", detail: "Choose a sole or open mandate, then send the seller the link." },
     { href: "/sales/listings", title: "2. Viewing", detail: "Share the viewing form from the property. A signed form opens the buyer and books the calendar." },
     { href: "/sales/offers", title: "3. Offer", detail: "Generate the offer from the buyer, then send it to the seller to review." },
   ],
   client: [
-    { href: "/client/mandates", title: "1. Mandate", detail: "Send the seller form. Opening a completed form goes to that seller and a draft listing." },
+    { href: "/client/listings/mandate", title: "1. Mandate", detail: "Choose a sole or open mandate, then send the seller the link." },
     { href: "/client/listings", title: "2. Viewing", detail: "Share the viewing form from the property. A signed form opens the buyer and books the calendar." },
     { href: "/client/offers", title: "3. Offer", detail: "Generate the offer from the buyer, then send it to the seller to review." },
   ],

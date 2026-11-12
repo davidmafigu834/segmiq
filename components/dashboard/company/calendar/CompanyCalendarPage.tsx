@@ -58,6 +58,8 @@ import {
   CompanyCalendarSummary,
   type CompanyCalendarSummaryAction,
 } from "./CompanyCalendarSummary";
+import { RealEstateCalendar } from "@/components/real-estate/calendar/RealEstateCalendar";
+import { companyAppointments } from "@/components/real-estate/calendar/appointments";
 
 const VIEWS: Array<{ id: CompanyCalendarView; label: string }> = [
   { id: "day", label: "Day" },
@@ -522,7 +524,7 @@ export function CompanyCalendarPage({
 
   return (
     <CompanyWorkspaceShell companyName={data.clientName} companyLogoUrl={companyLogoUrl} userName={userName} avatarUrl={avatarUrl} unreadNotifications={unreadNotifications} notificationRole={notificationRole} whatsappBadge={whatsappBadge}>
-      <CompanyDashboardHeader unreadNotifications={unreadNotifications} notificationRole={notificationRole} userName={userName} avatarUrl={avatarUrl} canAddLead={false} breadcrumb="Company / Calendar" title="Company Calendar" description={data.includeViewings ? "Team activities, follow-ups, viewings and tasks in one place." : "Team activities, follow-ups, meetings and tasks in one place."} primaryAction={<Button variant="primary" size="md" disabled={!canCreateActivities} leftIcon={<Plus size={16} />} rightIcon={<ChevronDown size={14} />} onClick={() => openAdd()} data-course-target="calendar-new-activity">New Activity</Button>} />
+      <CompanyDashboardHeader unreadNotifications={unreadNotifications} notificationRole={notificationRole} userName={userName} avatarUrl={avatarUrl} canAddLead={false} breadcrumb="Company / Calendar" title="Calendar" description={data.includeViewings ? "Viewings, follow-ups, and calls." : "Team activities, follow-ups, meetings and tasks in one place."} hideTitleBlock={Boolean(data.includeViewings)} primaryAction={data.includeViewings ? null : <Button variant="primary" size="md" disabled={!canCreateActivities} leftIcon={<Plus size={16} />} rightIcon={<ChevronDown size={14} />} onClick={() => openAdd()} data-course-target="calendar-new-activity">New Activity</Button>} />
 
       {data.viewingsPartial ? (
         <div className="mb-3 flex min-h-[48px] items-center justify-between gap-3 rounded-[12px] border border-sales-warning/30 bg-sales-warning-soft px-3.5 py-2.5 text-[13px] text-sales-warning-fg">
@@ -531,9 +533,20 @@ export function CompanyCalendarPage({
         </div>
       ) : null}
 
+      {data.includeViewings ? (
+        <RealEstateCalendar
+          items={companyAppointments(events, data.timezone)}
+          todayKey={todayKey}
+          bookHref="/client/listings"
+          onSelectDate={(key) => {
+            if (key < data.rangeStartKey || key >= data.rangeEndKey) selectDate(key);
+          }}
+        />
+      ) : (
       <CompanyCalendarSummary metrics={metrics} activeAction={summaryAction} scopeLabel={metricScopeLabel} onAction={handleSummaryAction} />
+      )}
 
-      <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]" data-course-target="company-calendar">
+      {data.includeViewings ? null : <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]" data-course-target="company-calendar">
         <section className="min-w-0 overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-none">
           <div className="flex flex-col gap-3 border-b border-sales-border-subtle px-3 py-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between" data-course-target="calendar-view-switcher">
             <div className="flex flex-wrap items-center gap-1.5">
@@ -593,9 +606,9 @@ export function CompanyCalendarPage({
         </section>
 
         <div className="hidden min-w-0 xl:block">{agendaRail}</div>
-      </div>
+      </div>}
 
-      {agendaOpen ? <div className="fixed inset-0 z-[70] xl:hidden"><button type="button" className="absolute inset-0 bg-black/35" aria-label="Close agenda" onClick={() => setAgendaOpen(false)} /><div className="absolute inset-y-0 right-0 w-full overflow-y-auto bg-sales-bg p-3 shadow-sales-popover sm:w-[min(92vw,420px)]"><button type="button" className="sd-icon-btn absolute right-5 top-5 z-10" onClick={() => setAgendaOpen(false)} aria-label="Close agenda"><X size={17} /></button>{agendaRail}</div></div> : null}
+      {agendaOpen && !data.includeViewings ? <div className="fixed inset-0 z-[70] xl:hidden"><button type="button" className="absolute inset-0 bg-black/35" aria-label="Close agenda" onClick={() => setAgendaOpen(false)} /><div className="absolute inset-y-0 right-0 w-full overflow-y-auto bg-sales-bg p-3 shadow-sales-popover sm:w-[min(92vw,420px)]"><button type="button" className="sd-icon-btn absolute right-5 top-5 z-10" onClick={() => setAgendaOpen(false)} aria-label="Close agenda"><X size={17} /></button>{agendaRail}</div></div> : null}
 
       {addOpen ? <AddEventSheet
         leads={data.scheduleableLeads}

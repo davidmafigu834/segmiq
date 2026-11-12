@@ -20,7 +20,7 @@ export default async function Page() {
   const shell = await loadSalesShellProps(session);
   return (
     <SalesLayout breadcrumb="Sales / COMMISSIONS" pageTitle="My commissions" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Commissions" title="My commissions" description="Track your approved allocations and payment progress." showDefaultHeader={false}>
+      <SalesAppShell {...shell} breadcrumb="Sales / Commissions" title="My commissions" description="What you are due, what is approved, and what has been paid." showDefaultHeader={false}>
         <CommissionsWorkspace clientId={session.clientId} mineOnly />
       </SalesAppShell>
     </SalesLayout>

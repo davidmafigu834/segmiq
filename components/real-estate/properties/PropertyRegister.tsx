@@ -100,7 +100,7 @@ export function PropertyRegister({
           className="h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[14px] text-sales-text-primary focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
         />
       </label>
-      <SellerIntakePanel clientId={clientId} mode="send" />
+      <SellerIntakePanel clientId={clientId} mode="send" createHref={surface === "client" ? "/client/listings/mandate" : "/sales/listings/mandate"} />
       {notice ? (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2">
           <p className="text-[13px] text-sales-text-secondary">{notice}</p>

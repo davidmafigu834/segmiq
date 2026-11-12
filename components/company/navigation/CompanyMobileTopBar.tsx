@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Home } from "lucide-react";
 import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import { NotificationBell } from "@/components/NotificationBell";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
@@ -19,12 +20,14 @@ export function CompanyMobileTopBar({
   avatarUrl,
   unreadNotifications,
   notificationRole,
+  onOpenMenu,
 }: {
   userName: string;
   userRoleLabel?: string;
   avatarUrl?: string | null;
   unreadNotifications: number;
   notificationRole: UserRole;
+  onOpenMenu?: () => void;
 }) {
   const crmTheme = useCrmThemeOptional();
   const { isRealEstate: realEstate, businessType, solarWorkflow } = useCompanyWorkspace();
@@ -46,6 +49,32 @@ export function CompanyMobileTopBar({
       />
     </Link>
   );
+
+  if (realEstate) {
+    return (
+      <header className="sales-mobile-top-bar sticky top-0 z-[30] flex h-[52px] shrink-0 items-center gap-2 border-b border-sales-border-subtle bg-[var(--sales-sidebar-bg)] px-3 layout:hidden">
+        <button
+          type="button"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] hover:bg-[var(--sales-sidebar-hover)]"
+          aria-label="Open menu"
+          onClick={onOpenMenu}
+        >
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-sales-brand text-sales-brand-text" aria-hidden>
+            <Home size={14} strokeWidth={2} />
+          </span>
+        </button>
+        <div className="min-w-0 flex-1 text-[14px] font-medium text-sales-text-primary">
+          <ReMobileHeaderTitle
+            entries={getCompanyNavigation(businessType, { solarWorkflow })}
+            homeHref="/client/dashboard"
+            home={<span className="truncate">Today</span>}
+            extra={[{ label: "Profile", href: "/client/settings/profile" }]}
+          />
+        </div>
+        <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
+      </header>
+    );
+  }
 
   return (
     <header className="sales-mobile-top-bar sticky top-0 z-[30] flex shrink-0 items-center justify-between gap-2 border-b border-sales-border-subtle bg-sales-surface px-4 layout:hidden">

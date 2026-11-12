@@ -185,13 +185,13 @@ export function AgentDailyWorkspace({
         actions={
           <>
             <Link
-              href="/sales/buyers?new=1"
+              href="/sales/listings/viewing"
               className="re-focus inline-flex h-11 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface px-4 text-[14px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
             >
               Add buyer
             </Link>
             <Link
-              href="/sales/mandates"
+              href="/sales/listings/mandate"
               className="re-focus inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text"
             >
               <Plus size={16} strokeWidth={1.75} aria-hidden />

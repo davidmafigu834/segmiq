@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleHelp, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { CircleHelp, Home, PanelLeftClose, PanelLeftOpen, Search, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { Avatar } from "@/components/sales/ui/Avatar";
 import { Tooltip } from "@/components/sales/ui/Tooltip";
@@ -21,7 +22,7 @@ import {
 } from "@/lib/sales/navigation/company-nav-config";
 import { displaySalesName } from "@/lib/sales/navigation/sales-nav-config";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
-import { ReSidebarSections, ReWorkspaceContext } from "@/components/real-estate/navigation/ReSidebarSections";
+import { ReSidebarSections } from "@/components/real-estate/navigation/ReSidebarSections";
 import { isRealEstate } from "@/lib/terminology";
 import { cn } from "@/lib/ui/cn";
 function NavIcon({
@@ -149,8 +150,13 @@ export function CompanySidebar({
   const wordmarkSrc =
     crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
   const navigation = getCompanyNavigation(businessType, { solarWorkflow });
-  const sectionOrder = getCompanyNavSectionOrder(businessType);
   const realEstate = isRealEstate(businessType);
+  const sectionOrder = getCompanyNavSectionOrder(businessType, { solarWorkflow });
+  const [find, setFind] = useState("");
+  const findQuery = find.trim().toLowerCase();
+  const shownNavigation = realEstate && findQuery
+    ? navigation.filter((item) => item.label.toLowerCase().includes(findQuery))
+    : navigation;
 
   const badges: Partial<Record<CompanyNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
@@ -168,12 +174,25 @@ export function CompanySidebar({
               : "h-[72px] items-center justify-between gap-2 px-5"
           )}
         >
+          {realEstate && !collapsedMode ? (
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-sales-brand text-sales-brand-text" aria-hidden>
+                <Home size={14} strokeWidth={2} />
+              </span>
+              <span className="truncate text-[14px] font-medium text-[var(--sales-sidebar-text)]">{companyName?.trim() || userName}</span>
+            </div>
+          ) : (
           <Link
             href="/client/dashboard"
             onClick={onCloseMobile}
             className="flex min-w-0 items-center focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
           >
             {collapsedMode ? (
+              realEstate ? (
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-sales-brand text-sales-brand-text" aria-hidden>
+                  <Home size={14} strokeWidth={2} />
+                </span>
+              ) : (
               <Image
                 src="/brand/segmiq-q.png"
                 alt="SegmiQ"
@@ -182,6 +201,7 @@ export function CompanySidebar({
                 priority
                 className="h-7 w-7 object-contain"
               />
+              )
             ) : (
               <Image
                 src={wordmarkSrc}
@@ -193,6 +213,7 @@ export function CompanySidebar({
               />
             )}
           </Link>
+          )}
 
           {drawer ? (
             <button
@@ -229,13 +250,22 @@ export function CompanySidebar({
         {realEstate ? (
           <>
             {collapsedMode ? null : (
-              <ReWorkspaceContext primary={companyName?.trim() || "Your agency"} secondary="Real Estate · Manager" />
+              <label className="mx-3 mb-2 flex h-9 items-center gap-2 rounded-[8px] border border-[var(--sales-sidebar-border)] px-2 text-[var(--sales-sidebar-muted)]">
+                <Search size={16} strokeWidth={1.75} aria-hidden />
+                <input
+                  value={find}
+                  onChange={(event) => setFind(event.target.value)}
+                  placeholder="Find"
+                  aria-label="Find a screen"
+                  className="min-w-0 flex-1 bg-transparent text-[14px] font-normal text-[var(--sales-sidebar-text)] outline-none placeholder:text-[var(--sales-sidebar-muted)]"
+                />
+              </label>
             )}
             <ReSidebarSections
               groups={sectionOrder.map((sectionId) => ({
                 id: sectionId,
                 label: COMPANY_NAV_SECTION_LABEL[sectionId],
-                items: companyNavBySection(navigation, sectionId),
+                items: companyNavBySection(shownNavigation, sectionId),
               }))}
               isActive={(item) => item.match(pathname)}
               collapsedMode={collapsedMode}
@@ -358,7 +388,7 @@ export function CompanySidebar({
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 hidden border-r border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-bg)] transition-[width] duration-200 ease-out layout:block",
-          collapsed ? "w-[68px]" : "w-[228px]"
+          collapsed ? "w-[68px]" : realEstate ? "w-[272px]" : "w-[228px]"
         )}
         data-collapsed={collapsed ? "true" : "false"}
       >

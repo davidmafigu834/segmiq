@@ -24,6 +24,7 @@ export function PipelinePageShell({
   shellClassName,
   searchPlaceholder = "Search Deals, customers...",
   demoGuest = false,
+  toolbar = false,
 }: {
   children: ReactNode;
   userName: string;
@@ -43,6 +44,7 @@ export function PipelinePageShell({
   dense?: boolean;
   shellClassName?: string;
   searchPlaceholder?: string;
+  toolbar?: boolean;
 }) {
   return (
     <SalesAppShell
@@ -63,6 +65,7 @@ export function PipelinePageShell({
       dense={dense}
       searchPlaceholder={searchPlaceholder}
       demoGuest={demoGuest}
+      toolbar={toolbar}
     >
       {children}
     </SalesAppShell>

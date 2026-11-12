@@ -155,3 +155,57 @@ export function buildOpenAiChatBody(opts: {
   }
   return body;
 }
+
+/** OpenAI-compatible JSON read used by the gateway and Groq document checks. */
+export async function generateJsonChat(args: {
+  url: string;
+  apiKey: string;
+  model: string;
+  system: string;
+  userContent: string | Array<Record<string, unknown>>;
+  extra?: Record<string, unknown>;
+  fetchImpl?: typeof fetch;
+}): Promise<{ ok: true; json: unknown; model: string } | { ok: false; error: string }> {
+  const fetchImpl = args.fetchImpl ?? fetch;
+  let response: Response;
+  try {
+    response = await fetchImpl(args.url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${args.apiKey}` },
+      body: JSON.stringify({
+        model: args.model,
+        temperature: 0,
+        max_tokens: 2500,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: args.system },
+          { role: "user", content: args.userContent },
+        ],
+        ...args.extra,
+      }),
+      signal: AbortSignal.timeout(45_000),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "request failed";
+    return { ok: false, error: message };
+  }
+  const payload = (await response.json().catch(() => null)) as {
+    choices?: Array<{ message?: { content?: unknown; tool_calls?: OpenAiToolCall[] } }>;
+    error?: { message?: string };
+  } | null;
+  if (!response.ok) return { ok: false, error: payload?.error?.message || `The document reader returned ${response.status}.` };
+  const message = payload?.choices?.[0]?.message;
+  const toolArgs = message?.tool_calls?.[0]?.function?.arguments;
+  const raw = typeof toolArgs === "string"
+    ? toolArgs
+    : toolArgs && typeof toolArgs === "object"
+      ? JSON.stringify(toolArgs)
+      : textFromOpenAiContent(message?.content);
+  if (!raw) return { ok: false, error: "The document reader returned an empty response." };
+  const trimmed = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  try {
+    return { ok: true, json: JSON.parse(trimmed), model: args.model };
+  } catch {
+    return { ok: false, error: "The document reader did not return JSON." };
+  }
+}
