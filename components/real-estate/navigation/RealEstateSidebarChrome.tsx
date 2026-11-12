@@ -34,38 +34,38 @@ function workspaceTips(homeHref: string): SidebarTip[] {
   return [
     {
       title: "Find a screen",
-      body: "Press F, then type the name of the page you need.",
+      body: "Press F, then type the page you need.",
       action: "Try Find",
       focusSearch: true,
     },
     {
-      title: "Start from Today",
-      body: manager ? "Today shows what the agency still needs to do." : "Add a buyer or send a seller form from the top of Today.",
+      title: "Today",
+      body: manager ? "What the agency still needs sits on Today." : "A new buyer or seller form starts on Today.",
       action: "Open Today",
       href: homeHref,
     },
     {
-      title: "The week is on Calendar",
-      body: "Viewings for the week sit on Calendar.",
+      title: "Calendar",
+      body: "This week's viewings sit on Calendar.",
       action: "Open Calendar",
       href: `${root}/calendar`,
     },
     manager
       ? {
-          title: "Files waiting on you",
-          body: "Review is where a file waits for a manager decision.",
+          title: "Review",
+          body: "A file that needs a decision sits in Review.",
           action: "Open Review",
           href: "/client/review",
         }
       : {
-          title: "Reply from Sales Inbox",
-          body: "WhatsApp conversations for this agency wait in Sales Inbox.",
+          title: "Sales Inbox",
+          body: "WhatsApp replies wait in Sales Inbox.",
           action: "Open inbox",
           href: "/sales/inbox",
         },
     {
-      title: "Stock is Properties",
-      body: "Search an address before you book a viewing or send a form.",
+      title: "Properties",
+      body: "Search an address before a viewing is booked.",
       action: "Open Properties",
       href: `${root}/listings`,
     },
@@ -268,7 +268,7 @@ export function RealEstateSidebarChrome({
               </span>
               <p className="re-sb-note-title">Action required</p>
             </div>
-            <p className="re-sb-note-body">A follow-up needs you today.</p>
+            <p className="re-sb-note-body">{homeHref.startsWith("/client") ? "A message is waiting for a reply." : "A viewing follow-up was due yesterday."}</p>
             <Link href={homeHref} className="re-sb-note-action" onClick={onClose}>
               Review today
             </Link>
