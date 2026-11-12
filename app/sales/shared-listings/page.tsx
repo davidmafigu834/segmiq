@@ -18,8 +18,8 @@ export default async function SharedListingsPage() {
   if (shouldRedirectFromRealEstateRoute(client?.business_type)) redirect("/sales/dashboard");
   const shell = await loadSalesShellProps(session);
   return (
-    <SalesLayout breadcrumb="Sales / SHARED LISTINGS" pageTitle="My Shared Listings" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} breadcrumb="Sales / Shared listings" title="My Shared Listings" description="Personal marketing links, visits, and enquiries.">
+    <SalesLayout breadcrumb="Sales / MARKETING" pageTitle="Marketing" hideShellHeader hideShellSidebar contentFlush>
+      <SalesAppShell {...shell} breadcrumb="Sales / Marketing" title="Marketing" description="Personal marketing links, visits, and enquiries.">
         <SharedListingsDashboard clientId={session.clientId} mode="agent" />
       </SalesAppShell>
     </SalesLayout>

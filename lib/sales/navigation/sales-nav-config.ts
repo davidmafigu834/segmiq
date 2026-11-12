@@ -15,6 +15,7 @@ import {
   Landmark,
   LayoutDashboard,
   ListTodo,
+  Megaphone,
   MessageSquare,
   Search,
   Shield,
@@ -58,7 +59,8 @@ export type SalesNavIconId =
   | "buyers"
   | "matching"
   | "viewings"
-  | "commissions";
+  | "commissions"
+  | "marketing";
 
 export type SalesNavMobileSlot = "primary" | "more";
 
@@ -134,6 +136,7 @@ export const SALES_NAV_LUCIDE: Record<Exclude<SalesNavIconId, "whatsapp">, Lucid
   offers: Handshake,
   transactions: Landmark,
   compliance: Shield,
+  marketing: Megaphone,
 };
 
 function exactOrChild(pathname: string, href: string): boolean {
@@ -536,9 +539,9 @@ export function resolveSalesNavItems(
   };
   const sharedListingsItem: SalesNavItemConfig = {
     id: "sharedListings",
-    label: "My Shared Listings",
+    label: "Marketing",
     href: "/sales/shared-listings",
-    icon: "listings",
+    icon: "marketing",
     section: "sales",
     mobileSlot: "more",
     mobileLabel: "Shared",
@@ -604,7 +607,7 @@ function covers(pathname: string, hrefs: readonly string[]): boolean {
 const REAL_ESTATE_ACTIVE_ON: Partial<Record<string, (pathname: string) => boolean>> = {
   listings: (pathname) =>
     !covers(pathname, ["/sales/listings/mandate", "/sales/listings/viewing"]) &&
-    covers(pathname, ["/sales/listings", "/sales/acquisitions", "/sales/shared-listings", "/sales/matching"]),
+    covers(pathname, ["/sales/listings", "/sales/acquisitions", "/sales/matching"]),
   transactions: (pathname) => covers(pathname, ["/sales/transactions", "/sales/compliance"]),
 };
 
@@ -627,7 +630,7 @@ const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
   matching: "more_tools",
   viewings: "buyer_sales",
   offers: "buyer_sales",
-  sharedListings: "agency",
+  sharedListings: "buyer_sales",
   compliance: "agency",
   commissions: "agency",
   pipeline: "more_tools",
@@ -645,13 +648,14 @@ const REAL_ESTATE_AGENT_LABELS: Record<string, { label: string; mobileLabel: str
   tasks: { label: "My Activities", mobileLabel: "Activities" },
   owners: { label: "Sellers", mobileLabel: "Sellers" },
   offers: { label: "Offers", mobileLabel: "Offers" },
+  sharedListings: { label: "Marketing", mobileLabel: "Marketing" },
   transactions: { label: "Sales", mobileLabel: "Sales" },
 };
 
 const REAL_ESTATE_ITEM_ORDER: Partial<Record<SalesNavSectionId, string[]>> = {
   main: ["dashboard", "listings", "calendar", "transactions", "whatsapp", "socialInbox", "tasks"],
   acquisition: ["mandates", "dueDiligence", "owners", "inspections"],
-  buyer_sales: ["leads", "buyers", "viewings", "offers"],
+  buyer_sales: ["leads", "buyers", "viewings", "offers", "sharedListings"],
 };
 
 /** Sections drawn in the Real Estate web menu. Other sections stay in the item list for direct URLs. */
