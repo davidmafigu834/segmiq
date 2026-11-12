@@ -9,6 +9,8 @@ import { viewingOverlapWarning } from "@/lib/real-estate/buyer-match";
 import { createRealEstateOffer, mutateRealEstateOffer } from "@/lib/real-estate/offer-service";
 import { buyerRecordIsOpenable } from "@/lib/real-estate/viewing-calendar";
 import { offerExpiryInstant, offerRevisionAfterTermChange, secureLinkAccess, claimViewingSubmission, issuanceTemplateDecision, transactionStartRecovery, SYNTHETIC_OFFER_TEMPLATE, SYNTHETIC_VIEWING_TEMPLATE, type SecureLinkScope } from "@/lib/real-estate/workflow/journey";
+import { viewingFormCard, viewingParty, viewingPhotoKeys, viewingSignatureAccepted } from "@/lib/real-estate/workflow/viewing-form";
+import { isPrivateListingImageStorageConfigured, readPrivateListingImage } from "@/lib/real-estate/private-listing-images";
 
 const LINK_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -64,7 +66,7 @@ export async function issueViewingLink(input: {
   if (!template.ok) return fail(409, template.error);
   if (input.actor.role !== "SUPER_ADMIN" && input.actor.clientId !== input.clientId) return fail(403, "Forbidden");
   const slots = [...new Set(input.slots.map((slot) => new Date(slot).toISOString()).filter((slot) => Number.isFinite(Date.parse(slot))))].slice(0, 8);
-  if (!slots.length) return fail(400, "Choose at least one proposed time.");
+  if (input.slots.length > 0 && slots.length === 0) return fail(400, "Choose at least one proposed time.");
   const supabase = createAdminClient();
   const { data: listing } = await supabase.from("listings").select("id, client_id, agent_id, approval_status, address, suburb").eq("id", input.listingId).eq("client_id", input.clientId).maybeSingle();
   if (!listing || !canReadListing(input.actor as ListingActor, listing)) return fail(404, "Listing not found.");
@@ -132,21 +134,64 @@ export async function previewJourneyLink(token: string) {
   });
   if (!access.ok) return fail(410, access.error);
   const supabase = createAdminClient();
-  const { data: listing } = await supabase.from("listings").select("address, suburb").eq("id", link.listing_id as string).eq("client_id", link.client_id as string).maybeSingle();
+  const { data: listing } = await supabase.from("listings").select("id, address, suburb, description, price, bedrooms, bathrooms, size_sqm, transaction_type, property_category, photos").eq("id", link.listing_id as string).eq("client_id", link.client_id as string).maybeSingle();
+  const { data: money } = await supabase.from("quotation_settings").select("default_currency").eq("client_id", link.client_id as string).maybeSingle();
   const brand = await agencyCard(String(link.client_id), (link.agent_id as string | null) ?? null);
+  const currency = typeof money?.default_currency === "string" ? money.default_currency.trim().toUpperCase() : null;
+  const card = viewingFormCard({
+    agencyName: brand.agencyName,
+    contactName: brand.contactName,
+    address: (listing?.address as string | null) ?? null,
+    suburb: (listing?.suburb as string | null) ?? null,
+    description: (listing?.description as string | null) ?? null,
+    price: listing?.price == null ? null : Number(listing.price),
+    currency: currency && /^[A-Z]{3}$/.test(currency) ? currency : null,
+    bedrooms: listing?.bedrooms == null ? null : Number(listing.bedrooms),
+    bathrooms: listing?.bathrooms == null ? null : Number(listing.bathrooms),
+    sizeSqm: listing?.size_sqm == null ? null : Number(listing.size_sqm),
+    transactionType: (listing?.transaction_type as string | null) ?? null,
+    propertyCategory: (listing?.property_category as string | null) ?? null,
+  });
+  const photoKeys = listing ? viewingPhotoKeys(listing.photos, String(link.client_id), String(listing.id)) : [];
   return {
     ok: true as const,
     purpose: link.purpose,
     synthetic: Boolean(link.synthetic),
     brand,
     propertyLabel: [listing?.address, listing?.suburb].filter(Boolean).join(", ") || "Property",
+    property: { ...card, photoCount: isPrivateListingImageStorageConfigured() ? photoKeys.length : 0 },
     slots: Array.isArray(link.authorised_slots) ? link.authorised_slots : [],
     revision: String(link.revision ?? "1"),
     savedProfile: null,
   };
 }
 
-export async function submitViewingLink(input: { token: string; slot: string; name: string; phone: string; signature: string }) {
+export async function readJourneyViewingPhoto(token: string, index: number) {
+  if (!Number.isInteger(index) || index < 0 || index > 3) return fail(404, "Photograph not found.");
+  const loaded = await loadLink(token);
+  if (!loaded.ok) return loaded;
+  const link = loaded.link;
+  if (link.purpose !== "viewing_acknowledgement") return fail(404, "Photograph not found.");
+  const access = secureLinkAccess({
+    link: scopeOf(link),
+    clientId: String(link.client_id),
+    purpose: "viewing_acknowledgement",
+    recordId: String(link.id),
+    revision: String(link.revision ?? "1"),
+    recipientId: (link.recipient_id as string | null) ?? null,
+    nowMs: Date.now(),
+  });
+  if (!access.ok) return fail(404, "Photograph not found.");
+  const supabase = createAdminClient();
+  const { data: listing } = await supabase.from("listings").select("id, photos").eq("id", link.listing_id as string).eq("client_id", link.client_id as string).maybeSingle();
+  const key = listing ? viewingPhotoKeys(listing.photos, String(link.client_id), String(listing.id))[index] : null;
+  if (!key) return fail(404, "Photograph not found.");
+  const image = await readPrivateListingImage(key);
+  if (!image) return fail(404, "Photograph unavailable.");
+  return { ok: true as const, bytes: image.bytes, contentType: image.contentType };
+}
+
+export async function submitViewingLink(input: { token: string; slot: string; name: string; phone: string; signature: string; party?: string | null }) {
   const loaded = await loadLink(input.token);
   if (!loaded.ok) return loaded;
   const link = loaded.link;
@@ -161,7 +206,9 @@ export async function submitViewingLink(input: { token: string; slot: string; na
     nowMs: Date.now(),
   });
   if (!access.ok) return fail(410, access.error);
-  if (!input.name.trim() || !input.phone.trim() || input.signature.trim().length < 2) return fail(400, "Enter your name, phone, and signature.");
+  if (!Number.isFinite(Date.parse(input.slot))) return fail(400, "Choose a time the agent offered, or suggest another.");
+  if (!input.name.trim() || !input.phone.trim() || !viewingSignatureAccepted(input.signature)) return fail(400, "Enter your name, phone, and signature.");
+  const party = viewingParty(input.party);
   const supabase = createAdminClient();
   const { data: existingRows } = await supabase.from("viewings").select("id, agent_id, scheduled_at").eq("client_id", link.client_id as string).eq("agent_id", link.agent_id as string).gte("scheduled_at", new Date(Date.parse(input.slot) - 3 * 3600_000).toISOString()).lte("scheduled_at", new Date(Date.parse(input.slot) + 3 * 3600_000).toISOString());
   const availabilityOk = !viewingOverlapWarning(
@@ -209,7 +256,7 @@ export async function submitViewingLink(input: { token: string; slot: string; na
     clientId: String(link.client_id),
     linkId: String(link.id),
     title: "Viewing acknowledgement",
-    lines: [claim.outcome === "book" || claim.outcome === "existing" ? "Confirmed booking" : "Viewing request", `Signer: ${input.name.trim()}`, `Signed: ${new Date().toISOString()}`, claim.copy],
+    lines: [claim.outcome === "book" || claim.outcome === "existing" ? "Confirmed booking" : "Viewing request", `Signer: ${input.name.trim()}`, party ? `Coming: ${party}` : "", `Signed: ${new Date().toISOString()}`, claim.copy].filter(Boolean),
   });
   await supabase.from("re_journey_submissions").insert({
     client_id: link.client_id,
@@ -218,7 +265,7 @@ export async function submitViewingLink(input: { token: string; slot: string; na
     revision: String(link.revision ?? "1"),
     signer_name: input.name.trim(),
     signed_at: new Date().toISOString(),
-    answers: { slot: input.slot },
+    answers: { slot: input.slot, ...(party ? { party } : {}) },
     storage_key: pdf.key,
     content_sha256: pdf.sha256,
     idempotency_key: `viewing-link:${String(link.id)}:${claim.outcome}:${input.slot}`,

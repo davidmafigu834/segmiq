@@ -412,17 +412,17 @@ export function AgentDailyWorkspace({
     primary: {
       id: "mandate",
       label: "New seller form",
-      description: "Create a link for the seller to complete",
+      description: "Choose a sole or open mandate and send the link",
       icon: <ScrollText size={16} strokeWidth={1.8} />,
-      onSelect: () => router.push("/sales/listings#seller-intake"),
+      onSelect: () => router.push("/sales/listings/mandate"),
     },
     secondary: [
       {
         id: "buyer",
         label: "Add buyer",
-        description: "Open buyers and tenants to add someone",
+        description: "Search a property and create a viewing form",
         icon: <UsersRound size={16} strokeWidth={1.8} />,
-        onSelect: () => router.push("/sales/buyers?new=1"),
+        onSelect: () => router.push("/sales/listings/viewing"),
       },
       ...(onAddInquiry
         ? [
@@ -440,7 +440,7 @@ export function AgentDailyWorkspace({
         label: "Viewing form",
         description: "Copy a viewing form from a property",
         icon: <CalendarPlus size={16} strokeWidth={1.8} />,
-        onSelect: () => router.push("/sales/listings"),
+        onSelect: () => router.push("/sales/listings/viewing"),
       },
       ...(onLogCall
         ? [

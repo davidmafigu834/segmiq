@@ -2,13 +2,13 @@ import Link from "next/link";
 
 const STEPS = {
   sales: [
-    { href: "/sales/listings#seller-intake", title: "1. Mandate", detail: "Send the seller form. A completed mandate opens the seller and a draft listing." },
+    { href: "/sales/listings/mandate", title: "1. Mandate", detail: "Choose a sole or open mandate, then send the seller the link." },
     { href: "/sales/listings", title: "2. Viewing", detail: "Share the viewing form from the property. A signed form opens the buyer and books the calendar." },
     { href: "/sales/offers", title: "3. Offer", detail: "Generate the offer from the buyer, then send it to the seller to review." },
     { href: "/sales/transactions", title: "4. Sold", detail: "Invite the lawyer from the transaction, then mark it sold." },
   ],
   client: [
-    { href: "/client/listings#seller-intake", title: "1. Mandate", detail: "Review the signed mandate. Approval opens the seller and one draft listing." },
+    { href: "/client/listings/mandate", title: "1. Mandate", detail: "Choose a sole or open mandate, then send the seller the link." },
     { href: "/client/listings", title: "2. Viewing", detail: "Share the viewing form from the property. A signed form opens the buyer and books the calendar." },
     { href: "/client/offers", title: "3. Offer", detail: "Generate the offer from the buyer, then send it to the seller to review." },
     { href: "/client/transactions", title: "4. Sold", detail: "Invite the lawyer from the transaction, then mark it sold." },

@@ -15,9 +15,13 @@ import { OfferRecord, type OfferId } from "./OfferRecord";
 import { CalendarRecord } from "./CalendarRecord";
 import { ActivitiesPage, BuyersPage, InboxPage, InquiriesPage, InspectionsPage, MandatesPage, PeoplePage, SalesPage, SellersPage, ViewingsPage } from "./WorkPages";
 import { DueDiligenceMock } from "./DueDiligenceMock";
+import { ViewingFormMock } from "./ViewingFormMock";
+import { MandateFormMock } from "./MandateFormMock";
+import { MandateChoice } from "./MandateChoice";
+import { OpenMandateFormMock } from "./OpenMandateFormMock";
 import "./mock.css";
 
-type Screen = "today" | "properties" | "calendar" | "people" | "sales" | "mandates" | "diligence" | "sellers" | "inspections" | "buyers" | "viewings" | "offers" | "inbox" | "activities" | "inquiries" | "seller" | "property" | "states";
+type Screen = "today" | "properties" | "calendar" | "people" | "sales" | "mandates" | "diligence" | "sellers" | "inspections" | "buyers" | "viewings" | "viewingForm" | "mandateChoice" | "mandateForm" | "openMandate" | "offers" | "inbox" | "activities" | "inquiries" | "seller" | "property" | "states";
 
 const SCREENS: Array<{ id: Screen; label: string }> = [
   { id: "today", label: "Today" },
@@ -31,6 +35,8 @@ const SCREENS: Array<{ id: Screen; label: string }> = [
   { id: "inspections", label: "Inspections" },
   { id: "buyers", label: "Buyers" },
   { id: "viewings", label: "Viewings" },
+  { id: "viewingForm", label: "Viewing link" },
+  { id: "mandateChoice", label: "Mandate link" },
   { id: "offers", label: "Offers" },
   { id: "inbox", label: "Inbox" },
   { id: "activities", label: "Activities" },
@@ -41,6 +47,7 @@ const SCREENS: Array<{ id: Screen; label: string }> = [
 ];
 
 function asScreen(value: string | undefined): Screen {
+  if (value === "mandateForm" || value === "openMandate" || value === "mandateChoice") return value;
   return SCREENS.some((item) => item.id === value) ? (value as Screen) : "today";
 }
 
@@ -49,6 +56,7 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
   const [loading, setLoading] = useState(true);
   const [offerId, setOfferId] = useState<OfferId | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
+  const [buyerFlow, setBuyerFlow] = useState<null | "pick" | string>(null);
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
@@ -66,7 +74,15 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
   function openScreen(next: Screen, id?: string) {
     setOfferId(null);
     setFocus(id ?? null);
+    setBuyerFlow(null);
     setScreen(next);
+  }
+
+  function startAddBuyer() {
+    setOfferId(null);
+    setFocus(null);
+    setBuyerFlow("pick");
+    setScreen("properties");
   }
 
   useEffect(() => {
@@ -121,10 +137,10 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
               <button
                 key={item.id}
                 type="button"
-                aria-current={screen === item.id ? "page" : undefined}
+                aria-current={screen === item.id || (item.id === "mandateChoice" && (screen === "mandateForm" || screen === "openMandate")) ? "page" : undefined}
                 onClick={() => openScreen(item.id)}
                 className={`h-9 shrink-0 rounded-[8px] px-3 text-[13px] font-medium transition-colors ${
-                  screen === item.id
+                  screen === item.id || (item.id === "mandateChoice" && (screen === "mandateForm" || screen === "openMandate"))
                     ? "bg-sales-text-primary text-sales-surface"
                     : "text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
                 }`}
@@ -138,9 +154,19 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
 
       <main className="mx-auto max-w-[1120px] px-4 py-6 min-[480px]:px-5 min-[480px]:py-8">
         {offerId ? <OfferRecord id={offerId} onClose={() => setOfferId(null)} /> : null}
-        {!offerId && screen === "today" ? <Today loading={loading} onOpenOffer={setOfferId} /> : null}
+        {!offerId && screen === "today" ? <Today loading={loading} onOpenOffer={setOfferId} onAddBuyer={startAddBuyer} onNewMandate={() => openScreen("mandateChoice")} /> : null}
         {!offerId && screen === "calendar" ? <CalendarRecord loading={loading} /> : null}
-        {!offerId && screen === "properties" ? <Properties loading={loading} onOpenOffer={setOfferId} /> : null}
+        {!offerId && screen === "properties" ? (
+          <Properties
+            loading={loading}
+            onOpenOffer={setOfferId}
+            selecting={buyerFlow != null}
+            selected={buyerFlow && buyerFlow !== "pick" ? buyerFlow : null}
+            onSelect={setBuyerFlow}
+            onBack={() => { setBuyerFlow(null); setScreen("today"); }}
+            onNewMandate={() => openScreen("mandateChoice")}
+          />
+        ) : null}
         {!offerId && screen === "offers" ? <Offers loading={loading} onOpenOffer={setOfferId} /> : null}
         {!offerId && screen === "people" ? <PeoplePage onOpen={openScreen} /> : null}
         {!offerId && screen === "sales" ? <SalesPage loading={loading} /> : null}
@@ -152,10 +178,14 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
             <SellerRecord loading={false} />
           </div>
         ) : null}
-        {!offerId && screen === "sellers" && focus !== "david" ? <SellersPage loading={loading} focus={focus} onOpenDavid={() => setFocus("david")} /> : null}
+        {!offerId && screen === "sellers" && focus !== "david" ? <SellersPage loading={loading} focus={focus} onOpenDavid={() => setFocus("david")} onNewMandate={() => openScreen("mandateChoice")} /> : null}
         {!offerId && screen === "inspections" ? <InspectionsPage loading={loading} /> : null}
         {!offerId && screen === "buyers" ? <BuyersPage loading={loading} focus={focus} onOpenOffer={(id, buyerId) => { setFocus(buyerId); setOfferId(id); }} /> : null}
         {!offerId && screen === "viewings" ? <ViewingsPage loading={loading} /> : null}
+        {!offerId && screen === "viewingForm" ? <ViewingFormMock /> : null}
+        {!offerId && screen === "mandateChoice" ? <MandateChoice onSole={() => openScreen("mandateForm")} onOpen={() => openScreen("openMandate")} /> : null}
+        {!offerId && screen === "mandateForm" ? <MandateFormMock onBack={() => openScreen("mandateChoice")} /> : null}
+        {!offerId && screen === "openMandate" ? <OpenMandateFormMock onBack={() => openScreen("mandateChoice")} /> : null}
         {!offerId && screen === "inbox" ? <InboxPage loading={loading} /> : null}
         {!offerId && screen === "activities" ? <ActivitiesPage loading={loading} /> : null}
         {!offerId && screen === "inquiries" ? <InquiriesPage loading={loading} onOpenBuyer={() => openScreen("buyers")} onOpenSeller={() => openScreen("sellers")} /> : null}
@@ -167,7 +197,7 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
   );
 }
 
-function Today({ loading, onOpenOffer }: { loading: boolean; onOpenOffer: (id: OfferId) => void }) {
+function Today({ loading, onOpenOffer, onAddBuyer, onNewMandate }: { loading: boolean; onOpenOffer: (id: OfferId) => void; onAddBuyer: () => void; onNewMandate: () => void }) {
   return (
     <div className="space-y-5">
       <div className="re-head flex flex-wrap items-end justify-between gap-4">
@@ -177,10 +207,10 @@ function Today({ loading, onOpenOffer }: { loading: boolean; onOpenOffer: (id: O
           <p className="mt-2 text-[14px] text-sales-text-secondary">3 items need a next action.</p>
         </div>
         <div className="re-actions flex flex-wrap gap-2">
-          <button type="button" className="inline-flex h-11 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface px-4 text-[14px] font-semibold transition-colors hover:bg-sales-surface-hover">
+          <button type="button" onClick={onAddBuyer} className="inline-flex h-11 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface px-4 text-[14px] font-semibold transition-colors hover:bg-sales-surface-hover">
             Add buyer
           </button>
-          <button type="button" className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text">
+          <button type="button" onClick={onNewMandate} className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text">
             <Plus size={16} strokeWidth={1.75} aria-hidden />
             New seller form
           </button>
@@ -320,39 +350,101 @@ function DiligenceDesk({ loading }: { loading: boolean }) {
   );
 }
 
-function Properties({ loading, onOpenOffer }: { loading: boolean; onOpenOffer: (id: OfferId) => void }) {
-  const rows = [
-    ["14 Kingsmead", "Tendai Moyo", "On the market", "Share viewing form"],
-    ["8 Stonechat Lane", "Amina Cruz", "In preparation", "Book inspection"],
-    ["Flat 4B, Kensington", "Rudo Ncube", "Under offer", "Open offer"],
-  ];
+const STOCK = [
+  { address: "14 Kingsmead", seller: "Tendai Moyo", status: "On the market", action: "Share viewing form", offer: null },
+  { address: "8 Stonechat Lane", seller: "Amina Cruz", status: "In preparation", action: "Book inspection", offer: null },
+  { address: "Flat 4B, Kensington", seller: "Rudo Ncube", status: "Under offer", action: "Open offer", offer: "kensington" as OfferId },
+] as const;
+
+function Properties({
+  loading,
+  onOpenOffer,
+  selecting = false,
+  selected = null,
+  onSelect,
+  onBack,
+  onNewMandate,
+}: {
+  loading: boolean;
+  onOpenOffer: (id: OfferId) => void;
+  selecting?: boolean;
+  selected?: string | null;
+  onSelect?: (address: string) => void;
+  onBack?: () => void;
+  onNewMandate?: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const needle = query.trim().toLowerCase();
+  const rows = STOCK.filter((row) => {
+    if (!selecting || !needle) return true;
+    return `${row.address} ${row.seller} ${row.status}`.toLowerCase().includes(needle);
+  });
   return (
     <div className="space-y-5">
-      <PageTitle kicker="Stock" title="Properties" detail="In preparation, on the market, and under offer." action="New seller form" />
-      <div className="re-chips flex gap-2">
-        {["All", "In preparation", "On the market", "Closed"].map((label, index) => (
-          <span key={label} className={`inline-flex h-9 shrink-0 items-center rounded-full px-3 text-[13px] font-medium ${index === 0 ? "bg-sales-text-primary text-sales-surface" : "border border-sales-border text-sales-text-secondary"}`}>
-            {label}
-          </span>
-        ))}
-      </div>
-      <Panel title="Properties" count={loading ? undefined : 3} flush>
-        {loading ? <Bones kind="quiet" /> : (
+      {selecting ? (
+        <div className="re-head flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[13px] font-medium text-sales-text-muted">Stock</p>
+            <h1 className="mt-1 break-words font-display text-[32px] font-semibold leading-none tracking-[-0.03em]">Properties</h1>
+            <p className="mt-2 text-[14px] text-sales-text-secondary">Search for the property, then select it. The viewing form is for that address.</p>
+          </div>
+          <button type="button" onClick={onBack} className="inline-flex h-11 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface px-4 text-[14px] font-semibold transition-colors hover:bg-sales-surface-hover">
+            Back
+          </button>
+        </div>
+      ) : (
+        <PageTitle kicker="Stock" title="Properties" detail="In preparation, on the market, and under offer." action="New seller form" onAction={onNewMandate} />
+      )}
+      {selecting ? (
+        <label className="block">
+          <span className="text-[13px] font-medium">Search properties</span>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Address or seller"
+            className="mt-1.5 h-11 w-full min-w-0 rounded-[10px] border border-sales-border bg-sales-bg px-3 text-[14px] text-sales-text-primary placeholder:text-sales-text-muted"
+          />
+        </label>
+      ) : null}
+      {selected ? <ViewingFormLink key={selected} address={selected} /> : null}
+      {selecting ? null : (
+        <div className="re-chips flex gap-2">
+          {["All", "In preparation", "On the market", "Closed"].map((label, index) => (
+            <span key={label} className={`inline-flex h-9 shrink-0 items-center rounded-full px-3 text-[13px] font-medium ${index === 0 ? "bg-sales-text-primary text-sales-surface" : "border border-sales-border text-sales-text-secondary"}`}>
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
+      <Panel title="Properties" count={loading ? undefined : rows.length} flush>
+        {loading ? <Bones kind="quiet" /> : rows.length === 0 ? (
+          <div className="px-4 py-10 text-center">
+            <p className="text-[15px] font-semibold">No property matches</p>
+            <p className="mx-auto mt-1 max-w-[36ch] text-[13px] text-sales-text-secondary">Try another address or seller name.</p>
+          </div>
+        ) : (
           <>
           <ul className="min-[480px]:hidden">
-            {rows.map((row, index) => (
-              <li key={row[0]} className="re-in border-t border-sales-border-subtle px-4 py-3" style={{ animationDelay: `${index * 40}ms` }}>
-                <p className="text-[14px] font-semibold">{row[0]}</p>
-                <p className="mt-0.5 text-[13px] text-sales-text-secondary">{row[1]} · {row[2]}</p>
-                <button
-                  type="button"
-                  onClick={row[3] === "Open offer" ? () => onOpenOffer("kensington") : undefined}
-                  className="mt-3 h-11 w-full rounded-[10px] border border-sales-border bg-sales-bg text-[14px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
-                >
-                  {row[3]}
-                </button>
-              </li>
-            ))}
+            {rows.map((row, index) => {
+              const chosen = selected === row.address;
+              const label = selecting ? (chosen ? "Selected" : "Create viewing form") : row.action;
+              return (
+                <li key={row.address} className="re-in border-t border-sales-border-subtle px-4 py-3" style={{ animationDelay: `${index * 40}ms` }}>
+                  <p className="text-[14px] font-semibold">{row.address}</p>
+                  <p className="mt-0.5 text-[13px] text-sales-text-secondary">{row.seller} · {row.status}</p>
+                  <button
+                    type="button"
+                    aria-pressed={selecting ? chosen : undefined}
+                    onClick={selecting ? () => onSelect?.(row.address) : row.offer ? () => onOpenOffer(row.offer) : undefined}
+                    className={`mt-3 h-11 w-full rounded-[10px] border text-[14px] font-semibold transition-colors ${
+                      chosen ? "border-sales-text-primary bg-sales-surface-active text-sales-text-primary" : "border-sales-border bg-sales-bg text-sales-text-primary hover:bg-sales-surface-hover"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
           <table className="hidden w-full text-left min-[480px]:table">
             <thead>
@@ -364,28 +456,89 @@ function Properties({ loading, onOpenOffer }: { loading: boolean; onOpenOffer: (
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, index) => (
-                <tr key={row[0]} className="re-in border-b border-sales-border-subtle last:border-0" style={{ animationDelay: `${index * 40}ms` }}>
-                  <td className="px-4 py-3 text-[14px] font-semibold">{row[0]}</td>
-                  <td className="px-3 py-3 text-[13px] text-sales-text-secondary">{row[1]}</td>
-                  <td className="px-3 py-3 text-[13px] text-sales-text-secondary">{row[2]}</td>
-                  <td className="px-3 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={row[3] === "Open offer" ? () => onOpenOffer("kensington") : undefined}
-                      className="h-9 rounded-[8px] border border-sales-border bg-sales-bg px-3 text-[13px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
-                    >
-                      {row[3]}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {rows.map((row, index) => {
+                const chosen = selected === row.address;
+                const label = selecting ? (chosen ? "Selected" : "Create viewing form") : row.action;
+                return (
+                  <tr key={row.address} className="re-in border-b border-sales-border-subtle last:border-0" style={{ animationDelay: `${index * 40}ms` }}>
+                    <td className="px-4 py-3 text-[14px] font-semibold">{row.address}</td>
+                    <td className="px-3 py-3 text-[13px] text-sales-text-secondary">{row.seller}</td>
+                    <td className="px-3 py-3 text-[13px] text-sales-text-secondary">{row.status}</td>
+                    <td className="px-3 py-3 text-right">
+                      <button
+                        type="button"
+                        aria-pressed={selecting ? chosen : undefined}
+                        onClick={selecting ? () => onSelect?.(row.address) : row.offer ? () => onOpenOffer(row.offer) : undefined}
+                        className={`h-9 rounded-[8px] border px-3 text-[13px] font-semibold transition-colors ${
+                          chosen ? "border-sales-text-primary bg-sales-surface-active text-sales-text-primary" : "border-sales-border bg-sales-bg text-sales-text-primary hover:bg-sales-surface-hover"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           </>
         )}
       </Panel>
     </div>
+  );
+}
+
+function ViewingFormLink({ address }: { address: string }) {
+  const [link, setLink] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function generate() {
+    setError(null);
+    setCopied(false);
+    setGenerating(true);
+    window.setTimeout(() => {
+      setLink(`${window.location.origin}/dev/real-estate-ui?screen=viewingForm`);
+      setGenerating(false);
+    }, 500);
+  }
+
+  async function copy() {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setError(null);
+    } catch {
+      setCopied(false);
+      setError("Select the link and copy it.");
+    }
+  }
+
+  return (
+    <section className="re-in rounded-[12px] border border-sales-border bg-sales-surface px-4 py-4" aria-label="Viewing form">
+      <h2 className="font-display text-[22px] font-semibold leading-none tracking-[-0.03em]">Viewing form</h2>
+      <p className="mt-2 max-w-[52ch] text-[14px] text-sales-text-secondary">For {address}. The buyer chooses a time and signs. A signed form opens the buyer. Nothing is saved from this sample.</p>
+      <button type="button" disabled={generating} onClick={generate} className="mt-4 inline-flex h-11 items-center justify-center rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text transition-colors hover:opacity-90 disabled:opacity-60">
+        {generating ? "Generating" : "Generate link"}
+      </button>
+      {error ? <p className="mt-3 text-[13px] font-medium text-sales-danger-fg">{error}</p> : null}
+      {link ? (
+        <div className="mt-4 flex flex-col gap-2 border-t border-sales-border-subtle pt-4 sm:flex-row sm:items-center">
+          <input
+            readOnly
+            value={link}
+            aria-label="Viewing form link"
+            onFocus={(event) => event.currentTarget.select()}
+            className="h-11 min-w-0 flex-1 rounded-[10px] border border-sales-border bg-sales-bg px-3 text-[13px] text-sales-text-primary"
+          />
+          <button type="button" onClick={() => void copy()} className="inline-flex h-11 items-center justify-center rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text transition-colors hover:opacity-90">
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -453,7 +606,7 @@ function States() {
   );
 }
 
-function PageTitle({ kicker, title, detail, action }: { kicker: string; title: string; detail: string; action: string }) {
+function PageTitle({ kicker, title, detail, action, onAction }: { kicker: string; title: string; detail: string; action: string; onAction?: () => void }) {
   return (
     <div className="re-head flex items-end justify-between gap-4">
       <div className="min-w-0">
@@ -461,7 +614,7 @@ function PageTitle({ kicker, title, detail, action }: { kicker: string; title: s
         <h1 className="mt-1 break-words font-display text-[32px] font-semibold leading-none tracking-[-0.03em]">{title}</h1>
         <p className="mt-2 text-[14px] text-sales-text-secondary">{detail}</p>
       </div>
-      <button type="button" className="re-fill inline-flex h-11 items-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text">
+      <button type="button" onClick={onAction} className="re-fill inline-flex h-11 items-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text">
         <Plus size={16} strokeWidth={1.75} aria-hidden />
         {action}
       </button>

@@ -170,6 +170,7 @@ function SalesAppShellInner({
   headerActions,
   titleActions,
   showDefaultHeader = true,
+  toolbar = false,
   showSearch = true,
   showQuickActions = true,
   onLogCall,

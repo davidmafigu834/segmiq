@@ -399,11 +399,10 @@ export function InquiriesPage({ loading, onOpenBuyer, onOpenSeller }: { loading:
   );
 }
 
-export function SellersPage({ loading, focus, onOpenDavid }: { loading: boolean; focus: string | null; onOpenDavid: () => void }) {
+export function SellersPage({ loading, focus, onOpenDavid, onNewMandate }: { loading: boolean; focus: string | null; onOpenDavid: () => void; onNewMandate?: () => void }) {
   const [openId, setOpenId] = useState<string | null>(focus === "amina" ? "amina" : null);
   const [booked, setBooked] = useState<string | null>(null);
   const [when, setWhen] = useState("2026-11-12T09:00");
-  const [formReady, setFormReady] = useState(false);
   useTop(openId);
   if (openId === "amina") {
     return (
@@ -429,8 +428,7 @@ export function SellersPage({ loading, focus, onOpenDavid }: { loading: boolean;
   }
   return (
     <div className="space-y-5">
-      <Head kicker="Property acquisition" title="Sellers" detail="People with a property on file." action={formReady ? undefined : "New seller form"} onAction={() => setFormReady(true)} />
-      {formReady ? <p className="text-[14px] text-sales-text-secondary">Seller form prepared. Send it to the person with a property to sell.</p> : null}
+      <Head kicker="Property acquisition" title="Sellers" detail="People with a property on file." action="New seller form" onAction={onNewMandate} />
       <List title="Sellers" count={loading ? undefined : 2}>
         {loading ? <Bones /> : (
           <>

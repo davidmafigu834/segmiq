@@ -76,7 +76,7 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
     const json = await res.json().catch(() => ({}));
     setLoading(false);
     if (!res.ok) {
-      setError(json.error ?? "Could not load owners");
+      setError(json.error ?? "Could not load sellers");
       return;
     }
     setError(null);
@@ -113,25 +113,25 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
         title="Sellers"
-        description="Seller profiles. A completed mandate opens the seller and the property they are listing."
+        description="Seller profiles. A completed form opens the seller and the property."
       />
       <SellerIntakePanel clientId={clientId} mode="queue" />
       <label>
-        <span className="sr-only">Search owners</span>
+        <span className="sr-only">Search sellers</span>
         <input className={acqFieldClass} placeholder="Search by name" value={q} onChange={(event) => setQ(event.target.value)} />
       </label>
-      {error ? <ReErrorState title="Owners didn't load" description={error} onRetry={() => void load()} /> : null}
-      {loading ? <ReSkeletonRows rows={5} label="Loading owners" /> : null}
+      {error ? <ReErrorState title="Sellers didn't load" description={error} onRetry={() => void load()} /> : null}
+      {loading ? <ReSkeletonRows rows={5} label="Loading sellers" /> : null}
       {!loading && !error && visible.length === 0 ? (
         <ReEmptyState
           framed
           title="No sellers yet"
           description="A seller profile is created when a mandate form is completed."
-          action={<Link href={`${listingsPath}#seller-intake`} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>Send seller form</Link>}
+          action={<Link href={`${listingsPath}/mandate`} className={cn(salesMenuTriggerClass({ variant: "primary", size: "md" }), "min-h-11")}>New seller form</Link>}
         />
       ) : null}
       {!loading && !error && visible.length > 0 ? (
-        <ReSection id="owners" title="Owners" count={visible.length} flush>
+        <ReSection id="owners" title="Sellers" count={visible.length} flush>
           <ul className="divide-y divide-sales-border-subtle">
             {visible.map((owner) => {
               const name = owner.name || "Unnamed owner";
@@ -163,7 +163,7 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
                       sheetTitle={name}
                       actions={[
                         { id: "view", label: "View seller", onSelect: () => setSelected(owner.contactId) },
-                        { id: "form", label: "Send seller form", description: "Opens the mandate form on Properties.", onSelect: () => router.push(`${listingsPath}#seller-intake`) },
+                        { id: "form", label: "New seller form", description: "Choose a sole or open mandate and send the link.", onSelect: () => router.push(`${listingsPath}/mandate`) },
                         ...(ownerPhone
                           ? [
                               { id: "call", label: "Call", onSelect: () => { window.location.href = `tel:${ownerPhone}`; } },
@@ -191,9 +191,9 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
                 WhatsApp
               </a>
             </div>
-          ) : <p className="mb-3 text-[13px] text-sales-text-muted">No phone on these opportunities.</p>}
+          ) : <p className="mb-3 text-[13px] text-sales-text-muted">No phone number on file.</p>}
           {selectedOwner.contactId.startsWith("unlinked:") ? null : (
-            <ContextCompliancePanel clientId={clientId} context="seller" title="Seller verification" contactId={selectedOwner.contactId} />
+            <ContextCompliancePanel clientId={clientId} context="seller" title="Documents" contactId={selectedOwner.contactId} />
           )}
           <ul className="mt-4 divide-y divide-sales-border">
             {linked.map((row) => (
@@ -203,7 +203,7 @@ export function OwnerList({ clientId, basePath, framed = false }: { clientId: st
                   {row.property_intent === "sale" ? "For sale" : row.property_intent === "rent" ? "To rent" : "Intent not set"} · {row.status.replaceAll("_", " ")}
                 </p>
                 <Link href={`${acquisitionsPath}/${row.id}`} className="re-focus mt-2 inline-flex min-h-11 items-center text-[13px] font-semibold underline-offset-2 hover:underline">
-                  Open opportunity
+                  Open property
                 </Link>
               </li>
             ))}
@@ -261,7 +261,7 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
         title="Inspections"
-        description="Recorded from a property opportunity."
+        description="Visits to prepare a property for the market."
       />
       <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Inspection filter">
         {INSPECTION_FILTERS.map((item) => (
@@ -284,8 +284,8 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
         <ReEmptyState
           framed
           title={filter === "all" ? "No inspections yet" : "No inspections in this view"}
-          description={filter === "all" ? "Inspections are scheduled from property opportunities." : "Nothing in this filter. Try another status, or open a property opportunity."}
-          action={<Link href={opportunityBase} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open property opportunities</Link>}
+          description={filter === "all" ? "Book an inspection from the property." : "Nothing in this filter."}
+          action={<Link href={opportunityBase} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open properties</Link>}
         />
       ) : null}
       {!loading && !error && visible.length > 0 ? (
@@ -342,12 +342,12 @@ export function InspectionList({ clientId, opportunityBase, framed = false }: { 
 }
 
 const MANDATE_FILTERS = [
-  { id: "attention", label: "Pending review" },
+  { id: "attention", label: "Waiting" },
   { id: "approved", label: "Active" },
   { id: "expiring", label: "Expiring" },
   { id: "expired", label: "Expired" },
-  { id: "revoked", label: "Rejected or revoked" },
-  { id: "legacy", label: "Legacy unverified" },
+  { id: "revoked", label: "Ended" },
+  { id: "legacy", label: "Older records" },
   { id: "all", label: "All" },
 ] as const;
 
@@ -394,8 +394,8 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
   return (
     <div className={framed ? reEmbeddedShell : shellClass}>
       <RePageHeader
-        title="Property mandates"
-        description="Marketing authority recorded against a property opportunity."
+        title="Mandates"
+        description="Forms returned by sellers, and the mandates on file."
       />
       <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Mandate filter">
         {MANDATE_FILTERS.map((item) => (
@@ -417,9 +417,9 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
       {!loading && !error && visible.length === 0 ? (
         <ReEmptyState
           framed
-          title={filter === "attention" ? "No mandates awaiting review" : "No mandates in this view"}
-          description={filter === "attention" ? "Mandates are recorded from a property opportunity." : "Nothing matches this status in the mandates that loaded."}
-          action={<Link href={opportunityBase} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open property opportunities</Link>}
+          title={filter === "attention" ? "Nothing is waiting" : "No mandates in this view"}
+          description={filter === "attention" ? "Returned forms and mandates that need a decision will show here." : "Nothing matches this status."}
+          action={<Link href={opportunityBase} className={cn(salesMenuTriggerClass({ variant: "secondary", size: "md" }), "min-h-11")}>Open properties</Link>}
         />
       ) : null}
       {!loading && !error && visible.length > 0 ? (
@@ -474,7 +474,7 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
                       actions={[
                         { id: "view", label: "View mandate", onSelect: () => setOpenId(row.id) },
                         ...(row.opportunity_id
-                          ? [{ id: "opp", label: "Open opportunity", onSelect: () => { window.location.href = `${opportunityBase}/${String(row.opportunity_id)}`; } }]
+                          ? [{ id: "opp", label: "Open property", onSelect: () => { window.location.href = `${opportunityBase}/${String(row.opportunity_id)}`; } }]
                           : []),
                       ]}
                     />
@@ -491,7 +491,7 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
           title={String(open.propertyLabel ?? "Mandate")}
           description={mandateStatusLabel(String(open.displayStatus ?? open.status))}
           onClose={() => setOpenId(null)}
-          headerAside={open.opportunity_id ? <Link href={`${opportunityBase}/${String(open.opportunity_id)}`} className="text-[13px] font-semibold underline-offset-2 hover:underline">Opportunity</Link> : undefined}
+          headerAside={open.opportunity_id ? <Link href={`${opportunityBase}/${String(open.opportunity_id)}`} className="text-[13px] font-semibold underline-offset-2 hover:underline">Property</Link> : undefined}
         >
           <dl className="mb-4 space-y-2 text-[13px]">
             <div className="flex justify-between gap-3"><dt className="text-sales-text-muted">Type</dt><dd>{mandateTypeLabel(open.mandate_type as string)}</dd></div>
@@ -499,7 +499,7 @@ export function MandateList({ clientId, opportunityBase, framed = false }: { cli
             <div className="flex justify-between gap-3"><dt className="text-sales-text-muted">Expiry</dt><dd>{open.expiry_date ? String(open.expiry_date) : "No expiry"}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-sales-text-muted">Evidence</dt><dd className="text-right">{String(open.evidence_status ?? "not provided").replaceAll("_", " ")}</dd></div>
           </dl>
-          <p className="mb-3 text-[12px] leading-snug text-sales-text-muted">Evidence on file is not described here as legally valid. Approval is a separate decision.</p>
+          <p className="mb-3 text-[12px] leading-snug text-sales-text-muted">A manager approves the mandate. A file on its own is not an approval.</p>
           <MandateActions clientId={clientId} mandate={open} canReview={canReview} onChanged={() => void load()} />
         </ReSheet>
       ) : null}
