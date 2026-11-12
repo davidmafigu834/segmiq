@@ -110,19 +110,22 @@ export function RealEstateSidebarChrome({
   const accountId = useId();
   const teamVisible = name.toLowerCase().includes(teamQuery.trim().toLowerCase());
   const tips = workspaceTips(homeHref);
-  const [tipIndex, setTipIndex] = useState(0);
-  const [tipPaused, setTipPaused] = useState(false);
+  const [tipIndex, setTipIndex] = useState(() => Math.floor(Date.now() / (3 * 60 * 60 * 1000)) % tips.length);
   const tip = tips[tipIndex % tips.length] ?? tips[0]!;
 
   useEffect(() => {
-    if (attention > 0 || tipPaused) return;
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (media.matches) return;
-    const timer = window.setInterval(() => {
-      setTipIndex((current) => (current + 1) % tips.length);
-    }, 8000);
-    return () => window.clearInterval(timer);
-  }, [attention, tipPaused, tips.length]);
+    const windowMs = 3 * 60 * 60 * 1000;
+    let timer = 0;
+    function schedule() {
+      const delay = Math.max(1000, windowMs - (Date.now() % windowMs));
+      timer = window.setTimeout(() => {
+        setTipIndex(Math.floor(Date.now() / windowMs) % tips.length);
+        schedule();
+      }, delay);
+    }
+    schedule();
+    return () => window.clearTimeout(timer);
+  }, [tips.length]);
 
   useEffect(() => {
     const el = navRef.current;
@@ -274,15 +277,7 @@ export function RealEstateSidebarChrome({
             </Link>
           </section>
         ) : (
-          <section
-            className="re-sb-note"
-            data-tone="tip"
-            aria-label={tip.title}
-            onMouseEnter={() => setTipPaused(true)}
-            onMouseLeave={() => setTipPaused(false)}
-            onFocus={() => setTipPaused(true)}
-            onBlur={() => setTipPaused(false)}
-          >
+          <section className="re-sb-note" data-tone="tip" aria-label={tip.title}>
             <div className="re-sb-note-head">
               <span className="re-sb-note-icon" aria-hidden>
                 <Lightbulb size={13} strokeWidth={1.8} />

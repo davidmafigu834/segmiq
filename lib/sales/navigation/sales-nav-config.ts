@@ -613,10 +613,10 @@ const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
   listings: "main",
   calendar: "main",
   transactions: "main",
-  whatsapp: "follow_up",
-  tasks: "follow_up",
-  leads: "follow_up",
-  socialInbox: "follow_up",
+  whatsapp: "main",
+  tasks: "main",
+  leads: "buyer_sales",
+  socialInbox: "main",
   opportunities: "more_tools",
   owners: "acquisition",
   inspections: "acquisition",
@@ -649,14 +649,13 @@ const REAL_ESTATE_AGENT_LABELS: Record<string, { label: string; mobileLabel: str
 };
 
 const REAL_ESTATE_ITEM_ORDER: Partial<Record<SalesNavSectionId, string[]>> = {
-  main: ["dashboard", "listings", "calendar", "transactions"],
+  main: ["dashboard", "listings", "calendar", "transactions", "whatsapp", "socialInbox", "tasks"],
   acquisition: ["mandates", "dueDiligence", "owners", "inspections"],
-  buyer_sales: ["buyers", "viewings", "offers"],
-  follow_up: ["whatsapp", "tasks", "leads", "socialInbox"],
+  buyer_sales: ["leads", "buyers", "viewings", "offers"],
 };
 
 /** Sections drawn in the Real Estate web menu. Other sections stay in the item list for direct URLs. */
-export const REAL_ESTATE_SALES_SECTION_ORDER: SalesNavSectionId[] = ["main", "acquisition", "buyer_sales", "follow_up"];
+export const REAL_ESTATE_SALES_SECTION_ORDER: SalesNavSectionId[] = ["main", "acquisition", "buyer_sales"];
 
 export const SALES_NAV_SECTION_LABEL: Record<SalesNavSectionId, string> = {
   sales: "Sales",

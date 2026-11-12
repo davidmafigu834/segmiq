@@ -196,7 +196,7 @@ export const COMPANY_NAV_SECTION_LABEL: Record<CompanyNavSectionId, string> = {
 
 export const COMPANY_NAV_SECTION_ORDER: Record<BusinessType, CompanyNavSectionId[]> = {
   trades: ["company", "products", "tools"],
-  real_estate: ["main", "acquisition", "buyer_sales", "follow_up", "agency"],
+  real_estate: ["main", "acquisition", "buyer_sales", "agency"],
 };
 
 function exactOrChild(pathname: string, href: string): boolean {
@@ -214,10 +214,9 @@ const REAL_ESTATE_COMPANY_ACTIVE_ON: Partial<Record<string, (pathname: string) =
 };
 
 const REAL_ESTATE_COMPANY_ITEM_ORDER: Partial<Record<CompanyNavSectionId, string[]>> = {
-  main: ["overview", "listings", "calendar", "transactions", "review"],
+  main: ["overview", "listings", "calendar", "transactions", "review", "whatsapp", "socialInbox"],
   acquisition: ["mandates", "dueDiligence", "owners", "inspections"],
-  buyer_sales: ["buyers", "viewings", "offers"],
-  follow_up: ["whatsapp", "inquiries", "socialInbox"],
+  buyer_sales: ["inquiries", "buyers", "viewings", "offers"],
   agency: [
     "agents",
     "commissions",
@@ -480,7 +479,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Inquiries",
     href: "/client/leads",
     icon: "leads",
-    section: "follow_up",
+    section: "buyer_sales",
     mobileSlot: "more",
     mobileLabel: "Inquiries",
     match: (p) =>
@@ -533,7 +532,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Sales Inbox",
     href: "/client/inbox",
     icon: "whatsapp",
-    section: "follow_up",
+    section: "main",
     badgeKey: "whatsapp",
     mobileSlot: "more",
     mobileLabel: "Inbox",
@@ -544,7 +543,7 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Social Inbox",
     href: "/client/social-inbox",
     icon: "socialInbox",
-    section: "follow_up",
+    section: "main",
     mobileSlot: "more",
     mobileLabel: "Social",
     match: (p) => exactOrChild(p, "/client/social-inbox"),
