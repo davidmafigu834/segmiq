@@ -125,7 +125,7 @@ export function SellerForm({ token }: { token: string }) {
 
 function Shell({ children }: { children: ReactNode }) {
   return (
-    <div className="sales-dashboard-premium min-h-dvh bg-sales-bg px-4 py-6 text-sales-text-primary" data-re-workspace="true">
+    <div className="sales-dashboard-premium h-dvh overflow-y-auto overscroll-y-contain bg-sales-bg px-4 py-6 text-sales-text-primary" data-re-workspace="true">
       {children}
     </div>
   );

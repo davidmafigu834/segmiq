@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { SignaturePad } from "@/components/real-estate/workflow/SignaturePad";
 import { VIEWING_PARTIES, formatViewingSlot, type ViewingFormCard, type ViewingParty, type ViewingPropertyCard } from "@/lib/real-estate/workflow/viewing-form";
 
@@ -43,7 +43,7 @@ const STEPS: Step[] = ["time", "who", "confirm"];
 
 export function PublicJourneyShell({ children }: { children: ReactNode }) {
   return (
-    <main className="sales-dashboard-premium min-h-screen bg-sales-bg px-4 py-6 text-sales-text-primary sm:px-6 sm:py-8">
+    <main className="sales-dashboard-premium h-dvh overflow-y-auto overscroll-y-contain bg-sales-bg px-4 py-6 text-sales-text-primary sm:px-6 sm:py-8">
       <div className="mx-auto max-w-5xl">{children}</div>
     </main>
   );
@@ -82,6 +82,14 @@ export function ViewingAcknowledgementForm({ token, preview }: { token: string; 
   const index = Math.max(0, STEPS.indexOf(step));
   const visiblePhotos = photoSources.filter((item) => !hiddenPhotos.includes(item));
   const activePhoto = photo && visiblePhotos.includes(photo) ? photo : visiblePhotos[0];
+  const touchX = useRef(0);
+
+  function stepPhoto(direction: number) {
+    if (visiblePhotos.length < 2 || !activePhoto) return;
+    const current = visiblePhotos.indexOf(activePhoto);
+    const next = (current + direction + visiblePhotos.length) % visiblePhotos.length;
+    setPhoto(visiblePhotos[next] ?? null);
+  }
 
   function pickSlot(id: string) {
     setSlotId(id);
@@ -156,19 +164,35 @@ export function ViewingAcknowledgementForm({ token, preview }: { token: string; 
         ) : null}
 
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-          <aside className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface lg:sticky lg:top-6">
+          <aside className="min-w-0 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface lg:sticky lg:top-6">
             {activePhoto ? (
-              <div className="relative">
-                {/* Public photos are served from this form's own link, so next/image host allowlists do not apply. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={activePhoto}
-                  alt=""
-                  className="h-44 w-full object-cover lg:aspect-[16/10] lg:h-auto"
-                  onError={() => setHiddenPhotos((current) => current.includes(activePhoto) ? current : [...current, activePhoto])}
-                />
+              <div>
+                <div
+                  className="relative touch-pan-y"
+                  onTouchStart={(event) => { touchX.current = event.changedTouches[0]?.clientX ?? 0; }}
+                  onTouchEnd={(event) => {
+                    const delta = (event.changedTouches[0]?.clientX ?? 0) - touchX.current;
+                    if (Math.abs(delta) > 48) stepPhoto(delta < 0 ? 1 : -1);
+                  }}
+                >
+                  {/* Public photos are served from this form's own link, so next/image host allowlists do not apply. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={activePhoto}
+                    alt=""
+                    className="aspect-[4/3] w-full object-cover"
+                    onError={() => setHiddenPhotos((current) => current.includes(activePhoto) ? current : [...current, activePhoto])}
+                  />
+                  {visiblePhotos.length > 1 ? (
+                    <>
+                      <button type="button" aria-label="Previous photograph" onClick={() => stepPhoto(-1)} className="absolute left-2 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-[28px] leading-none text-white">‹</button>
+                      <button type="button" aria-label="Next photograph" onClick={() => stepPhoto(1)} className="absolute right-2 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-[28px] leading-none text-white">›</button>
+                      <span className="absolute bottom-3 right-3 rounded-full bg-black/55 px-2.5 py-1 text-[12px] font-medium text-white">{visiblePhotos.indexOf(activePhoto) + 1} / {visiblePhotos.length}</span>
+                    </>
+                  ) : null}
+                </div>
                 {visiblePhotos.length > 1 ? (
-                  <div className="absolute bottom-3 left-3 flex gap-2">
+                  <div className="flex gap-2 overflow-x-auto px-3 py-3">
                     {visiblePhotos.map((item, itemIndex) => (
                       <button
                         key={item}
@@ -176,7 +200,7 @@ export function ViewingAcknowledgementForm({ token, preview }: { token: string; 
                         aria-pressed={activePhoto === item}
                         aria-label={`Photograph ${itemIndex + 1}`}
                         onClick={() => setPhoto(item)}
-                        className={`h-10 w-14 overflow-hidden rounded-[6px] ring-2 ring-offset-1 ring-offset-transparent ${activePhoto === item ? "ring-sales-brand" : "ring-transparent opacity-80"}`}
+                        className={`h-16 w-20 shrink-0 overflow-hidden rounded-[8px] ring-2 ring-offset-1 ring-offset-transparent ${activePhoto === item ? "ring-sales-brand" : "ring-transparent"}`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={item} alt="" className="h-full w-full object-cover" />
@@ -189,7 +213,7 @@ export function ViewingAcknowledgementForm({ token, preview }: { token: string; 
             <div className="border-b border-sales-border-subtle px-5 py-5">
               <p className="text-[13px] font-medium text-sales-text-muted">{property?.sentBy ?? `${agent} sent this`}</p>
               {contactLine ? <p className="mt-1 text-[13px] text-sales-text-secondary">{contactLine}</p> : null}
-              <h1 className="mt-2 font-display text-[32px] font-semibold leading-[1.05] tracking-[-0.03em]">{heading}</h1>
+              <h1 className="mt-2 break-words font-display text-[32px] font-semibold leading-[1.05] tracking-[-0.03em]">{heading}</h1>
               {placeLine ? <p className="mt-2 text-[15px] text-sales-text-secondary">{placeLine}</p> : null}
             </div>
             {facts.length ? (
@@ -207,7 +231,7 @@ export function ViewingAcknowledgementForm({ token, preview }: { token: string; 
             ) : null}
           </aside>
 
-          <section className="rounded-[12px] border border-sales-border bg-sales-surface px-5 py-5" aria-live="polite">
+          <section className="min-w-0 rounded-[12px] border border-sales-border bg-sales-surface px-5 py-5" aria-live="polite">
             {step !== "sent" ? (
               <div className="flex items-center gap-2" aria-label={`Part ${index + 1} of 3`}>
                 {STEPS.map((item, itemIndex) => (
