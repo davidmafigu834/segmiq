@@ -43,7 +43,15 @@ function countUnread(rows: NotificationRow[]) {
   return rows.filter((n) => !n.read).length;
 }
 
-export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: number; role: UserRole }) {
+export function NotificationBell({
+  initialUnread = 0,
+  role,
+  variant = "default",
+}: {
+  initialUnread?: number;
+  role: UserRole;
+  variant?: "default" | "sidebar";
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationRow[]>([]);
@@ -164,16 +172,20 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
     return "/dashboard/leads";
   }
 
+  const sidebar = variant === "sidebar";
+
   return (
     <div ref={ref} className="relative z-40 shrink-0">
       <button
         type="button"
         onClick={() => (open ? setOpen(false) : void handleOpen())}
-        className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-sales-text-secondary transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+        className={sidebar ? "re-sb-icon-btn" : "relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-sales-text-secondary transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"}
         aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+        aria-expanded={sidebar ? open : undefined}
       >
-        <Bell className="h-4 w-4" strokeWidth={1.75} />
-        {unreadCount > 0 ? (
+        <Bell className={sidebar ? undefined : "h-4 w-4"} size={sidebar ? 16 : undefined} strokeWidth={sidebar ? 1.8 : 1.75} />
+        {sidebar && unreadCount > 0 ? <span className="re-sb-dot" aria-hidden /> : null}
+        {!sidebar && unreadCount > 0 ? (
           <span
             className="absolute right-1 top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-sales-sm bg-sales-brand px-1 text-[10px] font-semibold leading-none text-sales-brand-text ring-2 ring-sales-bg"
             aria-hidden
@@ -184,7 +196,7 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-surface-card md:absolute md:inset-auto md:right-0 md:top-11 md:h-auto md:max-h-[min(90vh,520px)] md:w-[360px] md:rounded-lg md:border md:border-border md:shadow-lg">
+        <div className={sidebar ? "absolute bottom-10 right-0 z-50 flex max-h-[min(70vh,420px)] w-[min(280px,70vw)] flex-col overflow-hidden rounded-[10px] border border-[var(--sb-line)] bg-[var(--sb-pop)] text-[var(--sb-text)] shadow-[var(--sb-shadow)]" : "fixed inset-0 z-50 flex flex-col overflow-hidden bg-surface-card md:absolute md:inset-auto md:right-0 md:top-11 md:h-auto md:max-h-[min(90vh,520px)] md:w-[360px] md:rounded-lg md:border md:border-border md:shadow-lg"}>
           <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-3 md:px-4">
             <button
               type="button"

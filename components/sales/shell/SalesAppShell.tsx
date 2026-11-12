@@ -226,7 +226,7 @@ function SalesAppShellInner({
   const { quickActionsOpen, setQuickActionsOpen, hideBottomNav } = useSalesMobileChrome();
   const workspace = useCompanyWorkspace();
   const realEstateWorkspace = realEstate || workspace.isRealEstate;
-  const sidebarWidth = realEstateWorkspace && !collapsed ? 272 : width;
+  const sidebarWidth = realEstateWorkspace ? 272 : width;
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -294,10 +294,12 @@ function SalesAppShellInner({
           isSolo={isSolo}
           whatsappBadge={whatsappBadge}
           tasksBadge={tasksBadge}
-          collapsed={collapsed}
+          collapsed={realEstateWorkspace ? false : collapsed}
           onToggleCollapsed={toggleCollapsed}
           mobileOpen={realEstateWorkspace && mobileNavOpen}
           onCloseMobile={() => setMobileNavOpen(false)}
+          unreadNotifications={unreadNotifications}
+          notificationRole={notificationRole}
         />
       </div>
 
@@ -336,7 +338,7 @@ function SalesAppShellInner({
                   : "sales-page-stack relative space-y-4 layout:space-y-5"
             }
           >
-            {showDefaultHeader && title ? (
+            {showDefaultHeader && title && !realEstateWorkspace ? (
               <SalesPageHeader
                 breadcrumb={breadcrumb}
                 title={title}
@@ -353,7 +355,7 @@ function SalesAppShellInner({
         </main>
       </div>
 
-      {!hideMobileChrome && !hideBottomNav ? <ImportantMessagesTrigger floating /> : null}
+      {!hideMobileChrome && !hideBottomNav && !realEstateWorkspace ? <ImportantMessagesTrigger floating /> : null}
       {!hideMobileChrome ? (
         <>
           <SalesBottomNav

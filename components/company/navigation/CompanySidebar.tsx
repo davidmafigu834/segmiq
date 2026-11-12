@@ -25,9 +25,11 @@ import {
 import { displaySalesName } from "@/lib/sales/navigation/sales-nav-config";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { ReSidebarSections } from "@/components/real-estate/navigation/ReSidebarSections";
+import { RealEstateSidebarChrome } from "@/components/real-estate/navigation/RealEstateSidebarChrome";
 import { isRealEstate } from "@/lib/terminology";
 import { cn } from "@/lib/ui/cn";
 import { ImportantMessagesTrigger } from "@/components/important-messages/ImportantMessagesDock";
+import type { UserRole } from "@/types";
 
 function NavIcon({
   icon,
@@ -62,13 +64,24 @@ function CompanyNavItem({
   badge,
   collapsed,
   onNavigate,
+  studio = false,
 }: {
   item: CompanyNavItemConfig;
   active: boolean;
   badge?: number;
   collapsed?: boolean;
   onNavigate?: () => void;
+  studio?: boolean;
 }) {
+  if (studio) {
+    const Icon = COMPANY_NAV_LUCIDE[item.icon];
+    return (
+      <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className="re-sb-item">
+        {Icon ? <Icon size={18} strokeWidth={2} aria-hidden /> : null}
+        <span className="re-sb-label">{item.label}</span>
+      </Link>
+    );
+  }
   const showBadge = badge != null && badge > 0;
   const label = item.label;
 
@@ -135,6 +148,8 @@ export function CompanySidebar({
   onCloseMobile,
   collapsed = false,
   onToggleCollapsed,
+  unreadNotifications = 0,
+  notificationRole = "CLIENT_MANAGER",
 }: {
   /** Shown as workspace context in the Real Estate sidebar only. */
   companyName?: string;
@@ -147,6 +162,8 @@ export function CompanySidebar({
   onCloseMobile?: () => void;
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
+  unreadNotifications?: number;
+  notificationRole?: UserRole;
 }) {
   const pathname = usePathname();
   const crmTheme = useCrmThemeOptional();
@@ -169,6 +186,50 @@ export function CompanySidebar({
 
   function body(opts: { drawer: boolean; collapsedMode: boolean }) {
     const { drawer, collapsedMode } = opts;
+    if (realEstate) {
+      const groups = sectionOrder
+        .map((sectionId) => ({
+          id: sectionId,
+          label: COMPANY_NAV_SECTION_LABEL[sectionId],
+          items: companyNavBySection(shownNavigation, sectionId),
+        }))
+        .filter((group) => group.items.length > 0);
+      return (
+        <RealEstateSidebarChrome
+          name={companyName?.trim() || userName}
+          role={userRoleLabel}
+          homeHref="/client/dashboard"
+          helpHref="/client/settings/profile"
+          notificationRole={notificationRole}
+          unread={unreadNotifications}
+          attention={whatsappBadge}
+          drawer={drawer}
+          onClose={onCloseMobile}
+          query={find}
+          onQuery={setFind}
+        >
+          {groups.length === 0 ? <p className="re-sb-soon-block">No matches.</p> : (
+            <ReSidebarSections
+              appearance="studio"
+              groups={groups}
+              isActive={(item) => companyNavIsActive(item, pathname)}
+              collapsedMode={false}
+              storageKey={drawer ? "segmiq-re-nav-groups-company-drawer" : "segmiq-re-nav-groups-company"}
+              ariaLabel="Company navigation"
+              renderItem={(item) => (
+                <CompanyNavItem
+                  key={item.id}
+                  item={item}
+                  active={companyNavIsActive(item, pathname)}
+                  studio
+                  onNavigate={onCloseMobile}
+                />
+              )}
+            />
+          )}
+        </RealEstateSidebarChrome>
+      );
+    }
     return (
       <div className="relative flex h-full min-h-0 flex-col bg-[var(--sales-sidebar-bg)]">
         <div
@@ -408,11 +469,12 @@ export function CompanySidebar({
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 hidden border-r border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-bg)] transition-[width] duration-200 ease-out layout:block",
-          collapsed ? "w-[68px]" : realEstate ? "w-[272px]" : "w-[228px]"
+          realEstate && "re-sb-frame",
+          collapsed && !realEstate ? "w-[68px]" : realEstate ? "w-[272px]" : "w-[228px]"
         )}
         data-collapsed={collapsed ? "true" : "false"}
       >
-        {body({ drawer: false, collapsedMode: collapsed })}
+        {body({ drawer: false, collapsedMode: realEstate ? false : collapsed })}
       </aside>
 
       {mobileOpen ? (
@@ -423,7 +485,7 @@ export function CompanySidebar({
             aria-label="Close menu"
             onClick={onCloseMobile}
           />
-          <aside className="fixed inset-y-0 left-0 z-50 w-[min(88vw,280px)] border-r border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-bg)] shadow-[0_8px_30px_rgba(17,19,24,0.12)] layout:hidden">
+          <aside className={cn("fixed inset-y-0 left-0 z-50 w-[min(88vw,280px)] border-r border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-bg)] shadow-[0_8px_30px_rgba(17,19,24,0.12)] layout:hidden", realEstate && "re-sb-frame w-[272px]")}>
             {body({ drawer: true, collapsedMode: false })}
           </aside>
         </>

@@ -52,7 +52,7 @@ export function CompanyWorkspaceShell({
     preferCollapsedOnFirstVisit: preferCollapsedSidebar,
   });
   const realEstateShell = isRealEstate(businessType ?? parentWorkspace.businessType);
-  const sidebarWidth = realEstateShell && !collapsed ? 272 : width;
+  const sidebarWidth = realEstateShell ? 272 : width;
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const shell = (
@@ -61,7 +61,7 @@ export function CompanyWorkspaceShell({
       className="sales-dashboard-premium dashboard-shell flex h-full max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-sales-bg text-sales-text-primary"
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideMobileChrome ? "true" : "false"}
-      data-re-workspace={isRealEstate(businessType) ? "true" : undefined}
+      data-re-workspace={realEstateShell ? "true" : undefined}
       style={{ ["--sales-sidebar-current-width" as string]: `${sidebarWidth}px` } as CSSProperties}
     >
       <PresenceHeartbeat />
@@ -73,10 +73,12 @@ export function CompanyWorkspaceShell({
           userRoleLabel="Company Manager"
           avatarUrl={avatarUrl}
           whatsappBadge={whatsappBadge}
-          collapsed={collapsed}
+          collapsed={realEstateShell ? false : collapsed}
           onToggleCollapsed={toggleCollapsed}
           mobileOpen={realEstateShell && mobileNavOpen}
           onCloseMobile={() => setMobileNavOpen(false)}
+          unreadNotifications={unreadNotifications}
+          notificationRole={notificationRole}
         />
       </div>
 

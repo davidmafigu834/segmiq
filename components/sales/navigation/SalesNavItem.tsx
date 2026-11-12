@@ -43,13 +43,24 @@ export function SalesNavItem({
   badge,
   collapsed,
   onNavigate,
+  studio = false,
 }: {
   item: SalesNavItemConfig;
   active: boolean;
   badge?: number;
   collapsed?: boolean;
   onNavigate?: () => void;
+  studio?: boolean;
 }) {
+  if (studio) {
+    const Icon = item.icon === "whatsapp" ? null : SALES_NAV_LUCIDE[item.icon];
+    return (
+      <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className="re-sb-item" data-course-target={`sales-nav-${item.id}`}>
+        {item.icon === "whatsapp" ? <SiWhatsapp size={18} aria-hidden /> : Icon ? <Icon size={18} strokeWidth={2} aria-hidden /> : null}
+        <span className="re-sb-label">{item.label}</span>
+      </Link>
+    );
+  }
   const showBadge = badge != null && badge > 0;
   const label = item.label;
 
