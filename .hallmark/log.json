@@ -1,5 +1,32 @@
 [
   {
+    "date": "2026-11-12",
+    "scope": "app",
+    "macrostructure": "Listing",
+    "theme": "SegmiQ operations",
+    "design_system": "design.md",
+    "enrichment": "none",
+    "brief": "Public property page a shared link opens: photograph, price, then enquire. Desk facts only."
+  },
+  {
+    "date": "2026-11-12",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "SegmiQ operations",
+    "design_system": "design.md",
+    "enrichment": "none",
+    "brief": "Mock marketing report: Kensington needs a share, then the period counts, then each personal link."
+  },
+  {
+    "date": "2026-11-12",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "SegmiQ operations",
+    "design_system": "design.md",
+    "enrichment": "none",
+    "brief": "Mock sign-in: the Monday desk with names held, then the sign-in action, on the existing real-estate tokens."
+  },
+  {
     "date": "2026-11-03",
     "scope": "app",
     "macrostructure": "Workbench",

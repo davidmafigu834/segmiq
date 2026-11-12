@@ -56,24 +56,10 @@ async function postJson(path: string, body: Record<string, unknown>) {
   return { ok: response.ok, error: json.error, message: json.message };
 }
 
-function Icon({ name }: { name: "bed" | "bath" | "size" | "kind" }) {
-  const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  if (name === "bed") {
-    return <svg viewBox="0 0 24 24" aria-hidden {...common}><path d="M3 18V8M3 14h18v4M7 14v-3a2 2 0 0 1 2-2h2M21 18V11a3 3 0 0 0-3-3h-4" /></svg>;
-  }
-  if (name === "bath") {
-    return <svg viewBox="0 0 24 24" aria-hidden {...common}><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3zM6 12V7a2 2 0 0 1 2-2h1" /></svg>;
-  }
-  if (name === "size") {
-    return <svg viewBox="0 0 24 24" aria-hidden {...common}><path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" /></svg>;
-  }
-  return <svg viewBox="0 0 24 24" aria-hidden {...common}><path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6" /></svg>;
-}
-
 function EmptyHero({ category, suburb }: { category: string | null; suburb: string | null }) {
   return (
     <div className={styles.fallback} role="img" aria-label="Photographs are not published for this property">
-      <svg viewBox="0 0 72 48" fill="none" stroke="#2f3a32" strokeWidth="1.4" aria-hidden>
+      <svg viewBox="0 0 72 48" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
         <path d="M6 28 L36 8 L66 28" />
         <path d="M14 26 V42 H58 V26" />
         <path d="M30 42 V32 H42 V42" />
@@ -98,12 +84,12 @@ export function PublicListingPage({ model }: { model: PublicListingModel }) {
   const photos = model.photos.filter((item) => !broken[item.index]);
   const safeIndex = photos.length ? photo % photos.length : 0;
   const current = photos[safeIndex];
-  const facts: Array<{ icon: "bed" | "bath" | "size" | "kind"; label: string }> = [];
-  if (model.property.bedrooms != null) facts.push({ icon: "bed", label: `${model.property.bedrooms} bed` });
-  if (model.property.bathrooms != null) facts.push({ icon: "bath", label: `${model.property.bathrooms} bath` });
-  if (model.property.sizeSqm != null) facts.push({ icon: "size", label: `${model.property.sizeSqm} m²` });
-  if (model.property.transactionLabel) facts.push({ icon: "kind", label: model.property.transactionLabel });
-  if (model.property.categoryLabel) facts.push({ icon: "kind", label: model.property.categoryLabel });
+  const facts: string[] = [];
+  if (model.property.bedrooms != null) facts.push(`${model.property.bedrooms} bed`);
+  if (model.property.bathrooms != null) facts.push(`${model.property.bathrooms} bath`);
+  if (model.property.sizeSqm != null) facts.push(`${model.property.sizeSqm} m²`);
+  if (model.property.transactionLabel) facts.push(model.property.transactionLabel);
+  if (model.property.categoryLabel) facts.push(model.property.categoryLabel);
   const verifiedPrice = model.property.currencyContext === "quotation_currency" ? model.property.priceLabel : null;
   const priceOnRequest = Boolean(model.property.priceOnRequest);
 
@@ -191,6 +177,18 @@ export function PublicListingPage({ model }: { model: PublicListingModel }) {
     );
   }
 
+  const priceLine = verifiedPrice ?? (priceOnRequest ? "Price on request" : null);
+  const specs: Array<[string, string]> = [];
+  if (model.property.address) specs.push(["Address", model.property.address]);
+  if (model.property.suburb) specs.push(["Suburb", model.property.suburb]);
+  specs.push(["Status", model.property.statusLabel]);
+  if (model.property.categoryLabel) specs.push(["Type", model.property.categoryLabel]);
+  if (model.property.transactionLabel) specs.push(["Listing", model.property.transactionLabel]);
+  if (model.property.bedrooms != null) specs.push(["Bedrooms", String(model.property.bedrooms)]);
+  if (model.property.bathrooms != null) specs.push(["Bathrooms", String(model.property.bathrooms)]);
+  if (model.property.sizeSqm != null) specs.push(["Size", `${model.property.sizeSqm} m²`]);
+  if (verifiedPrice) specs.push(["Asking price", verifiedPrice]);
+
   const actions = (
     <>
       {model.actions.enquire ? <button className={styles.primary} type="button" onClick={() => openSheet("enquire")}>Enquire</button> : null}
@@ -200,7 +198,7 @@ export function PublicListingPage({ model }: { model: PublicListingModel }) {
   );
 
   return (
-    <div className={`${styles.page} ${styles.pad}`} style={model.agency.accent ? ({ ["--brand-accent" as string]: model.agency.accent } as CSSProperties) : undefined} data-accent={model.agency.accent ? "brand" : undefined}>
+    <div className={`${styles.page} ${styles.pad} sales-dashboard-premium`} data-re-form="dark" style={model.agency.accent ? ({ ["--brand-accent" as string]: model.agency.accent } as CSSProperties) : undefined} data-accent={model.agency.accent ? "brand" : undefined}>
       <div className={styles.wrap}>
         <header className={styles.bar}>
           <div className={styles.brand}>
@@ -227,12 +225,14 @@ export function PublicListingPage({ model }: { model: PublicListingModel }) {
               ) : (
                 <EmptyHero category={model.property.categoryLabel} suburb={model.property.suburb} />
               )}
+            </div>
+            <div className={styles.nav}>
+              <p>{photos.length > 1 ? `${safeIndex + 1} of ${photos.length}` : current ? "Photograph" : "No photograph"}</p>
               {photos.length > 1 ? (
-                <>
-                  <button className={`${styles.navBtn} ${styles.prev}`} type="button" aria-label="Previous photograph" onClick={() => step(-1)}>‹</button>
-                  <button className={`${styles.navBtn} ${styles.next}`} type="button" aria-label="Next photograph" onClick={() => step(1)}>›</button>
-                  <span className={styles.counter}>{safeIndex + 1} / {photos.length}</span>
-                </>
+                <div>
+                  <button type="button" onClick={() => step(-1)}>Previous</button>
+                  <button type="button" onClick={() => step(1)}>Next</button>
+                </div>
               ) : null}
             </div>
             {photos.length > 1 ? (
@@ -246,52 +246,49 @@ export function PublicListingPage({ model }: { model: PublicListingModel }) {
             ) : null}
           </div>
 
-          <div className={styles.panel}>
-            <div>
-              {model.property.suburb ? <p className={styles.kicker}>{model.property.suburb}</p> : null}
-              <h1 id={titleId}>{model.property.heading}</h1>
-            </div>
-            <div className={styles.priceRow}>
-              {verifiedPrice ? <p className={styles.price}>{verifiedPrice}</p> : priceOnRequest ? <p className={styles.ask}>Price on request</p> : null}
-              <span className={styles.status}>{model.property.statusLabel}</span>
-            </div>
+          <aside className={styles.panel}>
+            {model.property.suburb ? <p className={styles.kicker}>{model.property.suburb}</p> : null}
+            <h1 id={titleId}>{model.property.heading}</h1>
+            {priceLine ? <p className={styles.price}>{priceLine}</p> : null}
+            <p className={styles.status}>{model.property.statusLabel}</p>
             {!model.property.advertiseAsAvailable ? <p className={styles.statusNote}>This property is not being advertised as available.</p> : null}
             {facts.length ? (
               <ul className={styles.facts}>
                 {facts.map((fact) => (
-                  <li key={fact.label}><Icon name={fact.icon} />{fact.label}</li>
+                  <li key={fact}>{fact}</li>
                 ))}
               </ul>
             ) : null}
+            <div className={styles.actions}>{actions}</div>
             {model.agent ? (
               <div className={styles.agent}>
                 {model.agent.photoUrl ? <img className={styles.avatar} src={model.agent.photoUrl} alt="" /> : <div className={styles.avatar}>{model.agent.initials}</div>}
                 <div>
-                  <p className={styles.kicker}>Presented by</p>
                   <strong>{model.agent.name}</strong>
                   <p className={styles.quiet}>{model.agency.name} · {model.agent.role}</p>
                 </div>
               </div>
             ) : null}
-            <div className={styles.desktopActions}>{actions}</div>
-          </div>
-        </div>
+          </aside>
 
-        <div className={styles.story}>
-          {model.property.description ? (
-            <section className={styles.block}>
-              <h2>About this home</h2>
-              <p className={styles.prose}>{model.property.description}</p>
-            </section>
-          ) : null}
-          {model.property.suburb ? (
-            <section className={styles.block}>
-              <h2>Location</h2>
-              <div className={styles.placeCard}>
-                <strong>{model.property.suburb}</strong>
-              </div>
-            </section>
-          ) : null}
+          <div className={styles.story}>
+            {model.property.description ? (
+              <section className={styles.block}>
+                <h2>About this property</h2>
+                <p className={styles.prose}>{model.property.description}</p>
+              </section>
+            ) : null}
+            {specs.length ? (
+              <dl className={styles.specs}>
+                {specs.map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+          </div>
         </div>
 
         {notice ? <p className={styles.banner} role="status">{notice}</p> : null}
@@ -306,8 +303,10 @@ export function PublicListingPage({ model }: { model: PublicListingModel }) {
                     <div className={styles.cardFigure}>
                       {item.photoSrc ? <img src={item.photoSrc} alt="" /> : <div className={styles.cardMark}>No photograph</div>}
                     </div>
-                    <strong>{item.heading}</strong>
-                    <span className={styles.quiet}>{[item.suburb, item.priceLabel, item.bedrooms != null ? `${item.bedrooms} bed` : null, item.bathrooms != null ? `${item.bathrooms} bath` : null].filter(Boolean).join(" · ")}</span>
+                    <div>
+                      <strong>{item.heading}</strong>
+                      <span className={styles.quiet}>{[item.suburb, item.priceLabel, item.bedrooms != null ? `${item.bedrooms} bed` : null, item.bathrooms != null ? `${item.bathrooms} bath` : null].filter(Boolean).join(" · ")}</span>
+                    </div>
                   </>
                 );
                 return item.href
@@ -327,7 +326,10 @@ export function PublicListingPage({ model }: { model: PublicListingModel }) {
         </footer>
       </div>
 
-      <div className={styles.dock}>{actions}</div>
+      <div className={styles.dock}>
+        {priceLine ? <p>{priceLine}</p> : <span />}
+        {model.actions.enquire ? <button className={styles.primary} type="button" onClick={() => openSheet("enquire")}>Enquire</button> : model.actions.viewing ? <button className={styles.primary} type="button" onClick={() => openSheet("viewing")}>Request viewing</button> : whatsApp(styles.primary)}
+      </div>
 
       {sheet ? (
         <>

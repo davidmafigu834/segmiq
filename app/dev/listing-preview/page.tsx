@@ -47,7 +47,7 @@ export default function ListingPreviewPage({ searchParams }: { searchParams: { c
   if (process.env.NODE_ENV === "production") notFound();
   if (searchParams.case === "unavailable") {
     return (
-      <main className={styles.page}>
+      <main className={`${styles.page} sales-dashboard-premium`} data-re-form="dark">
         <section className={styles.unavailable}>
           <p className={styles.kicker}>Haven Properties</p>
           <h1>This property link is unavailable</h1>
