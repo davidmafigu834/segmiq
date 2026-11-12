@@ -42,10 +42,10 @@ const HIDDEN_AGENT_IDS = [
 describe("real estate stage 1 navigation", () => {
   it("shows five agent destinations and keeps the older entries reachable by id", () => {
     const agent = resolveSalesNavItems(false, "real_estate");
-    assert.deepEqual(salesNavSectionOrder("real_estate"), ["main", "acquisition", "buyer_sales", "follow_up"]);
+    assert.deepEqual(salesNavSectionOrder("real_estate"), ["main", "acquisition", "buyer_sales"]);
     assert.deepEqual(
       salesNavItemsBySection(agent, "main").map((item) => item.id),
-      ["dashboard", "listings", "calendar", "transactions"]
+      ["dashboard", "listings", "calendar", "transactions", "whatsapp", "socialInbox", "tasks"]
     );
     assert.deepEqual(
       salesNavItemsBySection(agent, "acquisition").map((item) => item.id),
@@ -53,14 +53,11 @@ describe("real estate stage 1 navigation", () => {
     );
     assert.deepEqual(
       salesNavItemsBySection(agent, "buyer_sales").map((item) => item.id),
-      ["buyers", "viewings", "offers"]
+      ["leads", "buyers", "viewings", "offers"]
     );
     assert.equal(agent.find((item) => item.id === "owners")?.label, "Sellers");
     assert.equal(agent.find((item) => item.id === "offers")?.label, "Offers");
-    assert.deepEqual(
-      salesNavItemsBySection(agent, "follow_up").map((item) => item.id),
-      ["whatsapp", "tasks", "leads", "socialInbox"]
-    );
+    assert.equal(agent.find((item) => item.id === "leads")?.section, "buyer_sales");
     assert.equal(agent.find((item) => item.id === "dashboard")?.label, "Today");
     assert.equal(agent.find((item) => item.id === "calendar")?.label, "Calendar");
     assert.equal(agent.find((item) => item.id === "tasks")?.label, "My Activities");
@@ -89,20 +86,20 @@ describe("real estate stage 1 navigation", () => {
 
   it("gives the manager the same five names plus Review, without taking Review onto the phone bar", () => {
     const manager = getCompanyNavigation("real_estate");
-    assert.deepEqual(getCompanyNavSectionOrder("real_estate"), ["main", "acquisition", "buyer_sales", "follow_up", "agency"]);
+    assert.deepEqual(getCompanyNavSectionOrder("real_estate"), ["main", "acquisition", "buyer_sales", "agency"]);
     assert.deepEqual(
       companyNavBySection(manager, "acquisition").map((item) => item.id),
       ["mandates", "dueDiligence", "owners", "inspections"]
     );
     assert.deepEqual(
       companyNavBySection(manager, "buyer_sales").map((item) => item.id),
-      ["buyers", "viewings", "offers"]
+      ["inquiries", "buyers", "viewings", "offers"]
     );
     assert.equal(manager.find((item) => item.id === "owners")?.label, "Sellers");
     assert.equal(manager.find((item) => item.id === "offers")?.label, "Offers");
     assert.deepEqual(
       companyNavBySection(manager, "main").map((item) => item.id),
-      ["overview", "listings", "calendar", "transactions", "review"]
+      ["overview", "listings", "calendar", "transactions", "review", "whatsapp", "socialInbox"]
     );
     assert.deepEqual(
       companyMobilePrimaryItems(manager).map((item) => item.id),
@@ -110,13 +107,13 @@ describe("real estate stage 1 navigation", () => {
     );
     assert.equal(manager.find((item) => item.id === "overview")?.label, "Today");
     assert.equal(manager.find((item) => item.id === "calendar")?.label, "Calendar");
-    assert.equal(manager.find((item) => item.id === "whatsapp")?.section, "follow_up");
+    assert.equal(manager.find((item) => item.id === "whatsapp")?.section, "main");
     for (const id of ["agents", "commissions", "reports", "marketing", "settings", "billing", "developments"]) {
       assert.equal(manager.find((item) => item.id === id)?.section, "agency");
     }
     for (const id of ["opportunities", "introductions", "matching", "compliance", "reviews"]) {
       assert.ok(manager.some((item) => item.id === id), `missing compatibility entry ${id}`);
-      assert.equal(["main", "acquisition", "buyer_sales", "follow_up", "agency"].includes(manager.find((item) => item.id === id)!.section), false);
+      assert.equal(["main", "acquisition", "buyer_sales", "agency"].includes(manager.find((item) => item.id === id)!.section), false);
     }
     const review = manager.find((item) => item.id === "review")!;
     assert.equal(companyNavIsActive(review, "/client/mandates"), false);
