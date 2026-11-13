@@ -72,7 +72,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   const index = photos.indexOf(key);
   return NextResponse.json({
     listing: listingReadDto(actor, saved, true),
-    image: { index, cover: index === 0, endpoint: `/api/clients/${params.clientId}/listings/${params.listingId}/images/${index}` },
+    image: { key, index, cover: index === 0, endpoint: `/api/clients/${params.clientId}/listings/${params.listingId}/images/${index}` },
     idempotent: current.includes(key),
   }, { status: current.includes(key) ? 200 : 201, headers: { "Cache-Control": "no-store" } });
 }

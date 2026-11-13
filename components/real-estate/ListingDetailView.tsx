@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, Phone } from "lucide-react";
+import { ArrowLeft, Loader2, Phone } from "lucide-react";
 import { acqFieldClass, acqLabelClass, formatWhen } from "@/components/real-estate/acquisition/acquisition-ui";
 import { MarketThisProperty } from "@/components/real-estate/listing-pages/MarketThisProperty";
 import { OfferDetailPanel } from "@/components/real-estate/offers/OfferDetailPanel";
@@ -246,15 +246,17 @@ function ShownPhoto({
   listingId,
   src,
   serverIndex,
+  preview,
   className,
 }: {
   clientId: string;
   listingId: string;
   src: string;
   serverIndex: number;
+  preview?: string;
   className: string;
 }) {
-  const direct = photoSrc(src);
+  const direct = photoSrc(src) ?? preview ?? null;
   const [signed, setSigned] = useState<string | null>(direct);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -287,6 +289,99 @@ function ShownPhoto({
   );
 }
 
+const MAX_LISTING_PHOTOS = 50;
+
+type PhotoUpload = {
+  id: string;
+  file: File;
+  preview: string;
+  state: "waiting" | "uploading" | "failed";
+  progress: number;
+  error?: string;
+};
+
+/** XHR rather than fetch so the tray can show upload progress for each photograph. */
+function sendListingPhoto(url: string, upload: PhotoUpload, onProgress: (fraction: number) => void): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("POST", url);
+    request.responseType = "json";
+    request.setRequestHeader("Idempotency-Key", upload.id);
+    request.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress(event.loaded / event.total);
+    };
+    request.onload = () => {
+      const json = (request.response ?? {}) as { error?: string; image?: { key?: unknown } };
+      if (request.status < 200 || request.status >= 300) {
+        reject(new Error(json.error ?? "The photo could not be stored."));
+      } else if (typeof json.image?.key !== "string") {
+        reject(new Error("The photo was stored. Reload this page to see it."));
+      } else {
+        resolve(json.image.key);
+      }
+    };
+    request.onerror = () => reject(new Error("The connection dropped before the photo was stored."));
+    const body = new FormData();
+    body.set("file", upload.file);
+    request.send(body);
+  });
+}
+
+function UploadTile({
+  upload,
+  onRetry,
+  onDismiss,
+}: {
+  upload: PhotoUpload;
+  onRetry: () => void;
+  onDismiss: () => void;
+}) {
+  const percent = Math.round(upload.progress * 100);
+  return (
+    <div className="min-w-0">
+      <div className="relative overflow-hidden rounded-[8px] border-2 border-sales-border">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={upload.preview}
+          alt=""
+          className={`aspect-[16/10] w-full object-cover ${upload.state === "uploading" ? "" : "opacity-60"}`}
+        />
+        {upload.state === "uploading" ? (
+          <>
+            <div className="absolute inset-0 grid place-items-center bg-black/35 text-white">
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold tabular-nums">
+                <Loader2 size={14} className="motion-safe:animate-spin" aria-hidden />
+                {percent < 100 ? `${percent}%` : "Saving"}
+              </span>
+            </div>
+            <div className="absolute inset-x-0 bottom-0 h-1 bg-black/30">
+              <div className="h-full bg-white transition-[width] duration-200" style={{ width: `${percent}%` }} />
+            </div>
+          </>
+        ) : null}
+        {upload.state === "waiting" ? (
+          <span className="absolute bottom-1.5 left-1.5 rounded-[6px] bg-sales-surface px-1.5 py-0.5 text-[11px] font-semibold text-sales-text-secondary">
+            Waiting
+          </span>
+        ) : null}
+        {upload.state === "failed" ? (
+          <div className="absolute inset-0 flex items-end justify-between gap-1 bg-black/45 p-1.5">
+            <button type="button" onClick={onRetry} className="h-8 rounded-[6px] bg-sales-surface px-2 text-[12px] font-semibold text-sales-text-primary">
+              Retry
+            </button>
+            <button type="button" onClick={onDismiss} className="h-8 rounded-[6px] px-2 text-[12px] font-semibold text-white">
+              Remove
+            </button>
+          </div>
+        ) : null}
+      </div>
+      {upload.state === "failed" && upload.error ? (
+        <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-sales-danger-fg">{upload.error}</p>
+      ) : null}
+    </div>
+  );
+}
+
 function FinishForm({
   clientId,
   listing,
@@ -309,7 +404,27 @@ function FinishForm({
   const [photo, setPhoto] = useState(0);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [uploads, setUploads] = useState<PhotoUpload[]>([]);
+  const uploadsRef = useRef<PhotoUpload[]>([]);
+  const uploadRunning = useRef(false);
+  const [batchDone, setBatchDone] = useState(0);
+  const previews = useRef(new Map<string, string>());
   const index = photos.length ? Math.min(photo, photos.length - 1) : 0;
+  const queued = uploads.filter((item) => item.state !== "failed");
+  const failedCount = uploads.length - queued.length;
+  const uploading = queued.length > 0;
+  const batchTotal = batchDone + queued.length;
+  const batchFraction = batchTotal
+    ? (batchDone + (queued.find((item) => item.state === "uploading")?.progress ?? 0)) / batchTotal
+    : 0;
+
+  useEffect(() => {
+    const stored = previews.current;
+    return () => {
+      uploadsRef.current.forEach((item) => URL.revokeObjectURL(item.preview));
+      stored.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   async function save(form: HTMLFormElement) {
     setBusy(true);
@@ -367,41 +482,82 @@ function FinishForm({
     });
   }
 
-  async function addPhotos(files: File[]) {
+  function setUploadList(next: PhotoUpload[]) {
+    uploadsRef.current = next;
+    setUploads(next);
+  }
+
+  function patchUpload(id: string, patch: Partial<PhotoUpload>) {
+    setUploadList(uploadsRef.current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  }
+
+  function addPhotos(files: File[]) {
     if (!files.length) return;
-    setBusy(true);
     setNotice(null);
-    const alreadySaved = new Set(photosRef.current);
-    let nextPhotos = photosRef.current;
-    try {
-      for (const file of files) {
-        const body = new FormData();
-        body.set("file", file);
-        const uploaded = await fetch(`/api/clients/${clientId}/listings/${listing.id}/images`, { method: "POST", body });
-        const uploadedJson = (await uploaded.json().catch(() => ({}))) as { error?: string; listing?: { photos?: unknown } };
-        if (!uploaded.ok) throw new Error(uploadedJson.error ?? "The photo could not be stored.");
-        const serverPhotos = Array.isArray(uploadedJson.listing?.photos)
-          ? uploadedJson.listing.photos.filter((value): value is string => typeof value === "string")
-          : [];
-        const fresh = serverPhotos.filter((value) => !alreadySaved.has(value));
-        if (!fresh.length) throw new Error("The photo was stored. Reload this page to see it.");
-        fresh.forEach((value) => alreadySaved.add(value));
-        nextPhotos = [...nextPhotos, ...fresh];
-      }
-      photosRef.current = nextPhotos;
-      setPhotos(nextPhotos);
-      setSavedPhotos(nextPhotos);
-      setPhoto(nextPhotos.length - 1);
-    } catch (error) {
-      if (nextPhotos !== photosRef.current || nextPhotos.length !== photos.length) {
-        photosRef.current = nextPhotos;
-        setPhotos(nextPhotos);
-        setSavedPhotos(nextPhotos);
-      }
-      setNotice(error instanceof Error ? error.message : "The photo could not be stored.");
-    } finally {
-      setBusy(false);
+    const room = Math.max(0, MAX_LISTING_PHOTOS - photosRef.current.length - uploadsRef.current.length);
+    if (!room) {
+      setNotice(`A listing can have up to ${MAX_LISTING_PHOTOS} photographs.`);
+      return;
     }
+    if (files.length > room) setNotice(`Only ${room} more photograph${room === 1 ? "" : "s"} fit on this listing.`);
+    const added: PhotoUpload[] = files.slice(0, room).map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      preview: URL.createObjectURL(file),
+      state: "waiting",
+      progress: 0,
+    }));
+    if (!uploadsRef.current.some((item) => item.state !== "failed")) setBatchDone(0);
+    setUploadList([...uploadsRef.current, ...added]);
+    void runUploads();
+  }
+
+  // One photograph at a time: the server appends to the listing's photo list, so parallel posts would race.
+  async function runUploads() {
+    if (uploadRunning.current) return;
+    uploadRunning.current = true;
+    try {
+      for (;;) {
+        const next = uploadsRef.current.find((item) => item.state === "waiting");
+        if (!next) break;
+        patchUpload(next.id, { state: "uploading", progress: 0, error: undefined });
+        try {
+          const key = await sendListingPhoto(
+            `/api/clients/${clientId}/listings/${listing.id}/images`,
+            next,
+            (progress) => patchUpload(next.id, { progress })
+          );
+          previews.current.set(key, next.preview);
+          if (!photosRef.current.includes(key)) {
+            const nextPhotos = [...photosRef.current, key];
+            photosRef.current = nextPhotos;
+            setPhotos(nextPhotos);
+          }
+          setSavedPhotos((current) => (current.includes(key) ? current : [...current, key]));
+          setUploadList(uploadsRef.current.filter((item) => item.id !== next.id));
+          setBatchDone((count) => count + 1);
+        } catch (error) {
+          patchUpload(next.id, {
+            state: "failed",
+            error: error instanceof Error ? error.message : "The photo could not be stored.",
+          });
+        }
+      }
+    } finally {
+      uploadRunning.current = false;
+    }
+  }
+
+  function retryUpload(id: string) {
+    if (!uploadsRef.current.some((item) => item.state !== "failed")) setBatchDone(0);
+    patchUpload(id, { state: "waiting", progress: 0, error: undefined });
+    void runUploads();
+  }
+
+  function dismissUpload(id: string) {
+    const item = uploadsRef.current.find((upload) => upload.id === id);
+    if (item) URL.revokeObjectURL(item.preview);
+    setUploadList(uploadsRef.current.filter((upload) => upload.id !== id));
   }
 
   const current = photos[index];
@@ -432,10 +588,46 @@ function FinishForm({
             ) : null}
           </div>
         </div>
+        {uploads.length ? (
+          <div className="mt-3 rounded-[12px] border border-sales-border bg-sales-surface p-3">
+            <div className="flex items-baseline justify-between gap-3" aria-live="polite">
+              <p className="text-[13px] font-semibold">
+                {uploading
+                  ? `Uploading photo ${Math.min(batchDone + 1, batchTotal)} of ${batchTotal}`
+                  : `${failedCount} photo${failedCount === 1 ? "" : "s"} did not upload`}
+              </p>
+              {uploading ? (
+                <p className="text-[12px] tabular-nums text-sales-text-muted">{Math.round(batchFraction * 100)}%</p>
+              ) : null}
+            </div>
+            {uploading ? (
+              <div
+                className="mt-2 h-1.5 overflow-hidden rounded-full bg-sales-surface-subtle"
+                role="progressbar"
+                aria-label="Photo upload progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(batchFraction * 100)}
+              >
+                <div className="h-full rounded-full bg-sales-brand transition-[width] duration-200" style={{ width: `${batchFraction * 100}%` }} />
+              </div>
+            ) : null}
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {uploads.map((upload) => (
+                <UploadTile
+                  key={upload.id}
+                  upload={upload}
+                  onRetry={() => retryUpload(upload.id)}
+                  onDismiss={() => dismissUpload(upload.id)}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
         {current ? (
           <>
             <div className="relative mt-3 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
-              <ShownPhoto clientId={clientId} listingId={listing.id} src={current} serverIndex={savedPhotos.indexOf(current)} className="aspect-[16/10] w-full object-cover" />
+              <ShownPhoto key={current} clientId={clientId} listingId={listing.id} src={current} serverIndex={savedPhotos.indexOf(current)} preview={previews.current.get(current)} className="aspect-[16/10] w-full object-cover" />
               {photos.length > 1 ? (
                 <div className="absolute bottom-3 right-3 hidden gap-2 min-[480px]:flex">
                   <button type="button" aria-label="Previous photograph" onClick={() => setPhoto((value) => (value + photos.length - 1) % photos.length)} className="h-9 rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[13px] font-semibold">Previous</button>
@@ -452,17 +644,17 @@ function FinishForm({
             <div className="mt-2 grid grid-cols-3 gap-2">
               {photos.map((src, itemIndex) => (
                 <button key={`${src}-${itemIndex}`} type="button" aria-label={`Photograph ${itemIndex + 1}`} aria-current={itemIndex === index ? "true" : undefined} onClick={() => setPhoto(itemIndex)} className={`overflow-hidden rounded-[8px] border-2 ${itemIndex === index ? "border-sales-text-primary" : "border-sales-border"}`}>
-                  <ShownPhoto clientId={clientId} listingId={listing.id} src={src} serverIndex={savedPhotos.indexOf(src)} className="aspect-[16/10] w-full object-cover" />
+                  <ShownPhoto clientId={clientId} listingId={listing.id} src={src} serverIndex={savedPhotos.indexOf(src)} preview={previews.current.get(src)} className="aspect-[16/10] w-full object-cover" />
                 </button>
               ))}
             </div>
             {editable ? (
-              <button type="button" className="mt-2 min-h-11 text-[13px] font-semibold text-sales-text-secondary" disabled={busy} onClick={() => removePhoto(current)}>
+              <button type="button" className="mt-2 min-h-11 text-[13px] font-semibold text-sales-text-secondary" disabled={busy || uploading} onClick={() => removePhoto(current)}>
                 Remove this photograph
               </button>
             ) : null}
           </>
-        ) : <p className="mt-3 text-[13px] text-sales-text-muted">No photographs yet. They appear here and on the viewing form.</p>}
+        ) : uploads.length ? null : <p className="mt-3 text-[13px] text-sales-text-muted">No photographs yet. They appear here and on the viewing form.</p>}
         {notice ? <p className="mt-2 text-[13px] text-sales-danger-fg" role="alert">{notice}</p> : null}
       </section>
 
@@ -471,7 +663,7 @@ function FinishForm({
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          if (!editable || busy) return;
+          if (!editable || busy || uploading) return;
           void save(event.currentTarget);
         }}
       >
@@ -496,7 +688,7 @@ function FinishForm({
             ) : null}
             <Field label="Size (m²)" name="size_sqm"><input id="size_sqm" name="size_sqm" type="number" inputMode="decimal" min="0" step="0.01" defaultValue={money(listing.size_sqm)} disabled={!editable} className={acqFieldClass} /></Field>
           </div>
-          {editable ? <div className="border-t border-sales-border-subtle px-4 py-3"><button type="submit" disabled={busy} className="inline-flex h-11 items-center rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text">{busy ? "Saving" : "Save listing"}</button></div> : null}
+          {editable ? <div className="border-t border-sales-border-subtle px-4 py-3"><button type="submit" disabled={busy || uploading} className="inline-flex h-11 items-center rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text disabled:opacity-60">{busy ? "Saving" : uploading ? "Uploading photos" : "Save listing"}</button></div> : null}
         </section>
       </form>
     </>
