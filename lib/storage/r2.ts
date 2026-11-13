@@ -63,9 +63,14 @@ export function getPublicUrl(key: string): string {
   return `${base}/${key}`;
 }
 
+// Batch uploads run in parallel, so a bare timestamp can collide and overwrite earlier files.
+function uniqueFileStem(): string {
+  return `${Date.now()}-${randomUUID()}`;
+}
+
 export function generateMediaKey(clientId: string, projectId: string, filename: string): string {
   const ext = filename.split(".").pop() ?? "jpg";
-  return `clients/${clientId}/projects/${projectId}/${Date.now()}.${ext}`;
+  return `clients/${clientId}/projects/${projectId}/${uniqueFileStem()}.${ext}`;
 }
 
 export function generateCapabilityAssetKey(clientId: string, filename: string): string {
@@ -85,7 +90,7 @@ export function generateTestimonialPhotoKey(clientId: string, filename: string):
 
 export function generateOriginalMediaKey(clientId: string, projectId: string, filename: string): string {
   const ext = filename.split(".").pop() ?? "jpg";
-  return `clients/${clientId}/projects/${projectId}/originals/${Date.now()}.${ext}`;
+  return `clients/${clientId}/projects/${projectId}/originals/${uniqueFileStem()}.${ext}`;
 }
 
 export function generateBlogCoverKey(filename: string): string {
@@ -95,8 +100,7 @@ export function generateBlogCoverKey(filename: string): string {
 
 export function generateVideoKey(clientId: string, projectId: string, filename: string): string {
   const ext = filename.split(".").pop()?.toLowerCase() ?? "mp4";
-  const timestamp = Date.now();
-  return `clients/${clientId}/projects/${projectId}/videos/${timestamp}.${ext}`;
+  return `clients/${clientId}/projects/${projectId}/videos/${uniqueFileStem()}.${ext}`;
 }
 
 export function generateWhatsAppOutboundKey(
