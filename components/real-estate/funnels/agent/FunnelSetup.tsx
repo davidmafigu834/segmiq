@@ -144,7 +144,7 @@ export function FunnelSetup({ baseUrl, me, agencyName, exampleSlug, initial, fir
             <p className="mt-3 inline-flex h-9 items-center rounded-[8px] bg-sales-brand px-3 text-[13px] font-semibold text-sales-brand-text">WhatsApp {me.first}</p>
           </div>
           <p className="mt-3 break-all font-mono text-[12px] text-sales-text-muted">{example}<span className="font-semibold text-sales-text-primary">{handle || "your-name"}</span></p>
-          <p className="mt-2 text-[12px] text-sales-text-muted">Each funnel's own design decides exactly where these appear.</p>
+          <p className="mt-2 text-[12px] text-sales-text-muted">Each funnel&apos;s own design decides exactly where these appear.</p>
         </aside>
       </div>
     </div>

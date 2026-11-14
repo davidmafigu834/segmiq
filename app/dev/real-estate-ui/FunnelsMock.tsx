@@ -499,7 +499,7 @@ export function FunnelRecord({ focus, onBack, onPreview, onSetup, onOpenInquirie
         <header>
           <p className="text-[13px] font-medium text-sales-text-muted">{funnel.kind} · {funnel.place}</p>
           <h1 className="mt-1 flex flex-wrap items-center gap-3 font-display text-[32px] font-semibold leading-none tracking-[-0.03em]">{funnel.name} <StatusChip status="building" /></h1>
-          <p className="mt-2 max-w-[60ch] text-[14px] text-sales-text-secondary">The SegmiQ team is building this page. You can't share it yet. When it goes live it shows up in Funnels with your link ready.</p>
+          <p className="mt-2 max-w-[60ch] text-[14px] text-sales-text-secondary">The SegmiQ team is building this page. You can&apos;t share it yet. When it goes live it shows up in Funnels with your link ready.</p>
         </header>
         <ol className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
           {steps.map(([label, state]) => (
@@ -557,7 +557,7 @@ export function FunnelRecord({ focus, onBack, onPreview, onSetup, onOpenInquirie
               </>
             ) : (
               <div className="mt-2">
-                <p className="text-[13px] text-sales-text-secondary">You haven't set up your funnel link yet.</p>
+                <p className="text-[13px] text-sales-text-secondary">You haven&apos;t set up your funnel link yet.</p>
                 <button type="button" className={`${lime} mt-3`} onClick={onSetup}>Set up my link</button>
               </div>
             )}
@@ -780,7 +780,7 @@ function ShareSheet({ funnel, me, onClose }: { funnel: Funnel; me: FunnelProfile
               </div>
             </div>
           </div>
-          <p className="text-center text-[12px] text-sales-text-muted">In your agency's brand. Post it to your Status, then paste your Status link as the caption.</p>
+          <p className="text-center text-[12px] text-sales-text-muted">In your agency&apos;s brand. Post it to your Status, then paste your Status link as the caption.</p>
           <div className="grid grid-cols-2 gap-2">
             <button type="button" className={bigLime} onClick={() => setDone("Image saved to your phone.")}>
               <Download size={16} strokeWidth={2} aria-hidden />
