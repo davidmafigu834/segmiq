@@ -66,6 +66,7 @@ export const PLATFORM_NAV_GROUPS: AppShellNavGroup[] = [
         icon: "workflow",
       },
       { href: "/dashboard/campaigns", label: "Campaigns", icon: "megaphone" },
+      { href: "/dashboard/funnels", label: "Funnels", icon: "layout-template" },
       { href: "/dashboard/reports", label: "Reports", icon: "bar-chart-3" },
     ],
   },
@@ -176,6 +177,11 @@ export const PLATFORM_COMMAND_PAGES: {
     href: "/dashboard/follow-up-reminders",
     label: "Jobs",
     hint: "Follow-up jobs",
+  },
+  {
+    href: "/dashboard/funnels",
+    label: "Funnels",
+    hint: "Bespoke property sales pages",
   },
   {
     href: "/dashboard/settings",

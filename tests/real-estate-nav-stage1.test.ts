@@ -28,7 +28,6 @@ const HIDDEN_AGENT_IDS = [
   "opportunities",
   "introductions",
   "matching",
-  "sharedListings",
   "compliance",
   "commissions",
   "pipeline",
@@ -53,7 +52,7 @@ describe("real estate stage 1 navigation", () => {
     );
     assert.deepEqual(
       salesNavItemsBySection(agent, "buyer_sales").map((item) => item.id),
-      ["leads", "buyers", "viewings", "offers"]
+      ["leads", "buyers", "viewings", "offers", "funnels"]
     );
     assert.equal(agent.find((item) => item.id === "owners")?.label, "Sellers");
     assert.equal(agent.find((item) => item.id === "offers")?.label, "Offers");
@@ -71,6 +70,10 @@ describe("real estate stage 1 navigation", () => {
       assert.ok(item, `missing compatibility entry ${id}`);
       assert.equal(REAL_ESTATE_SALES_SECTION_ORDER.includes(item.section), false);
     }
+    assert.equal(agent.find((item) => item.id === "funnels")?.label, "Funnels");
+    assert.equal(salesNavIsActive(agent.find((item) => item.id === "funnels")!, "/sales/funnels"), true);
+    assert.equal(salesNavIsActive(agent.find((item) => item.id === "funnels")!, "/sales/shared-listings/abc"), true);
+    assert.equal(salesNavIsActive(agent.find((item) => item.id === "listings")!, "/sales/shared-listings"), false);
     assert.equal(salesNavIsActive(agent.find((item) => item.id === "listings")!, "/sales/acquisitions"), true);
     assert.equal(salesNavIsActive(agent.find((item) => item.id === "offers")!, "/sales/offers/abc"), true);
     assert.equal(salesNavIsActive(agent.find((item) => item.id === "listings")!, "/sales/offers/abc"), false);
@@ -93,7 +96,7 @@ describe("real estate stage 1 navigation", () => {
     );
     assert.deepEqual(
       companyNavBySection(manager, "buyer_sales").map((item) => item.id),
-      ["inquiries", "buyers", "viewings", "offers"]
+      ["inquiries", "buyers", "viewings", "offers", "marketing"]
     );
     assert.equal(manager.find((item) => item.id === "owners")?.label, "Sellers");
     assert.equal(manager.find((item) => item.id === "offers")?.label, "Offers");
@@ -108,7 +111,9 @@ describe("real estate stage 1 navigation", () => {
     assert.equal(manager.find((item) => item.id === "overview")?.label, "Today");
     assert.equal(manager.find((item) => item.id === "calendar")?.label, "Calendar");
     assert.equal(manager.find((item) => item.id === "whatsapp")?.section, "main");
-    for (const id of ["agents", "commissions", "reports", "marketing", "settings", "billing", "developments"]) {
+    assert.equal(manager.find((item) => item.id === "marketing")?.label, "Marketing");
+    assert.equal(companyNavIsActive(manager.find((item) => item.id === "marketing")!, "/client/marketing"), true);
+    for (const id of ["agents", "commissions", "reports", "settings", "billing", "developments"]) {
       assert.equal(manager.find((item) => item.id === id)?.section, "agency");
     }
     for (const id of ["opportunities", "introductions", "matching", "compliance", "reviews"]) {

@@ -71,7 +71,42 @@ export function factualInsights(totals: MarketingTotals, sourceCounts: Record<st
   return insights;
 }
 
+export function sourceLabel(source: string): string {
+  if (source === "whatsapp") return "WhatsApp";
+  if (source === "facebook") return "Facebook";
+  if (source === "instagram") return "Instagram";
+  if (source === "direct") return "Direct open";
+  if (source === "x") return "X";
+  if (source === "referral") return "Referral";
+  return source;
+}
+
 export type DailyPoint = { day: string; visits: number };
+
+/** Every UTC day in [from, to), plus any counted day the window missed. */
+export function fillVisitDays(fromIso: string | undefined, toIso: string | undefined, series: DailyPoint[]): DailyPoint[] {
+  if (!fromIso || !toIso) return series;
+  const counts = new Map(series.map((point) => [point.day.slice(0, 10), point.visits]));
+  const days: DailyPoint[] = [];
+  const end = new Date(toIso);
+  for (let cursor = new Date(fromIso); cursor < end && days.length < 120; cursor = new Date(cursor.getTime() + 86_400_000)) {
+    const day = cursor.toISOString().slice(0, 10);
+    days.push({ day, visits: counts.get(day) ?? 0 });
+  }
+  if (!days.length) return series;
+  const known = new Set(days.map((point) => point.day));
+  for (const point of series) {
+    const day = point.day.slice(0, 10);
+    if (!known.has(day)) days.push({ day, visits: point.visits });
+  }
+  return days.sort((a, b) => a.day.localeCompare(b.day));
+}
+
+export function formatVisitDay(day: string): string {
+  const date = new Date(`${day.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return day;
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }).format(date);
+}
 
 export function visitSeries(rows: Array<{ day: string; eventType: string; botClass: string; count: number }>): DailyPoint[] {
   const map = new Map<string, number>();

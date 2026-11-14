@@ -14,10 +14,12 @@ import {
   Info,
   KeyRound,
   LayoutDashboard,
+  Megaphone,
   LogIn,
   LogOut,
   Menu,
   Moon,
+  Funnel,
   MoreHorizontal,
   Plus,
   RotateCcw,
@@ -53,6 +55,11 @@ export type MockScreen =
   | "activities"
   | "inquiries"
   | "marketing"
+  | "analytics"
+  | "funnels"
+  | "funnel"
+  | "funnelSetup"
+  | "funnelPage"
   | "listing"
   | "seller"
   | "property"
@@ -80,6 +87,11 @@ const SCREENS: MockScreen[] = [
   "activities",
   "inquiries",
   "marketing",
+  "analytics",
+  "funnels",
+  "funnel",
+  "funnelSetup",
+  "funnelPage",
   "listing",
   "seller",
   "property",
@@ -139,6 +151,8 @@ const NAV: Item[] = [
   { id: "calendar", label: "Calendar", icon: CalendarDays, screen: "calendar" },
   { id: "people", label: "People", icon: Users, screen: "people" },
   { id: "sales", label: "Sales", icon: Handshake, screen: "sales" },
+  { id: "marketing", label: "Marketing", icon: Megaphone, screen: "marketing" },
+  { id: "funnels", label: "Funnels", icon: Funnel, screen: "funnels" },
   {
     id: "acquisition",
     label: "Property acquisition",
@@ -170,7 +184,6 @@ const NAV: Item[] = [
       { id: "inbox", label: "Inbox", screen: "inbox" },
       { id: "activities", label: "Activities", screen: "activities" },
       { id: "inquiries", label: "Inquiries", screen: "inquiries" },
-      { id: "marketing", label: "Marketing", screen: "marketing" },
     ],
   },
   { id: "signin", label: "Sign in", icon: LogIn, screen: "signin" },
@@ -181,6 +194,8 @@ function screenOn(item: MockScreen, current: MockScreen) {
   if (item === "mandateChoice" && (current === "mandateForm" || current === "openMandate")) return true;
   if (item === "sellers" && current === "seller") return true;
   if (item === "properties" && current === "property") return true;
+  if (item === "marketing" && current === "analytics") return true;
+  if (item === "funnels" && (current === "funnel" || current === "funnelSetup")) return true;
   return false;
 }
 
@@ -188,7 +203,7 @@ function groupFor(screen: MockScreen) {
   return NAV.find((item) => item.children?.some((child) => screenOn(child.screen, screen)))?.id ?? null;
 }
 
-const DOCK = NAV.filter((item): item is Item & { screen: MockScreen } => Boolean(item.screen) && item.screen !== "signin");
+const DOCK = NAV.filter((item): item is Item & { screen: MockScreen } => Boolean(item.screen) && item.screen !== "signin" && item.screen !== "marketing" && item.screen !== "funnels");
 
 type Panel = "teams" | "account" | "notices" | "properties" | "create" | null;
 
@@ -348,9 +363,9 @@ export function MockFrame({
   const propertyRows = PROPERTIES.filter((item) => item.address.toLowerCase().includes(propertyNeedle));
   const currentProperty = PROPERTIES.find((item) => item.id === propertyId) ?? PROPERTIES[0];
 
-  if (screen === "signin" || screen === "listing") {
+  if (screen === "signin" || screen === "listing" || screen === "funnelPage") {
     return (
-      <div data-theme={screen === "listing" || dark ? "dark" : "light"} className="re-mock re-frame sales-dashboard-premium bg-sales-bg text-sales-text-primary">
+      <div data-theme={screen === "listing" || (screen === "signin" && dark) ? "dark" : "light"} className="re-mock re-frame sales-dashboard-premium bg-sales-bg text-sales-text-primary">
         {children}
       </div>
     );

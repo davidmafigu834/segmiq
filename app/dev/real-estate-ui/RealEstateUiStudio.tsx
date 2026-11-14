@@ -4,6 +4,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   Building2,
   Calendar,
+  CalendarClock,
+  CircleCheck,
   FileText,
   Handshake,
   Phone,
@@ -11,7 +13,7 @@ import {
 } from "lucide-react";
 import { SellerRecord } from "./SellerRecord";
 import { PropertyRecord } from "./PropertyRecord";
-import { listingIdForAddress } from "./marketing-links";
+import { LISTINGS, listingIdForAddress, useMarketingLinks } from "./marketing-links";
 import { OfferRecord, type OfferId } from "./OfferRecord";
 import { CalendarRecord } from "./CalendarRecord";
 import { ActivitiesPage, BuyersPage, InboxPage, InquiriesPage, InspectionsPage, MandatesPage, PeoplePage, SalesPage, SellersPage, ViewingsPage } from "./WorkPages";
@@ -23,7 +25,13 @@ import { OpenMandateFormMock } from "./OpenMandateFormMock";
 import { asMockScreen, MockFrame, type MockScreen } from "./MockSidebar";
 import { SignInMock } from "./SignInMock";
 import { MarketingMock } from "./MarketingMock";
+import { LinkAnalyticsMock, periodVisits } from "./LinkAnalyticsMock";
+import { MarketingDeskCard } from "@/components/real-estate/MarketingDeskCard";
+import { ReEmptyState } from "@/components/real-estate/ui";
+import { TodayCommandBar, useTodayView, type SellerHit } from "@/components/real-estate/TodayCommandBar";
+import { buildMarketingDesk, type DeskCount } from "@/lib/real-estate/agent-listing-pages/desk";
 import { PublicListingMock } from "./PublicListingMock";
+import { FunnelPageMock, FunnelRecord, FunnelSetupMock, FunnelsMock } from "./FunnelsMock";
 import "./mock.css";
 
 type Screen = MockScreen;
@@ -81,7 +89,7 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
   return (
     <MockFrame screen={screen} dark={dark} onNavigate={openScreen} onToggleDark={toggleDark} onReplay={replay}>
         {offerId ? <OfferRecord id={offerId} onClose={() => setOfferId(null)} /> : null}
-        {!offerId && screen === "today" ? <Today loading={loading} onOpenOffer={setOfferId} onAddBuyer={startAddBuyer} onNewMandate={() => openScreen("mandateChoice")} /> : null}
+        {!offerId && screen === "today" ? <Today loading={loading} onOpenOffer={setOfferId} onAddBuyer={startAddBuyer} onNewMandate={() => openScreen("mandateChoice")} onOpenMarketing={() => openScreen("marketing")} onOpenListing={(id) => openScreen("property", id)} onOpenAnalytics={(id) => openScreen("analytics", id)} onOpenSellers={(id) => openScreen("sellers", id)} /> : null}
         {!offerId && screen === "calendar" ? <CalendarRecord loading={loading} /> : null}
         {!offerId && screen === "properties" ? (
           <Properties
@@ -117,37 +125,50 @@ export function RealEstateUiStudio({ initialScreen }: { initialScreen?: string }
         {!offerId && screen === "inbox" ? <InboxPage loading={loading} /> : null}
         {!offerId && screen === "activities" ? <ActivitiesPage loading={loading} /> : null}
         {!offerId && screen === "inquiries" ? <InquiriesPage loading={loading} onOpenBuyer={() => openScreen("buyers")} onOpenSeller={() => openScreen("sellers")} /> : null}
-        {!offerId && screen === "marketing" ? <MarketingMock loading={loading} onOpenListing={(id) => openScreen("property", id)} onPreview={(id) => openScreen("listing", id)} /> : null}
+        {!offerId && screen === "marketing" ? <MarketingMock loading={loading} onOpenListing={(id) => openScreen("property", id)} onPreview={(id) => openScreen("listing", id)} onOpenAnalytics={(id) => openScreen("analytics", id)} /> : null}
+        {!offerId && screen === "analytics" ? <LinkAnalyticsMock loading={loading} linkId={focus ?? "kingsmead"} onBack={() => openScreen("marketing")} onOpenLink={(id) => openScreen("analytics", id)} onOpenListing={(id) => openScreen("property", id)} onPreview={(id) => openScreen("listing", id)} /> : null}
+        {!offerId && screen === "funnels" ? <FunnelsMock loading={loading} onOpen={(id) => openScreen("funnel", id)} onSetup={() => openScreen("funnelSetup")} /> : null}
+        {!offerId && screen === "funnel" ? <FunnelRecord key={focus ?? "charter"} focus={focus} onBack={() => openScreen("funnels")} onPreview={(id) => (id === "charter" ? openScreen("funnelPage", id) : openScreen("listing", id))} onSetup={() => openScreen("funnelSetup")} onOpenInquiries={() => openScreen("inquiries")} /> : null}
+        {!offerId && screen === "funnelSetup" ? <FunnelSetupMock onBack={() => openScreen("funnels")} onDone={() => openScreen("funnels")} /> : null}
+        {!offerId && screen === "funnelPage" ? <FunnelPageMock funnelId={focus ?? "charter"} onBack={() => openScreen("funnel", focus ?? "charter")} /> : null}
         {!offerId && screen === "seller" ? <SellerRecord loading={loading} /> : null}
         {!offerId && screen === "property" ? <PropertyRecord loading={loading} listingId={focus ?? "baines"} onOpenMarketing={() => openScreen("marketing")} onPreview={() => openScreen("listing", focus ?? "baines")} /> : null}
-        {!offerId && screen === "listing" ? <PublicListingMock listingId={focus ?? "baines"} onBack={() => openScreen("marketing")} onOpen={(id) => openScreen("listing", id)} /> : null}
+        {!offerId && screen === "listing" ? <PublicListingMock listingId={focus ?? "baines"} onBack={() => openScreen("marketing")} onOpen={(id) => openScreen("listing", id)} onRequestViewing={() => openScreen("viewingForm")} /> : null}
         {!offerId && screen === "states" ? <States /> : null}
         {!offerId && screen === "signin" ? <SignInMock dark={dark} onToggleDark={toggleDark} onEnter={() => openScreen("today")} /> : null}
     </MockFrame>
   );
 }
 
-function Today({ loading, onOpenOffer, onAddBuyer, onNewMandate }: { loading: boolean; onOpenOffer: (id: OfferId) => void; onAddBuyer: () => void; onNewMandate: () => void }) {
-  return (
-    <div className="space-y-5">
-      <div className="re-head flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-[13px] font-medium text-sales-text-muted">Monday 9 November</p>
-          <h1 className="mt-1 font-display text-[32px] font-semibold leading-none tracking-[-0.03em]">Today</h1>
-          <p className="mt-2 text-[14px] text-sales-text-secondary">3 items need a next action.</p>
-        </div>
-        <div className="re-actions flex flex-wrap gap-2">
-          <button type="button" onClick={onAddBuyer} className="inline-flex h-11 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface px-4 text-[14px] font-semibold transition-colors hover:bg-sales-surface-hover">
-            Add buyer
-          </button>
-          <button type="button" onClick={onNewMandate} className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text">
-            <Plus size={16} strokeWidth={1.75} aria-hidden />
-            New seller form
-          </button>
-        </div>
-      </div>
+const SEED_SELLERS: SellerHit[] = LISTINGS.filter((listing) => listing.seller).map((listing) => ({
+  id: listing.id,
+  name: listing.seller ?? "",
+  detail: `1 property · ${listing.address}, ${listing.suburb}`,
+  href: `/sales/owners?contactId=${listing.id}`,
+  active: listing.status !== "Sold" && listing.status !== "Withdrawn",
+  company: false,
+}));
 
-      <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.85fr)]">
+function Today({ loading, onOpenOffer, onAddBuyer, onNewMandate, onOpenMarketing, onOpenListing, onOpenAnalytics, onOpenSellers }: { loading: boolean; onOpenOffer: (id: OfferId) => void; onAddBuyer: () => void; onNewMandate: () => void; onOpenMarketing: () => void; onOpenListing: (id: string) => void; onOpenAnalytics: (id: string) => void; onOpenSellers: (id?: string) => void }) {
+  const [view, setView] = useTodayView();
+  return (
+    <div className="space-y-8">
+      <TodayCommandBar
+        view={view}
+        onViewChange={setView}
+        viewToggleClassName="hidden md:flex"
+        sellers={SEED_SELLERS}
+        onNavigate={(href) => {
+          const url = new URL(href, "http://mock.local");
+          if (url.pathname === "/sales/listings/mandate") onNewMandate();
+          else if (url.pathname === "/sales/listings/viewing") onAddBuyer();
+          else if (url.searchParams.get("contactId") === "baines") onOpenSellers("david");
+          else if (url.searchParams.get("contactId")) onOpenListing(url.searchParams.get("contactId") ?? "");
+          else onOpenSellers();
+        }}
+      />
+
+      <div className={`grid items-start gap-x-4 gap-y-8 ${view === "stacked" ? "" : "md:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.85fr)]"}`}>
         <Panel title="Needs you" count={loading ? undefined : 3}>
           {loading ? <Bones /> : (
             <ul>
@@ -169,6 +190,8 @@ function Today({ loading, onOpenOffer, onAddBuyer, onNewMandate }: { loading: bo
           )}
         </Panel>
       </div>
+
+      <MarketingDesk loading={loading} onOpenMarketing={onOpenMarketing} onOpenListing={onOpenListing} onOpenAnalytics={onOpenAnalytics} />
 
       <DiligenceDesk loading={loading} />
 
@@ -192,6 +215,54 @@ function Today({ loading, onOpenOffer, onAddBuyer, onNewMandate }: { loading: bo
   );
 }
 
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · component-scope */
+/* Hallmark · pre-emit critique: P5 H4 E4 S5 R4 V4 */
+function MarketingDesk({ loading, onOpenMarketing, onOpenListing, onOpenAnalytics }: { loading: boolean; onOpenMarketing: () => void; onOpenListing: (id: string) => void; onOpenAnalytics: (id: string) => void }) {
+  const links = useMarketingLinks();
+  const counts: DeskCount[] = [];
+  for (const link of links) {
+    const slice = link.slices["30"];
+    const days = periodVisits(link.id, 30);
+    if (days && days.reduce((total, day) => total + day.visits, 0) === slice.visits) {
+      for (const day of days) counts.push({ shareId: link.id, eventType: "page_view", botClass: "human", count: day.visits, day: day.day });
+    } else {
+      counts.push({ shareId: link.id, eventType: "page_view", botClass: "human", count: slice.visits });
+    }
+    counts.push({ shareId: link.id, eventType: "enquiry_submit", botClass: "human", count: slice.enquiries });
+    counts.push({ shareId: link.id, eventType: "viewing_request", botClass: "human", count: slice.viewings });
+    counts.push({ shareId: link.id, eventType: "whatsapp_click", botClass: "human", count: slice.whatsapp });
+  }
+  const period = periodVisits("kingsmead", 30) ?? [];
+  const first = period[0]?.day;
+  const last = period[period.length - 1]?.day;
+  const desk = buildMarketingDesk({
+    shares: links.map((link) => ({ id: link.id, listingId: link.listingId, status: link.revoked ? "revoked" : "active", address: link.address, suburb: link.suburb })),
+    counts,
+    listings: LISTINGS.map((listing) => ({ id: listing.id, address: listing.address, suburb: listing.suburb })),
+    range: first && last ? { from: `${first}T00:00:00.000Z`, to: new Date(Date.parse(`${last}T00:00:00.000Z`) + 86_400_000).toISOString() } : undefined,
+  });
+
+  if (loading) {
+    return (
+      <section className="space-y-3" aria-hidden>
+        <div className="re-bone h-10 w-56 rounded-[10px]" />
+        <div className="re-bone h-72 rounded-[16px]" />
+      </section>
+    );
+  }
+
+  return (
+    <MarketingDeskCard
+      desk={desk}
+      onNavigate={(href) => {
+        if (href === "/sales/shared-listings") onOpenMarketing();
+        else if (href.startsWith("/sales/shared-listings/")) onOpenAnalytics(href.split("/").pop() ?? "");
+        else if (href.startsWith("/sales/listings/")) onOpenListing(href.split("/").pop() ?? "");
+      }}
+    />
+  );
+}
+
 /* Hallmark · pre-emit critique: P5 H4 E4 S4 R4 V4 */
 const CLEARED = [
   { name: "David Mafigu", place: "2 Baines Avenue", held: "Identity, address, and the signed mandate." },
@@ -209,7 +280,7 @@ function DiligenceDesk({ loading }: { loading: boolean }) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-sales-text-muted">Due diligence</p>
-          <h2 id="diligence-desk" className="mt-1 font-display text-[22px] font-semibold leading-none tracking-[-0.03em]">Mandates</h2>
+          <h2 id="diligence-desk" className="mt-1 font-display text-[18px] font-semibold leading-tight tracking-[-0.02em]">Mandates</h2>
         </div>
         <p className="text-[13px] text-sales-text-secondary">Sample records, so the desk can be judged.</p>
       </div>
@@ -507,15 +578,17 @@ function States() {
         <h1 className="font-display text-[32px] font-semibold leading-none tracking-[-0.03em]">States</h1>
         <p className="mt-2 max-w-[62ch] text-[14px] text-sales-text-secondary">Loading uses the shape of the row it will become. Icons sit on the action, not on every line.</p>
       </div>
+      <div className="grid items-start gap-x-4 gap-y-8 md:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.85fr)]">
+        <Panel title="Needs you" count={0}>
+          <ReEmptyState icon={<CircleCheck />} title="You're all caught up" description="New inquiries, offers waiting on you and overdue follow-ups show here as they come in." />
+        </Panel>
+        <Panel title="Schedule" count={0}>
+          <ReEmptyState icon={<CalendarClock />} title="Your day is clear" description="Viewings and follow-ups due today show here in time order." />
+        </Panel>
+      </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel title="Loading">
           <Bones />
-        </Panel>
-        <Panel title="Empty">
-          <div className="px-4 py-10 text-center">
-            <p className="text-[15px] font-semibold">Nothing needs you right now</p>
-            <p className="mx-auto mt-1 max-w-[36ch] text-[13px] text-sales-text-secondary">New inquiries, offers, and overdue follow-ups will appear here.</p>
-          </div>
         </Panel>
         <Panel title="Could not load">
           <div className="re-split flex items-center justify-between gap-3 px-4 py-4">
@@ -564,14 +637,16 @@ function PageTitle({ kicker, title, detail, action, onAction }: { kicker: string
   );
 }
 
-function Panel({ title, count, children, flush = false }: { title: string; count?: number; children: ReactNode; flush?: boolean }) {
+function Panel({ title, count, children }: { title: string; count?: number; children: ReactNode; flush?: boolean }) {
   return (
-    <section className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
-      <div className="flex items-baseline justify-between px-4 pb-2 pt-4">
-        <h2 className="text-[15px] font-semibold tracking-[-0.01em]">{title}</h2>
-        {count != null ? <span className="text-[13px] tabular-nums text-sales-text-muted">{count}</span> : null}
-      </div>
-      <div className={flush ? "pb-1" : ""}>{children}</div>
+    <section className="min-w-0">
+      <h2 className="mb-3 flex items-center gap-2 font-display text-[18px] font-semibold leading-tight tracking-[-0.02em]">
+        <span className="truncate">{title}</span>
+        {count != null ? (
+          <span className="inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full border border-sales-border bg-sales-surface px-1.5 font-sans text-[12px] font-semibold leading-none tabular-nums tracking-normal">{count}</span>
+        ) : null}
+      </h2>
+      <div className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface [&>ul>li:first-child]:border-t-0">{children}</div>
     </section>
   );
 }
