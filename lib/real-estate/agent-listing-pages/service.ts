@@ -5,6 +5,8 @@ import { logLeadEvent } from "@/lib/lead-events";
 import { appendInterestedListingIds } from "@/lib/real-estate/helpers";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { checkDbRateLimit } from "@/lib/auth/db-rate-limit";
+import { issueViewingLink } from "@/lib/real-estate/workflow/journey-links";
+import { SYNTHETIC_VIEWING_TEMPLATE } from "@/lib/real-estate/workflow/journey";
 import { getPublicBaseUrl } from "@/lib/constants";
 import { buildMarketingDesk, type DeskCount, type MarketingDesk } from "@/lib/real-estate/agent-listing-pages/desk";
 import { listingCompliancePublication } from "@/lib/real-estate/compliance-management/publication";
@@ -162,7 +164,7 @@ async function loadListing(db: Db, clientId: string, listingId: string): Promise
   return data as ListingRow;
 }
 
-async function ensureSlug(db: Db, listing: ListingRow): Promise<string | null> {
+export async function ensureSlug(db: Db, listing: ListingRow): Promise<string | null> {
   if (typeof listing.public_slug === "string" && listing.public_slug) return listing.public_slug;
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const slug = newPublicSlug(text(listing.suburb));
@@ -604,7 +606,7 @@ export async function recordPublicSignal(
 }
 
 async function resolvePublicTarget(db: Db, slug: string, token: string | null, requireEnquiry = true): Promise<Ok<{ clientId: string; listingId: string; shareId: string | null; campaignLabel: string | null; dialCode: string; listing: ListingRow; share: Record<string, unknown> | null; settings: AgencyListingPageSettings; client: Record<string, unknown> }> | Fail> {
-  const { data: listing } = await db.from("listings").select("id, client_id, approval_status, status, address, suburb, transaction_type, public_slug, description, price, bedrooms, bathrooms, size_sqm, photos, property_category").eq("public_slug", slug).maybeSingle();
+  const { data: listing } = await db.from("listings").select("id, client_id, agent_id, approval_status, status, address, suburb, transaction_type, public_slug, description, price, bedrooms, bathrooms, size_sqm, photos, property_category").eq("public_slug", slug).maybeSingle();
   if (!listing) return fail(404, "This page is unavailable", "UNAVAILABLE");
   const row = listing as ListingRow;
   const org = await organisationActive(db, String(row.client_id));
@@ -654,6 +656,34 @@ async function resolvePublicTarget(db: Db, slug: string, token: string | null, r
     settings,
     client: org.client,
   };
+}
+
+export async function openPublicViewingForm(
+  db: Db,
+  input: { slug: string; token: string | null; ipKey: string }
+): Promise<Ok<{ path: string }> | Fail> {
+  const limited = await checkDbRateLimit({ key: `listing-page:viewing-form:${input.ipKey}`, limit: 8, windowMs: 60 * 60 * 1000 });
+  if (!limited.ok) return fail(429, "Too many requests. Please wait and try again.", "RATE_LIMITED");
+  const target = await resolvePublicTarget(db, input.slug, input.token);
+  if (!target.ok) return target;
+  const agentId = text(target.share?.agent_id) || text(target.listing.agent_id);
+  if (!agentId) return fail(409, "A viewing form is not available for this property yet.", "NO_AGENT");
+  const { data: user } = await db.from("users").select("id, name, role, client_id, is_active").eq("id", agentId).maybeSingle();
+  const agent = user as { name?: string | null; role?: string | null; client_id?: string | null; is_active?: boolean | null } | null;
+  if (!agent || agent.is_active === false || text(agent.client_id) !== target.clientId || !text(agent.role)) {
+    return fail(409, "A viewing form is not available for this property yet.", "NO_AGENT");
+  }
+  const issued = await issueViewingLink({
+    clientId: target.clientId,
+    actor: { userId: agentId, role: text(agent.role)!, clientId: target.clientId, name: text(agent.name) },
+    listingId: target.listingId,
+    slots: [],
+    templateKey: SYNTHETIC_VIEWING_TEMPLATE,
+  });
+  if (!issued.ok || !issued.path.startsWith("/journey/")) {
+    return fail(issued.ok ? 503 : issued.status, issued.ok ? "The viewing form was not created." : issued.error, "VIEWING_FORM");
+  }
+  return { ok: true, path: issued.path };
 }
 
 export async function submitPublicForm(

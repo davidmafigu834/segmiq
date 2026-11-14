@@ -19,7 +19,7 @@ function counted(n: number, singular: string, plural: string) {
 
 export function MarketingDeskCard({
   desk,
-  marketingHref = "/sales/shared-listings",
+  marketingHref = "/sales/funnels",
   onNavigate,
 }: {
   desk: MarketingDesk | null;

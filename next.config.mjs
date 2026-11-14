@@ -169,8 +169,13 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        // Funnel documents send their own sandbox policy; the app CSP would block their fonts and images.
+        source: "/((?!api/public/funnels/document).*)",
         headers: securityHeaders(),
+      },
+      {
+        source: "/api/public/funnels/document",
+        headers: securityHeaders().filter((header) => !header.key.startsWith("Content-Security-Policy")),
       },
     ];
   },

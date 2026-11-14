@@ -57,7 +57,7 @@ function yAt(value: number, max: number) {
 export function LinkAnalyticsView({
   clientId,
   shareId,
-  homeHref = "/sales/shared-listings",
+  homeHref = "/sales/funnels",
   listingBase = "/sales/listings",
 }: {
   clientId: string;

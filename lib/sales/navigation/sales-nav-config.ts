@@ -8,6 +8,7 @@ import {
   Columns3,
   FileText,
   FolderKanban,
+  Funnel,
   KeyRound,
   Handshake,
   Home,
@@ -60,7 +61,8 @@ export type SalesNavIconId =
   | "matching"
   | "viewings"
   | "commissions"
-  | "marketing";
+  | "marketing"
+  | "funnels";
 
 export type SalesNavMobileSlot = "primary" | "more";
 
@@ -137,6 +139,7 @@ export const SALES_NAV_LUCIDE: Record<Exclude<SalesNavIconId, "whatsapp">, Lucid
   transactions: Landmark,
   compliance: Shield,
   marketing: Megaphone,
+  funnels: Funnel,
 };
 
 function exactOrChild(pathname: string, href: string): boolean {
@@ -537,15 +540,15 @@ export function resolveSalesNavItems(
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/sales/commissions"),
   };
-  const sharedListingsItem: SalesNavItemConfig = {
-    id: "sharedListings",
-    label: "Marketing",
-    href: "/sales/shared-listings",
-    icon: "marketing",
+  const funnelsItem: SalesNavItemConfig = {
+    id: "funnels",
+    label: "Funnels",
+    href: "/sales/funnels",
+    icon: "funnels",
     section: "sales",
     mobileSlot: "more",
-    mobileLabel: "Shared",
-    match: (p) => exactOrChild(p, "/sales/shared-listings"),
+    mobileLabel: "Funnels",
+    match: (p) => exactOrChild(p, "/sales/funnels") || exactOrChild(p, "/sales/shared-listings"),
   };
   const complianceItem: SalesNavItemConfig = {
     id: "compliance",
@@ -565,7 +568,7 @@ export function resolveSalesNavItems(
         ...buyerItems,
         ...acquisitionItems,
         listingsItem,
-        sharedListingsItem,
+        funnelsItem,
         offersItem,
         transactionsItem,
         complianceItem,
@@ -630,7 +633,7 @@ const REAL_ESTATE_AGENT_SECTIONS: Record<string, SalesNavSectionId> = {
   matching: "more_tools",
   viewings: "buyer_sales",
   offers: "buyer_sales",
-  sharedListings: "buyer_sales",
+  funnels: "buyer_sales",
   compliance: "agency",
   commissions: "agency",
   pipeline: "more_tools",
@@ -655,7 +658,7 @@ const REAL_ESTATE_AGENT_LABELS: Record<string, { label: string; mobileLabel: str
 const REAL_ESTATE_ITEM_ORDER: Partial<Record<SalesNavSectionId, string[]>> = {
   main: ["dashboard", "listings", "calendar", "transactions", "whatsapp", "socialInbox", "tasks"],
   acquisition: ["mandates", "dueDiligence", "owners", "inspections"],
-  buyer_sales: ["leads", "buyers", "viewings", "offers", "sharedListings"],
+  buyer_sales: ["leads", "buyers", "viewings", "offers", "funnels"],
 };
 
 /** Sections drawn in the Real Estate web menu. Other sections stay in the item list for direct URLs. */

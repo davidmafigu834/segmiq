@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Charter House | Commercial Investment in Bulawayo CBD | Landlords Junction Properties</title>
+  <meta name="description" content="Charter House: a landmark commercial building in Bulawayo CBD. 3,776.83 sqm lettable, 95 offices, secure underground parking. Asking price US$2,600,000." />
+  <meta property="og:title" content="Charter House | US$2,600,000 | Bulawayo CBD" />
+  <meta property="og:description" content="Landmark commercial investment. 95 offices, 3,776.83 sqm lettable, secure underground parking." />
+  <meta property="og:image" content="charter-house-street.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link rel="icon" href="landlords-junction-logo.webp" />
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+  <link rel="preload" as="image" href="charter-house-street.jpg" />
+
+  <style>
+    :root {
+      /* Landlords Junction brand: navy #042462 + orange #F78800 (sampled from logo) */
+      --bg: #f6f7f9;
+      --surface: #fdfdfe;
+      --tint: #eaedf3;
+      --ink: #0e1a33;
+      --muted: #4f5a6e;
+      --line: #dde1ea;
+      --navy: #042462;
+      --navy-deep: #031a48;
+      --orange: #f78800;
+      --orange-hover: #e27c00;
+      --accent: var(--navy);
+      --accent-soft: #e4e9f4;
+      --on-accent: #ffffff;
+      --on-dark: #eef1f8;
+      --on-dark-muted: #b6c0d8;
+      --scrim: 3, 18, 50;
+      --font-display: "Cinzel", "Trajan Pro", Georgia, serif;
+      --font-tagline: "Cormorant Garamond", Georgia, serif;
+      --font-body: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --radius: 6px;
+      --max: 1200px;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; }
+    h1, h2, h3 { margin: 0; letter-spacing: -0.025em; line-height: 1.1; font-weight: 600; }
+    h1, h2 { font-family: var(--font-display); letter-spacing: 0.01em; line-height: 1.15; color: var(--navy); }
+    .tagline { font-family: var(--font-tagline); font-style: italic; font-weight: 500; }
+    p { margin: 0; }
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+    .num { font-variant-numeric: tabular-nums; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      height: 50px; padding: 0 22px; border-radius: var(--radius);
+      font: inherit; font-weight: 600; font-size: 15px; white-space: nowrap;
+      text-decoration: none; cursor: pointer; border: 1px solid transparent;
+      transition: background-color .25s var(--ease), transform .15s var(--ease), border-color .25s var(--ease);
+    }
+    .btn:active { transform: translateY(1px) scale(0.99); }
+    .btn i { font-size: 19px; }
+    .btn-primary { background: var(--orange); color: var(--navy); font-weight: 700; }
+    .btn-primary:hover { background: var(--orange-hover); }
+    .btn-ghost-light { background: rgba(var(--scrim), 0.35); color: var(--on-dark); border-color: rgba(238, 241, 248, 0.55); backdrop-filter: blur(6px); }
+    .btn-ghost-light:hover { background: rgba(var(--scrim), 0.6); }
+    .btn-outline { background: transparent; color: var(--navy); border-color: var(--line); }
+    .btn-outline:hover { border-color: var(--navy); }
+    :focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+
+    /* Announcement bar */
+    .announce { background: var(--navy); color: var(--on-dark); font-size: 14px; }
+    .announce .wrap { min-height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px 16px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; text-align: center; }
+    .announce i { color: var(--orange); font-size: 17px; vertical-align: -3px; margin-right: 6px; }
+    .announce a { color: #ffffff; font-weight: 600; text-underline-offset: 3px; white-space: nowrap; }
+
+    /* Header */
+    .site-header {
+      position: sticky; top: 0; z-index: 40;
+      background: rgba(253, 253, 254, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid transparent;
+      transition: border-color .3s var(--ease);
+    }
+    .site-header.is-stuck { border-bottom-color: var(--line); }
+    .header-row { height: 80px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; text-decoration: none; }
+    .brand-logo { height: 70px; width: auto; }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+    .header-actions .btn { height: 42px; padding: 0 16px; font-size: 14px; }
+    .header-phone { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; font-size: 14px; text-decoration: none; padding: 0 8px; }
+
+    /* Hero */
+    .hero { position: relative; min-height: calc(100dvh - 122px); display: flex; align-items: flex-end; color: var(--on-dark); overflow: hidden; }
+    .hero-media { position: absolute; inset: 0; }
+    .hero-media img { width: 100%; height: 100%; object-fit: cover; object-position: center 35%; }
+    .hero-media::after {
+      content: ""; position: absolute; inset: 0;
+      background:
+        linear-gradient(90deg, rgba(var(--scrim), 0.82) 0%, rgba(var(--scrim), 0.5) 45%, rgba(var(--scrim), 0.05) 75%),
+        linear-gradient(0deg, rgba(var(--scrim), 0.6) 0%, rgba(var(--scrim), 0) 45%);
+    }
+    .hero-inner { position: relative; width: 100%; padding-top: 72px; padding-bottom: 56px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: end; }
+    .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+    .hero .eyebrow { color: var(--orange); display: inline-flex; align-items: center; gap: 10px; }
+    .hero h1 { font-size: clamp(36px, 4.4vw, 60px); margin-top: 18px; max-width: 18ch; color: #ffffff; }
+    .hero-sub { margin-top: 18px; font-size: clamp(17px, 1.6vw, 19px); color: #dfe5f2; max-width: 34ch; line-height: 1.55; }
+    .hero-ctas { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 12px; }
+
+    .price-card {
+      justify-self: end; width: 100%; max-width: 380px;
+      background: rgba(253, 253, 254, 0.97); color: var(--ink);
+      border-radius: var(--radius); padding: 24px;
+      border-top: 4px solid var(--orange);
+      box-shadow: 0 24px 60px rgba(var(--scrim), 0.3);
+    }
+    .price-label { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .price-value { font-size: 36px; font-weight: 700; letter-spacing: -0.03em; margin-top: 4px; line-height: 1.1; color: var(--navy); }
+    .price-specs { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px 12px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .price-specs div { display: flex; gap: 10px; align-items: flex-start; }
+    .price-specs i { font-size: 20px; color: var(--accent); margin-top: 2px; }
+    .price-specs strong { display: block; font-size: 15px; line-height: 1.3; }
+    .price-specs span { font-size: 12.5px; color: var(--muted); }
+
+    /* Key figures */
+    .figures { background: var(--surface); border-bottom: 1px solid var(--line); }
+    .figures-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .figure { padding: 36px 24px 36px 0; }
+    .figure + .figure { padding-left: 28px; border-left: 1px solid var(--line); }
+    .figure-value { font-size: clamp(30px, 3.4vw, 44px); font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--navy); }
+    .figure-value small { font-size: 0.45em; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-left: 4px; }
+    .figure-label { margin-top: 10px; color: var(--muted); font-size: 14.5px; }
+
+    section { scroll-margin-top: 80px; }
+    .section { padding: 112px 0; }
+    .section-title { font-size: clamp(28px, 3.3vw, 42px); max-width: 22ch; }
+    .lead { margin-top: 20px; font-size: 18px; color: var(--muted); max-width: 60ch; }
+
+    /* Story */
+    .story { max-width: 720px; }
+    .story .section-title { max-width: 20ch; }
+    .story-body { margin-top: 28px; font-size: 19px; line-height: 1.7; color: #2d3850; }
+    .story-body p + p { margin-top: 20px; }
+    .story-body strong { color: var(--navy); font-weight: 600; }
+    .story-pull { margin-top: 32px; padding-left: 20px; border-left: 3px solid var(--orange); font-size: 22px; line-height: 1.45; font-weight: 500; color: var(--navy); letter-spacing: -0.01em; }
+
+    /* Overview */
+    .overview-grid { display: grid; grid-template-columns: 1fr 1.05fr; gap: 72px; align-items: start; }
+    .overview-copy p + p { margin-top: 18px; }
+    .overview-copy .lead { color: var(--ink); }
+    .overview-copy p:not(.lead) { color: var(--muted); max-width: 58ch; }
+
+    /* Urgency */
+    .urgency { background: var(--navy); color: var(--on-dark); }
+    .urgency .section-title { color: #ffffff; max-width: 22ch; }
+    .urgency .lead { color: var(--on-dark-muted); }
+    .urgency-grid { margin-top: 48px; display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 0; border-top: 1px solid rgba(238, 241, 248, 0.18); }
+    .urgency-item { padding: 28px 28px 8px 0; }
+    .urgency-item + .urgency-item { padding-left: 28px; border-left: 1px solid rgba(238, 241, 248, 0.18); }
+    .urgency-item i { font-size: 28px; color: var(--orange); }
+    .urgency-item h3 { margin-top: 14px; font-size: 20px; color: #ffffff; }
+    .urgency-item p { margin-top: 8px; color: var(--on-dark-muted); font-size: 15.5px; }
+    .urgency-cta { margin-top: 40px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .urgency-cta span { color: var(--on-dark-muted); font-size: 14.5px; }
+
+    /* Next steps */
+    .next-steps { margin-top: 32px; list-style: none; padding: 0; display: grid; gap: 16px; counter-reset: step; }
+    .next-steps li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; align-items: start; }
+    .next-steps li::before { counter-increment: step; content: counter(step); width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 600; display: grid; place-items: center; font-size: 15px; }
+    .next-steps strong { display: block; font-size: 16px; }
+    .next-steps span { color: var(--muted); font-size: 14.5px; }
+    .highlights { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: 1px solid var(--line); }
+    .highlight { padding: 22px 20px 22px 0; display: flex; gap: 14px; border-bottom: 1px solid var(--line); }
+    .highlight:nth-child(even) { padding-left: 20px; border-left: 1px solid var(--line); }
+    .highlight i { font-size: 24px; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+    .highlight strong { display: block; font-weight: 600; font-size: 16px; line-height: 1.35; }
+    .highlight span { display: block; color: var(--muted); font-size: 14px; margin-top: 4px; line-height: 1.45; }
+
+    /* Gallery */
+    .gallery-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
+    .gallery-grid { display: grid; grid-template-columns: 1.15fr 1fr; grid-template-rows: 300px 300px; gap: 12px; }
+    .gallery-item { position: relative; border: 0; padding: 0; margin: 0; cursor: zoom-in; overflow: hidden; border-radius: var(--radius); background: var(--tint); }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease); }
+    .gallery-item:hover img { transform: scale(1.03); }
+    .gallery-item.tall { grid-row: span 2; }
+    .gallery-item.tall img { object-position: center 20%; }
+    .gallery-caption { margin-top: 14px; color: var(--muted); font-size: 14px; }
+
+    /* Lightbox */
+    .lightbox { position: fixed; inset: 0; z-index: 60; background: rgba(var(--scrim), 0.95); display: none; align-items: center; justify-content: center; padding: 64px 72px; }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--radius); }
+    .lb-btn { position: absolute; background: rgba(255,255,255,0.08); color: #f2f3f1; border: 1px solid rgba(255,255,255,0.18); width: 48px; height: 48px; border-radius: var(--radius); display: grid; place-items: center; cursor: pointer; font-size: 22px; }
+    .lb-btn:hover { background: rgba(255,255,255,0.16); }
+    .lb-close { top: 16px; right: 16px; }
+    .lb-prev { left: 16px; top: 50%; transform: translateY(-50%); }
+    .lb-next { right: 16px; top: 50%; transform: translateY(-50%); }
+    .lb-count { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: #c9ccc9; font-size: 14px; }
+
+    /* Investment snapshot */
+    .invest { background: var(--tint); }
+    .invest .eyebrow { color: var(--accent); }
+    .invest .section-title { margin-top: 14px; }
+    .invest-grid { margin-top: 48px; display: grid; grid-template-columns: 1fr 1.1fr; gap: 24px; }
+    .metrics { display: grid; grid-template-rows: repeat(3, 1fr); gap: 12px; }
+    .metric { background: var(--surface); border-radius: var(--radius); padding: 24px 26px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .metric-label { color: var(--muted); font-size: 15px; }
+    .metric-value { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; color: var(--navy); }
+    .calc { background: var(--navy); color: var(--on-dark); border-radius: var(--radius); padding: 32px; display: flex; flex-direction: column; border-top: 4px solid var(--orange); }
+    .calc h3 { font-size: 22px; }
+    .calc > p { margin-top: 8px; color: var(--on-dark-muted); font-size: 14.5px; }
+    .calc-field { margin-top: 26px; }
+    .calc-field label { display: flex; justify-content: space-between; font-size: 14.5px; font-weight: 500; }
+    .calc-field output { font-family: "Geist Mono", ui-monospace, monospace; color: var(--orange); }
+    input[type="range"] { width: 100%; margin-top: 12px; accent-color: var(--orange); height: 24px; }
+    .calc-result { margin-top: auto; padding-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .calc-result div { border-top: 1px solid rgba(238, 241, 248, 0.22); padding-top: 16px; }
+    .calc-result span { display: block; font-size: 13.5px; color: var(--on-dark-muted); }
+    .calc-result strong { display: block; font-size: 30px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px; color: #ffffff; }
+    .calc-note { margin-top: 18px; font-size: 12.5px; color: var(--on-dark-muted); }
+
+    /* Who it suits */
+    .suits-list { margin-top: 40px; display: flex; flex-wrap: wrap; gap: 12px; }
+    .suit { display: inline-flex; align-items: center; gap: 12px; padding: 14px 20px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); font-weight: 500; font-size: 16px; }
+    .suit i { font-size: 22px; color: var(--accent); }
+
+    /* Location */
+    .location { position: relative; }
+    .map-frame { position: relative; height: 520px; border-radius: var(--radius); overflow: hidden; background: var(--tint); }
+    .map-frame iframe { width: 100%; height: 100%; border: 0; filter: grayscale(0.55) contrast(1.05); }
+    .location-card { position: absolute; left: 24px; bottom: 24px; max-width: 360px; background: var(--surface); border-radius: var(--radius); padding: 26px; box-shadow: 0 20px 50px rgba(var(--scrim), 0.18); border-top: 4px solid var(--orange); }
+    .location-card h2 { font-size: 28px; }
+    .location-card ul { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 12px; }
+    .location-card li { display: flex; gap: 12px; font-size: 15px; color: var(--muted); line-height: 1.45; }
+    .location-card li i { color: var(--accent); font-size: 20px; flex-shrink: 0; }
+
+    /* Enquiry */
+    .enquire { background: var(--surface); border-top: 1px solid var(--line); }
+    .enquire .eyebrow { color: var(--accent); }
+    .enquire-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 72px; }
+    .enquire .section-title { margin-top: 14px; }
+    .agent { margin-top: 40px; display: flex; gap: 18px; align-items: center; padding: 22px; background: var(--bg); border-radius: var(--radius); }
+    .agent-avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-weight: 600; font-size: 24px; flex-shrink: 0; }
+    .agent-name { font-weight: 600; font-size: 18px; line-height: 1.25; color: var(--navy); }
+    .agent-role { color: var(--muted); font-size: 14.5px; }
+    .agent-tagline { color: var(--orange-hover); font-size: 17px; margin-top: 2px; }
+    .agent-line { margin-top: 10px; color: var(--ink); font-size: 15px; line-height: 1.5; }
+    .agent-links { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .agent-links .btn { height: 44px; font-size: 14px; padding: 0 16px; }
+    .price-repeat { margin-top: 28px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+    .price-repeat span { color: var(--muted); font-size: 15px; }
+    .price-repeat strong { font-size: 32px; letter-spacing: -0.03em; color: var(--navy); }
+
+    form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 18px; align-content: start; }
+    .field { display: grid; gap: 8px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 14.5px; font-weight: 500; color: var(--ink); }
+    .field label .opt { color: var(--muted); font-weight: 400; }
+    .field input, .field select, .field textarea {
+      font: inherit; font-size: 16px; color: var(--ink);
+      background: var(--surface); border: 1px solid #c3cada; border-radius: var(--radius);
+      padding: 12px 14px; min-height: 50px; width: 100%;
+      transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+    }
+    .field textarea { min-height: 112px; resize: vertical; }
+    .field input::placeholder, .field textarea::placeholder { color: #6c7487; }
+    .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(247, 136, 0, 0.3); }
+    .field.has-error input, .field.has-error select { border-color: #b3261e; }
+    .field .error { color: #b3261e; font-size: 13.5px; display: none; }
+    .field.has-error .error { display: block; }
+    .consent { grid-column: 1 / -1; display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--muted); }
+    .consent input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--accent); }
+    .form-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .form-actions .btn { min-width: 220px; }
+    .form-success { display: none; grid-column: 1 / -1; padding: 28px; border-radius: var(--radius); background: var(--accent-soft); }
+    .form-success i { font-size: 32px; color: var(--accent); }
+    .form-success h3 { margin-top: 12px; font-size: 22px; }
+    .form-success p { margin-top: 8px; color: var(--muted); }
+    .form-success .btn { margin-top: 18px; }
+    form.is-sent > :not(.form-success) { display: none; }
+    form.is-sent .form-success { display: block; }
+
+    /* FAQ */
+    .faq-grid { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 72px; }
+    .faq-list details { border-bottom: 1px solid var(--line); }
+    .faq-list details:first-child { border-top: 1px solid var(--line); }
+    .faq-list summary { list-style: none; cursor: pointer; padding: 22px 0; display: flex; justify-content: space-between; gap: 20px; font-weight: 600; font-size: 17px; color: var(--navy); }
+    .faq-list summary::-webkit-details-marker { display: none; }
+    .faq-list summary i { font-size: 20px; color: var(--muted); transition: transform .3s var(--ease); flex-shrink: 0; margin-top: 2px; }
+    .faq-list details[open] summary i { transform: rotate(45deg); color: var(--orange-hover); }
+    .faq-list details p { padding: 0 40px 22px 0; color: var(--muted); max-width: 62ch; }
+
+    /* Closing */
+    .closing { position: relative; overflow: hidden; color: var(--on-dark); }
+    .closing img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+    .closing::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(var(--scrim), 0.9), rgba(var(--scrim), 0.45)); }
+    .closing .wrap { position: relative; z-index: 1; padding-top: 120px; padding-bottom: 120px; }
+    .closing h2 { font-size: clamp(30px, 4vw, 50px); max-width: 20ch; color: #ffffff; }
+    .closing p { margin-top: 18px; font-size: 18px; color: #dfe5f2; max-width: 46ch; }
+    .closing .hero-ctas { margin-top: 32px; }
+
+    footer { background: var(--surface); border-top: 4px solid var(--orange); color: var(--muted); font-size: 14px; }
+    .footer-row { padding: 40px 24px; display: flex; flex-wrap: wrap; gap: 24px 48px; justify-content: space-between; align-items: center; }
+    .footer-brand { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .footer-brand img { height: 92px; width: auto; }
+    .footer-brand .tagline { color: var(--navy); font-size: 21px; }
+    .footer-note { max-width: 52ch; font-size: 13px; color: var(--muted); }
+
+    /* Mobile sticky contact bar */
+    .mobile-bar { display: none; }
+
+    /* Reveal */
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+      .reveal.in { opacity: 1; transform: none; }
+      .hero-copy > * { opacity: 0; transform: translateY(18px); animation: rise .9s var(--ease) forwards; }
+      .hero-copy > :nth-child(2) { animation-delay: .08s; }
+      .hero-copy > :nth-child(3) { animation-delay: .16s; }
+      .hero-copy > :nth-child(4) { animation-delay: .24s; }
+      .price-card { opacity: 0; transform: translateY(18px); animation: rise .9s var(--ease) .32s forwards; }
+      @keyframes rise { to { opacity: 1; transform: none; } }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .gallery-item img { transition: none; }
+    }
+
+    /* Tablet */
+    @media (max-width: 1024px) {
+      .hero-inner { grid-template-columns: 1fr; gap: 28px; }
+      .price-card { justify-self: start; }
+      .overview-grid, .enquire-grid, .faq-grid { grid-template-columns: 1fr; gap: 48px; }
+      .urgency-grid { grid-template-columns: 1fr; }
+      .urgency-item, .urgency-item + .urgency-item { padding: 24px 0; border-left: 0; }
+      .urgency-item + .urgency-item { border-top: 1px solid rgba(238, 241, 239, 0.16); }
+      .invest-grid { grid-template-columns: 1fr; }
+      .header-phone { display: none; }
+    }
+
+    /* Mobile */
+    @media (max-width: 767px) {
+      body { padding-bottom: 72px; }
+      .wrap { padding: 0 18px; }
+      .header-row { height: 64px; }
+      .brand-logo { height: 52px; }
+      .header-actions .btn-primary { display: none; }
+      .hero { min-height: calc(100dvh - 106px); }
+      .hero-inner { padding-top: 48px; padding-bottom: 28px; }
+      .hero-media::after { background: linear-gradient(0deg, rgba(var(--scrim), 0.9) 0%, rgba(var(--scrim), 0.55) 55%, rgba(var(--scrim), 0.2) 100%); }
+      .footer-brand img { height: 76px; }
+      .hero-ctas .btn { flex: 1 1 100%; }
+      .price-card { max-width: none; padding: 20px; }
+      .price-value { font-size: 30px; }
+      .figures-grid { grid-template-columns: 1fr 1fr; }
+      .figure { padding: 26px 12px 26px 0; }
+      .figure + .figure { padding-left: 0; border-left: 0; }
+      .figure:nth-child(even) { padding-left: 18px; border-left: 1px solid var(--line); }
+      .figure:nth-child(n+3) { border-top: 1px solid var(--line); }
+      .section { padding: 72px 0; }
+      .highlights { grid-template-columns: 1fr; }
+      .story-body { font-size: 17.5px; }
+      .story-pull { font-size: 19px; }
+      .announce .wrap { font-size: 13px; }
+      .highlight:nth-child(even) { padding-left: 0; border-left: 0; }
+      .gallery-head { flex-direction: column; align-items: start; }
+      .gallery-grid { grid-template-columns: 1fr; grid-template-rows: 420px 240px 240px; }
+      .gallery-item.tall { grid-row: auto; }
+      .metric { flex-direction: column; align-items: flex-start; gap: 4px; padding: 20px; }
+      .calc { padding: 24px; }
+      .map-frame { height: 360px; }
+      .location-card { position: static; max-width: none; margin-top: 12px; box-shadow: none; border: 1px solid var(--line); }
+      form { grid-template-columns: 1fr; }
+      .form-actions .btn { width: 100%; }
+      .lightbox { padding: 64px 12px; }
+      .lb-prev, .lb-next { top: auto; bottom: 12px; transform: none; }
+      .closing .wrap { padding-top: 80px; padding-bottom: 80px; }
+
+      .mobile-bar {
+        display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 8px;
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+        background: rgba(253, 253, 252, 0.97); border-top: 1px solid var(--line);
+        backdrop-filter: blur(10px);
+      }
+      .mobile-bar .btn { height: 48px; padding: 0 10px; font-size: 14px; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="announce" role="note">
+    <div class="wrap">
+      <span><i class="ph ph-key" aria-hidden="true"></i>Charter House is now on the market. Private viewings are by appointment only.</span>
+      <a href="#enquire" data-book-viewing>Book a viewing</a>
+    </div>
+  </div>
+
+  <header class="site-header" id="top">
+    <div class="wrap header-row">
+      <a class="brand" href="#top">
+        <img class="brand-logo" src="landlords-junction-logo.webp" alt="Landlords Junction Properties" width="256" height="153" />
+      </a>
+      <div class="header-actions">
+        <a class="header-phone" data-tel href="#"><i class="ph ph-phone" aria-hidden="true"></i><span data-phone-display></span></a>
+        <a class="btn btn-outline" data-whatsapp href="#" target="_blank" rel="noopener"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i>WhatsApp</a>
+        <a class="btn btn-primary" href="#enquire">Request info pack</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-media">
+        <img src="charter-house-street.jpg" alt="Charter House, a ten-storey office tower on a two-storey podium in Bulawayo CBD" fetchpriority="high" />
+      </div>
+      <div class="wrap hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow"><i class="ph ph-map-pin" aria-hidden="true"></i>Charter House, Bulawayo CBD</p>
+          <h1 id="hero-title">Own a landmark in the heart of Bulawayo</h1>
+          <p class="hero-sub">95 offices, 3,776.83 sqm of lettable space and secure underground parking, in one of the CBD's most recognisable buildings.</p>
+          <div class="hero-ctas">
+            <a class="btn btn-primary" href="#enquire"><i class="ph ph-file-text" aria-hidden="true"></i>Request info pack</a>
+            <a class="btn btn-ghost-light" data-whatsapp href="#" target="_blank" rel="noopener"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i>WhatsApp <span data-agent-first>Danny</span></a>
+          </div>
+        </div>
+
+        <aside class="price-card" aria-label="Price and key facts">
+          <p class="price-label">Asking price</p>
+          <p class="price-value num">US$2,600,000</p>
+          <div class="price-specs">
+            <div><i class="ph ph-ruler" aria-hidden="true"></i><p><strong class="num">3,776.83 sqm</strong><span>Lettable floor area</span></p></div>
+            <div><i class="ph ph-door" aria-hidden="true"></i><p><strong class="num">95</strong><span>Offices</span></p></div>
+            <div><i class="ph ph-square-half" aria-hidden="true"></i><p><strong class="num">1,388 sqm</strong><span>Land area</span></p></div>
+            <div><i class="ph ph-car" aria-hidden="true"></i><p><strong>Underground</strong><span>Secure parking</span></p></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="figures" aria-label="Key figures">
+      <div class="wrap figures-grid">
+        <div class="figure reveal"><p class="figure-value num">3,776.83<small>sqm</small></p><p class="figure-label">Total lettable floor area</p></div>
+        <div class="figure reveal"><p class="figure-value num">95</p><p class="figure-label">Individual offices</p></div>
+        <div class="figure reveal"><p class="figure-value num">1,388<small>sqm</small></p><p class="figure-label">Land area</p></div>
+        <div class="figure reveal"><p class="figure-value">CBD</p><p class="figure-label">Prime Bulawayo location</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="story" aria-labelledby="story-title">
+      <div class="wrap">
+        <div class="story reveal">
+          <h2 class="section-title" id="story-title">Buildings like this rarely change hands</h2>
+          <div class="story-body">
+            <p>Walk through Bulawayo's CBD and you will notice something about its landmark buildings: <strong>they rarely come up for sale.</strong> Owners tend to hold them for the long term, because a well-located office building keeps earning long after other investments have come and gone.</p>
+            <p>Charter House is one of those buildings. Its tower is visible from down the street, and its ground floor is busy with the daily life of the city.</p>
+            <p>Now it is available to a new owner.</p>
+            <p>Picture it in your portfolio. <strong>95 offices</strong> ready to let to businesses that want a central address. <strong>3,776.83 sqm</strong> of lettable floor space on a 1,388 sqm site. And <strong>secure underground parking</strong>, something tenants in the CBD struggle to find and are willing to pay for.</p>
+            <p>You are not buying a plan or a promise. You are buying a building that already stands exactly where business happens.</p>
+          </div>
+          <p class="story-pull">The question is not whether a building like this is worth owning. It is who will own it next.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="overview" aria-labelledby="overview-title" style="padding-top: 0;">
+      <div class="wrap overview-grid">
+        <div class="overview-copy reveal">
+          <h2 class="section-title" id="overview-title">Six reasons it belongs on your shortlist</h2>
+          <p class="lead">Substantial floor space, excellent accessibility and strong income potential, in one of Bulawayo's most strategic business locations.</p>
+          <p>Each of these on its own makes a building worth a look. Together, they make Charter House a rare commercial opportunity.</p>
+        </div>
+
+        <div class="highlights reveal" role="list">
+          <div class="highlight" role="listitem"><i class="ph ph-buildings" aria-hidden="true"></i><p><strong>95 offices</strong><span>Flexible units for single or multi-tenant letting.</span></p></div>
+          <div class="highlight" role="listitem"><i class="ph ph-car" aria-hidden="true"></i><p><strong>Secure underground parking</strong><span>A rare advantage for tenants in the CBD.</span></p></div>
+          <div class="highlight" role="listitem"><i class="ph ph-map-trifold" aria-hidden="true"></i><p><strong>Prime CBD location</strong><span>In the heart of Bulawayo's business district.</span></p></div>
+          <div class="highlight" role="listitem"><i class="ph ph-eye" aria-hidden="true"></i><p><strong>Accessibility and visibility</strong><span>A recognisable landmark on a busy street.</span></p></div>
+          <div class="highlight" role="listitem"><i class="ph ph-currency-dollar" aria-hidden="true"></i><p><strong>Rental-income potential</strong><span>Large lettable area across many units.</span></p></div>
+          <div class="highlight" role="listitem"><i class="ph ph-chart-line-up" aria-hidden="true"></i><p><strong>Capital growth potential</strong><span>A long-term hold in a strategic location.</span></p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="gallery" aria-labelledby="gallery-title" style="padding-top: 0;">
+      <div class="wrap">
+        <div class="gallery-head reveal">
+          <h2 class="section-title" id="gallery-title">See the building</h2>
+          <button class="btn btn-outline" type="button" data-open-gallery="0"><i class="ph ph-images" aria-hidden="true"></i>View all photos</button>
+        </div>
+        <div class="gallery-grid reveal">
+          <button class="gallery-item tall" type="button" data-open-gallery="0" aria-label="Open photo 1: tower view">
+            <img src="charter-house-tower.jpg" alt="Charter House tower rising above its podium" loading="lazy" />
+          </button>
+          <button class="gallery-item" type="button" data-open-gallery="1" aria-label="Open photo 2: street corner view">
+            <img src="charter-house-street.jpg" alt="Charter House from the street corner with pedestrians and traffic" loading="lazy" />
+          </button>
+          <button class="gallery-item" type="button" data-open-gallery="2" aria-label="Open photo 3: front elevation">
+            <img src="charter-house-front.jpg" alt="Front elevation of Charter House with garage entrance and parked cars" loading="lazy" />
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section invest" id="investment" aria-labelledby="invest-title">
+      <div class="wrap">
+        <div class="reveal">
+          <p class="eyebrow">Investment snapshot</p>
+          <h2 class="section-title" id="invest-title">What US$2.6 million buys</h2>
+        </div>
+
+        <div class="invest-grid">
+          <div class="metrics reveal">
+            <div class="metric"><span class="metric-label">Price per sqm of lettable space</span><span class="metric-value num" data-metric="per-lettable"></span></div>
+            <div class="metric"><span class="metric-label">Price per office</span><span class="metric-value num" data-metric="per-office"></span></div>
+            <div class="metric"><span class="metric-label">Price per sqm of land</span><span class="metric-value num" data-metric="per-land"></span></div>
+          </div>
+
+          <div class="calc reveal" aria-labelledby="calc-title">
+            <h3 id="calc-title">Estimate your gross yield</h3>
+            <p>Set your own rent and occupancy assumptions to see an indicative return.</p>
+
+            <div class="calc-field">
+              <label for="rent">Rent per sqm per month <output for="rent" id="rent-out" class="num"></output></label>
+              <input type="range" id="rent" min="2" max="15" step="0.5" value="5" />
+            </div>
+            <div class="calc-field">
+              <label for="occ">Occupancy <output for="occ" id="occ-out" class="num"></output></label>
+              <input type="range" id="occ" min="30" max="100" step="5" value="80" />
+            </div>
+
+            <div class="calc-result" aria-live="polite">
+              <div><span>Annual gross rent</span><strong class="num" id="annual-rent"></strong></div>
+              <div><span>Gross yield</span><strong class="num" id="gross-yield"></strong></div>
+            </div>
+            <p class="calc-note">Illustrative only, based on your inputs. Not a valuation or a statement of current income.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="suits" aria-labelledby="suits-title">
+      <div class="wrap reveal">
+        <h2 class="section-title" id="suits-title">Who Charter House suits</h2>
+        <p class="lead">If you are looking for a long-term home for serious capital, an income-producing building in the centre of town is exactly the kind of asset you wait for.</p>
+        <div class="suits-list">
+          <span class="suit"><i class="ph ph-bank" aria-hidden="true"></i>Institutional investors</span>
+          <span class="suit"><i class="ph ph-buildings" aria-hidden="true"></i>Property investment companies</span>
+          <span class="suit"><i class="ph ph-piggy-bank" aria-hidden="true"></i>Pension funds</span>
+          <span class="suit"><i class="ph ph-briefcase" aria-hidden="true"></i>Corporate investors</span>
+          <span class="suit"><i class="ph ph-user-circle" aria-hidden="true"></i>Private investors</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section location" id="location" aria-labelledby="location-title" style="padding-top: 0;">
+      <div class="wrap">
+        <div class="map-frame reveal">
+          <iframe title="Map of Bulawayo CBD" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+            src="https://maps.google.com/maps?q=Bulawayo%20CBD%2C%20Zimbabwe&z=15&output=embed"></iframe>
+          <div class="location-card">
+            <h2 id="location-title">Bulawayo CBD</h2>
+            <ul>
+              <li><i class="ph ph-map-pin" aria-hidden="true"></i>Central business district address</li>
+              <li><i class="ph ph-users-three" aria-hidden="true"></i>Busy street frontage with steady foot traffic</li>
+              <li><i class="ph ph-path" aria-hidden="true"></i>Easy access for tenants, staff and visitors</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section urgency" id="why-now" aria-labelledby="urgency-title">
+      <div class="wrap reveal">
+        <h2 class="section-title" id="urgency-title">Only one buyer will own Charter House</h2>
+        <p class="lead">Opportunities like this do not wait. The investors who move first are the ones who get to decide.</p>
+
+        <div class="urgency-grid">
+          <div class="urgency-item">
+            <i class="ph ph-buildings" aria-hidden="true"></i>
+            <h3>There is only one</h3>
+            <p>No second Charter House is coming to market. Once it is sold, this opportunity is gone for years, possibly decades.</p>
+          </div>
+          <div class="urgency-item">
+            <i class="ph ph-clock-countdown" aria-hidden="true"></i>
+            <h3>Early buyers have the advantage</h3>
+            <p>Getting the pack and viewing the building now puts you in position to make an offer while others are still thinking.</p>
+          </div>
+          <div class="urgency-item">
+            <i class="ph ph-shield-check" aria-hidden="true"></i>
+            <h3>Finding out costs nothing</h3>
+            <p>The information pack and a private viewing are free, with no obligation to buy.</p>
+          </div>
+        </div>
+
+        <div class="urgency-cta">
+          <a class="btn btn-primary" href="#enquire"><i class="ph ph-file-text" aria-hidden="true"></i>Request info pack</a>
+          <span>Takes less than a minute.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section enquire" id="enquire" aria-labelledby="enquire-title">
+      <div class="wrap enquire-grid">
+        <div class="reveal">
+          <p class="eyebrow">Enquire</p>
+          <h2 class="section-title" id="enquire-title">Get the full information pack</h2>
+          <p class="lead">Leave your details and <span data-agent-first>Danny</span> will take it from there.</p>
+
+          <ol class="next-steps">
+            <li><p><strong>Send your details</strong><span>Fill in the short form. It takes less than a minute.</span></p></li>
+            <li><p><strong><span data-agent-first>Danny</span> sends you the pack</strong><span>Your agent contacts you directly with the full property information.</span></p></li>
+            <li><p><strong>View the building</strong><span>Walk through Charter House at a time that suits you, then decide.</span></p></li>
+          </ol>
+
+          <div class="price-repeat"><span>Asking price</span><strong class="num">US$2,600,000</strong></div>
+
+          <div class="agent">
+            <div class="agent-avatar" aria-hidden="true" data-agent-initials>D</div>
+            <div>
+              <p class="agent-name" data-agent-name>Danny</p>
+              <p class="agent-role"><span data-agent-role>Property Sales Negotiator</span>, Landlords Junction Properties</p>
+              <p class="agent-line" data-agent-line>Hi, I'm Danny. I'll personally walk you through Charter House.</p>
+              <p class="agent-tagline tagline">The trusted steward of property wealth</p>
+              <div class="agent-links">
+                <a class="btn btn-outline" data-tel href="#"><i class="ph ph-phone" aria-hidden="true"></i>Call</a>
+                <a class="btn btn-outline" data-whatsapp href="#" target="_blank" rel="noopener"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i>WhatsApp <span data-agent-first>Danny</span></a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form id="enquiry-form" class="reveal" novalidate>
+          <div class="field">
+            <label for="name">Full name</label>
+            <input id="name" name="name" autocomplete="name" required />
+            <span class="error">Please enter your name.</span>
+          </div>
+          <div class="field">
+            <label for="phone">Phone or WhatsApp</label>
+            <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+263" required />
+            <span class="error">Please enter a phone number we can reach you on.</span>
+          </div>
+          <div class="field">
+            <label for="email">Email <span class="opt">(optional)</span></label>
+            <input id="email" name="email" type="email" autocomplete="email" />
+            <span class="error">Please check the email address.</span>
+          </div>
+          <div class="field">
+            <label for="buyer">I am enquiring as</label>
+            <select id="buyer" name="buyer" required>
+              <option value="">Select one</option>
+              <option>Institutional investor</option>
+              <option>Property investment company</option>
+              <option>Pension fund</option>
+              <option>Corporate investor</option>
+              <option>Private investor</option>
+              <option>Agent or advisor</option>
+            </select>
+            <span class="error">Please choose an option.</span>
+          </div>
+          <div class="field full">
+            <label for="message">Message <span class="opt">(optional)</span></label>
+            <textarea id="message" name="message" placeholder="For example: I would like to view the building next week."></textarea>
+          </div>
+          <label class="consent"><input type="checkbox" name="viewing" /> I would also like to book a viewing</label>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit"><i class="ph ph-file-text" aria-hidden="true"></i>Request info pack</button>
+          </div>
+
+          <div class="form-success" role="status">
+            <i class="ph ph-check-circle" aria-hidden="true"></i>
+            <h3>Thank you, your request is in</h3>
+            <p><span data-agent-first>Danny</span> will be in touch shortly with the Charter House information pack.</p>
+            <a class="btn btn-primary" id="success-whatsapp" href="#" target="_blank" rel="noopener"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i>Send on WhatsApp too</a>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="section" id="faq" aria-labelledby="faq-title">
+      <div class="wrap faq-grid">
+        <h2 class="section-title reveal" id="faq-title">Questions buyers ask</h2>
+        <div class="faq-list reveal">
+          <details>
+            <summary>Can I view the building?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+            <p>Yes. Viewings are by appointment. Use the form or WhatsApp <span data-agent-first>Danny</span> to choose a time that suits you.</p>
+          </details>
+          <details>
+            <summary>What information is in the pack?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+            <p>The pack covers the building's specifications and photos. Further details, such as tenancy and income information, are shared with serious buyers on request.</p>
+          </details>
+          <details>
+            <summary>Is the price negotiable?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+            <p>The asking price is US$2,600,000. Please discuss any offer directly with <span data-agent-first>Danny</span>.</p>
+          </details>
+          <details>
+            <summary>How quickly do I need to act?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+            <p>There is no fixed deadline, but the property will go to the buyer who agrees terms with the seller. Requesting the pack now means you are ready to move when you decide.</p>
+          </details>
+          <details>
+            <summary>Can a company or fund buy the property?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+            <p>Yes. Charter House suits institutional buyers, property companies, pension funds and corporate investors as well as private buyers.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing" aria-labelledby="closing-title">
+      <img src="charter-house-front.jpg" alt="" loading="lazy" />
+      <div class="wrap">
+        <h2 id="closing-title">Someone will own Charter House next. It could be you.</h2>
+        <p>Request the information pack today, view the building, and make your decision with all the facts in front of you.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="#enquire"><i class="ph ph-file-text" aria-hidden="true"></i>Request info pack</a>
+          <a class="btn btn-ghost-light" data-whatsapp href="#" target="_blank" rel="noopener"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i>WhatsApp <span data-agent-first>Danny</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-row">
+      <div class="footer-brand">
+        <img src="landlords-junction-logo.webp" alt="Landlords Junction Properties" width="256" height="153" loading="lazy" />
+        <p class="tagline">The trusted steward of property wealth</p>
+      </div>
+      <p class="footer-note">Information is provided in good faith and does not form part of any contract. Buyers should verify all details independently.</p>
+    </div>
+  </footer>
+
+  <nav class="mobile-bar" aria-label="Quick contact">
+    <a class="btn btn-outline" data-tel href="#"><i class="ph ph-phone" aria-hidden="true"></i>Call</a>
+    <a class="btn btn-outline" data-whatsapp href="#" target="_blank" rel="noopener"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i>WhatsApp</a>
+    <a class="btn btn-primary" href="#enquire">Request info pack</a>
+  </nav>
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
+    <img id="lb-img" src="" alt="" />
+    <button class="lb-btn lb-close" type="button" data-lb="close" aria-label="Close"><i class="ph ph-x"></i></button>
+    <button class="lb-btn lb-prev" type="button" data-lb="prev" aria-label="Previous photo"><i class="ph ph-caret-left"></i></button>
+    <button class="lb-btn lb-next" type="button" data-lb="next" aria-label="Next photo"><i class="ph ph-caret-right"></i></button>
+    <p class="lb-count num" id="lb-count"></p>
+  </div>
+
+  <script>
+    // Sample agents. In SegmiQ these come from the agent behind the link, e.g. /p/charter-house/danny.
+    // Phone numbers are placeholders (international format, digits only).
+    const AGENTS = {
+      danny: {
+        first: "Danny",
+        name: "Danny",
+        initials: "D",
+        role: "Property Sales Negotiator",
+        phone: "263770000000",
+        phoneDisplay: "+263 77 000 0000",
+        line: "Hi, I'm Danny. I'll personally walk you through Charter House.",
+      },
+      rudo: {
+        first: "Rudo",
+        name: "Rudo Ndlovu",
+        initials: "RN",
+        role: "Senior Property Consultant",
+        phone: "263770000001",
+        phoneDisplay: "+263 77 000 0001",
+        line: "Hi, I'm Rudo. I work with investors across Bulawayo and would be glad to show you Charter House.",
+      },
+    };
+    const query = new URLSearchParams(location.search);
+    const agentKey = query.get("agent");
+    const fromQuery = query.get("name")
+      ? {
+          first: query.get("name").split(" ")[0],
+          name: query.get("name"),
+          initials: query.get("initials") || query.get("name").split(" ").map((part) => part[0]).join(""),
+          role: query.get("role") || "Property Sales Negotiator",
+          phone: query.get("wa") || AGENTS.danny.phone,
+          phoneDisplay: query.get("phone") || AGENTS.danny.phoneDisplay,
+          line: query.get("line") || "",
+        }
+      : null;
+    const AGENT = fromQuery || AGENTS[agentKey] || AGENTS.danny;
+    const CONTACT = { phone: AGENT.phone, phoneDisplay: AGENT.phoneDisplay };
+
+    const fill = (selector, value) => document.querySelectorAll(selector).forEach((el) => (el.textContent = value));
+    fill("[data-agent-first]", AGENT.first);
+    fill("[data-agent-name]", AGENT.name);
+    fill("[data-agent-initials]", AGENT.initials);
+    fill("[data-agent-role]", AGENT.role);
+    fill("[data-agent-line]", AGENT.line);
+
+    const PROPERTY = { price: 2600000, lettableSqm: 3776.83, landSqm: 1388, offices: 95 };
+
+    const usd = (n, digits = 0) =>
+      "US$" + n.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+
+    const waLink = (text) => `https://wa.me/${CONTACT.phone}?text=${encodeURIComponent(text)}`;
+    const defaultWaText = "Hi " + AGENT.first + ", I'm interested in Charter House (US$2,600,000) in Bulawayo CBD. Please send me the information pack.";
+
+    document.querySelectorAll("[data-whatsapp]").forEach((a) => (a.href = waLink(defaultWaText)));
+    document.querySelectorAll("[data-tel]").forEach((a) => (a.href = `tel:+${CONTACT.phone}`));
+    document.querySelectorAll("[data-phone-display]").forEach((el) => (el.textContent = CONTACT.phoneDisplay));
+
+    document.querySelectorAll("[data-book-viewing]").forEach((a) =>
+      a.addEventListener("click", () => {
+        document.querySelector('#enquiry-form input[name="viewing"]').checked = true;
+      })
+    );
+
+    const metrics = {
+      "per-lettable": usd(PROPERTY.price / PROPERTY.lettableSqm),
+      "per-office": usd(PROPERTY.price / PROPERTY.offices),
+      "per-land": usd(PROPERTY.price / PROPERTY.landSqm),
+    };
+    document.querySelectorAll("[data-metric]").forEach((el) => (el.textContent = metrics[el.dataset.metric]));
+
+    const rent = document.getElementById("rent");
+    const occ = document.getElementById("occ");
+    function updateCalc() {
+      const r = parseFloat(rent.value);
+      const o = parseFloat(occ.value) / 100;
+      const annual = r * PROPERTY.lettableSqm * 12 * o;
+      document.getElementById("rent-out").textContent = usd(r, 2);
+      document.getElementById("occ-out").textContent = Math.round(o * 100) + "%";
+      document.getElementById("annual-rent").textContent = usd(annual);
+      document.getElementById("gross-yield").textContent = ((annual / PROPERTY.price) * 100).toFixed(1) + "%";
+    }
+    rent.addEventListener("input", updateCalc);
+    occ.addEventListener("input", updateCalc);
+    updateCalc();
+
+    const header = document.querySelector(".site-header");
+    const hero = document.querySelector(".hero");
+    new IntersectionObserver(([entry]) => {
+      header.classList.toggle("is-stuck", entry.intersectionRatio < 0.98);
+    }, { threshold: [0.98] }).observe(hero);
+
+    const revealer = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add("in");
+          revealer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: "0px 0px -40px 0px" });
+    document.querySelectorAll(".reveal").forEach((el) => revealer.observe(el));
+
+    const photos = [
+      { src: "charter-house-tower.jpg", alt: "Charter House tower rising above its podium" },
+      { src: "charter-house-street.jpg", alt: "Charter House from the street corner" },
+      { src: "charter-house-front.jpg", alt: "Front elevation of Charter House" },
+    ];
+    const lb = document.getElementById("lightbox");
+    const lbImg = document.getElementById("lb-img");
+    const lbCount = document.getElementById("lb-count");
+    let current = 0;
+    let lastFocus = null;
+    function show(i) {
+      current = (i + photos.length) % photos.length;
+      lbImg.src = photos[current].src;
+      lbImg.alt = photos[current].alt;
+      lbCount.textContent = `${current + 1} of ${photos.length}`;
+    }
+    function openLb(i) {
+      lastFocus = document.activeElement;
+      show(i);
+      lb.classList.add("open");
+      document.body.style.overflow = "hidden";
+      lb.querySelector(".lb-close").focus();
+    }
+    function closeLb() {
+      lb.classList.remove("open");
+      document.body.style.overflow = "";
+      if (lastFocus) lastFocus.focus();
+    }
+    document.querySelectorAll("[data-open-gallery]").forEach((b) =>
+      b.addEventListener("click", () => openLb(parseInt(b.dataset.openGallery, 10)))
+    );
+    lb.addEventListener("click", (e) => {
+      const action = e.target.closest("[data-lb]")?.dataset.lb;
+      if (action === "close" || e.target === lb) closeLb();
+      if (action === "prev") show(current - 1);
+      if (action === "next") show(current + 1);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (!lb.classList.contains("open")) return;
+      if (e.key === "Escape") closeLb();
+      if (e.key === "ArrowLeft") show(current - 1);
+      if (e.key === "ArrowRight") show(current + 1);
+    });
+
+    const form = document.getElementById("enquiry-form");
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const checks = [
+        ["name", (v) => v.trim().length > 1],
+        ["phone", (v) => v.replace(/\D/g, "").length >= 7],
+        ["email", (v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)],
+        ["buyer", (v) => v !== ""],
+      ];
+      let firstBad = null;
+      checks.forEach(([id, ok]) => {
+        const input = document.getElementById(id);
+        const valid = ok(input.value);
+        input.closest(".field").classList.toggle("has-error", !valid);
+        input.setAttribute("aria-invalid", String(!valid));
+        if (!valid && !firstBad) firstBad = input;
+      });
+      if (firstBad) {
+        firstBad.focus();
+        return;
+      }
+
+      const data = new FormData(form);
+      const lines = [
+        "Hi " + AGENT.first + ", I'd like the Charter House information pack.",
+        `Name: ${data.get("name")}`,
+        `Phone: ${data.get("phone")}`,
+        data.get("email") ? `Email: ${data.get("email")}` : null,
+        `Buyer type: ${data.get("buyer")}`,
+        data.get("viewing") ? "I would also like to book a viewing." : null,
+        data.get("message") ? `Message: ${data.get("message")}` : null,
+      ].filter(Boolean);
+      document.getElementById("success-whatsapp").href = waLink(lines.join("\n"));
+      form.classList.add("is-sent");
+    });
+  </script>
+</body>
+</html>

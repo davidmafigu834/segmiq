@@ -20,6 +20,7 @@ const AGENT_PROPERTIES = [
   "/sales/inspections",
   "/sales/offers",
   "/sales/shared-listings",
+  "/sales/funnels",
   "/sales/matching",
 ] as const;
 
