@@ -28,6 +28,7 @@ export async function PATCH(req: Request, { params }: { params: { funnelId: stri
   if (!parsed.success) return NextResponse.json({ error: "Check the fields and try again" }, { status: 400 });
   const result = await updateFunnel(createAdminClient(), auth.session.userId, params.funnelId, parsed.data);
   if (!result.ok) return NextResponse.json({ error: result.error, code: result.code }, { status: result.status });
-  const { html: _html, ...funnel } = result.funnel;
+  const funnel = { ...result.funnel };
+  delete (funnel as { html?: unknown }).html;
   return NextResponse.json({ funnel });
 }
