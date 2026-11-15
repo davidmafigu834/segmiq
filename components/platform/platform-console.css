@@ -1,0 +1,229 @@
+/* Superadmin shell. Same workbench voice as the studio: side rail, top bar, then the record. */
+
+.platform-console {
+  font-family: var(--font-geist-sans), Geist, ui-sans-serif, system-ui, sans-serif;
+}
+
+@media (min-width: 1100px) {
+  .platform-console .crm-shell-sidebar-host {
+    width: 272px;
+  }
+  .platform-console .crm-shell-main {
+    margin-left: 272px;
+  }
+}
+
+.platform-console .sa-brand {
+  cursor: default;
+}
+.platform-console .sa-brand:hover {
+  background: transparent;
+}
+.platform-console .re-sb-item.is-child {
+  padding-left: 36px;
+}
+.platform-console .re-sb-empty-line {
+  margin: 0;
+  padding: 8px;
+  color: var(--sb-muted);
+  font-size: 14px;
+}
+.platform-console .re-sb-find {
+  margin-top: 8px;
+}
+
+.platform-console .pc-switch {
+  position: relative;
+  min-width: 0;
+}
+.platform-console .pc-switch .re-top-pop {
+  left: 0;
+  display: flex;
+  width: min(280px, calc(100vw - 24px));
+  max-height: min(420px, 70vh);
+  flex-direction: column;
+}
+.platform-console .pc-client-list {
+  min-height: 0;
+  overflow: auto;
+}
+
+.platform-console .pc-create {
+  position: relative;
+}
+.platform-console .pc-create .re-top-pop {
+  top: calc(100% + 6px);
+}
+.platform-console .re-top-status > div > button {
+  height: 32px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sb-text);
+}
+.platform-console .re-top-status > div > button:hover {
+  background: var(--sb-hover);
+  color: var(--sb-text);
+}
+.platform-console .sd-search-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--sb-muted);
+}
+.platform-console .sd-search-icon:hover {
+  background: var(--sb-hover);
+  color: var(--sb-text);
+}
+.platform-console .pc-bell button {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--sb-muted);
+  background: transparent;
+}
+.platform-console .pc-bell button:hover {
+  background: var(--sb-hover);
+  color: var(--sb-text);
+}
+
+.pc-head {
+  margin-bottom: 28px;
+}
+.pc-kicker {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.pc-title {
+  margin: 4px 0 0;
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), Geist, ui-sans-serif, system-ui, sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.platform-console main .rounded-xl,
+.platform-console main .rounded-lg,
+.platform-console main .rounded-2xl,
+html[data-platform-console] [role="dialog"][aria-modal="true"] {
+  border-radius: 6px;
+}
+
+.platform-console main .input-base,
+.platform-console main select.input-base,
+html[data-platform-console] [role="dialog"] .input-base,
+html[data-platform-console] [role="dialog"] select.input-base {
+  height: 44px;
+  border-radius: 6px;
+  background: var(--bg-primary);
+  font-size: 14px;
+}
+.platform-console main .textarea-base,
+html[data-platform-console] [role="dialog"] .textarea-base {
+  border-radius: 6px;
+  background: var(--bg-primary);
+  font-size: 14px;
+}
+.platform-console main .input-base:focus,
+.platform-console main .textarea-base:focus,
+html[data-platform-console] [role="dialog"] .input-base:focus,
+html[data-platform-console] [role="dialog"] .textarea-base:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.platform-console main .btn-primary,
+html[data-platform-console] [role="dialog"] .btn-primary {
+  height: 44px;
+  border-radius: 8px;
+  padding-inline: 16px;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 600;
+}
+.platform-console main .btn-primary:hover:not(:disabled),
+html[data-platform-console] [role="dialog"] .btn-primary:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+.platform-console main .btn-primary:focus-visible,
+html[data-platform-console] [role="dialog"] .btn-primary:focus-visible,
+.platform-console main .btn-secondary-dark:focus-visible,
+.platform-console main .btn-ghost:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.platform-console main .btn-primary:active:not(:disabled),
+html[data-platform-console] [role="dialog"] .btn-primary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.platform-console main .btn-secondary-dark,
+.platform-console main .btn-ghost,
+html[data-platform-console] [role="dialog"] .btn-secondary-dark,
+html[data-platform-console] [role="dialog"] .btn-ghost {
+  height: 44px;
+  border-radius: 8px;
+}
+
+.pc-dock {
+  position: fixed;
+  z-index: 30;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 2px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-primary);
+  padding-right: 4px;
+  padding-left: 4px;
+}
+.pc-dock-item {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  height: 56px;
+  border: 0;
+  background: transparent;
+  padding: 6px 2px 4px;
+  color: var(--text-tertiary);
+  font: inherit;
+  font-size: 11px;
+  line-height: 14px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.pc-dock-item[aria-current="page"] {
+  color: var(--text-primary);
+}
+@media (min-width: 1100px) {
+  .pc-dock { display: none; }
+  .pc-create-label,
+  .pc-support-label { display: inline; }
+}
+@media (max-width: 1099.98px) {
+  .pc-support-label { display: none; }
+}
+@media (max-width: 639.98px) {
+  .pc-create-label { display: none; }
+  .pc-title { font-size: 26px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platform-console .re-sb-item:active,
+  .platform-console .re-top-btn:active,
+  .platform-console .re-prop:active,
+  .platform-console .btn-primary:active,
+  html[data-platform-console] [role="dialog"] .btn-primary:active {
+    transform: none;
+  }
+}

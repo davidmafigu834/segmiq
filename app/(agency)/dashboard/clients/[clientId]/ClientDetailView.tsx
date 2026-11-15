@@ -2,32 +2,44 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PublicSlugCopy } from "@/components/clients/PublicSlugCopy";
 import { AgencyManagedToggle } from "@/components/clients/AgencyManagedToggle";
 import { PlatformStatusBadge } from "@/components/platform/PlatformStatusBadge";
 import type { ClientDetailHeroProps } from "@/lib/client-hero";
 
-const PRIMARY_TABS = (id: string) =>
-  [
-    { label: "Overview", href: `/dashboard/clients/${id}` },
-    { label: "Users", href: `/dashboard/clients/${id}/team` },
-    { label: "Integrations", href: `/dashboard/clients/${id}/facebook` },
-    { label: "Settings", href: `/dashboard/clients/${id}/settings` },
-  ] as const;
+type Tab = { label: string; href: string; exact?: boolean };
 
-const MORE_TABS = (id: string) =>
-  [
-    { label: "Projects", href: `/dashboard/clients/${id}/projects` },
-    { label: "Profile page", href: `/dashboard/clients/${id}/profile` },
-    { label: "Testimonials", href: `/dashboard/clients/${id}/testimonials` },
-    { label: "Form", href: `/dashboard/clients/${id}/form` },
-    { label: "Instant forms", href: `/dashboard/clients/${id}/instant-forms` },
-    { label: "Campaigns", href: `/dashboard/clients/${id}/campaigns` },
-    { label: "Audiences", href: `/dashboard/clients/${id}/audiences` },
-  ] as const;
+function tabs(id: string): { name: string; items: Tab[] }[] {
+  const base = `/dashboard/clients/${id}`;
+  return [
+    {
+      name: "Work",
+      items: [
+        { label: "Overview", href: base, exact: true },
+        { label: "Users", href: `${base}/team` },
+        { label: "Projects", href: `${base}/projects` },
+        { label: "Campaigns", href: `${base}/campaigns` },
+      ],
+    },
+    {
+      name: "Setup",
+      items: [
+        { label: "Integrations", href: `${base}/facebook` },
+        { label: "Settings", href: `${base}/settings` },
+        { label: "Profile page", href: `${base}/profile` },
+        { label: "Testimonials", href: `${base}/testimonials` },
+        { label: "Form", href: `${base}/form` },
+        { label: "Instant forms", href: `${base}/instant-forms` },
+        { label: "Audiences", href: `${base}/audiences` },
+      ],
+    },
+  ];
+}
+
+function tabOn(pathname: string, tab: Tab) {
+  return tab.exact ? pathname === tab.href : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+}
 
 export function ClientDetailView({
   clientId,
@@ -53,39 +65,19 @@ export function ClientDetailView({
   planLabel?: string;
 }) {
   const pathname = usePathname();
-  const primary = PRIMARY_TABS(clientId);
-  const more = MORE_TABS(clientId);
-  const activeTabRef = useRef<HTMLAnchorElement | null>(null);
-  const [moreOpen, setMoreOpen] = useState(false);
-  const moreRef = useRef<HTMLDivElement>(null);
-
-  const moreActive = more.some((t) => pathname === t.href);
-
-  useEffect(() => {
-    activeTabRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-  }, [pathname]);
-
-  useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      if (!moreRef.current?.contains(e.target as Node)) setMoreOpen(false);
-    }
-    if (moreOpen) document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [moreOpen]);
-
+  const groups = tabs(clientId);
   const facebookLinked = Boolean(hero.fbFormId || hero.fbPageId);
+  const suspended = statusLabel === "suspended";
+  const tokenExpired = Boolean(hero.fbTokenExpiredAt);
+  const exception = suspended
+    ? { text: "This organisation is suspended.", href: `/dashboard/clients/${clientId}/settings`, action: "Open settings" }
+    : tokenExpired
+      ? { text: "The Facebook token has expired.", href: `/dashboard/clients/${clientId}/facebook`, action: "Reconnect" }
+      : null;
 
   return (
     <div>
-      <p className="mb-4 text-[12px] text-[var(--text-tertiary)]">
-        <Link href="/dashboard/clients" className="hover:text-[var(--text-primary)]">
-          Organisations
-        </Link>
-        <span className="mx-1.5">/</span>
-        <span className="text-[var(--text-secondary)]">{name}</span>
-      </p>
-
-      <header className="mb-6 flex flex-col gap-5 layout:flex-row layout:items-start layout:justify-between">
+      <header className="flex flex-col gap-5 layout:flex-row layout:items-start layout:justify-between">
         <div className="flex min-w-0 items-start gap-4">
           <ClientAvatar name={name} size="lg" />
           <div className="min-w-0">
@@ -94,7 +86,7 @@ export function ClientDetailView({
                 {name}
               </h1>
               <PlatformStatusBadge
-                kind={statusLabel === "suspended" ? "suspended" : "active"}
+                kind={suspended ? "suspended" : "active"}
                 label={statusLabel ? titleCase(statusLabel) : "Active"}
               />
             </div>
@@ -121,65 +113,57 @@ export function ClientDetailView({
           />
           <HealthLine
             label="Facebook"
-            ok={facebookLinked && !hero.fbTokenExpiredAt}
+            ok={facebookLinked && !tokenExpired}
             okText="Connected"
-            offText={hero.fbTokenExpiredAt ? "Token expired" : "Not connected"}
-            warn={Boolean(hero.fbTokenExpiredAt)}
+            offText={tokenExpired ? "Token expired" : "Not connected"}
+            warn={tokenExpired}
           />
         </div>
       </header>
 
-      <nav className="flex items-center gap-1 overflow-x-auto border-b border-[var(--border)] scrollbar-hide">
-        {primary.map((t) => {
-          const active = pathname === t.href;
-          return (
-            <Link
-              key={t.href}
-              href={t.href}
-              ref={active ? activeTabRef : undefined}
-              className={`relative shrink-0 whitespace-nowrap px-3 py-2.5 text-[13px] font-medium transition-colors ${
-                active ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              {t.label}
-              {active ? (
-                <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-[var(--accent)]" />
-              ) : null}
-            </Link>
-          );
-        })}
-        <div className="relative" ref={moreRef}>
-          <button
-            type="button"
-            onClick={() => setMoreOpen((v) => !v)}
-            className={`relative inline-flex items-center gap-1 px-3 py-2.5 text-[13px] font-medium ${
-              moreActive ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            }`}
-            aria-expanded={moreOpen}
+      {exception ? (
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-[12px] text-[var(--text-tertiary)]">Needs a decision</p>
+            <p className="mt-1 text-[15px] font-semibold text-[var(--text-primary)]">{exception.text}</p>
+          </div>
+          <Link
+            href={exception.href}
+            className="inline-flex h-9 shrink-0 items-center rounded-md bg-[var(--text-primary)] px-3 text-[13px] font-semibold text-[var(--bg-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           >
-            More
-            <ChevronDown className="h-3.5 w-3.5" strokeWidth={1.5} />
-            {moreActive ? <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-[var(--accent)]" /> : null}
-          </button>
-          {moreOpen ? (
-            <div className="absolute left-0 z-20 mt-1 w-48 rounded-md border border-[var(--border)] bg-[var(--surface-dropdown)] py-1 shadow-[var(--shadow-md)]">
-              {more.map((t) => (
+            {exception.action}
+          </Link>
+        </div>
+      ) : null}
+
+      <nav aria-label="Organisation sections" className="mt-6 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]">
+        {groups.map((group, index) => (
+          <div
+            key={group.name}
+            role="list"
+            aria-label={group.name}
+            className={`flex gap-1 overflow-x-auto px-2 py-2 ${index > 0 ? "border-t border-[var(--border)]" : ""}`}
+          >
+            {group.items.map((tab) => {
+              const active = tabOn(pathname, tab);
+              return (
                 <Link
-                  key={t.href}
-                  href={t.href}
-                  onClick={() => setMoreOpen(false)}
-                  className={`block px-3 py-1.5 text-[13px] ${
-                    pathname === t.href
-                      ? "text-[var(--text-primary)]"
+                  key={tab.href}
+                  href={tab.href}
+                  role="listitem"
+                  aria-current={active ? "page" : undefined}
+                  className={`inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-md px-3 text-[13px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
+                    active
+                      ? "bg-[var(--text-primary)] text-[var(--bg-primary)]"
                       : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
                   }`}
                 >
-                  {t.label}
+                  {tab.label}
                 </Link>
-              ))}
-            </div>
-          ) : null}
-        </div>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       <div className="mt-6">{children}</div>
@@ -202,14 +186,8 @@ function HealthLine({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span
-        className={`h-1.5 w-1.5 rounded-full ${
-          warn ? "bg-[var(--warning)]" : ok ? "bg-[var(--success)]" : "bg-[var(--text-tertiary)]"
-        }`}
-        aria-hidden
-      />
       <span className="text-[var(--text-tertiary)]">{label}</span>
-      <span className="text-[var(--text-primary)]">{ok && !warn ? okText : offText}</span>
+      <span className={warn ? "text-[var(--warning)]" : "text-[var(--text-primary)]"}>{ok && !warn ? okText : offText}</span>
     </div>
   );
 }

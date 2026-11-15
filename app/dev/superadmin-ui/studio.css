@@ -1,0 +1,53 @@
+/* Hallmark · macrostructure: Workbench · tone: utilitarian · anchor hue: lime
+ * theme: SegmiQ operations (design.md) · studied: yes · DNA-source: real-estate mock studio
+ * genre: modern-minimal · nav: side rail (shared app shell) · footer: none (app studio)
+ * audience: SegmiQ superadmins · use: open the record that needs a decision
+ * pre-emit critique: P5 H5 E4 S5 R5 V4
+ * states: default · hover · focus · active · disabled · loading · error · success
+ */
+
+.sa-btn {
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 180ms var(--sb-ease, cubic-bezier(0.2, 0, 0, 1)),
+    color 180ms var(--sb-ease, cubic-bezier(0.2, 0, 0, 1)),
+    border-color 180ms var(--sb-ease, cubic-bezier(0.2, 0, 0, 1)),
+    opacity 180ms var(--sb-ease, cubic-bezier(0.2, 0, 0, 1));
+}
+.sa-btn:hover,
+.sa-btn.is-hover { filter: brightness(0.96); }
+.sa-btn:focus { outline: none; }
+.sa-btn:focus-visible,
+.sa-btn.is-focus {
+  outline: 2px solid var(--sb-focus);
+  outline-offset: 2px;
+}
+.sa-btn:active,
+.sa-btn.is-active { transform: translateY(1px); }
+.sa-btn:disabled,
+.sa-btn[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.45;
+  transform: none;
+}
+.sa-btn:disabled:hover,
+.sa-btn:disabled.is-hover { filter: none; }
+.sa-brand { cursor: default; }
+.sa-brand:hover,
+.sa-brand[aria-expanded="true"] { background: transparent; }
+.sa-btn[data-state="loading"] { opacity: 0.7; }
+.sa-btn[data-state="error"] {
+  background: transparent;
+  color: var(--sales-danger-fg, var(--sales-danger));
+  border: 1px solid var(--sales-danger-fg, var(--sales-danger));
+}
+.sa-btn[data-state="success"] {
+  background: var(--sales-text-primary);
+  color: var(--sales-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sa-btn,
+  .sa-btn:active,
+  .sa-btn.is-active { transition: none; transform: none; }
+}

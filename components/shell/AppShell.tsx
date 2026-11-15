@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Menu, MoreHorizontal, Plus, X } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import type { UserRole } from "@/types";
@@ -17,6 +17,10 @@ import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import { CrmSidebarResizeHandle } from "./CrmSidebarResizeHandle";
 import { useCrmSidebarLayout } from "@/lib/shell/use-crm-sidebar-layout";
 import { PlatformStatusIndicator } from "@/components/platform/PlatformStatusIndicator";
+import { PlatformClientSwitcher, platformShellHidesTitle } from "@/components/platform/PlatformClientSwitcher";
+import { PlatformDock, PlatformPageHead, PlatformTopBar } from "@/components/platform/PlatformTopBar";
+import { PlatformSidebar } from "@/components/platform/PlatformSidebar";
+import "@/components/platform/platform-console.css";
 
 export type { AppShellClientRow, AppShellNavGroup, AppShellNavItem } from "./app-shell-types";
 
@@ -85,7 +89,13 @@ export function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [newLeadOpen, setNewLeadOpen] = useState(false);
   const { collapsed: sidebarCollapsed, resize: resizeSidebar, toggleCollapsed: toggleSidebarCollapsed, resizable: sidebarResizable } =
-    useCrmSidebarLayout(!hideSidebar);
+    useCrmSidebarLayout(!hideSidebar && !platformConsole);
+
+  useEffect(() => {
+    if (!platformConsole) return;
+    document.documentElement.setAttribute("data-platform-console", "");
+    return () => document.documentElement.removeAttribute("data-platform-console");
+  }, [platformConsole]);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -100,7 +110,7 @@ export function AppShell({
     };
   }, [mobileOpen]);
 
-  function navActive(href: string) {
+  const navActive = useCallback((href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
     if (href === "/client/dashboard") return pathname === "/client/dashboard";
     if (href === "/solo/dashboard") return pathname === "/solo/dashboard";
@@ -114,9 +124,13 @@ export function AppShell({
     if (href === "/client/inbox") return pathname === "/client/inbox";
     if (href === "/sales/won-lost") return pathname === "/sales/won-lost";
     return pathname === href || pathname.startsWith(href + "/");
-  }
+  }, [pathname]);
 
   const hideQuick = showQuickAction === false || notificationRole === "CLIENT_MANAGER" || platformConsole;
+  const hideShellTitle = platformConsole && platformShellHidesTitle(pathname);
+  const shellTitle = (
+    <h1 className={`min-w-0 flex-1 truncate font-semibold tracking-[-0.01em] text-[var(--text-primary)] ${titleSize === "hero" ? "text-[16px] layout:text-[18px]" : "text-[15px] layout:text-[16px]"}`}>{pageTitle}</h1>
+  );
   const hideSearch = showWorkspaceSearch === false;
   const mobileNav =
     notificationRole === "SALESPERSON"
@@ -182,17 +196,37 @@ export function AppShell({
       {!hideSidebar ? (
       <div className="crm-shell-sidebar-host fixed inset-y-0 left-0 z-20 hidden layout:flex">
         <aside
-          className="crm-shell-sidebar flex min-w-0 flex-col border-r border-[var(--border)] bg-surface-sidebar"
+          className={`crm-shell-sidebar flex min-w-0 flex-col ${
+            platformConsole ? "border-0 bg-transparent" : "border-r border-[var(--border)] bg-surface-sidebar"
+          }`}
           aria-label="Workspace navigation"
         >
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{sidebar}</div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {platformConsole ? (
+              <PlatformSidebar
+                groups={navGroups ?? []}
+                pathname={pathname}
+                userName={userName}
+                userRoleLabel={userRoleLabel}
+                profileHref={profileHref}
+                homeHref={homeHref}
+                unread={unreadNotifications ?? 0}
+                notificationRole={notificationRole}
+                captureKeys
+              />
+            ) : (
+              sidebar
+            )}
+          </div>
         </aside>
-        <CrmSidebarResizeHandle
-          onResize={resizeSidebar}
-          onToggleCollapse={toggleSidebarCollapsed}
-          collapsed={sidebarCollapsed}
-          label="Resize sidebar"
-        />
+        {platformConsole ? null : (
+          <CrmSidebarResizeHandle
+            onResize={resizeSidebar}
+            onToggleCollapse={toggleSidebarCollapsed}
+            collapsed={sidebarCollapsed}
+            label="Resize sidebar"
+          />
+        )}
       </div>
       ) : null}
 
@@ -204,7 +238,14 @@ export function AppShell({
             aria-label="Close menu"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="fixed inset-y-0 left-0 z-[51] flex w-[88vw] max-w-[340px] flex-col overflow-y-auto border-r border-[var(--border)] bg-surface-sidebar shadow-[var(--shadow-lg)] layout:hidden">
+          <aside
+            className={`fixed inset-y-0 left-0 z-[51] flex flex-col overflow-hidden shadow-[var(--shadow-lg)] layout:hidden ${
+              platformConsole
+                ? "w-[272px] max-w-[88vw] bg-transparent"
+                : "w-[88vw] max-w-[340px] border-r border-[var(--border)] bg-surface-sidebar"
+            }`}
+          >
+            {platformConsole ? null : (
             <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] p-4">
               <span className="text-[13px] font-semibold text-[var(--text-primary)]">Menu</span>
               <button
@@ -216,7 +257,26 @@ export function AppShell({
                 <X className="h-4 w-4" strokeWidth={1.5} />
               </button>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{mobileSidebar}</div>
+            )}
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              {platformConsole ? (
+                <PlatformSidebar
+                  groups={navGroups ?? []}
+                  pathname={pathname}
+                  userName={userName}
+                  userRoleLabel={userRoleLabel}
+                  profileHref={profileHref}
+                  homeHref={homeHref}
+                  unread={unreadNotifications ?? 0}
+                  notificationRole={notificationRole}
+                  drawer
+                  captureKeys
+                  onClose={() => setMobileOpen(false)}
+                />
+              ) : (
+                mobileSidebar
+              )}
+            </div>
           </aside>
         </>
       ) : null}
@@ -228,7 +288,16 @@ export function AppShell({
             : "layout:min-h-0 layout:overflow-hidden"
         }`}
       >
-        {!hideSidebar && hideHeader && !contentFlush ? (
+        {platformConsole && !hideSidebar ? (
+          <PlatformTopBar
+            clients={clients ?? []}
+            onOpenMenu={() => setMobileOpen(true)}
+            actions={actions}
+            unread={unreadNotifications ?? 0}
+            notificationRole={notificationRole}
+            isActive={navActive}
+          />
+        ) : !hideSidebar && hideHeader && !contentFlush ? (
           <header className="safe-top sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-bg-primary px-4 layout:hidden">
             <button
               type="button"
@@ -238,7 +307,9 @@ export function AppShell({
             >
               <Menu className="h-5 w-5" strokeWidth={1.5} />
             </button>
-            <div className="min-w-0 flex-1" />
+            <div className="min-w-0 flex-1">
+              {platformConsole ? <PlatformClientSwitcher clients={clients ?? []} /> : null}
+            </div>
             <div className="flex shrink-0 items-center gap-2">
               {!hideSearch ? (
                 <GlobalSearch
@@ -286,16 +357,19 @@ export function AppShell({
             >
               <Menu className="h-5 w-5" strokeWidth={1.5} />
             </button>
-            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-              {breadcrumb ? (
-                <>
-                  <span className="hidden min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--text-tertiary)] lg:inline">
-                    {breadcrumb}
-                  </span>
-                  <span className="hidden h-3 w-px shrink-0 bg-[var(--border)] lg:inline" aria-hidden />
-                </>
-              ) : null}
-              <h1 className={`min-w-0 flex-1 truncate font-semibold tracking-[-0.01em] text-[var(--text-primary)] ${titleSize === "hero" ? "text-[16px] layout:text-[18px]" : "text-[15px] layout:text-[16px]"}`}>{pageTitle}</h1>
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              {platformConsole ? <PlatformClientSwitcher clients={clients ?? []} /> : null}
+              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+                {!platformConsole && breadcrumb ? (
+                  <>
+                    <span className="hidden min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--text-tertiary)] lg:inline">
+                      {breadcrumb}
+                    </span>
+                    <span className="hidden h-3 w-px shrink-0 bg-[var(--border)] lg:inline" aria-hidden />
+                  </>
+                ) : null}
+                {hideShellTitle ? null : shellTitle}
+              </div>
             </div>
             <div className="ml-auto flex shrink-0 flex-nowrap items-center gap-1.5 sm:gap-2">
               <div className="hidden items-center xl:flex">
@@ -366,11 +440,16 @@ export function AppShell({
                 : "min-w-0 w-full max-w-full flex-1 px-4 pt-5 pb-28 sm:px-5 md:px-6 md:pt-6 layout:pb-10 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-8 layout:pt-7"
           }
         >
+          {platformConsole && !hideHeader && !hideShellTitle ? (
+            <PlatformPageHead kicker={breadcrumb} title={pageTitle} />
+          ) : null}
           {children}
         </main>
       </div>
 
-      {!hideSidebar && !contentFlush ? (
+      {platformConsole && !hideSidebar && !contentFlush ? (
+        <PlatformDock isActive={navActive} onMore={() => setMobileOpen(true)} />
+      ) : !hideSidebar && !contentFlush ? (
       <nav
         aria-label="Bottom navigation"
         className="safe-bottom fixed inset-x-0 bottom-0 z-30 flex border-t border-[var(--border)] bg-bg-primary layout:hidden"

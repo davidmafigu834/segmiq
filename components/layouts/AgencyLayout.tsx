@@ -25,16 +25,27 @@ export async function AgencyLayout({
   const session = await getServerSession(authOptions);
 
   let unread = 0;
+  let platformClients: { id: string; name: string; leadCount: number }[] = [];
 
   try {
     if (session?.userId) {
       const supabase = createAdminClient();
-      const { count } = await supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", session.userId)
-        .eq("read", false);
+      const [{ count }, { data: clientRows }] = await Promise.all([
+        supabase
+          .from("notifications")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", session.userId)
+          .eq("read", false),
+        supabase
+          .from("clients")
+          .select("id, name")
+          .or("is_archived.is.null,is_archived.eq.false")
+          .order("name"),
+      ]);
       unread = count ?? 0;
+      platformClients = (clientRows ?? [])
+        .filter((row) => row.id && row.name)
+        .map((row) => ({ id: row.id as string, name: row.name as string, leadCount: 0 }));
     }
   } catch (e) {
     console.error("[AgencyLayout] data load failed:", e);
@@ -51,6 +62,7 @@ export async function AgencyLayout({
       primaryNav={primaryNav}
       secondaryNav={[]}
       navGroups={PLATFORM_NAV_GROUPS}
+      clients={platformClients}
       platformConsole
       showQuickAction={false}
       userName={session?.user?.name ?? "User"}

@@ -281,7 +281,7 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
           <button type="button" className="flex h-9 w-9 items-center justify-center md:hidden" onClick={onClose} aria-label="Back">
             <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
           </button>
-          <h2 id="create-client-title" className="min-w-0 flex-1 truncate font-display text-xl text-ink-primary">New client</h2>
+          <h2 id="create-client-title" className="min-w-0 flex-1 truncate font-display text-xl text-ink-primary">New organisation</h2>
           <button
             type="button"
             className="hidden text-ink-tertiary hover:text-ink-primary md:block"
@@ -545,7 +545,7 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
                 : mfaRequired
                   ? "Verify & continue"
                 : creationMode === "manual"
-                  ? "Create client"
+                  ? "Create organisation"
                   : "Send onboarding link"}
             </button>
           </div>
