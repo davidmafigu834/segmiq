@@ -40,14 +40,12 @@ export function PlatformTopBar({
   actions,
   unread,
   notificationRole,
-  isActive,
 }: {
   clients: PlatformClientOption[];
   onOpenMenu: () => void;
   actions?: React.ReactNode;
   unread: number;
   notificationRole: UserRole;
-  isActive: (href: string) => boolean;
 }) {
   const pathname = usePathname() ?? "";
   const [createOpen, setCreateOpen] = useState(false);

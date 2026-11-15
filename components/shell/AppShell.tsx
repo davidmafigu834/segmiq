@@ -295,7 +295,6 @@ export function AppShell({
             actions={actions}
             unread={unreadNotifications ?? 0}
             notificationRole={notificationRole}
-            isActive={navActive}
           />
         ) : !hideSidebar && hideHeader && !contentFlush ? (
           <header className="safe-top sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-bg-primary px-4 layout:hidden">
