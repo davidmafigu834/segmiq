@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { Clock3 } from "lucide-react";
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
-import { CommercialEmptyState, CommercialSection, CommercialStatus, CommercialUnavailable } from "@/components/commercial/CommercialPrimitives";
+import { CommercialUnavailable } from "@/components/commercial/CommercialPrimitives";
+import { EmptyNote, Fact, Panel, WorkRow } from "@/components/platform/workbench";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -19,23 +18,47 @@ export default async function GracePeriodsPage() {
   const now = Date.now();
   const active = rows.filter((row) => !row.ended_at && new Date(row.starts_at).getTime() <= now && new Date(row.ends_at).getTime() > now);
 
+  const first = active[0];
   return (
     <AgencyLayout breadcrumb="PLATFORM / COMMERCIAL" pageTitle="Grace Periods">
-      <div className="space-y-5">
-        <p className="max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">Review temporary billing-access exceptions. New grace periods are granted from the customer commercial profile so the affected account, dates, reason, and notification state stay visible together.</p>
+      <div className="space-y-8">
+        <p className="max-w-[62ch] text-[14px] text-[var(--text-secondary)]">A grace window is granted from the organisation. This register only shows it.</p>
         {error ? <CommercialUnavailable detail="The grace-period register is not available. This can mean the pending additive migration has not been applied; no active state has been inferred." /> : null}
-        <CommercialSection title="Active grace periods" description={`${active.length} currently within the approved access window.`}>
-          {active.length ? <GraceList rows={active} /> : <CommercialEmptyState icon={Clock3} title="No active grace periods" description="No customer currently has a live commercial grace exception." />}
-        </CommercialSection>
-        <CommercialSection title="Grace history" description="Ended and expired windows remain visible as commercial evidence.">
-          {rows.length ? <GraceList rows={rows} /> : <CommercialEmptyState icon={Clock3} title="No grace history" description="Grace periods will appear here after an authorised administrator records one from a customer profile." />}
-        </CommercialSection>
+        <Fact
+          name={first ? `${first.clients?.name ?? "A customer"} is in grace.` : "No grace window is open."}
+          detail={first ? `${first.reason} Ends ${formatDate(first.ends_at)}.` : "Grant one from the organisation when billing access should stay open."}
+          action={first ? "Open organisation" : "Open organisations"}
+          href={first ? `/dashboard/clients/${first.client_id}` : "/dashboard/clients"}
+        />
+        <Panel title="Active" count={active.length}>
+          {active.length === 0 ? <EmptyNote title="No active grace" detail="No customer is inside an approved access window." /> : <GraceList rows={active} />}
+        </Panel>
+        <Panel title="History" count={rows.length}>
+          {rows.length === 0 ? <EmptyNote title="No history" detail="Ended windows stay here as evidence." /> : <GraceList rows={rows} />}
+        </Panel>
       </div>
     </AgencyLayout>
   );
 }
 
 function GraceList({ rows }: { rows: GraceRow[] }) {
-  return <div className="divide-y divide-[var(--border)] px-4 sm:px-5">{rows.map((row) => { const status = row.ended_at ? "ended" : new Date(row.ends_at).getTime() <= Date.now() ? "expired" : "active"; return <article key={row.id} className="grid gap-3 py-4 lg:grid-cols-[minmax(180px,1fr)_minmax(260px,2fr)_auto] lg:items-center"><div><Link href={`/dashboard/clients/${row.client_id}`} className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]">{row.clients?.name ?? "Customer"}</Link><p className="mt-1 text-xs text-[var(--text-tertiary)]">{formatDate(row.starts_at)} → {formatDate(row.ends_at)}</p></div><div><p className="text-sm text-[var(--text-secondary)]">{row.reason}</p><p className="mt-1 text-xs text-[var(--text-tertiary)]">Customer notification: {row.customer_notified ? "recorded" : "not recorded"}</p></div><CommercialStatus value={status} /></article>; })}</div>;
+  return (
+    <ul>
+      {rows.map((row) => {
+        const status = row.ended_at ? "ended" : new Date(row.ends_at).getTime() <= Date.now() ? "expired" : "active";
+        return (
+          <WorkRow
+            key={row.id}
+            name={row.clients?.name ?? "Customer"}
+            meta={`${formatDate(row.starts_at)} → ${formatDate(row.ends_at)}`}
+            detail={`${row.reason} Notification ${row.customer_notified ? "recorded" : "not recorded"}. ${status}.`}
+            mark={status === "active" ? "today" : status === "expired" ? "overdue" : "waiting"}
+            action="Open"
+            href={`/dashboard/clients/${row.client_id}`}
+          />
+        );
+      })}
+    </ul>
+  );
 }
 function formatDate(value: string) { return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(value)); }

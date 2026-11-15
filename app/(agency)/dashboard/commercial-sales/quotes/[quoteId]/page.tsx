@@ -5,6 +5,7 @@ import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { platformSalesEnabled } from "@/lib/platform-sales/flags";
 import { formatUsd } from "@/lib/commercial/catalogue";
+import { Fact, Panel, QuietRow } from "@/components/platform/workbench";
 import type { QuoteSnapshot } from "@/lib/platform-sales/types";
 
 export const dynamic = "force-dynamic";
@@ -55,85 +56,43 @@ export default async function PlatformQuotePage({
       breadcrumb="COMMERCIAL SALES / QUOTATIONS"
       pageTitle={String(quote.quote_number)}
     >
-      <div className="space-y-5">
-        <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="font-semibold text-[var(--text-primary)]">
-                {prospect.organisation_name}
-              </h2>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                {prospect.contact_name} · Revision {quote.current_revision} ·{" "}
-                {quote.status}
-              </p>
-            </div>
-            <a
-              className="inline-flex min-h-10 items-center text-sm font-medium text-[var(--accent)]"
-              href={`/api/admin/platform-sales/quotes/${quote.id}/pdf`}
-            >
-              Fresh private PDF link
-            </a>
-          </div>
-        </section>
-        <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-5">
-          <h2 className="font-semibold text-[var(--text-primary)]">
-            Revision history
-          </h2>
-          <div className="mt-3 divide-y divide-[var(--border)]">
+      <div className="space-y-8">
+        <Fact
+          name={String(quote.status) === "accepted" ? `${prospect.organisation_name} accepted this quotation.` : `${prospect.organisation_name} has not accepted this quotation.`}
+          detail={`${prospect.contact_name} · revision ${quote.current_revision} · ${quote.status}`}
+          action="Open agreements"
+          href="/dashboard/commercial-sales/agreements"
+        />
+        <p>
+          <a className="text-[14px] font-semibold text-[var(--text-primary)] underline decoration-[var(--border)] underline-offset-4" href={`/api/admin/platform-sales/quotes/${quote.id}/pdf`}>
+            Fresh private PDF
+          </a>
+        </p>
+        <Panel title="Revisions" count={(revisions ?? []).length}>
+          <ul>
             {(revisions ?? []).map((revision) => {
               const snapshot = revision.pricing_snapshot as QuoteSnapshot;
               return (
-                <article key={revision.revision as number} className="py-4">
-                  <div className="flex flex-wrap justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-[var(--text-primary)]">
-                        Revision {revision.revision as number} ·{" "}
-                        {revision.status as string}
-                      </p>
-                      <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                        Content {String(revision.content_sha256).slice(0, 16)}…{" "}
-                        {revision.pdf_sha256
-                          ? `· PDF ${String(revision.pdf_sha256).slice(0, 16)}…`
-                          : "· PDF pending"}
-                      </p>
-                    </div>
-                    <div className="text-right text-sm">
-                      <p>
-                        {formatUsd(snapshot.recurringTotalUsdCents)} / month
-                      </p>
-                      <p className="text-[var(--text-tertiary)]">
-                        {formatUsd(snapshot.initialDueUsdCents)} initial due
-                      </p>
-                    </div>
-                  </div>
-                </article>
+                <QuietRow
+                  key={revision.revision as number}
+                  name={`Revision ${revision.revision as number}`}
+                  detail={`${revision.status as string} · ${formatUsd(snapshot.recurringTotalUsdCents)} / month · ${formatUsd(snapshot.initialDueUsdCents)} initial`}
+                />
               );
             })}
-          </div>
-        </section>
-        <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-5">
-          <h2 className="font-semibold text-[var(--text-primary)]">
-            Audit timeline
-          </h2>
-          <div className="mt-3 divide-y divide-[var(--border)]">
+          </ul>
+        </Panel>
+        <Panel title="Audit" count={(events ?? []).length}>
+          <ul>
             {(events ?? []).map((event) => (
-              <div
+              <QuietRow
                 key={event.id as number}
-                className="flex justify-between gap-3 py-3 text-sm"
-              >
-                <span>
-                  {event.action as string} · {event.actor_type as string}
-                </span>
-                <time className="text-[var(--text-tertiary)]">
-                  {new Date(event.occurred_at as string).toLocaleString("en", {
-                    timeZone: "UTC",
-                  })}{" "}
-                  UTC
-                </time>
-              </div>
+                name={`${event.action as string}`}
+                detail={`${event.actor_type as string} · ${new Date(event.occurred_at as string).toLocaleString("en", { timeZone: "UTC" })} UTC`}
+              />
             ))}
-          </div>
-        </section>
+          </ul>
+        </Panel>
       </div>
     </AgencyLayout>
   );

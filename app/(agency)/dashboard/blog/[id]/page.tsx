@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { BlogPostForm } from "@/components/agency/BlogPostForm";
+import { RecordFrame } from "@/components/platform/workbench";
 import { getBlogPostByIdAdmin } from "@/lib/blog-admin";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,17 @@ export default async function EditBlogPostPage({ params }: { params: { id: strin
 
   return (
     <AgencyLayout breadcrumb="PLATFORM / BLOG / EDIT" pageTitle="Edit post">
-      <BlogPostForm post={post} />
+      <RecordFrame
+        detail={post.title || "Untitled draft"}
+        fact={{
+          name: post.status === "published" ? "This post is published." : "This post is still a draft.",
+          detail: "The form below is the record.",
+          action: "Back to blog",
+          href: "/dashboard/blog",
+        }}
+      >
+        <BlogPostForm post={post} />
+      </RecordFrame>
     </AgencyLayout>
   );
 }

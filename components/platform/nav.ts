@@ -87,7 +87,7 @@ export const PLATFORM_NAV_GROUPS: AppShellNavGroup[] = [
       { href: "/dashboard/proposals", label: "Proposals", icon: "file-text" },
       { href: "/dashboard/blog", label: "Blog", icon: "file-text" },
       { href: "/dashboard/submissions", label: "Submissions", icon: "inbox" },
-      { href: "/upload", label: "Upload", icon: "camera" },
+      { href: "/dashboard/upload", label: "Upload", icon: "camera" },
       {
         href: "/dashboard/settings",
         label: "Platform Settings",
@@ -188,4 +188,5 @@ export const PLATFORM_COMMAND_PAGES: {
     label: "Platform settings",
     hint: "Configuration",
   },
+  { href: "/dashboard/upload", label: "Upload", hint: "Project media" },
 ];

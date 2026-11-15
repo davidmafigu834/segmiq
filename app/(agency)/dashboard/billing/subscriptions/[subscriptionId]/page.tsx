@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { RecordFrame } from "@/components/platform/workbench";
 import {
   SubscriptionDetailClient,
   type SubscriptionDetail,
@@ -66,7 +67,17 @@ export default async function SubscriptionDetailPage({
 
   return (
     <AgencyLayout breadcrumb="PLATFORM / BILLING / SUBSCRIPTION" pageTitle={detail.clientName}>
-      <SubscriptionDetailClient detail={detail} history={history} />
+      <RecordFrame
+        detail={`${detail.plan} · ${detail.status}`}
+        fact={{
+          name: detail.status === "active" ? `${detail.clientName} is active.` : `${detail.clientName} needs a billing decision.`,
+          detail: "Invoices for this subscription are the record below.",
+          action: "Back to billing",
+          href: "/dashboard/billing",
+        }}
+      >
+        <SubscriptionDetailClient detail={detail} history={history} />
+      </RecordFrame>
     </AgencyLayout>
   );
 }

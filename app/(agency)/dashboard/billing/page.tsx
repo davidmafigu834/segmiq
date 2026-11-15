@@ -2,6 +2,7 @@ import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SubscriptionsListClient, type SubscriptionRow } from "@/components/billing/SubscriptionsListClient";
 import { SubscribePaidClientForm } from "@/components/billing/SubscribePaidClientForm";
+import { RecordFrame } from "@/components/platform/workbench";
 
 export const dynamic = "force-dynamic";
 
@@ -60,12 +61,23 @@ export default async function BillingPage() {
     outstanding: outstanding[s.id as string] ?? 0,
   }));
 
+  const due = rows.find((row) => row.outstanding > 0);
   return (
     <AgencyLayout breadcrumb="Customers / Subscriptions" pageTitle="Subscriptions">
-      <div className="space-y-6">
-        <SubscribePaidClientForm clients={clientOptions} />
-        <SubscriptionsListClient rows={rows} />
-      </div>
+      <RecordFrame
+        detail="A subscription is the record. An unpaid invoice is the decision."
+        fact={{
+          name: due ? `${due.clientName} has an unpaid invoice.` : "No invoice is unpaid.",
+          detail: due ? `${due.plan} · ${due.status}` : "Start a paid subscription only when the organisation and the agreement are already in place.",
+          action: due ? "Open subscription" : "Open organisations",
+          href: due ? `/dashboard/billing/subscriptions/${due.id}` : "/dashboard/clients",
+        }}
+      >
+        <div className="space-y-6">
+          <SubscribePaidClientForm clients={clientOptions} />
+          <SubscriptionsListClient rows={rows} />
+        </div>
+      </RecordFrame>
     </AgencyLayout>
   );
 }

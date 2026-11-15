@@ -4,6 +4,7 @@ import {
   CircleHelp,
   ShieldAlert,
 } from "lucide-react";
+import { Fact, Panel, QuietRow, WorkRow } from "@/components/platform/workbench";
 import { LaunchModeForm } from "./LaunchModeForm";
 import type {
   CommercialHealthSnapshot,
@@ -47,85 +48,49 @@ export function CommercialHealthDashboard({
         release.status === "END_TO_END_VERIFIED" ||
         release.status === "LIVE_VERIFIED",
     ) && data.readiness.every((check) => check.status === "PASS");
+  const failed = data.readiness.find((check) => check.status !== "PASS");
   return (
-    <div className="space-y-5">
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
-              Commercial release decision
-            </p>
-            <h2 className="mt-1 text-2xl font-semibold text-[var(--text-primary)]">
-              {go ? "GO candidate" : "NO-GO"}
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-              Missing or stale evidence fails closed. This screen does not infer
-              readiness from tables, routes, or feature flags alone.
-            </p>
-          </div>
-          <div className="text-right text-sm text-[var(--text-secondary)]">
-            <p>{data.environmentLabel}</p>
-            <p className="mt-1 font-mono text-xs">
-              {data.deployedRevision?.slice(0, 12) ?? "Revision unknown"}
-            </p>
-            <p className="mt-1 text-xs">
-              Observed {new Date(data.observedAt).toLocaleString()}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section aria-labelledby="release-status-heading">
-        <h2
-          id="release-status-heading"
-          className="text-lg font-semibold text-[var(--text-primary)]"
-        >
-          Release evidence
-        </h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {data.releases.map((release) => (
-            <article
-              key={release.release}
-              className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-4"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold">{release.release}</h3>
-                <Status value={release.status} />
-              </div>
-              <p className="mt-3 text-sm text-[var(--text-secondary)]">
-                Schema: {release.schemaPresent ? "present" : "missing"}
-              </p>
-              <p className="mt-2 text-xs leading-5 text-[var(--text-tertiary)]">
-                {release.blocker ?? "No recorded blocker."}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section aria-labelledby="live-counts-heading">
-        <h2
-          id="live-counts-heading"
-          className="text-lg font-semibold text-[var(--text-primary)]"
-        >
-          Observable counts
-        </h2>
-        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+    <div className="space-y-8">
+      <Fact
+        name={go ? "This release is a GO candidate." : "This release is NO-GO."}
+        detail={
+          failed
+            ? `${failed.label}. ${failed.detail}`
+            : `${data.environmentLabel}. Missing or stale evidence fails closed.`
+        }
+        action="Open commercial"
+        href="/dashboard/commercial"
+      />
+      <Panel title="Release evidence" count={data.releases.length}>
+        <ul>
+          {data.releases.map((release) => {
+            const clear =
+              release.status === "END_TO_END_VERIFIED" || release.status === "LIVE_VERIFIED";
+            return (
+              <WorkRow
+                key={release.release}
+                name={release.release}
+                meta={release.status.replaceAll("_", " ")}
+                detail={release.blocker ?? (release.schemaPresent ? "Schema present." : "Schema missing.")}
+                mark={clear ? "waiting" : "overdue"}
+                action="Open commercial"
+                href="/dashboard/commercial"
+              />
+            );
+          })}
+        </ul>
+      </Panel>
+      <Panel title="Observable counts">
+        <ul>
           {Object.entries(data.counts).map(([key, count]) => (
-            <article
+            <QuietRow
               key={key}
-              className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-4"
-            >
-              <p className="text-2xl font-semibold tabular-nums">
-                {value(count)}
-              </p>
-              <p className="mt-1 break-words text-xs text-[var(--text-tertiary)]">
-                {key.replace(/([A-Z])/g, " $1")}
-              </p>
-            </article>
+              name={value(count)}
+              detail={key.replace(/([A-Z])/g, " $1")}
+            />
           ))}
-        </div>
-      </section>
+        </ul>
+      </Panel>
 
       <div className="grid gap-5 xl:grid-cols-2">
         <section

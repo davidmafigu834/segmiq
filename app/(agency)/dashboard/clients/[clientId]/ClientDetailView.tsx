@@ -6,6 +6,7 @@ import { ClientAvatar } from "@/components/ClientAvatar";
 import { PublicSlugCopy } from "@/components/clients/PublicSlugCopy";
 import { AgencyManagedToggle } from "@/components/clients/AgencyManagedToggle";
 import { PlatformStatusBadge } from "@/components/platform/PlatformStatusBadge";
+import { Fact } from "@/components/platform/workbench";
 import type { ClientDetailHeroProps } from "@/lib/client-hero";
 
 type Tab = { label: string; href: string; exact?: boolean };
@@ -66,6 +67,8 @@ export function ClientDetailView({
 }) {
   const pathname = usePathname();
   const groups = tabs(clientId);
+  const overview = pathname === `/dashboard/clients/${clientId}`;
+  const activeLabel = groups.flatMap((group) => group.items).find((tab) => tabOn(pathname, tab))?.label ?? "this section";
   const facebookLinked = Boolean(hero.fbFormId || hero.fbPageId);
   const suspended = statusLabel === "suspended";
   const tokenExpired = Boolean(hero.fbTokenExpiredAt);
@@ -166,7 +169,21 @@ export function ClientDetailView({
         ))}
       </nav>
 
-      <div className="mt-6">{children}</div>
+      <div className="mt-6">
+        {overview || exception ? (
+          children
+        ) : (
+          <div className="space-y-8">
+            <Fact
+              name={`This is ${activeLabel}.`}
+              detail="Finish the record here. Overview is where the next decision is named."
+              action="Back to overview"
+              href={`/dashboard/clients/${clientId}`}
+            />
+            {children}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

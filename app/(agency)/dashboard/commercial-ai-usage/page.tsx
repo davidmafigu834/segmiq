@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { AdminAiUsageClient } from "@/components/platform-ai-usage/AdminAiUsageClient";
+import { RecordFrame } from "@/components/platform/workbench";
 import { platformAiUsageFlags } from "@/lib/platform-ai-usage/flags";
 import { loadAiUsageOverviews } from "@/lib/platform-ai-usage/read-model";
 
@@ -22,15 +23,22 @@ export default async function CommercialAiUsagePage() {
     : [];
   return (
     <AgencyLayout breadcrumb="COMMERCIAL" pageTitle="AI Usage">
-      <div className="space-y-5">
-        {!platformAiUsageFlags.reporting ? (
-          <div className="rounded-xl border border-[var(--warning)] bg-[var(--bg-secondary)] p-4 text-sm text-[var(--text-secondary)]">
-            Usage reporting is disabled. Shadow observations require an explicit
-            organisation allowlist and do not create charges or quota credits.
-          </div>
-        ) : null}
+      <RecordFrame
+        detail="Usage is a record. A shadow observation does not create a charge or a quota credit."
+        fact={platformAiUsageFlags.reporting ? {
+          name: rows.length ? `${rows.length} organisations have usage on the register.` : "No usage is recorded.",
+          detail: "Open top-ups only when a customer has approved a pack.",
+          action: "Open top-ups",
+          href: "/dashboard/commercial-topups",
+        } : {
+          name: "Usage reporting is closed.",
+          detail: "Shadow observations need an explicit organisation allowlist. They do not create charges.",
+          action: "Open commercial",
+          href: "/dashboard/commercial",
+        }}
+      >
         <AdminAiUsageClient rows={rows} />
-      </div>
+      </RecordFrame>
     </AgencyLayout>
   );
 }

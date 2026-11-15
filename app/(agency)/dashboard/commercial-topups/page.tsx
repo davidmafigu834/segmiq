@@ -5,8 +5,7 @@ import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { platformAiUsageFlags } from "@/lib/platform-ai-usage/flags";
 import { formatUsd } from "@/lib/commercial/catalogue";
-import { MessagesSquare } from "lucide-react";
-import { CommercialEmptyState, CommercialStatus } from "@/components/commercial/CommercialPrimitives";
+import { EmptyNote, Fact, Panel, WorkRow } from "@/components/platform/workbench";
 
 export const dynamic = "force-dynamic";
 
@@ -29,40 +28,48 @@ export default async function CommercialTopupsPage() {
       .limit(100);
     rows = (data ?? []) as Array<Record<string, unknown>>;
   }
+  const first = rows[0];
+  const firstClient = first?.clients as { name?: string } | null;
   return (
     <AgencyLayout breadcrumb="COMMERCIAL" pageTitle="AI Top-ups">
-      <div className="space-y-4">
+      <div className="space-y-8">
+        <p className="max-w-[62ch] text-[14px] text-[var(--text-secondary)]">A pack is a request. It does not charge until the customer approves it.</p>
         {!platformAiUsageFlags.topups ? (
-          <div className="rounded-xl border border-[var(--warning)] bg-[var(--bg-secondary)] p-4 text-sm text-[var(--text-secondary)]">
-            Top-ups are disabled until approved v2 agreements and payment-linked
-            activation are verified. No admin activation bypass is available.
-          </div>
-        ) : null}
-        {rows.map((row) => {
-          const client = row.clients as { name?: string } | null;
-          return (
-            <article
-              key={row.id as string}
-              className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-4"
-            >
-              <div className="flex flex-wrap justify-between gap-3">
-                <div>
-                  <h2 className="font-medium">{client?.name ?? "Company"}</h2>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                    {Number(row.pack_quantity)} × 250 conversations
-                  </p>
-                </div>
-                <div className="text-right text-sm">
-                  <p>{formatUsd(Number(row.total_price_usd_cents))}</p>
-                  <div className="mt-1"><CommercialStatus value={String(row.status)} /></div>
-                </div>
-              </div>
-            </article>
-          );
-        })}
-        {!rows.length ? (
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]"><CommercialEmptyState icon={MessagesSquare} title="No top-up requests" description={platformAiUsageFlags.topups ? "Customer-approved conversation packs will appear here after a valid request." : "Top-up records stay unavailable while the feature gate is off. No overage charge is created automatically."} /></div>
-        ) : null}
+          <Fact
+            name="Top-ups are closed."
+            detail="They stay closed until approved v2 agreements and payment-linked activation are verified. There is no admin bypass."
+            action="Open agreements"
+            href="/dashboard/commercial-sales/agreements"
+          />
+        ) : (
+          <Fact
+            name={first ? `${firstClient?.name ?? "A company"} requested a pack.` : "No pack is waiting."}
+            detail={first ? `${Number(first.pack_quantity)} × 250 conversations · ${formatUsd(Number(first.total_price_usd_cents))}` : "Customer-approved packs appear here. Nothing is charged automatically."}
+            action="Open usage"
+            href="/dashboard/commercial-ai-usage"
+          />
+        )}
+        <Panel title="Requests" count={rows.length}>
+          {rows.length === 0 ? (
+            <EmptyNote title="No requests" detail={platformAiUsageFlags.topups ? "Approved packs will appear here." : "The gate is off, so no overage charge is created."} />
+          ) : (
+            <ul>
+              {rows.map((row) => {
+                const client = row.clients as { name?: string } | null;
+                return (
+                  <WorkRow
+                    key={row.id as string}
+                    name={client?.name ?? "Company"}
+                    meta={String(row.status)}
+                    detail={`${Number(row.pack_quantity)} × 250 conversations · ${formatUsd(Number(row.total_price_usd_cents))}`}
+                    action="Open usage"
+                    href="/dashboard/commercial-ai-usage"
+                  />
+                );
+              })}
+            </ul>
+          )}
+        </Panel>
       </div>
     </AgencyLayout>
   );

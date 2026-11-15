@@ -8,6 +8,7 @@ import {
   listPlatformQuotes,
 } from "@/lib/platform-sales/repository";
 import { CommercialSalesClient } from "@/components/platform-sales/CommercialSalesClient";
+import { RecordFrame } from "@/components/platform/workbench";
 export const dynamic = "force-dynamic";
 export default async function CommercialSalesPage({ searchParams }: { searchParams?: { view?: string; create?: string } }) {
   const session = await getServerSession(authOptions);
@@ -21,11 +22,26 @@ export default async function CommercialSalesPage({ searchParams }: { searchPara
   const [prospects, quotes] = enabled
     ? await Promise.all([listPlatformProspects(), listPlatformQuotes()])
     : [[], []];
+  const quotesView = searchParams?.view === "quotes";
   return (
     <AgencyLayout
       breadcrumb="PLATFORM / COMMERCIAL SALES"
-      pageTitle="Commercial Sales"
+      pageTitle={quotesView ? "Quotations" : "Prospects"}
     >
+      <RecordFrame
+        detail={quotesView ? "A quotation is the offer. It does not activate the organisation." : "A prospect is a company that is not an organisation yet."}
+        fact={quotesView ? {
+          name: quotes.length ? `${quotes.length} quotations are on the register.` : "No quotation is open.",
+          detail: "Open the one that has not been accepted.",
+          action: "Open agreements",
+          href: "/dashboard/commercial-sales/agreements",
+        } : {
+          name: prospects.length ? `${prospects.length} prospects are waiting.` : "No prospect is waiting.",
+          detail: "Create the organisation only after the quotation is accepted.",
+          action: "Open quotations",
+          href: "/dashboard/commercial-sales?view=quotes",
+        }}
+      >
       {enabled ? (
         <CommercialSalesClient
           initialProspects={prospects as never[]}
@@ -46,6 +62,7 @@ export default async function CommercialSalesPage({ searchParams }: { searchPara
           </p>
         </div>
       )}
+      </RecordFrame>
     </AgencyLayout>
   );
 }

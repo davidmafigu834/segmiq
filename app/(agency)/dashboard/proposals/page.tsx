@@ -4,6 +4,7 @@ import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { ProposalsManager } from "@/components/proposals/ProposalsManager";
+import { RecordFrame } from "@/components/platform/workbench";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ProposalRow } from "@/types";
 
@@ -38,7 +39,17 @@ export default async function ProposalsPage({
         </Link>
       }
     >
-      <ProposalsManager initialProposals={(data ?? []) as ProposalRow[]} openId={searchParams.open} />
+      <RecordFrame
+        detail="A proposal is a sales record. Settings hold the number sequence."
+        fact={{
+          name: data?.length ? `${data.length} proposals are on the register.` : "No proposal is on the register.",
+          detail: "Open settings when the number sequence needs a change.",
+          action: "Open settings",
+          href: "/dashboard/proposals/settings",
+        }}
+      >
+        <ProposalsManager initialProposals={(data ?? []) as ProposalRow[]} openId={searchParams.open} />
+      </RecordFrame>
     </AgencyLayout>
   );
 }

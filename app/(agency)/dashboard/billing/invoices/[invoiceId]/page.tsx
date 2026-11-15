@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { RecordFrame } from "@/components/platform/workbench";
 import {
   InvoiceDetailClient,
   type InvoiceDetail,
@@ -95,7 +96,17 @@ export default async function InvoiceDetailPage({ params }: { params: { invoiceI
 
   return (
     <AgencyLayout breadcrumb="PLATFORM / BILLING / INVOICE" pageTitle={detail.invoiceNumber}>
-      <InvoiceDetailClient detail={detail} payments={paymentRows} />
+      <RecordFrame
+        detail={`${detail.clientName ?? "Organisation"} · ${detail.status}`}
+        fact={{
+          name: detail.status === "paid" ? `${detail.invoiceNumber} is paid.` : `${detail.invoiceNumber} is not paid.`,
+          detail: "Payments against this invoice are the record below.",
+          action: "Back to billing",
+          href: "/dashboard/billing",
+        }}
+      >
+        <InvoiceDetailClient detail={detail} payments={paymentRows} />
+      </RecordFrame>
     </AgencyLayout>
   );
 }

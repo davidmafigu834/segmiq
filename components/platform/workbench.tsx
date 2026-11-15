@@ -111,6 +111,24 @@ export function QuietRow({
   );
 }
 
+export function RecordFrame({
+  detail,
+  fact,
+  children,
+}: {
+  detail: string;
+  fact: { name: string; detail: string; action: string; href: string };
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-8">
+      <p className="max-w-[62ch] text-[14px] text-[var(--text-secondary)]">{detail}</p>
+      <Fact name={fact.name} detail={fact.detail} action={fact.action} href={fact.href} />
+      {children}
+    </div>
+  );
+}
+
 export function EmptyNote({ title, detail }: { title: string; detail: string }) {
   return (
     <div className="px-4 py-8">

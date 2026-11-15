@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { WhatsAppTemplateTester } from "@/components/agency/WhatsAppTemplateTester";
+import { RecordFrame } from "@/components/platform/workbench";
 import { defaultSampleOgImageUrl, listTemplates } from "@/lib/messaging/meta-whatsapp-templates";
 
 export const dynamic = "force-dynamic";
@@ -18,14 +19,21 @@ export default async function WhatsAppTemplatesPage() {
 
   return (
     <AgencyLayout breadcrumb="Operations / WhatsApp" pageTitle="WhatsApp">
-      <p className="mb-6 max-w-2xl text-[13px] text-[var(--text-secondary)]">
-        Live templates from your Meta WABA. Send test messages to your own WhatsApp number.
-      </p>
+      <RecordFrame
+        detail="These are the live templates. A test goes only to your own WhatsApp number."
+        fact={{
+          name: result.ok ? (result.templates.length ? `${result.templates.length} templates are live.` : "No template is live.") : "The template list did not load.",
+          detail: result.ok ? "Confirm the template before you send a test." : result.error,
+          action: "Open jobs",
+          href: "/dashboard/follow-up-reminders",
+        }}
+      >
       <WhatsAppTemplateTester
         listError={result.ok ? null : result.error}
         templates={result.ok ? result.templates : []}
         sampleOgImageUrl={sampleOgUrl}
       />
+      </RecordFrame>
     </AgencyLayout>
   );
 }

@@ -9,6 +9,7 @@ import {
   SupportAccessLogView,
   type SupportAccessLogRow,
 } from "@/components/agency/support-access/SupportAccessLogView";
+import { RecordFrame } from "@/components/platform/workbench";
 
 export const dynamic = "force-dynamic";
 
@@ -56,17 +57,21 @@ export default async function SupportAccessLogPage({
 
   return (
     <AgencyLayout breadcrumb="Security / Support Access" pageTitle="Support Access">
-      <div className="space-y-6">
-        <p className="max-w-[70ch] text-[13px] leading-relaxed text-[var(--text-secondary)]">
-          Monitor privileged administrative activity across SegmiQ. Client business data is
-          restricted by default. Approval policy:{" "}
-          <span className="font-mono text-[12px] text-[var(--text-primary)]">
-            {resolveApprovalMode()}
-          </span>
-          .
-        </p>
+      <RecordFrame
+        detail={`Client business data stays restricted. Approval policy: ${resolveApprovalMode()}.`}
+        fact={{
+          name: rows.find((row) => row.status === "ACTIVE")
+            ? `${rows.find((row) => row.status === "ACTIVE")?.organisation ?? "An organisation"} has an open session.`
+            : "No support session is open.",
+          detail: "Open the organisation only while the session is active.",
+          action: rows.find((row) => row.status === "ACTIVE")?.organisationId ? "Open organisation" : "Open organisations",
+          href: rows.find((row) => row.status === "ACTIVE")?.organisationId
+            ? `/dashboard/clients/${rows.find((row) => row.status === "ACTIVE")?.organisationId}`
+            : "/dashboard/clients",
+        }}
+      >
         <SupportAccessLogView rows={rows} />
-      </div>
+      </RecordFrame>
     </AgencyLayout>
   );
 }

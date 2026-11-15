@@ -1,6 +1,7 @@
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ReportsPageClient } from "./ReportsPageClient";
+import { RecordFrame } from "@/components/platform/workbench";
 
 export default async function ReportsPage() {
   const supabase = createAdminClient();
@@ -11,8 +12,18 @@ export default async function ReportsPage() {
     .order("name");
 
   return (
-    <AgencyLayout breadcrumb="" pageTitle="" hideShellHeader>
-      <ReportsPageClient clients={clients ?? []} />
+    <AgencyLayout breadcrumb="Operations / Reports" pageTitle="Reports">
+      <RecordFrame
+        detail="Pick an organisation, then read the report. The numbers belong to that record."
+        fact={{
+          name: clients?.length ? "Choose the organisation first." : "No active organisation is available.",
+          detail: "Portfolio totals sit under the organisation you select.",
+          action: "Open organisations",
+          href: "/dashboard/clients",
+        }}
+      >
+        <ReportsPageClient clients={clients ?? []} />
+      </RecordFrame>
     </AgencyLayout>
   );
 }

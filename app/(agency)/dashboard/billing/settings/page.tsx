@@ -1,6 +1,7 @@
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BillingSettingsClient, type BillingSettingsValues } from "@/components/billing/BillingSettingsClient";
+import { RecordFrame } from "@/components/platform/workbench";
 
 export const dynamic = "force-dynamic";
 
@@ -37,8 +38,18 @@ export default async function BillingSettingsPage() {
   };
 
   return (
-    <AgencyLayout breadcrumb="PLATFORM / BILLING / SETTINGS" pageTitle="Billing settings" titleSize="hero">
-      <BillingSettingsClient initial={data ? values : EMPTY} />
+    <AgencyLayout breadcrumb="PLATFORM / BILLING / SETTINGS" pageTitle="Billing settings">
+      <RecordFrame
+        detail="These are the payment instructions printed on invoices."
+        fact={{
+          name: data ? "Payment instructions are on file." : "Payment instructions are empty.",
+          detail: "An invoice uses whatever is saved here.",
+          action: "Back to billing",
+          href: "/dashboard/billing",
+        }}
+      >
+        <BillingSettingsClient initial={data ? values : EMPTY} />
+      </RecordFrame>
     </AgencyLayout>
   );
 }

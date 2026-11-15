@@ -1,6 +1,7 @@
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PendingPaymentsClient, type PendingPayment } from "@/components/billing/PendingPaymentsClient";
+import { RecordFrame } from "@/components/platform/workbench";
 
 export const dynamic = "force-dynamic";
 
@@ -63,8 +64,18 @@ export default async function PendingPaymentsPage() {
   }));
 
   return (
-    <AgencyLayout breadcrumb="PLATFORM / BILLING / PAYMENTS" pageTitle="Pending payments" titleSize="hero">
-      <PendingPaymentsClient rows={rows} />
+    <AgencyLayout breadcrumb="PLATFORM / BILLING / PAYMENTS" pageTitle="Pending payments">
+      <RecordFrame
+        detail="A pending payment is waiting for a decision. Confirm it only when the proof matches the invoice."
+        fact={{
+          name: rows[0] ? `${rows[0].clientName} has a payment waiting.` : "No payment is waiting.",
+          detail: rows[0] ? `${rows[0].invoiceNumber} · ${rows[0].method}` : "Confirmed payments leave this register.",
+          action: rows[0] ? "Open invoice" : "Back to billing",
+          href: rows[0] ? `/dashboard/billing/invoices/${rows[0].invoiceId}` : "/dashboard/billing",
+        }}
+      >
+        <PendingPaymentsClient rows={rows} />
+      </RecordFrame>
     </AgencyLayout>
   );
 }

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { fetchCloudClientsForAdmin } from "@/lib/cloud-clients";
 import { CloudClientsClient } from "./CloudClientsClient";
+import { RecordFrame } from "@/components/platform/workbench";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,15 @@ export default async function CloudClientsPage() {
 
   return (
     <AgencyLayout breadcrumb="Customers / Users" pageTitle="Users">
+      <RecordFrame
+        detail="A user belongs to an organisation. Open the organisation when you need the tenant, not the person."
+        fact={{
+          name: cloudClients[0] ? `${cloudClients.length} users are on the register.` : "No user is on the register.",
+          detail: queryError ? "The register could not be loaded." : "Suspend or reactivate from the row. The organisation is the record.",
+          action: "Open organisations",
+          href: "/dashboard/clients",
+        }}
+      >
       {queryError ? (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">
           Could not load cloud clients from the database.
@@ -36,6 +46,7 @@ export default async function CloudClientsPage() {
         initialClients={cloudClients}
         supabaseDashboardBase={supabaseDashboardBase}
       />
+      </RecordFrame>
     </AgencyLayout>
   );
 }
