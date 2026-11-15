@@ -3,19 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, MoreHorizontal, Search } from "lucide-react";
-import { ClientAvatar } from "@/components/ClientAvatar";
-import { PlatformStatusBadge } from "@/components/platform/PlatformStatusBadge";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { MoreHorizontal, Search } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/Table";
+import { EmptyNote, Fact, Panel, WorkRow } from "@/components/platform/workbench";
 
 export type ClientsPageListRow = {
   id: string;
@@ -63,11 +53,21 @@ export function ClientsPageClient({
   const managedCount = clients.filter((c) => c.agency_managed).length;
   const selfServeCount = clients.length - managedCount;
 
+  const waiting = clients.find((c) => c.is_active === false) ?? clients.find((c) => c.name.trim().toLowerCase() === "pending setup");
+
   return (
-    <>
-      <p className="mb-5 max-w-2xl text-[13px] text-[var(--text-secondary)]">
-        Manage every organisation using SegmiQ.
+    <div className="space-y-8">
+      <p className="max-w-[62ch] text-[14px] text-[var(--text-secondary)]">
+        Open an organisation, then work through its record. Plan and billing stay on that record.
       </p>
+      {waiting ? (
+        <Fact
+          name={waiting.is_active === false ? `${waiting.name} is inactive.` : `${waiting.name} is still pending setup.`}
+          detail={waiting.is_active === false ? "Reactivate it from the row menu, or open the record and finish settings." : "The organisation exists. Finish setup from its record."}
+          action="Open organisation"
+          href={`/dashboard/clients/${waiting.id}`}
+        />
+      ) : null}
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {(
@@ -110,89 +110,49 @@ export function ClientsPageClient({
         </div>
       ) : null}
 
-      {filtered.length === 0 ? (
-        <div className="rounded-lg border border-[var(--border)]">
-          <EmptyState
-            icon={Building2}
-            title={query ? `No results for “${query}”` : "No organisations found"}
-            description={
-              query
-                ? "Try another organisation name, ID or industry."
-                : "No organisations match your current filters."
-            }
-            action={
-              query || filter !== "all" ? (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setQuery("");
-                    setFilter("all");
-                  }}
-                >
-                  Clear filters
-                </Button>
-              ) : null
-            }
+      <Panel title="Organisations" count={filtered.length}>
+        {filtered.length === 0 ? (
+          <EmptyNote
+            title={query ? `No results for “${query}”` : "No organisations"}
+            detail={query || filter !== "all" ? "Clear the search or the filter." : "Create an organisation from the top bar."}
           />
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
-          <Table>
-            <TableHeader>
-              <TableRow isHeader>
-                <TableHead>Organisation</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Industry</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="w-10" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((c) => (
-                <TableRow key={c.id} className="group">
-                  <TableCell>
-                    <Link href={`/dashboard/clients/${c.id}`} className="flex items-center gap-3">
-                      <ClientAvatar name={c.name} size="sm" />
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium text-[var(--text-primary)]">{c.name}</span>
-                        <span className="block truncate font-mono text-[11px] text-[var(--text-tertiary)]">
-                          {c.id.slice(0, 8)}
-                        </span>
-                      </span>
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <PlatformStatusBadge
-                      kind={c.is_active === false ? "suspended" : "active"}
-                      label={c.is_active === false ? "Inactive" : "Active"}
-                    />
-                  </TableCell>
-                  <TableCell className="text-[13px] text-[var(--text-secondary)]">
-                    {c.agency_managed ? "Managed" : "Self-serve"}
-                  </TableCell>
-                  <TableCell className="text-[13px] text-[var(--text-secondary)]">
-                    {c.industry || "—"}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap text-[13px] text-[var(--text-secondary)]">
-                    {formatDate(c.created_at)}
-                  </TableCell>
-                  <TableCell>
-                    <RowMenu
-                      row={c}
-                      open={menuId === c.id}
-                      onToggle={() => setMenuId(menuId === c.id ? null : c.id)}
-                      onClose={() => setMenuId(null)}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-    </>
+        ) : (
+          <ul>
+            {filtered.map((c) => (
+              <WorkRow
+                key={c.id}
+                name={c.name}
+                meta={[c.industry || "No industry", c.agency_managed ? "Managed" : "Self-serve"].join(" · ")}
+                detail={`${c.is_active === false ? "Inactive" : "Active"} · created ${formatDate(c.created_at)}`}
+                mark={c.is_active === false ? "overdue" : c.name.trim().toLowerCase() === "pending setup" ? "today" : "waiting"}
+                action="Open"
+                href={`/dashboard/clients/${c.id}`}
+                extra={
+                  <RowMenu
+                    row={c}
+                    open={menuId === c.id}
+                    onToggle={() => setMenuId(menuId === c.id ? null : c.id)}
+                    onClose={() => setMenuId(null)}
+                  />
+                }
+              />
+            ))}
+          </ul>
+        )}
+      </Panel>
+      {query || filter !== "all" ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setQuery("");
+            setFilter("all");
+          }}
+        >
+          Clear filters
+        </Button>
+      ) : null}
+    </div>
   );
 }
 
