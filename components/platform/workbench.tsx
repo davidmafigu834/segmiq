@@ -64,8 +64,8 @@ export function WorkRow({
   meta: string;
   detail: string;
   mark?: WorkMark;
-  action: string;
-  href: string;
+  action?: string;
+  href?: string;
   extra?: ReactNode;
 }) {
   const rule = mark === "overdue" ? "bg-[var(--error)]" : mark === "today" ? "bg-[var(--accent)]" : "bg-[var(--border)]";
@@ -78,9 +78,11 @@ export function WorkRow({
         <p className="mt-0.5 line-clamp-2 text-[13px] text-[var(--text-secondary)]">{detail}</p>
       </div>
       {extra}
-      <Link href={href} className={ink}>
-        {action}
-      </Link>
+      {action && href ? (
+        <Link href={href} className={ink}>
+          {action}
+        </Link>
+      ) : null}
     </li>
   );
 }

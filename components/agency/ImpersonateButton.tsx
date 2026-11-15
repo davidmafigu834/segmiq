@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Loader2, UserRoundSearch } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { DEFAULT_IMPERSONATION_REASON } from "@/lib/auth/impersonation";
 
 /**
@@ -19,7 +19,7 @@ export function ImpersonateButton({
   userName: string;
   organisationId?: string;
   organisationName?: string;
-  variant?: "button" | "link";
+  variant?: "button" | "link" | "row";
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -51,14 +51,16 @@ export function ImpersonateButton({
 
   const label = loading ? "Starting…" : `View as ${userName}`;
   const className =
-    variant === "link"
-      ? "inline-flex items-center gap-1.5 font-mono text-[11px] text-[var(--accent)] underline-offset-2 hover:underline disabled:opacity-60"
-      : "inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-ink-secondary transition-colors hover:bg-surface-card-alt disabled:opacity-60";
+    variant === "row"
+      ? "inline-flex h-9 items-center rounded-[8px] bg-[var(--text-primary)] px-3 text-[13px] font-semibold text-[var(--bg-primary)] disabled:opacity-60"
+      : variant === "link"
+        ? "inline-flex h-9 items-center text-[13px] font-semibold text-[var(--text-primary)] underline decoration-[var(--border)] underline-offset-4 disabled:opacity-60"
+        : "inline-flex h-9 items-center rounded-[8px] border border-[var(--border)] px-3 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] disabled:opacity-60";
 
   return (
     <span className="inline-flex flex-col items-end gap-1">
       <button type="button" onClick={() => void handleClick()} disabled={loading} className={className}>
-        {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserRoundSearch className="h-3 w-3" />}
+        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
         {label}
       </button>
       {error ? (

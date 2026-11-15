@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, ExternalLink, Loader2, MoreHorizontal, Users, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
+import { WorkbenchMenu } from "@/components/platform/WorkbenchMenu";
+import { EmptyNote, Panel, WorkRow } from "@/components/platform/workbench";
 import { CloudTeamModal } from "./CloudTeamModal";
 
 export type CloudClientRow = {
@@ -19,7 +21,6 @@ export type CloudClientRow = {
 };
 
 const PLAN_PRICES: Record<string, number> = { starter: 20, professional: 49, business: 99 };
-const PLAN_ANNUAL: Record<string, number> = { starter: 200, professional: 490, business: 990 };
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -41,55 +42,9 @@ function clientStorageBytes(c: CloudClientRow): number {
   );
 }
 
-function calcMRR(c: CloudClientRow): number {
-  const plan = c.plan ?? "starter";
-  if (c.billing_period === "annual") return (PLAN_ANNUAL[plan] ?? 0) / 12;
-  return PLAN_PRICES[plan] ?? 0;
-}
-
-function PlanBadge({ plan }: { plan: string }) {
-  if (plan === "professional")
-    return (
-      <span style={{ background: "rgba(180,130,40,0.1)", color: "#7A5810", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
-        Professional
-      </span>
-    );
-  if (plan === "business")
-    return (
-      <span style={{ background: "#1C1410", color: "#D4FF4F", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
-        Business
-      </span>
-    );
-  return (
-    <span style={{ background: "rgba(0,0,0,0.06)", color: "#666660", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
-      Starter
-    </span>
-  );
-}
-
-function PaymentBadge({ status }: { status: string }) {
-  if (status === "paid")
-    return (
-      <span style={{ background: "rgba(46,125,94,0.1)", color: "#2E7D5E", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
-        Paid
-      </span>
-    );
-  if (status === "overdue")
-    return (
-      <span style={{ background: "rgba(232,96,44,0.1)", color: "#E8602C", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 4 }}>
-        <AlertTriangle style={{ width: 11, height: 11 }} /> Overdue
-      </span>
-    );
-  return (
-    <span style={{ background: "rgba(0,0,0,0.06)", color: "#999990", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
-      Unpaid
-    </span>
-  );
-}
-
-const inputCls = "w-full rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors";
-const labelCls = "mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]";
-const planOptionBase = "flex flex-1 flex-col items-center rounded-xl border-2 px-3 py-2.5 text-[12px] font-semibold transition-colors cursor-pointer";
+const inputCls = "input-base w-full";
+const labelCls = "mb-1 block text-[13px] text-[var(--text-secondary)]";
+const planOptionBase = "flex flex-1 flex-col items-center rounded-[6px] border px-3 py-2.5 text-[13px] font-semibold";
 
 export function CloudClientsClient({
   initialClients,
@@ -99,7 +54,6 @@ export function CloudClientsClient({
   supabaseDashboardBase: string;
 }) {
   const [clients, setClients] = useState<CloudClientRow[]>(initialClients);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const [modalClient, setModalClient] = useState<CloudClientRow | null>(null);
   const [modalPlan, setModalPlan] = useState("starter");
@@ -121,7 +75,6 @@ export function CloudClientsClient({
     setModalNextDate(c.next_payment_date ?? "");
     setModalNotes(c.payment_notes ?? "");
     setSaveError("");
-    setOpenMenuId(null);
   }
 
   function closeModal() {
@@ -179,13 +132,11 @@ export function CloudClientsClient({
         prev.map((x) => (x.id === c.id ? { ...x, billing_period: newBilling } : x))
       );
     }
-    setOpenMenuId(null);
   }
 
   async function deactivateClient(c: CloudClientRow) {
     if (!window.confirm(`Deactivate "${c.name}"? They will no longer be able to log in.`)) return;
     setDeactivating(c.id);
-    setOpenMenuId(null);
     await fetch(`/api/clients/${c.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -195,176 +146,52 @@ export function CloudClientsClient({
     setClients((prev) => prev.map((x) => (x.id === c.id ? { ...x, is_active: false } : x)));
   }
 
-  const totalClients = clients.length;
-  const payingClients = clients.filter((c) => c.plan && c.plan !== "starter").length;
-  const mrr = clients.reduce((sum, c) => sum + calcMRR(c), 0);
-  const overdueClients = clients.filter((c) => c.payment_status === "overdue");
-
-  const statCard = (label: string, value: string | number, sub?: string) => (
-    <div className="min-w-0 py-1">
-      <p className="text-[12px] text-[var(--text-tertiary)]">{label}</p>
-      <p className="mt-1 text-[24px] font-semibold tabular-nums tracking-[-0.03em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      {sub ? <p className="mt-1 text-[12px] text-[var(--text-secondary)]">{sub}</p> : null}
-    </div>
-  );
-
   return (
-    <div>
-      <p className="mb-5 max-w-2xl text-[13px] text-[var(--text-secondary)]">
-        Who has platform access and which organisation they belong to.
-      </p>
-
-      {overdueClients.length > 0 && (
-        <div className="mb-5 flex items-center gap-2.5 rounded-lg border border-[var(--warning-border)] bg-[var(--warning-muted)] px-3 py-2.5 text-[13px] text-[var(--warning)]">
-          <AlertTriangle className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-          <p>
-            {overdueClients.length} organisation{overdueClients.length > 1 ? "s are" : " is"} overdue.{" "}
-            {overdueClients.map((c) => c.name).join(", ")}
-          </p>
-        </div>
-      )}
-
-      <div className="mb-6 grid grid-cols-2 gap-x-6 gap-y-4 border-y border-[var(--border)] py-4 sm:grid-cols-3">
-        {statCard("Organisations", totalClients)}
-        {statCard("Paying", payingClients, "Professional or Business")}
-        {statCard("Est. MRR", `$${mrr.toFixed(0)}`)}
-      </div>
-
-      {/* Table */}
-      {clients.length === 0 ? (
-        <div className="rounded-lg border border-[var(--border)] p-10 text-center text-[13px] text-[var(--text-tertiary)]">
-          No Segmiq Cloud clients found yet.
-        </div>
-      ) : (
-        <div className="rounded-lg border border-[var(--border)] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-[13px]">
-              <thead>
-                <tr className="border-b border-[var(--border)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
-                  <th className="px-4 py-3 text-left">Client</th>
-                  <th className="px-4 py-3 text-left">Plan</th>
-                  <th className="px-4 py-3 text-left">Billing</th>
-                  <th className="px-4 py-3 text-left">Payment</th>
-                  <th className="px-4 py-3 text-left">Storage</th>
-                  <th className="px-4 py-3 text-left">Team</th>
-                  <th className="px-4 py-3 text-left">Joined</th>
-                  <th className="px-4 py-3 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clients.map((c) => (
-                  <tr
-                    key={c.id}
-                    className={`border-b border-[var(--border)] last:border-0 ${!c.is_active ? "opacity-50" : ""}`}
-                  >
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-[var(--text-primary)]">{c.name}</p>
-                      <p className="text-[11px] text-[var(--text-tertiary)]">
-                        {c.users.find((u) => u.role === "CLIENT_MANAGER")?.email ?? ""}
-                      </p>
-                      {!c.is_active && (
-                        <span className="text-[10px] font-semibold text-[var(--text-tertiary)]">(Inactive)</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <PlanBadge plan={c.plan ?? "starter"} />
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)] capitalize">
-                      {c.billing_period ?? "monthly"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <PaymentBadge status={c.payment_status ?? "unpaid"} />
-                      {c.next_payment_date && (
-                        <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
-                          Due {formatDate(c.next_payment_date)}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)]">
-                      {formatBytes(clientStorageBytes(c))}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)]">
-                      {c.users.length}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)]">
-                      {formatDate(c.created_at)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="relative">
-                        <button
-                          onClick={() => setOpenMenuId(openMenuId === c.id ? null : c.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
-                        >
-                          {deactivating === c.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <MoreHorizontal className="h-3.5 w-3.5" />
-                          )}
-                        </button>
-                        {openMenuId === c.id && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-10"
-                              onClick={() => setOpenMenuId(null)}
-                            />
-                            <div className="absolute right-0 top-9 z-20 w-52 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-lg">
-                              <button
-                                onClick={() => openModal(c)}
-                                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
-                              >
-                                Change plan
-                              </button>
-                              <button
-                                onClick={() => void toggleBillingPeriod(c)}
-                                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
-                              >
-                                Switch to {c.billing_period === "annual" ? "Monthly" : "Annual"}
-                              </button>
-                              <div className="h-px bg-[var(--border)] my-1" />
-                              <button
-                                onClick={() => {
-                                  setTeamModalClient(c);
-                                  setOpenMenuId(null);
-                                }}
-                                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
-                              >
-                                <Users className="h-3.5 w-3.5" />
-                                Manage Cloud team
-                              </button>
-                              <div className="h-px bg-[var(--border)] my-1" />
-                              <a
-                                href={`${supabaseDashboardBase}&filter=id:eq:${c.id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={() => setOpenMenuId(null)}
-                                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
-                              >
-                                View in Supabase
-                                <ExternalLink className="ml-auto h-3 w-3 text-[var(--text-tertiary)]" />
-                              </a>
-                              <div className="h-px bg-[var(--border)] my-1" />
-                              {c.is_active && (
-                                <button
-                                  onClick={() => void deactivateClient(c)}
-                                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-red-500 hover:bg-red-50 transition-colors"
-                                >
-                                  Deactivate account
-                                </button>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+    <div className="space-y-8">
+      <Panel title="Register" count={clients.length}>
+        {clients.length === 0 ? (
+          <EmptyNote title="No cloud organisations" detail="Organisations with cloud access appear here." />
+        ) : (
+          <ul>
+            {clients.map((c) => {
+              const manager = c.users.find((user) => user.role === "CLIENT_MANAGER");
+              return (
+                <WorkRow
+                  key={c.id}
+                  name={c.name}
+                  meta={`${c.plan ?? "starter"} · ${c.billing_period ?? "monthly"} · ${c.payment_status ?? "unpaid"}`}
+                  detail={`${manager?.email ?? "No manager"} · ${c.users.length} people · ${formatBytes(clientStorageBytes(c))} · joined ${formatDate(c.created_at)}`}
+                  mark={!c.is_active || c.payment_status === "overdue" ? "overdue" : "waiting"}
+                  action="Open"
+                  href={`/dashboard/clients/${c.id}`}
+                  extra={
+                    <WorkbenchMenu
+                      label={`Actions for ${c.name}`}
+                      items={[
+                        { id: "plan", label: "Change plan", onSelect: () => openModal(c) },
+                        {
+                          id: "billing",
+                          label: `Switch to ${c.billing_period === "annual" ? "monthly" : "annual"}`,
+                          onSelect: () => void toggleBillingPeriod(c),
+                        },
+                        { id: "team", label: "Manage cloud team", onSelect: () => setTeamModalClient(c) },
+                        {
+                          id: "supabase",
+                          label: "View in Supabase",
+                          onSelect: () => window.open(`${supabaseDashboardBase}&filter=id:eq:${c.id}`, "_blank", "noopener,noreferrer"),
+                        },
+                        ...(c.is_active
+                          ? [{ id: "deactivate", label: deactivating === c.id ? "Deactivating…" : "Deactivate account", destructive: true, disabled: deactivating === c.id, onSelect: () => void deactivateClient(c) }]
+                          : []),
+                      ]}
+                    />
+                  }
+                />
+              );
+            })}
+          </ul>
+        )}
+      </Panel>
 
       {teamModalClient && (
         <CloudTeamModal
@@ -377,13 +204,13 @@ export function CloudClientsClient({
       {/* Change plan modal */}
       {modalClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeModal} />
-          <div className="relative w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-2xl">
+          <div className="absolute inset-0 bg-black/40" onClick={closeModal} />
+          <div role="dialog" aria-modal="true" aria-labelledby="cloud-plan-title" className="relative w-full max-w-md rounded-[6px] border border-[var(--border)] bg-[var(--bg-primary)] p-6">
             <div className="mb-5 flex items-start justify-between">
               <div>
-                <p className="text-[15px] font-semibold text-[var(--text-primary)]">
+                <h2 id="cloud-plan-title" className="text-[18px] font-semibold text-[var(--text-primary)]">
                   Update plan for {modalClient.name}
-                </p>
+                </h2>
                 <p className="text-[12px] text-[var(--text-tertiary)]">
                   Current:{" "}
                   <span className="font-semibold capitalize">{modalClient.plan ?? "starter"}</span> ·{" "}
@@ -478,7 +305,7 @@ export function CloudClientsClient({
                 onChange={(e) => setModalNotes(e.target.value)}
                 placeholder="e.g. Paid via EcoCash on 8 May 2026, ref #12345"
                 rows={2}
-                className={`${inputCls} resize-none`}
+                className="textarea-base w-full resize-none"
               />
             </div>
 
@@ -489,14 +316,14 @@ export function CloudClientsClient({
             <div className="flex gap-3">
               <button
                 onClick={closeModal}
-                className="flex-1 rounded-xl border border-[var(--border)] py-2.5 text-[13px] font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                className="btn-secondary-dark flex-1"
               >
                 Cancel
               </button>
               <button
                 onClick={() => void saveChange()}
                 disabled={saving}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-2.5 text-[13px] font-bold text-[var(--accent-ink)] hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-60"
+                className="btn-primary flex flex-1 items-center justify-center gap-2"
               >
                 {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {saving ? "Saving…" : "Confirm change"}

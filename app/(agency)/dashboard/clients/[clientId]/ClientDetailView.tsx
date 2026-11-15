@@ -93,7 +93,7 @@ export function ClientDetailView({
                 label={statusLabel ? titleCase(statusLabel) : "Active"}
               />
             </div>
-            <p className="mt-1 font-mono text-[11px] text-[var(--text-tertiary)]">
+            <p className="mt-1 text-[13px] text-[var(--text-tertiary)]">
               {organisationId ?? clientId}
             </p>
             <p className="mt-1 text-[12px] text-[var(--text-secondary)]">
@@ -175,8 +175,8 @@ export function ClientDetailView({
         ) : (
           <div className="space-y-8">
             <Fact
-              name={`This is ${activeLabel}.`}
-              detail="Finish the record here. Overview is where the next decision is named."
+              name={activeLabel === "Users" ? "View as a person only when you mean to enter their CRM." : `This is ${activeLabel}.`}
+              detail={activeLabel === "Users" ? "The session is audited. The list below is the team." : "Finish the record here. Overview is where the next decision is named."}
               action="Back to overview"
               href={`/dashboard/clients/${clientId}`}
             />

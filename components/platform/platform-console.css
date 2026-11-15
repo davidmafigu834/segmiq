@@ -1,7 +1,16 @@
 /* Superadmin shell. Same workbench voice as the studio: side rail, top bar, then the record. */
 
 .platform-console {
+  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+}
+.platform-console h1,
+.platform-console h2,
+.platform-console h3,
+.platform-console .font-display,
+.platform-console .pc-title {
   font-family: var(--font-geist-sans), Geist, ui-sans-serif, system-ui, sans-serif;
+  font-style: normal;
+  font-weight: 600;
 }
 
 @media (min-width: 1100px) {
@@ -216,6 +225,67 @@ html[data-platform-console] [role="dialog"] .btn-ghost {
 @media (max-width: 639.98px) {
   .pc-create-label { display: none; }
   .pc-title { font-size: 26px; }
+}
+
+html[data-platform-console] {
+  --surface-dropdown: var(--bg-primary);
+  --surface-modal: var(--bg-primary);
+  --surface-card: var(--bg-secondary);
+}
+html[data-platform-console] [role="menu"],
+html[data-platform-console] .sales-menu-surface,
+.pc-menu {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  box-shadow: none;
+  animation: none;
+  padding: 4px;
+}
+html[data-platform-console] [role="menuitem"],
+.pc-menu-item {
+  display: flex;
+  width: 100%;
+  min-height: 40px;
+  align-items: center;
+  border-radius: 4px;
+  background: transparent;
+  padding: 0 10px;
+  color: var(--text-primary);
+  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+}
+html[data-platform-console] [role="menuitem"]:hover,
+html[data-platform-console] [role="menuitem"]:focus-visible,
+.pc-menu-item:hover,
+.pc-menu-item:focus-visible {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  outline: none;
+}
+.pc-menu-item.is-danger,
+html[data-platform-console] [role="menuitem"][data-destructive="true"] {
+  color: var(--error);
+}
+.pc-menu-item:disabled {
+  opacity: 0.5;
+}
+html[data-platform-console] [role="dialog"][aria-modal="true"] {
+  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+html[data-platform-console] [role="dialog"] h2,
+html[data-platform-console] [role="dialog"] .font-display {
+  font-family: var(--font-geist-sans), Geist, ui-sans-serif, system-ui, sans-serif;
+  font-style: normal;
+  font-weight: 600;
 }
 
 @media (prefers-reduced-motion: reduce) {

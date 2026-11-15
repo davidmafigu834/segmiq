@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { WorkbenchMenu } from "@/components/platform/WorkbenchMenu";
 import { EmptyNote, Fact, Panel, WorkRow } from "@/components/platform/workbench";
 
 export type ClientsPageListRow = {
@@ -32,9 +32,10 @@ export function ClientsPageClient({
   clients: ClientsPageListRow[];
   loadError?: string | null;
 }) {
+  const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
-  const [menuId, setMenuId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -128,11 +129,30 @@ export function ClientsPageClient({
                 action="Open"
                 href={`/dashboard/clients/${c.id}`}
                 extra={
-                  <RowMenu
-                    row={c}
-                    open={menuId === c.id}
-                    onToggle={() => setMenuId(menuId === c.id ? null : c.id)}
-                    onClose={() => setMenuId(null)}
+                  <WorkbenchMenu
+                    label={`Actions for ${c.name}`}
+                    items={[
+                      { id: "open", label: "Open organisation", href: `/dashboard/clients/${c.id}` },
+                      { id: "users", label: "Manage users", href: `/dashboard/clients/${c.id}/team` },
+                      { id: "settings", label: "Settings", href: `/dashboard/clients/${c.id}/settings` },
+                      {
+                        id: "active",
+                        label: c.is_active === false ? "Reactivate organisation" : "Suspend organisation",
+                        destructive: c.is_active !== false,
+                        disabled: busyId === c.id,
+                        onSelect: () => {
+                          setBusyId(c.id);
+                          void fetch(`/api/clients/${c.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ is_active: c.is_active === false }),
+                          }).finally(() => {
+                            setBusyId(null);
+                            router.refresh();
+                          });
+                        },
+                      },
+                    ]}
                   />
                 }
               />
@@ -151,96 +171,6 @@ export function ClientsPageClient({
         >
           Clear filters
         </Button>
-      ) : null}
-    </div>
-  );
-}
-
-function RowMenu({
-  row,
-  open,
-  onToggle,
-  onClose,
-}: {
-  row: ClientsPageListRow;
-  open: boolean;
-  onToggle: () => void;
-  onClose: () => void;
-}) {
-  const router = useRouter();
-  const ref = useRef<HTMLDivElement>(null);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      if (!ref.current?.contains(e.target as Node)) onClose();
-    }
-    if (open) document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open, onClose]);
-
-  async function toggleActive() {
-    setBusy(true);
-    try {
-      await fetch(`/api/clients/${row.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: !(row.is_active !== false) }),
-      });
-      onClose();
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
-        aria-label={`Actions for ${row.name}`}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onToggle();
-        }}
-      >
-        <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
-      </button>
-      {open ? (
-        <div className="absolute right-0 z-20 mt-1 w-48 rounded-md border border-[var(--border)] bg-[var(--surface-dropdown)] py-1 shadow-[var(--shadow-md)]">
-          <Link
-            href={`/dashboard/clients/${row.id}`}
-            className="block px-3 py-1.5 text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
-            onClick={onClose}
-          >
-            Open organisation
-          </Link>
-          <Link
-            href={`/dashboard/clients/${row.id}/team`}
-            className="block px-3 py-1.5 text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
-            onClick={onClose}
-          >
-            Manage users
-          </Link>
-          <Link
-            href={`/dashboard/clients/${row.id}/settings`}
-            className="block px-3 py-1.5 text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
-            onClick={onClose}
-          >
-            Settings
-          </Link>
-          <div className="my-1 h-px bg-[var(--border)]" />
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void toggleActive()}
-            className="block w-full px-3 py-1.5 text-left text-[13px] text-[var(--error)] hover:bg-[var(--bg-tertiary)] disabled:opacity-50"
-          >
-            {row.is_active === false ? "Reactivate organisation" : "Suspend organisation"}
-          </button>
-        </div>
       ) : null}
     </div>
   );

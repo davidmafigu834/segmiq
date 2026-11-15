@@ -96,11 +96,11 @@ export function CloudTeamModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-2xl">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div role="dialog" aria-modal="true" aria-labelledby="cloud-team-title" className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-[6px] border border-[var(--border)] bg-[var(--bg-primary)]">
         <div className="flex items-start justify-between border-b border-[var(--border)] px-6 py-4">
           <div>
-            <p className="text-[15px] font-semibold text-[var(--text-primary)]">Cloud team — {clientName}</p>
+            <h2 id="cloud-team-title" className="text-[18px] font-semibold text-[var(--text-primary)]">Cloud team — {clientName}</h2>
             <p className="text-[12px] text-[var(--text-tertiary)]">
               Invite managers or salespeople — both have full Cloud access.
             </p>
@@ -122,7 +122,7 @@ export function CloudTeamModal({
               {members.map((m) => (
                 <div
                   key={m.id}
-                  className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3"
+                  className="flex items-center gap-3 border-t border-[var(--border)] px-1 py-3 first:border-t-0"
                 >
                   <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[var(--bg-tertiary)] text-[12px] font-bold">
                     {m.name.slice(0, 1).toUpperCase()}
@@ -152,7 +152,7 @@ export function CloudTeamModal({
           {!showInvite ? (
             <button
               onClick={() => setShowInvite(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-2.5 text-[13px] font-bold text-[var(--accent-ink)] hover:bg-[var(--accent-hover)] transition-colors"
+              className="btn-primary flex w-full items-center justify-center gap-2"
             >
               <Plus className="h-4 w-4" />
               Invite member
@@ -160,7 +160,7 @@ export function CloudTeamModal({
           ) : (
             <form onSubmit={(e) => void handleInvite(e)} className="space-y-3">
               {inviteSuccess && (
-                <p className="rounded-lg bg-green-50 px-3 py-2 text-[12px] text-green-700">Invite sent!</p>
+                <p className="text-[14px] text-[var(--text-primary)]">Invite sent.</p>
               )}
               <input
                 type="text"
@@ -168,7 +168,7 @@ export function CloudTeamModal({
                 onChange={(e) => setInviteName(e.target.value)}
                 placeholder="Full name"
                 required
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2 text-[13px] outline-none focus:border-[var(--accent)]"
+                className="input-base w-full"
               />
               <input
                 type="email"
@@ -176,7 +176,7 @@ export function CloudTeamModal({
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="Email"
                 required
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2 text-[13px] outline-none focus:border-[var(--accent)]"
+                className="input-base w-full"
               />
               <input
                 type="tel"
@@ -184,12 +184,12 @@ export function CloudTeamModal({
                 onChange={(e) => setInvitePhone(e.target.value)}
                 placeholder="Phone"
                 required
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2 text-[13px] outline-none focus:border-[var(--accent)]"
+                className="input-base w-full"
               />
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as "CLIENT_MANAGER" | "SALESPERSON")}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2 text-[13px] outline-none focus:border-[var(--accent)]"
+                className="input-base w-full"
               >
                 <option value="SALESPERSON">Salesperson</option>
                 <option value="CLIENT_MANAGER">Manager</option>
@@ -204,14 +204,14 @@ export function CloudTeamModal({
                 <button
                   type="button"
                   onClick={() => setShowInvite(false)}
-                  className="flex-1 rounded-xl border border-[var(--border)] py-2 text-[13px] font-semibold text-[var(--text-secondary)]"
+                  className="btn-secondary-dark flex-1"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={inviting}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-2 text-[13px] font-bold text-[var(--accent-ink)] disabled:opacity-60"
+                  className="btn-primary flex flex-1 items-center justify-center gap-2"
                 >
                   {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
                   {inviting ? "Sending…" : "Send invite"}
