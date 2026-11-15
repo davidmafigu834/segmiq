@@ -10,7 +10,6 @@ import { buildClientDetailHero } from "@/lib/client-hero";
 import { authOptions } from "@/lib/auth";
 import { fetchOrganisationDiagnostics } from "@/lib/security/support-access/diagnostics";
 import { loadCommercialOverview } from "@/lib/commercial/account-repository";
-import { CommercialOverviewPanel } from "@/components/commercial/CommercialOverviewPanel";
 import {
   effectiveGrantStatus,
   grantRemainingMs,
@@ -89,9 +88,10 @@ export default async function ClientDetailPage({ params }: { params: { clientId:
         statusLabel={diagnostics.organisation.status}
         planLabel={diagnostics.organisation.plan ?? undefined}
       >
-        <CommercialOverviewPanel clientId={cid} overview={commercial} />
         <OrganisationOperationsTab
+          clientId={cid}
           diagnostics={diagnostics}
+          commercial={commercial}
           supportAccess={
             <SupportAccessPanel
               organisationId={cid}

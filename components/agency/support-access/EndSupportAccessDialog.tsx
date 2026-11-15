@@ -27,29 +27,32 @@ export function EndSupportAccessDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[140] grid place-items-center bg-black/45 px-4 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="end-support-access-title"
+      className="fixed inset-0 z-[140] grid place-items-center bg-black/45 px-4"
+      role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onCancel();
       }}
     >
-      <div className="w-full max-w-[420px] rounded-2xl border border-border bg-surface-card p-6 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.45)]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="end-support-access-title"
+        className="w-full max-w-[420px] rounded-[6px] border border-[var(--border)] bg-[var(--bg-primary)] p-5"
+      >
         <h2
           id="end-support-access-title"
-          className="font-display text-[18px] tracking-display text-ink-primary"
+          className="text-[18px] font-semibold tracking-[-0.02em] text-[var(--text-primary)]"
         >
-          End Support Access?
+          End support access
         </h2>
-        <p className="mt-2 text-[13.5px] leading-relaxed text-ink-secondary">
+        <p className="mt-2 text-[14px] leading-relaxed text-[var(--text-secondary)]">
           You will immediately lose access to {organisationName}&rsquo;s customer data.
         </p>
         <div className="mt-6 flex justify-end gap-2">
-          <Button variant="ghost" onClick={onCancel}>
+          <Button variant="secondary" onClick={onCancel}>
             Cancel
           </Button>
-          <Button onClick={onConfirm}>End Access</Button>
+          <Button variant="destructive" onClick={onConfirm}>End access</Button>
         </div>
       </div>
     </div>

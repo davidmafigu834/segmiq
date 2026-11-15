@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Lock, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui";
 import { formatRemaining } from "@/lib/security/support-access/policy";
 import {
@@ -60,76 +59,45 @@ export function SupportAccessPanel({
   }
 
   return (
-    <section>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Support Access</h2>
-          <p className="mt-1 max-w-[48ch] text-[12px] text-[var(--text-secondary)]">
-            Client business data is restricted by default. Request temporary, scoped access when it is required.
-          </p>
-        </div>
-        <Link
-          href={`/dashboard/support-access?clientId=${organisationId}`}
-          className="text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-        >
-          View access log →
-        </Link>
-      </div>
+    <section className="space-y-3">
 
       {state.granted ? (
-        <div className="rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/[0.06] p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 grid h-8 w-8 place-items-center rounded-lg border border-[var(--accent)]/40 bg-surface-card">
-                <ShieldCheck
-                  className="h-4 w-4 text-[var(--accent)]"
-                  strokeWidth={1.75}
-                  aria-hidden
-                />
-              </span>
-              <div>
-                <p className="text-[14px] font-medium text-ink-primary">
-                  Support Access is active
-                </p>
-                <p className="mt-1 text-[13px] leading-relaxed text-ink-secondary">
-                  {state.scopes.map((s) => SUPPORT_ACCESS_SCOPE_LABELS[s]).join(" · ")}
-                </p>
-                <p className="mt-2 font-mono text-[11px] text-ink-tertiary">
-                  {state.reference} · {formatRemaining(state.remainingMs)} remaining
-                </p>
-              </div>
-            </div>
-            <Button variant="secondary" size="sm" onClick={() => setEnding(true)}>
-              End Access
-            </Button>
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-[6px] border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-4">
+          <div className="min-w-0">
+            <p className="text-[12px] text-[var(--text-tertiary)]">Support access</p>
+            <p className="mt-1 text-[16px] font-semibold text-[var(--text-primary)]">A session is open.</p>
+            <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
+              {state.scopes.map((s) => SUPPORT_ACCESS_SCOPE_LABELS[s]).join(" · ")}
+              {state.reference ? ` · ${state.reference}` : ""} · {formatRemaining(state.remainingMs)} remaining
+            </p>
           </div>
+          <Button variant="secondary" size="sm" onClick={() => setEnding(true)}>
+            End access
+          </Button>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-surface-card p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 grid h-8 w-8 place-items-center rounded-lg border border-border bg-[var(--bg-tertiary)]">
-                <Lock className="h-4 w-4 text-ink-tertiary" strokeWidth={1.5} aria-hidden />
-              </span>
-              <div className="max-w-[54ch]">
-                <p className="text-[14px] font-medium text-ink-primary">
-                  Access to this organisation&rsquo;s customer data is restricted.
-                </p>
-                <p className="mt-1 text-[13px] leading-relaxed text-ink-secondary">
-                  Use temporary Support Access only when required to resolve a customer
-                  support or security issue.
-                  {state.pendingApproval
-                    ? " A request is awaiting approval."
-                    : ""}
-                </p>
-              </div>
-            </div>
-            <Button size="sm" onClick={() => setModalOpen(true)} disabled={state.pendingApproval}>
-              Request Support Access
-            </Button>
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-[6px] border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-4">
+          <div className="min-w-0 max-w-[54ch]">
+            <p className="text-[12px] text-[var(--text-tertiary)]">Support access</p>
+            <p className="mt-1 text-[16px] font-semibold text-[var(--text-primary)]">
+              {state.pendingApproval ? "A request is waiting for approval." : "Customer data is closed."}
+            </p>
+            <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
+              Open a session only to resolve a support or security issue.
+            </p>
           </div>
+          <Button size="sm" onClick={() => setModalOpen(true)} disabled={state.pendingApproval}>
+            Request access
+          </Button>
         </div>
       )}
+
+      <Link
+        href={`/dashboard/support-access?clientId=${organisationId}`}
+        className="inline-flex h-9 items-center text-[13px] font-semibold text-[var(--text-primary)] underline decoration-[var(--border)] underline-offset-4"
+      >
+        Open the access log
+      </Link>
 
       <RequestSupportAccessModal
         open={modalOpen}

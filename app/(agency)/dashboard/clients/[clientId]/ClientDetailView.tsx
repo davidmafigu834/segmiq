@@ -69,7 +69,6 @@ export function ClientDetailView({
   const groups = tabs(clientId);
   const overview = pathname === `/dashboard/clients/${clientId}`;
   const activeLabel = groups.flatMap((group) => group.items).find((tab) => tabOn(pathname, tab))?.label ?? "this section";
-  const facebookLinked = Boolean(hero.fbFormId || hero.fbPageId);
   const suspended = statusLabel === "suspended";
   const tokenExpired = Boolean(hero.fbTokenExpiredAt);
   const exception = suspended
@@ -107,24 +106,9 @@ export function ClientDetailView({
           </div>
         </div>
 
-        <div className="flex flex-col items-start gap-1.5 text-[12px] layout:items-end">
-          <HealthLine
-            label="Profile"
-            ok={hero.profilePublished}
-            okText="Live"
-            offText="Not published"
-          />
-          <HealthLine
-            label="Facebook"
-            ok={facebookLinked && !tokenExpired}
-            okText="Connected"
-            offText={tokenExpired ? "Token expired" : "Not connected"}
-            warn={tokenExpired}
-          />
-        </div>
       </header>
 
-      {exception ? (
+      {exception && !overview ? (
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3">
           <div className="min-w-0">
             <p className="text-[12px] text-[var(--text-tertiary)]">Needs a decision</p>
@@ -184,27 +168,6 @@ export function ClientDetailView({
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function HealthLine({
-  label,
-  ok,
-  okText,
-  offText,
-  warn,
-}: {
-  label: string;
-  ok: boolean;
-  okText: string;
-  offText: string;
-  warn?: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-[var(--text-tertiary)]">{label}</span>
-      <span className={warn ? "text-[var(--warning)]" : "text-[var(--text-primary)]"}>{ok && !warn ? okText : offText}</span>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { EmptyNote, Panel } from "@/components/platform/workbench";
 import type { OrganisationTeamActivity as TeamActivity } from "@/lib/agency/organisation-team-activity";
 import type { PresenceState } from "@/lib/presence/constants";
 
@@ -81,45 +82,37 @@ export function OrganisationTeamActivity({ organisationId }: { organisationId: s
     : null;
 
   return (
-    <section>
-      <h2 className="mb-1 text-[15px] font-semibold text-[var(--text-primary)]">Team activity</h2>
-      <p className="mb-3 text-[12px] text-[var(--text-tertiary)]">
-        Who is in the app, when they were last online, and whether their latest action was a lead or a deal.
-        Customer records are not shown.
+    <Panel title="Team" count={activity?.members.length}>
+      <p className="border-b border-[var(--border)] px-4 py-3 text-[14px] text-[var(--text-secondary)]">
+        {summary ?? "Who is in the app, and whether their latest action was a lead or a deal. Customer records are not shown."}
       </p>
       {error && !activity ? (
-        <p className="text-[13px] text-[var(--text-secondary)]">Could not load team activity.</p>
+        <EmptyNote title="Could not load team activity" detail="Refresh the page to try again." />
       ) : !activity ? (
-        <p className="text-[13px] text-[var(--text-secondary)]">Loading team activity…</p>
+        <EmptyNote title="Loading team activity" detail="Presence updates about once a minute." />
       ) : activity.members.length === 0 ? (
-        <p className="text-[13px] text-[var(--text-secondary)]">No team members.</p>
+        <EmptyNote title="No team members" detail="People invited to this organisation appear here." />
       ) : (
-        <>
-          <p className="mb-3 font-mono text-[12px] tabular-nums text-[var(--text-secondary)]">{summary}</p>
-          <ul className="divide-y divide-[var(--border)] border-y border-[var(--border)]">
-            {activity.members.map((member) => (
-              <li key={member.id} className="flex items-start justify-between gap-4 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-[13px] font-medium text-[var(--text-primary)]">{member.name}</p>
-                  <p className="mt-0.5 text-[12px] text-[var(--text-secondary)]">
-                    {member.roleLabel}
-                    {" · "}
-                    {member.lastOnlineLabel}
-                  </p>
-                  <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">{member.workLabel}</p>
-                </div>
-                <span className="inline-flex shrink-0 items-center gap-2 text-[12px] text-[var(--text-secondary)]">
-                  <span
-                    className={`h-2 w-2 rounded-full ${member.isActive ? DOT_CLASS[member.presence] : "bg-[var(--text-tertiary)]"}`}
-                    aria-hidden
-                  />
-                  {member.presenceLabel}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </>
+        <ul>
+          {activity.members.map((member) => (
+            <li key={member.id} className="flex items-center justify-between gap-4 border-t border-[var(--border)] px-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-[14px] font-semibold text-[var(--text-primary)]">{member.name}</p>
+                <p className="truncate text-[13px] text-[var(--text-secondary)]">
+                  {member.roleLabel} · {member.lastOnlineLabel} · {member.workLabel}
+                </p>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-2 text-[13px] text-[var(--text-secondary)]">
+                <span
+                  className={`h-2 w-2 rounded-full ${member.isActive ? DOT_CLASS[member.presence] : "bg-[var(--text-tertiary)]"}`}
+                  aria-hidden
+                />
+                {member.presenceLabel}
+              </span>
+            </li>
+          ))}
+        </ul>
       )}
-    </section>
+    </Panel>
   );
 }
