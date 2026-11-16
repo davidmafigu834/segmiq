@@ -9,13 +9,15 @@ import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
 import { SalesLeadsClient } from "@/components/sales/leads-directory/SalesLeadsClient";
 import { SolarSalesLeads } from "@/components/sales/solar/SolarSalesLeads";
 import { Skeleton } from "@/components/sales/ui";
+import { SolarPageBones } from "@/components/sales/solar/desk";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
-function LeadsFallback() {
+function LeadsFallback({ solar = false }: { solar?: boolean }) {
+  if (solar) return <SolarPageBones label="Loading leads" />;
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -76,7 +78,7 @@ export default async function SalesLeadsDirectoryPage() {
         showDefaultHeader={!solar}
         searchPlaceholder="Search leads, customers, quotes..."
       >
-        <Suspense fallback={<LeadsFallback />}>
+        <Suspense fallback={<LeadsFallback solar={solar} />}>
           {solar ? (
             <SolarSalesLeads assignmentMode={assignmentMode} />
           ) : (

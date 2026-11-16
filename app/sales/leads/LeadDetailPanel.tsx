@@ -39,6 +39,7 @@ import { HandoverBanner } from "@/components/leads/HandoverBanner";
 import { LeadBriefing } from "@/components/leads/LeadBriefing";
 import { SolarStageCue } from "@/components/sales/solar/SolarStageCue";
 import { SolarLeadWork } from "@/components/sales/solar/SolarLeadWork";
+import { SolarLeadDesk } from "@/components/sales/solar/SolarLeadDesk";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { AskSegmiq } from "@/components/intelligence/AskSegmiq";
 import { DealValueEditor } from "@/components/leads/DealValueEditor";
@@ -300,7 +301,7 @@ export function LeadDetailPanel({
         />
       ) : null}
       <div
-        className="pipeline-drawer-light pointer-events-auto relative z-10 flex w-full min-w-0 max-w-full flex-col overflow-hidden border-sales-border bg-sales-surface text-sales-text-primary shadow-[0_8px_30px_rgba(16,24,40,0.08)] transition-transform duration-200 max-md:max-h-[min(96dvh,100dvh)] max-md:rounded-t-2xl max-md:pb-[env(safe-area-inset-bottom)] md:h-[100dvh] md:max-h-[100dvh] md:w-[520px] md:max-w-[min(100%,520px)] md:rounded-none md:border-l"
+        className={`pipeline-drawer-light pointer-events-auto relative z-10 flex w-full min-w-0 max-w-full flex-col overflow-hidden border-sales-border text-sales-text-primary shadow-[0_8px_30px_rgba(16,24,40,0.08)] transition-transform duration-200 max-md:max-h-[min(96dvh,100dvh)] max-md:rounded-t-2xl max-md:pb-[env(safe-area-inset-bottom)] md:h-[100dvh] md:max-h-[100dvh] md:rounded-none md:border-l ${solarSales ? "solar-lead-sheet bg-sales-bg md:w-[440px] md:max-w-[min(100%,440px)]" : "bg-sales-surface md:w-[520px] md:max-w-[min(100%,520px)]"}`}
         role="dialog"
         aria-modal={isMobileDrawer}
         onClick={(e) => e.stopPropagation()}
@@ -318,7 +319,7 @@ export function LeadDetailPanel({
             <ChevronLeft className="h-5 w-5" strokeWidth={1.8} />
           </button>
 
-          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-sales-neutral-100">
+          <span className="solar-lead-chrome mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-sales-neutral-100">
             {isWhatsAppChat ? (
               <SiWhatsapp size={16} color="#25D366" aria-hidden />
             ) : isFacebook ? (
@@ -328,7 +329,7 @@ export function LeadDetailPanel({
             )}
           </span>
 
-          <div className="min-w-0 flex-1">
+          <div className="solar-lead-chrome min-w-0 flex-1">
             <h2 className="truncate text-[17px] font-semibold tracking-[-0.02em] text-sales-text-primary md:text-[18px]">
               {displayName}
             </h2>
@@ -361,7 +362,7 @@ export function LeadDetailPanel({
                 />
               </button>
             ) : null}
-            <div className="relative">
+            <div className="solar-lead-chrome relative">
               <button
                 type="button"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] text-sales-text-secondary transition-colors hover:bg-sales-surface-hover"
@@ -431,7 +432,7 @@ export function LeadDetailPanel({
           </div>
         </div>
 
-        <div className="sticky top-0 z-[1] flex shrink-0 border-b border-sales-border bg-sales-surface">
+        <div className={`${solarSales ? "hidden" : "sticky top-0 z-[1] flex shrink-0 border-b border-sales-border bg-sales-surface"}`}>
           <button type="button" onClick={() => setActiveTab("details")} className={tabClass(activeTab === "details")}>
             Details
           </button>
@@ -451,6 +452,19 @@ export function LeadDetailPanel({
         </div>
 
         <div className="min-h-0 flex-1 divide-y divide-sales-border overflow-y-auto overflow-x-hidden overscroll-y-contain pb-[max(1.25rem,env(safe-area-inset-bottom))] text-sm max-md:text-[15px] [touch-action:pan-y]">
+          {solarSales ? (
+            <div className="px-5 pb-10 pt-5">
+              <SolarLeadDesk
+                key={activeLead.id}
+                leadId={activeLead.id}
+                name={displayName}
+                phone={phone}
+                followUpDate={activeLead.follow_up_date}
+                onSaved={() => setTimelineRefresh((k) => k + 1)}
+              />
+            </div>
+          ) : null}
+          <div className={solarSales ? "hidden" : undefined}>
           {activeTab === "timeline" ? <LeadTimeline key={timelineRefresh} leadId={activeLead.id} /> : null}
           {activeTab === "quote" && canQuote ? (
             <div className="p-4 sm:p-5">
@@ -877,6 +891,7 @@ export function LeadDetailPanel({
                 <CallHistory leadId={activeLead.id} refreshKey={logRefresh} />
               </div>
             ) : null}
+          </div>
           </div>
         </div>
       </div>

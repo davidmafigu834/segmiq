@@ -9,12 +9,13 @@ import { SalesQuotesClient } from "@/components/sales/quotes/SalesQuotesClient";
 import { Skeleton } from "@/components/sales/ui";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
-import { Head } from "@/components/sales/solar/desk";
+import { Head, SolarPageBones } from "@/components/sales/solar/desk";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
-function QuotesFallback() {
+function QuotesFallback({ solar = false }: { solar?: boolean }) {
+  if (solar) return <SolarPageBones label="Loading quotations" />;
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -74,7 +75,7 @@ export default async function SalesQuotesPage() {
         showDefaultHeader={!solar}
         searchPlaceholder="Search leads, customers, quotes..."
       >
-        <Suspense fallback={<QuotesFallback />}>
+        <Suspense fallback={<QuotesFallback solar={solar} />}>
           {solar ? (
             <div className="space-y-8">
               <Head

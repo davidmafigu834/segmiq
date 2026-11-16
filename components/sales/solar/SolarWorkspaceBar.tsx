@@ -18,12 +18,10 @@ export function SolarWorkspaceBar({
   name,
   unreadNotifications,
   notificationRole,
-  onAddLead,
 }: {
   name: string;
   unreadNotifications: number;
   notificationRole: UserRole;
-  onAddLead: () => void;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -50,8 +48,7 @@ export function SolarWorkspaceBar({
   function go(href: string) {
     setOpen(false);
     if (href === "/sales/leads") {
-      onAddLead();
-      router.push(href);
+      router.push("/sales/leads?add=1");
       return;
     }
     router.push(href);

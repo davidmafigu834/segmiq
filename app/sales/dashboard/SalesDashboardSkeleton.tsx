@@ -3,9 +3,25 @@
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { RealEstatePageBones } from "@/components/real-estate/ui/RealEstatePageBones";
 import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
+import { SolarPageBones } from "@/components/sales/solar/desk";
 
 export default function SalesDashboardSkeleton() {
-  const { isRealEstate } = useCompanyWorkspace();
+  const { isRealEstate, solarWorkflow } = useCompanyWorkspace();
+  if (solarWorkflow && !isRealEstate) {
+    return (
+      <SalesAppShell
+        userName=""
+        unreadNotifications={0}
+        notificationRole="SALESPERSON"
+        whatsappBadge={0}
+        tasksBadge={0}
+        isSolo={false}
+        showDefaultHeader={false}
+      >
+        <SolarPageBones label="Loading today" />
+      </SalesAppShell>
+    );
+  }
   if (!isRealEstate) return <TradesDashboardSkeleton />;
   return (
     <SalesAppShell

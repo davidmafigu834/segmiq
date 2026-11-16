@@ -5,11 +5,11 @@ import { Plus } from "lucide-react";
 import "./solar-desk.css";
 
 export const inkBtn =
-  "so-btn h-9 shrink-0 rounded-[8px] bg-sales-text-primary px-3 text-[13px] font-semibold text-sales-surface";
+  "so-btn h-9 shrink-0 bg-sales-text-primary px-3 text-[13px] font-semibold text-sales-surface";
 export const lineBtn =
-  "so-btn h-9 shrink-0 rounded-[8px] border border-sales-border bg-sales-bg px-3 text-[13px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover";
+  "so-btn h-9 shrink-0 border border-sales-border bg-sales-bg px-3 text-[13px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover";
 export const limeBtn =
-  "so-btn inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text";
+  "so-btn inline-flex h-11 items-center justify-center gap-2 bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text";
 
 export function Head({
   kicker,
@@ -104,13 +104,29 @@ export function Bones() {
     <ul aria-hidden>
       {[0, 1, 2].map((row) => (
         <li key={row} className="flex items-center gap-3 border-t border-sales-border-subtle px-4 py-3 first:border-t-0">
-          <span className="h-8 w-[3px] shrink-0 animate-pulse rounded-full bg-sales-surface-subtle" />
+          <span className="so-bone h-8 w-[3px] shrink-0 rounded-full" />
           <div className="min-w-0 flex-1 space-y-1.5">
-            <span className="block h-3.5 w-36 max-w-[46%] animate-pulse rounded-[4px] bg-sales-surface-subtle" />
-            <span className="block h-3 w-52 max-w-[62%] animate-pulse rounded-[4px] bg-sales-surface-subtle" />
+            <span className="so-bone block h-3.5 w-36 max-w-[46%]" />
+            <span className="so-bone block h-3 w-52 max-w-[62%]" />
           </div>
+          <span className="so-bone h-9 w-16 shrink-0" />
         </li>
       ))}
     </ul>
+  );
+}
+
+export function SolarPageBones({ label = "Loading" }: { label?: string }) {
+  return (
+    <div className="space-y-8" aria-busy="true" aria-label={label}>
+      <div className="space-y-2">
+        <span className="so-bone block h-3 w-16" />
+        <span className="so-bone block h-8 w-48 max-w-[70%]" />
+        <span className="so-bone block h-4 w-80 max-w-full" />
+      </div>
+      <section className="overflow-hidden rounded-[6px] border border-sales-border bg-sales-surface">
+        <Bones />
+      </section>
+    </div>
   );
 }

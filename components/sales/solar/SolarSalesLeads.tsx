@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SOLAR_SALES_STAGE_LABEL, SOLAR_SALES_STAGES, type SolarSalesStage } from "@/lib/sales/solar-workflow";
-import { AddToHubSheet } from "@/components/sales/AddToHubSheet";
+import { SolarCreateSheet } from "@/components/sales/solar/SolarCreateSheet";
 import { LeadDetailPanel } from "@/app/sales/leads/LeadDetailPanel";
 import { openLeadPanel } from "@/store/uiStore";
 import type { LeadRow } from "@/types";
-import { EmptyNote, Head, Panel, WorkRow, inkBtn, lineBtn } from "./desk";
+import { Bones, EmptyNote, Head, Panel, WorkRow, inkBtn, lineBtn } from "./desk";
 
 type Card = {
   leadId: string;
@@ -18,7 +18,7 @@ type Card = {
   nextAction: string;
 };
 
-export function SolarSalesLeads({ assignmentMode }: { assignmentMode: "direct" | "pool" | "round_robin" }) {
+export function SolarSalesLeads({ assignmentMode: _assignmentMode }: { assignmentMode: "direct" | "pool" | "round_robin" }) {
   const searchParams = useSearchParams();
   const [cards, setCards] = useState<Card[]>([]);
   const [stage, setStage] = useState<SolarSalesStage | "all">("all");
@@ -55,6 +55,7 @@ export function SolarSalesLeads({ assignmentMode }: { assignmentMode: "direct" |
 
   useEffect(() => {
     const leadId = searchParams.get("lead");
+    if (searchParams.get("add") === "1") setAddOpen(true);
     if (leadId) void open(leadId);
     // Open the deep link once the page has the query.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,7 +90,7 @@ export function SolarSalesLeads({ assignmentMode }: { assignmentMode: "direct" |
       </div>
       {error ? <p className="text-[14px] text-sales-danger-fg" role="alert">{error}</p> : null}
       <Panel title="Leads" count={loading ? undefined : visible.length}>
-        {loading ? <div className="h-40 animate-pulse bg-sales-surface-subtle" aria-hidden /> : visible.length === 0 ? (
+        {loading ? <Bones /> : visible.length === 0 ? (
           <EmptyNote title="No leads in this stage" detail="Add a lead, or choose another stage." />
         ) : (
           <ul>
@@ -107,8 +108,7 @@ export function SolarSalesLeads({ assignmentMode }: { assignmentMode: "direct" |
         )}
       </Panel>
       {addOpen ? (
-        <AddToHubSheet
-          assignmentMode={assignmentMode}
+        <SolarCreateSheet
           onClose={() => setAddOpen(false)}
           onSuccess={() => {
             setAddOpen(false);

@@ -58,7 +58,11 @@ export function SolarPipelineDesk() {
         ))}
       </div>
       {error ? <p className="text-[14px] text-sales-danger-fg" role="alert">{error}</p> : null}
-      {loading ? <Bones /> : (
+      {loading ? (
+        <section className="overflow-hidden rounded-[6px] border border-sales-border bg-sales-surface">
+          <Bones />
+        </section>
+      ) : (
         <div className="so-board">
           {visible.map((id) => {
             const column = cards.filter((card) => card.stage === id);

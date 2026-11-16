@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { Button } from "@/components/sales/ui";
 import { solarFollowUpWrite } from "@/lib/sales/solar-workflow/engagement";
+import { limeBtn } from "./desk";
 
 export function SolarLeadWork({
   leadId,
@@ -103,40 +103,40 @@ export function SolarLeadWork({
   }
 
   return (
-    <div className="space-y-3">
-      <form onSubmit={(event) => void saveReminder(event)} className="rounded-[12px] border border-sales-border bg-sales-surface p-3">
-        <label className="block text-[13px] font-medium text-sales-text-primary" htmlFor={`solar-reminder-${leadId}`}>
+    <div>
+      <form onSubmit={(event) => void saveReminder(event)} className="so-form">
+        <label className="so-label" htmlFor={`solar-reminder-${leadId}`}>
           Reminder
+          <span className="so-hint">One date. It shows on Today and does not move the stage.</span>
+          <input
+            id={`solar-reminder-${leadId}`}
+            type="date"
+            value={reminder}
+            onChange={(event) => setReminder(event.target.value)}
+            className="so-field"
+          />
         </label>
-        <p className="mt-1 text-[12px] text-sales-text-secondary">One date. It shows on Today and does not move the stage.</p>
-        <input
-          id={`solar-reminder-${leadId}`}
-          type="date"
-          value={reminder}
-          onChange={(event) => setReminder(event.target.value)}
-          className="mt-2 h-11 w-full rounded-[10px] border border-sales-border bg-sales-bg px-3 text-[14px]"
-        />
-        <Button type="submit" variant="primary" size="md" className="mt-3" loading={busy === "reminder"} disabled={busy != null && busy !== "reminder"}>
-          Save reminder
-        </Button>
+        <div className="so-form-actions">
+          <button type="submit" className={limeBtn} disabled={busy != null && busy !== "reminder"}>{busy === "reminder" ? "Saving…" : "Save reminder"}</button>
+        </div>
       </form>
-      <form onSubmit={(event) => void saveNote(event)} className="rounded-[12px] border border-sales-border bg-sales-surface p-3">
-        <label className="block text-[13px] font-medium text-sales-text-primary" htmlFor={`solar-note-${leadId}`}>
+      <form onSubmit={(event) => void saveNote(event)} className="so-form">
+        <label className="so-label" htmlFor={`solar-note-${leadId}`}>
           Note
+          <span className="so-hint">A note records what you learned. It does not change the stage.</span>
+          <textarea
+            id={`solar-note-${leadId}`}
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            className="so-field"
+            placeholder="Write what you learned"
+          />
         </label>
-        <textarea
-          id={`solar-note-${leadId}`}
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          rows={3}
-          className="mt-2 w-full rounded-[10px] border border-sales-border bg-sales-bg px-3 py-2 text-[14px]"
-          placeholder="What you learned"
-        />
-        <Button type="submit" variant="secondary" size="md" className="mt-3" loading={busy === "note"} disabled={busy != null && busy !== "note"}>
-          Save note
-        </Button>
+        <div className="so-form-actions">
+          <button type="submit" className={limeBtn} disabled={busy != null && busy !== "note"}>{busy === "note" ? "Saving…" : "Save note"}</button>
+        </div>
       </form>
-      {error ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
+      {error ? <p className="so-alert" role="alert">{error}</p> : null}
       {status ? <p className="text-[13px] text-sales-text-secondary" role="status">{status}</p> : null}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { UserRole } from "@/types";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
@@ -21,6 +22,7 @@ import { RealEstatePageBones } from "@/components/real-estate/ui/RealEstatePageB
 import { SalesCopilotDailyWorkspace } from "./SalesCopilotDailyWorkspace";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { SolarToday } from "@/components/sales/solar/SolarToday";
+import { SolarPageBones } from "@/components/sales/solar/desk";
 
 /** Action-oriented KPIs stay elevated; the rest demote to a dense strip. */
 const PRIMARY_KPI_IDS = new Set(["new-enquiries", "followups", "active-deals"]);
@@ -66,6 +68,7 @@ function SalesDashboardInner({
   const isRealEstate = Boolean(data.realEstate && data.clientId);
   const { solarWorkflow } = useCompanyWorkspace();
   const solar = solarWorkflow && !isRealEstate;
+  const router = useRouter();
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps(legacy.assignmentMode ?? "direct", { realEstate: isRealEstate });
   const roleLabel = isRealEstate ? "Agent" : "Sales Executive";
@@ -103,6 +106,25 @@ function SalesDashboardInner({
         </SalesAppShell>
       );
     }
+    if (solar) {
+      return (
+        <SalesAppShell
+          userName={fullName}
+          userRoleLabel={roleLabel}
+          avatarUrl={avatarUrl}
+          unreadNotifications={unreadNotifications}
+          notificationRole={notificationRole}
+          whatsappBadge={whatsappBadge}
+          tasksBadge={tasksBadge}
+          isSolo={isSolo}
+          assignmentMode={legacy.assignmentMode ?? "direct"}
+          showDefaultHeader={false}
+          demoGuest={demoGuest}
+        >
+          <SolarPageBones label="Loading today" />
+        </SalesAppShell>
+      );
+    }
     return <SalesDashboardSkeletonShell />;
   }
 
@@ -128,7 +150,7 @@ function SalesDashboardInner({
             data={data.realEstate!}
           />
       ) : solar ? (
-        <SolarToday onAddLead={demoGuest ? undefined : openAddHubSheet} />
+        <SolarToday onAddLead={demoGuest ? undefined : () => router.push("/sales/leads?add=1")} />
       ) : (
         <>
           <DashboardHeader

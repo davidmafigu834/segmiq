@@ -341,7 +341,6 @@ function SalesAppShellInner({
             name={userName}
             unreadNotifications={unreadNotifications}
             notificationRole={notificationRole}
-            onAddLead={() => openAddHubSheet()}
           />
         ) : null}
         <main
