@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   buildProjectPdfFilename,
   isProjectPdfCacheFresh,
+  pdfRenderBaseUrl,
 } from "@/lib/cloud/project-magazine";
 import { generateAndStoreProjectPdf } from "@/lib/cloud/generate-project-pdf";
 
@@ -79,6 +80,7 @@ export async function GET(
       slug,
       title: (project.title as string) || "case-study",
       updatedAt,
+      baseUrl: pdfRenderBaseUrl(req),
     });
 
     return pdfAttachmentResponse(result.buffer, filename);

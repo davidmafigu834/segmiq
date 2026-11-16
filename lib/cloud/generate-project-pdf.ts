@@ -21,9 +21,10 @@ export async function generateAndStoreProjectPdf(opts: {
   slug: string;
   title: string;
   updatedAt: string;
+  baseUrl?: string;
 }): Promise<GenerateProjectPdfResult> {
   const { clientId, projectId, slug, title, updatedAt } = opts;
-  const baseUrl = normalizeAppDomainUrl();
+  const baseUrl = (opts.baseUrl ?? normalizeAppDomainUrl()).replace(/\/$/, "");
   const printUrl = `${baseUrl}/p/${slug}/projects/${projectId}/print`;
   const filename = buildProjectPdfFilename(title || "case-study");
 
