@@ -16,6 +16,7 @@ import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { useSalesMobileChrome } from "@/components/sales/navigation/SalesMobileChromeContext";
 import {
   REAL_ESTATE_SALES_SECTION_ORDER,
+  SOLAR_SALES_SECTION_ORDER,
   resolveSalesNavItems,
   SALES_NAV_SECTION_LABEL,
   salesMobileMoreItems,
@@ -140,7 +141,7 @@ export function SalesMoreSheet({
 
   const more = salesMobileMoreItems(items);
   const solarGrouped = Boolean(solarWorkflow) && !isRealEstate(businessType);
-  const moreGroups = (solarGrouped ? (["field", "sales", "intelligence", "tools"] as const) : (["sales", "tools"] as const)).map((id) => ({
+  const moreGroups = (solarGrouped ? SOLAR_SALES_SECTION_ORDER : (["sales", "tools"] as const)).map((id) => ({
     id,
     label: SALES_NAV_SECTION_LABEL[id],
     items: salesNavItemsBySection(more, id),
@@ -153,7 +154,7 @@ export function SalesMoreSheet({
   return (
     <PremiumSheet
       title="More"
-      description={solarGrouped ? "Help and your account." : "Sales pages, tools and account."}
+      description={solarGrouped ? "The rest of the solar workspace." : "Sales pages, tools and account."}
       onClose={close}
       size="md"
     >

@@ -127,13 +127,13 @@ export function SalesNavSection({
 }) {
   return (
     <div className={cn(collapsed ? "px-2" : "px-3")}>
-      {!collapsed ? (
+      {!collapsed && label ? (
         <p className="mb-1.5 px-3 text-[11px] font-medium text-[var(--sales-sidebar-muted)]">
           {label}
         </p>
-      ) : (
-        <span className="sr-only">{label}</span>
-      )}
+      ) : collapsed ? (
+        <span className="sr-only">{label || "Dashboard"}</span>
+      ) : null}
       <div className={cn("flex flex-col", collapsed ? "items-center gap-1" : "gap-1")}>
         {children}
       </div>

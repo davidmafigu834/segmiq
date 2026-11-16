@@ -284,7 +284,7 @@ export function SalesSidebar({
         >
           {groups.map((group, index) => (
             <div key={group.id} className={index === 0 ? undefined : collapsedMode ? "mt-3" : "mt-3.5"}>
-              <SalesNavSection label={group.label} collapsed={collapsedMode}>
+              <SalesNavSection label={solarGrouped && group.id === "overview" ? "" : group.label} collapsed={collapsedMode}>
                 {group.items.map((item) => (
                   <SalesNavItem
                     key={item.id}

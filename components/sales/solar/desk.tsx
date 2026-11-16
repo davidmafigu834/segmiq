@@ -130,3 +130,35 @@ export function SolarPageBones({ label = "Loading" }: { label?: string }) {
     </div>
   );
 }
+
+export function RegisterList({
+  title,
+  rows,
+  emptyTitle,
+  emptyDetail,
+}: {
+  title: string;
+  rows: Array<{ id: string; name: string; meta: string; fact?: string | null }>;
+  emptyTitle: string;
+  emptyDetail: string;
+}) {
+  return (
+    <Panel title={title} count={rows.length}>
+      {rows.length === 0 ? (
+        <EmptyNote title={emptyTitle} detail={emptyDetail} />
+      ) : (
+        <ul className="so-col-list">
+          {rows.map((row) => (
+            <li key={row.id}>
+              <div className="so-card">
+                <span className="so-card-name">{row.name}</span>
+                <span className="so-card-place">{row.meta}</span>
+                {row.fact ? <span className="so-card-fact">{row.fact}</span> : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}

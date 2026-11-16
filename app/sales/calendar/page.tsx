@@ -10,6 +10,10 @@ import { adaptDealToCalendarEvent, adaptLeadsToCalendarEvents } from "@/lib/sale
 import { locationFromFormData } from "@/lib/sales/calendar/location";
 import type { CalendarDealOption, CalendarLeadRow } from "@/lib/sales/calendar/types";
 import { SalesCalendarPage } from "@/components/sales/calendar/SalesCalendarPage";
+import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
+import { SolarCalendarDesk, type SolarCalendarVisit } from "@/components/sales/solar/SolarCalendarDesk";
+import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
+import { readSalesWorkflowPreset } from "@/lib/sales/solar-workflow/service";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
 import { headers } from "next/headers";
 import { isRealEstate } from "@/lib/terminology";
@@ -54,6 +58,44 @@ export default async function SalesCalendarRoutePage({
 }) {
   const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
+
+  if (session.clientId && (await readSalesWorkflowPreset(session.clientId)) === "SOLAR_INSTALLATION") {
+    const shell = await loadSalesShellProps(session);
+    let visits: SolarCalendarVisit[] = [];
+    if (!session.demoGuest) {
+      const supabase = createAdminClient();
+      const { data } = await supabase
+        .from("work_project_visits")
+        .select("id, title, visit_type, status, scheduled_start_at, site_address, project_id")
+        .eq("client_id", session.clientId)
+        .not("scheduled_start_at", "is", null)
+        .limit(120);
+      visits = (data ?? [])
+        .filter((row) => row.scheduled_start_at && row.status !== "CANCELLED" && row.project_id)
+        .map((row) => ({
+          id: String(row.id),
+          title: row.title ? String(row.title) : null,
+          visitType: String(row.visit_type ?? ""),
+          status: String(row.status ?? ""),
+          startAt: String(row.scheduled_start_at),
+          place: row.site_address ? String(row.site_address) : null,
+          projectId: String(row.project_id),
+        }));
+    }
+    return (
+      <SalesLayout breadcrumb="Sales / CALENDAR" pageTitle="Calendar" hideShellHeader hideShellSidebar contentFlush>
+        <SalesAppShell
+          {...shell}
+          breadcrumb="Sales / Calendar"
+          title="Calendar"
+          showDefaultHeader={false}
+          searchPlaceholder="Search leads, customers, quotes..."
+        >
+          <SolarCalendarDesk visits={visits} />
+        </SalesAppShell>
+      </SalesLayout>
+    );
+  }
 
   if (session.demoGuest && session.clientId) {
     const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");
