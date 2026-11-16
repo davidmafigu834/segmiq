@@ -18,7 +18,7 @@ type Card = {
   nextAction: string;
 };
 
-export function SolarSalesLeads({ assignmentMode: _assignmentMode }: { assignmentMode: "direct" | "pool" | "round_robin" }) {
+export function SolarSalesLeads() {
   const searchParams = useSearchParams();
   const [cards, setCards] = useState<Card[]>([]);
   const [stage, setStage] = useState<SolarSalesStage | "all">("all");
