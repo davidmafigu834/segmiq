@@ -1417,7 +1417,7 @@ export function ChatThread({
             </div>
           ) : null}
           </div>
-          {isWhatsApp ? (
+          {isWhatsApp && !solarWorkflow ? (
             <SalesCopilotCard
               item={copilotCard}
               analysisStatus={copilot.data?.analysis.status}
@@ -1745,7 +1745,7 @@ export function ChatThread({
         </PremiumSheet>
       ) : null}
 
-      {isWhatsApp ? (
+      {isWhatsApp && !solarWorkflow ? (
         <SalesCopilotSheet
           open={copilotOpen}
           items={copilot.data?.items ?? []}

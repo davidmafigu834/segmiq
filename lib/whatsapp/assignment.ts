@@ -14,28 +14,85 @@ type Salesperson = {
   round_robin_order: number;
 };
 
-async function countOpenLeadsByRep(
+/** Turn index is stored as a counter. The slot is that counter modulo the current rep list. */
+export function roundRobinSlot(currentIndex: number, length: number): { slot: number; nextIndex: number } {
+  if (length <= 0) return { slot: 0, nextIndex: 0 };
+  const normalized = Number.isFinite(currentIndex) ? Math.trunc(currentIndex) : 0;
+  const slot = ((normalized % length) + length) % length;
+  return { slot, nextIndex: normalized + 1 };
+}
+
+/**
+ * Advance the company counter only when this request still sees the same value.
+ * Two chats arriving together then take two different reps.
+ */
+export async function claimRoundRobinAssignee<T extends { id: string }>(
   supabase: SupabaseClient,
   clientId: string,
-  repIds: string[]
-): Promise<Map<string, number>> {
-  if (!repIds.length) return new Map();
-  const { data } = await supabase
-    .from("leads")
-    .select("assigned_to_id")
-    .eq("client_id", clientId)
-    .in("assigned_to_id", repIds)
-    .or("is_archived.is.null,is_archived.eq.false")
-    .not("status", "in", '("WON","LOST","NOT_QUALIFIED")');
-
-  const counts = new Map<string, number>();
-  for (const id of repIds) counts.set(id, 0);
-  for (const row of data ?? []) {
-    const id = row.assigned_to_id as string | null;
-    if (!id) continue;
-    counts.set(id, (counts.get(id) ?? 0) + 1);
+  salespeople: T[]
+): Promise<string | null> {
+  if (!salespeople.length) return null;
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const { data: client, error: readError } = await supabase
+      .from("clients")
+      .select("round_robin_index")
+      .eq("id", clientId)
+      .maybeSingle();
+    if (readError) throw new Error(readError.message);
+    const current = Number(client?.round_robin_index ?? 0);
+    const { slot, nextIndex } = roundRobinSlot(current, salespeople.length);
+    const { data: updated, error } = await supabase
+      .from("clients")
+      .update({ round_robin_index: nextIndex, updated_at: new Date().toISOString() })
+      .eq("id", clientId)
+      .eq("round_robin_index", current)
+      .select("id");
+    if (error) throw new Error(error.message);
+    if (updated && updated.length > 0) return salespeople[slot]?.id ?? null;
   }
-  return counts;
+  return salespeople[0]?.id ?? null;
+}
+
+export type PhoneClaim = "reserved" | "busy" | "unavailable";
+
+/** One in-flight lead create per customer phone. Missing table keeps the older path working. */
+export async function reserveInboundPhone(
+  supabase: SupabaseClient,
+  clientId: string,
+  phoneDigits: string
+): Promise<PhoneClaim> {
+  const { error } = await supabase.from("whatsapp_phone_claims").insert({
+    client_id: clientId,
+    phone_digits: phoneDigits,
+  });
+  if (!error) return "reserved";
+  if (error.code === "23505") return "busy";
+  if (/does not exist|schema cache|whatsapp_phone_claims/i.test(error.message)) return "unavailable";
+  throw new Error(error.message);
+}
+
+export async function releaseInboundPhone(
+  supabase: SupabaseClient,
+  clientId: string,
+  phoneDigits: string
+): Promise<void> {
+  await supabase.from("whatsapp_phone_claims").delete().eq("client_id", clientId).eq("phone_digits", phoneDigits);
+}
+
+export async function inboundPhoneClaimAgeMs(
+  supabase: SupabaseClient,
+  clientId: string,
+  phoneDigits: string
+): Promise<number | null> {
+  const { data } = await supabase
+    .from("whatsapp_phone_claims")
+    .select("created_at")
+    .eq("client_id", clientId)
+    .eq("phone_digits", phoneDigits)
+    .maybeSingle();
+  const created = Date.parse(String(data?.created_at ?? ""));
+  if (!Number.isFinite(created)) return null;
+  return Date.now() - created;
 }
 
 export async function findReturningAssignee(opts: {
@@ -129,37 +186,6 @@ export async function pickAssigneeForInbound(opts: {
     return { assigneeId: null, salespeople: list };
   }
 
-  const { data: client } = await supabase
-    .from("clients")
-    .select("round_robin_index")
-    .eq("id", clientId)
-    .maybeSingle();
-
-  let rr = (client?.round_robin_index as number) ?? 0;
-  const loads = await countOpenLeadsByRep(
-    supabase,
-    clientId,
-    list.map((s) => s.id)
-  );
-
-  let bestIdx = rr % list.length;
-  let bestLoad = loads.get(list[bestIdx].id) ?? 0;
-  for (let offset = 1; offset < list.length; offset += 1) {
-    const idx = (rr + offset) % list.length;
-    const load = loads.get(list[idx].id) ?? 0;
-    if (load < bestLoad) {
-      bestLoad = load;
-      bestIdx = idx;
-    }
-  }
-
-  const assigneeId = list[bestIdx].id;
-  rr = (bestIdx + 1) % list.length;
-
-  await supabase
-    .from("clients")
-    .update({ round_robin_index: rr, updated_at: new Date().toISOString() })
-    .eq("id", clientId);
-
+  const assigneeId = await claimRoundRobinAssignee(supabase, clientId, list);
   return { assigneeId, salespeople: list };
 }

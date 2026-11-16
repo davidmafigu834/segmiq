@@ -102,3 +102,77 @@ html[data-crm]:not([data-crm-theme="light"]) .solar-workspace .sales-mobile-bott
   border-top-color: rgba(255, 255, 255, 0.1);
   color: #f4f6fb;
 }
+
+/* Solar WhatsApp inbox. Same canvas, lime, and 6px corners as the solar mock. */
+.solar-workspace .salesperson-wa-workspace {
+  border-top: 0;
+  background: var(--sales-bg);
+}
+
+.solar-workspace .salesperson-wa-workspace .wa-chat-wallpaper {
+  background: var(--sales-bg) !important;
+  background-image: none !important;
+}
+
+.solar-workspace .salesperson-wa-workspace .wa-filter-tabs {
+  gap: 8px;
+  border-top: 0;
+  padding: 8px 12px;
+}
+
+.solar-workspace .salesperson-wa-workspace .wa-filter-tabs button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--sales-border);
+  border-radius: 6px;
+  background: var(--sales-surface);
+  color: var(--sales-text-primary);
+}
+
+.solar-workspace .salesperson-wa-workspace .wa-filter-tabs button[aria-selected="true"] {
+  border-color: var(--sales-brand, #d4ff4f);
+  background: var(--sales-brand, #d4ff4f);
+  color: var(--sales-brand-text, #101828);
+}
+
+.solar-workspace .salesperson-wa-workspace .wa-filter-tabs button span {
+  display: none;
+}
+
+.solar-workspace .salesperson-wa-workspace .wa-bubble-in {
+  border: 1px solid var(--sales-border-subtle) !important;
+  border-radius: 6px !important;
+  background: var(--sales-surface) !important;
+  color: var(--sales-text-primary) !important;
+}
+
+.solar-workspace .salesperson-wa-workspace .wa-bubble-out {
+  border: 1px solid color-mix(in srgb, var(--sales-brand, #d4ff4f) 62%, #101828) !important;
+  border-radius: 6px !important;
+  background: var(--sales-brand, #d4ff4f) !important;
+  color: var(--sales-brand-text, #101828) !important;
+}
+
+.solar-workspace .salesperson-wa-workspace .wa-bubble-out .wa-bubble-text,
+.solar-workspace .salesperson-wa-workspace .wa-bubble-out .wa-bubble-meta {
+  color: var(--sales-brand-text, #101828) !important;
+}
+
+.solar-workspace .salesperson-wa-workspace .wa-msg-grouped .wa-bubble-in,
+.solar-workspace .salesperson-wa-workspace .wa-msg-grouped .wa-bubble-out {
+  border-radius: 6px !important;
+}
+
+.solar-workspace .salesperson-wa-workspace .bg-sales-whatsapp {
+  background: var(--sales-brand, #d4ff4f) !important;
+  color: var(--sales-brand-text, #101828) !important;
+}
+
+.solar-workspace .salesperson-wa-workspace .text-sales-whatsapp {
+  color: var(--sales-brand-fg, #3f6212);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .solar-workspace .salesperson-wa-workspace .text-sales-whatsapp {
+  color: var(--sales-brand, #d4ff4f);
+}

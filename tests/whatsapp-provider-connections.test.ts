@@ -13,10 +13,13 @@ import {
   isMissingGatewayRoute,
 } from "../lib/whatsapp/gateway-client";
 import {
+  acceptAfterForRestore,
+  acceptAfterForResume,
   pairingAfterLoggedOut,
   pairingForAdminConnect,
   pairingForAutoRetry,
   pairingForRestore,
+  planSocketClose,
 } from "../lib/whatsapp/pairing-policy";
 
 test("temporary provider advertises only the supported beta capabilities", () => {
@@ -66,7 +69,7 @@ test("session and QR envelopes are authenticated and context-bound", async () =>
 test("a restarted gateway can resume live connections without a new QR scan", () => {
   // The gateway parks restorable connections in RECONNECTING before re-opening
   // each socket, so every status a restore can start from must reach it.
-  for (const from of ["CONNECTING", "CONNECTED", "DEGRADED", "RECONNECTING", "ERROR"] as const) {
+  for (const from of ["CONNECTING", "CONNECTED", "DEGRADED", "RECONNECTING", "RECONNECT_REQUIRED", "ERROR"] as const) {
     assert.equal(canTransitionWhatsAppConnection(from, "RECONNECTING"), true, from);
   }
   assert.equal(canTransitionWhatsAppConnection("RECONNECTING", "CONNECTING"), true);
@@ -113,6 +116,22 @@ test("admin connect always starts a fresh QR pairing instead of reusing a logged
   });
   // A logged-out restore must not emit a QR. An admin pair that still had old
   // creds should throw those away and pair again.
+  assert.equal(planSocketClose({ code: 401, attempts: 1 }).action, "qr_required");
+  assert.equal(planSocketClose({ code: 428, attempts: 8 }).action, "retry");
+  assert.equal(planSocketClose({ code: 515, attempts: 4 }).action, "retry");
+  const kept = planSocketClose({ code: 515, attempts: 4 });
+  assert.equal(kept.action === "retry" ? kept.attempts : 0, 4);
+  const replaced = planSocketClose({ code: 440, attempts: 2 });
+  assert.equal(replaced.action === "retry" && replaced.delayMs >= 20_000, true);
+  assert.equal(
+    acceptAfterForResume({ droppedAt: 1_000_000, previousAcceptAfter: 10_000, wasOpen: true }),
+    940_000
+  );
+  assert.equal(
+    acceptAfterForResume({ droppedAt: 1_000_000, previousAcceptAfter: 940_000, wasOpen: false }),
+    940_000
+  );
+  assert.equal(acceptAfterForRestore(10_000_000), 10_000_000 - 6 * 60 * 60 * 1000);
   assert.equal(pairingAfterLoggedOut({ allowQr: false, freshPairing: false }), null);
   assert.deepEqual(pairingAfterLoggedOut({ allowQr: true, freshPairing: false }), {
     allowQr: true,

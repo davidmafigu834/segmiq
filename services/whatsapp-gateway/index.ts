@@ -7,7 +7,6 @@ import nextEnv from "@next/env";
 import makeWASocket, {
   BufferJSON,
   Browsers,
-  DisconnectReason,
   downloadMediaMessage,
   initAuthCreds,
   makeCacheableSignalKeyStore,
@@ -25,10 +24,13 @@ import {
   unwrapWhatsAppContent,
 } from "../../lib/whatsapp/gateway-message";
 import {
+  acceptAfterForRestore,
+  acceptAfterForResume,
   pairingAfterLoggedOut,
   pairingForAdminConnect,
   pairingForAutoRetry,
   pairingForRestore,
+  planSocketClose,
   type WhatsAppPairingDecision,
 } from "../../lib/whatsapp/pairing-policy";
 // The shared signing module lives in the CommonJS half of the repository, so
@@ -49,7 +51,7 @@ type StoredAuth = {
   keys: Partial<Record<keyof SignalDataTypeMap, Record<string, unknown>>>;
 };
 
-const SESSION_PERSIST_DEBOUNCE_MS = 5_000;
+const SESSION_PERSIST_DEBOUNCE_MS = 1_000;
 /** Re-fetch contact avatars at most once per day per chat. */
 const PROFILE_PICTURE_TTL_MS = 24 * 60 * 60 * 1_000;
 const PROFILE_PICTURE_MAX_BYTES = 512 * 1024;
@@ -402,7 +404,8 @@ function disconnectCode(error: unknown): number | undefined {
 async function startConnection(
   connectionId: string,
   reconnectAttempts = 0,
-  pairing: WhatsAppPairingDecision = pairingForAdminConnect()
+  pairing: WhatsAppPairingDecision = pairingForAdminConnect(),
+  acceptAfterMs?: number
 ): Promise<void> {
   const existing = sessions.get(connectionId);
   if (existing) {
@@ -454,7 +457,7 @@ async function startConnection(
     socket,
     // WhatsApp timestamps are second-granular. Round down so the first valid
     // message in the activation second is not mistaken for pre-connect sync.
-    acceptAfter: Math.floor(Date.now() / 1_000) * 1_000,
+    acceptAfter: acceptAfterMs ?? Math.floor(Date.now() / 1_000) * 1_000,
     reconnectAttempts,
     closing: false,
     open: false,
@@ -544,11 +547,14 @@ async function startConnection(
     }
     if (update.connection === "close" && !session.closing) {
       const code = disconnectCode(update.lastDisconnect?.error);
+      const wasOpen = session.open;
+      const previousAcceptAfter = session.acceptAfter;
       await flushPersistAuth(session);
       session.closing = true;
       session.open = false;
       sessions.delete(connectionId);
-      if (code === DisconnectReason.loggedOut || code === DisconnectReason.badSession) {
+      const plan = planSocketClose({ code, attempts: session.reconnectAttempts });
+      if (plan.action === "qr_required") {
         const retryPairing = pairingAfterLoggedOut({
           allowQr: session.allowQr,
           freshPairing: session.freshPairing,
@@ -567,33 +573,32 @@ async function startConnection(
         await emit(connectionId, {
           type: "STATUS",
           state: "RECONNECT_REQUIRED",
-          errorCode: String(code ?? "LOGGED_OUT"),
-          errorMessage: "The linked phone signed out. Scan a new QR code to reconnect.",
+          errorCode: plan.errorCode,
+          errorMessage: plan.errorMessage,
         });
         return;
       }
-      session.reconnectAttempts += 1;
-      if (session.reconnectAttempts > 6) {
-        await emit(connectionId, {
-          type: "STATUS",
-          state: "RECONNECT_REQUIRED",
-          errorCode: "RETRY_LIMIT",
-          errorMessage: "Automatic reconnection stopped after repeated failures.",
-        });
-        return;
-      }
-      await emit(connectionId, { type: "STATUS", state: "RECONNECTING" }).catch(() => {});
-      const delay = Math.min(30_000, 1_000 * 2 ** (session.reconnectAttempts - 1));
+      const resumeFrom = acceptAfterForResume({
+        droppedAt: Date.now(),
+        previousAcceptAfter,
+        wasOpen,
+      });
+      await emit(connectionId, {
+        type: "STATUS",
+        state: "RECONNECTING",
+        errorCode: code === undefined ? "SOCKET_CLOSED" : String(code),
+      }).catch(() => {});
       setTimeout(() => void startConnection(
         connectionId,
-        session.reconnectAttempts,
-        pairingForAutoRetry({ allowQr: session.allowQr, freshPairing: session.freshPairing })
+        plan.attempts,
+        pairingForAutoRetry({ allowQr: session.allowQr, freshPairing: session.freshPairing }),
+        resumeFrom
       ).catch(async (error) => {
         await emit(connectionId, {
           type: "STATUS", state: "ERROR", errorCode: "RECONNECT_FAILED",
           errorMessage: error instanceof Error ? error.message : "Reconnect failed",
         }).catch(() => {});
-      }), delay);
+      }), plan.delayMs);
     }
   });
 }
@@ -817,7 +822,7 @@ async function restoreSessions(): Promise<void> {
   console.info(`[whatsapp-gateway] restoring ${restorable.length} connection(s)`);
   for (const [index, entry] of restorable.entries()) {
     setTimeout(() => {
-      void startConnection(entry.connectionId, 0, pairingForRestore()).catch(async (error) => {
+      void startConnection(entry.connectionId, 0, pairingForRestore(), acceptAfterForRestore(Date.now())).catch(async (error) => {
         await emit(entry.connectionId, {
           type: "STATUS",
           state: "RECONNECT_REQUIRED",

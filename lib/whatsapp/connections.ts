@@ -142,6 +142,7 @@ const RESTORABLE_STATES: readonly WhatsAppConnectionState[] = [
   "CONNECTED",
   "DEGRADED",
   "RECONNECTING",
+  "RECONNECT_REQUIRED",
   "ERROR",
 ];
 

@@ -80,8 +80,8 @@ export async function SalesInboxPageView({
   const tasksBadge = navBadges.followUpsToday || navBadges.callNow || 0;
 
   const solar = await companyUsesSolarWorkflow(session.clientId);
-  const hubTitle = solar ? "WhatsApp Sales Hub" : pageTitle;
-  const hubBreadcrumb = solar ? "Sales / WhatsApp Sales Hub" : breadcrumb;
+  const hubTitle = solar ? "WhatsApp inbox" : pageTitle;
+  const hubBreadcrumb = solar ? "Sales / WhatsApp inbox" : breadcrumb;
 
   return (
     <WhatsAppSalesHubShell

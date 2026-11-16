@@ -6,7 +6,12 @@ import { notifyNewLead, notifyWhatsAppInboundMessage, notifyAdminsNoSalesperson 
 import { parseSalesPrefs } from "@/lib/notification-prefs";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { findOpenLeadByPhone } from "@/lib/leads/findOpenLeadByPhone";
-import { pickAssigneeForInbound } from "./assignment";
+import {
+  inboundPhoneClaimAgeMs,
+  pickAssigneeForInbound,
+  releaseInboundPhone,
+  reserveInboundPhone,
+} from "./assignment";
 import { fetchWhatsAppMediaAsset } from "./media";
 import { resolveClientFromWhatsAppPhoneNumberId } from "./resolve-client";
 import {
@@ -156,6 +161,21 @@ export async function isWhatsAppSessionOpen(leadId: string): Promise<boolean> {
   return false;
 }
 
+async function waitForOpenLead(opts: {
+  supabase: ReturnType<typeof createAdminClient>;
+  clientId: string;
+  phoneDigits: string;
+  attempts?: number;
+}) {
+  const attempts = opts.attempts ?? 8;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const matched = await findOpenLeadByPhone(opts);
+    if (matched) return matched;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  return null;
+}
+
 export async function handleInboundWhatsAppMessage(opts: {
   phoneNumberId?: string | null;
   clientId?: string | null;
@@ -273,6 +293,54 @@ export async function handleInboundWhatsAppMessage(opts: {
     }
   }
 
+  let releasePhoneClaim = false;
+  let holdOff = false;
+  if (!leadId && phoneDigits) {
+    const reservation = await reserveInboundPhone(supabase, client.id, phoneDigits);
+    if (reservation === "reserved") {
+      releasePhoneClaim = true;
+      const raced = await findOpenLeadByPhone({ supabase, clientId: client.id, phoneDigits });
+      if (raced) {
+        leadId = raced.id as string;
+        assignedToId = (raced.assigned_to_id as string | null) ?? null;
+        contactId = (raced.contact_id as string | null) ?? null;
+      }
+    } else if (reservation === "busy") {
+      const claimed = await waitForOpenLead({ supabase, clientId: client.id, phoneDigits, attempts: 40 });
+      if (claimed) {
+        leadId = claimed.id as string;
+        assignedToId = (claimed.assigned_to_id as string | null) ?? null;
+        contactId = (claimed.contact_id as string | null) ?? null;
+      } else {
+        const age = await inboundPhoneClaimAgeMs(supabase, client.id, phoneDigits);
+        if (age === null || age >= 15_000) {
+          await releaseInboundPhone(supabase, client.id, phoneDigits);
+          const takeover = await reserveInboundPhone(supabase, client.id, phoneDigits);
+          if (takeover === "reserved") releasePhoneClaim = true;
+          if (takeover === "busy") {
+            const adopted = await waitForOpenLead({ supabase, clientId: client.id, phoneDigits, attempts: 40 });
+            if (adopted) {
+              leadId = adopted.id as string;
+              assignedToId = (adopted.assigned_to_id as string | null) ?? null;
+              contactId = (adopted.contact_id as string | null) ?? null;
+            }
+          }
+        } else {
+          holdOff = true;
+        }
+      }
+    }
+  }
+
+  if (!leadId && holdOff) {
+    const settled = await findOpenLeadByPhone({ supabase, clientId: client.id, phoneDigits });
+    if (settled) {
+      leadId = settled.id as string;
+      assignedToId = (settled.assigned_to_id as string | null) ?? null;
+      contactId = (settled.contact_id as string | null) ?? null;
+    }
+  }
+
   if (!leadId) {
     isNewLead = true;
     const { assigneeId, salespeople } = await pickAssigneeForInbound({
@@ -331,9 +399,16 @@ export async function handleInboundWhatsAppMessage(opts: {
       .select("id, assigned_to_id, name, phone")
       .single();
 
-    if (leadErr || !lead) return;
+    if (leadErr || !lead) {
+      if (releasePhoneClaim && phoneDigits) await releaseInboundPhone(supabase, client.id, phoneDigits);
+      return;
+    }
     leadId = lead.id as string;
     assignedToId = (lead.assigned_to_id as string | null) ?? assignedToId;
+    if (releasePhoneClaim && phoneDigits) {
+      await releaseInboundPhone(supabase, client.id, phoneDigits);
+      releasePhoneClaim = false;
+    }
 
     const assignee = assignedToId ? salespeople.find((s) => s.id === assignedToId) : null;
     await logLeadCreated({
@@ -395,6 +470,10 @@ export async function handleInboundWhatsAppMessage(opts: {
         clientId: client.id,
       });
     }
+  }
+
+  if (releasePhoneClaim && phoneDigits) {
+    await releaseInboundPhone(supabase, client.id, phoneDigits);
   }
 
   await syncWhatsAppIdentity({

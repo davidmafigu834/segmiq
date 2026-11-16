@@ -11,7 +11,7 @@ import { getPublicBaseUrl } from "@/lib/constants";
 import { getPublicLandingPageUrl } from "@/lib/public-url";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { findOpenLeadByPhone, type OpenLeadMatch } from "@/lib/leads/findOpenLeadByPhone";
-import { findReturningAssignee } from "@/lib/whatsapp/assignment";
+import { claimRoundRobinAssignee, findReturningAssignee } from "@/lib/whatsapp/assignment";
 import { fetchRoundRobinEligibleUsers } from "@/lib/auth/sales-capabilities";
 import { scoreFromManualPriority } from "@/lib/customer-hub/manual-lead-intake";
 import {
@@ -358,11 +358,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
       }
 
       if (!pickedFromReturning) {
-        let rr = (client.round_robin_index as number) ?? 0;
-        const idx = rr % list.length;
-        assignedId = list[idx].id as string;
-        rr = (rr + 1) % list.length;
-        await supabase.from("clients").update({ round_robin_index: rr, updated_at: new Date().toISOString() }).eq("id", clientId);
+        assignedId = await claimRoundRobinAssignee(supabase, clientId, list);
       }
     } else {
       assignedId = null;
