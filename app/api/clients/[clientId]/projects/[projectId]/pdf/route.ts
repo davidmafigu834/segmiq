@@ -3,6 +3,7 @@ import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateAndStoreProjectPdf } from "@/lib/cloud/generate-project-pdf";
+import { pdfRenderBaseUrl } from "@/lib/cloud/project-magazine";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,6 +60,7 @@ export async function POST(
       slug: profile.slug as string,
       title: (project.title as string) || "case-study",
       updatedAt: project.updated_at as string,
+      baseUrl: pdfRenderBaseUrl(req),
     });
 
     return NextResponse.json({

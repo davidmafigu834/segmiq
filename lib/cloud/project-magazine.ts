@@ -13,6 +13,9 @@ import {
   shouldShowCapabilitySection,
   type ClientCapabilityProfile,
 } from "@/lib/cloud/client-capability";
+import { galleryPhotos } from "@/lib/cloud/magazine-format";
+
+export { buildProjectPdfFilename, formatCompletionDate, galleryPhotos } from "@/lib/cloud/magazine-format";
 
 export type TimelineStep = {
   day_label: string;
@@ -188,11 +191,6 @@ export function getSpecIcon(index: number, label: string): LucideIcon {
   return SPEC_ICONS[index % SPEC_ICONS.length] ?? Check;
 }
 
-export function formatCompletionDate(dateStr: string | null): string | null {
-  if (!dateStr) return null;
-  return new Date(dateStr).toLocaleDateString("en-US", { month: "long", year: "numeric" });
-}
-
 export function buildSpecMetaLine(specFields: SpecField[]): string | null {
   if (specFields.length === 0) return null;
   const parts = specFields
@@ -200,12 +198,6 @@ export function buildSpecMetaLine(specFields: SpecField[]): string | null {
     .map((f) => f.value)
     .filter(Boolean);
   return parts.length > 0 ? parts.join(" · ") : null;
-}
-
-export function galleryPhotos(media: ProjectMediaRow[]): ProjectMediaRow[] {
-  return [...media]
-    .filter((m) => m.type !== "video" && m.type !== "video_url")
-    .sort((a, b) => a.display_order - b.display_order);
 }
 
 export function resolveTimelineStepPhotos(
@@ -416,6 +408,9 @@ export async function fetchProjectMagazineData(
   };
 }
 
+/** PDFs made before this layout are the previous case study and must be rebuilt. */
+const MAGAZINE_PDF_LAYOUT_AT = "2026-11-16T22:50:00.000Z";
+
 export function isProjectPdfCacheFresh(project: {
   pdf_url: string | null;
   pdf_generated_at: string | null;
@@ -424,6 +419,7 @@ export function isProjectPdfCacheFresh(project: {
   const pdfUrl = project.pdf_url;
   const pdfGeneratedAt = project.pdf_generated_at;
   if (!pdfUrl || !pdfGeneratedAt) return false;
+  if (new Date(pdfGeneratedAt).getTime() < new Date(MAGAZINE_PDF_LAYOUT_AT).getTime()) return false;
   return new Date(pdfGeneratedAt).getTime() >= new Date(project.updated_at).getTime();
 }
 
@@ -431,14 +427,15 @@ export function printImageUrl(url: string): string {
   return url;
 }
 
-export function buildProjectPdfFilename(title: string): string {
-  const base =
-    title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 60) || "case-study";
-  return `${base}.pdf`;
+export function pdfRenderBaseUrl(req: Request): string {
+  if (process.env.NODE_ENV === "development") {
+    const host = req.headers.get("host")?.trim();
+    if (host) {
+      const proto = host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https";
+      return `${proto}://${host}`;
+    }
+  }
+  return normalizeAppDomainUrl();
 }
 
 export function generateProjectPdfKey(clientId: string, projectId: string): string {
