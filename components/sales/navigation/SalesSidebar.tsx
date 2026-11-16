@@ -10,11 +10,11 @@ import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import { SalesNavItem, SalesNavSection } from "@/components/sales/navigation/SalesNavItem";
 import {
   displaySalesName,
-  REAL_ESTATE_SALES_SECTION_ORDER,
   resolveSalesNavItems,
   SALES_NAV_SECTION_LABEL,
   salesNavIsActive,
   salesNavItemsBySection,
+  salesNavSectionOrder,
   type SalesNavBadgeKey,
   type SalesNavSectionId,
 } from "@/lib/sales/navigation/sales-nav-config";
@@ -59,17 +59,13 @@ export function SalesSidebar({
     crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
   const items = resolveSalesNavItems(isSolo, businessType, { solarWorkflow });
   const realEstate = isRealEstate(businessType);
+  const solarGrouped = Boolean(solarWorkflow) && !realEstate;
   const groups: Array<{ id: SalesNavSectionId; label: string; items: ReturnType<typeof salesNavItemsBySection> }> =
-    realEstate
-      ? REAL_ESTATE_SALES_SECTION_ORDER.map((id) => ({
-          id,
-          label: SALES_NAV_SECTION_LABEL[id],
-          items: salesNavItemsBySection(items, id),
-        })).filter((group) => group.items.length > 0)
-      : [
-          { id: "sales", label: "Sales", items: salesNavItemsBySection(items, "sales") },
-          { id: "tools", label: "Tools", items: salesNavItemsBySection(items, "tools") },
-        ];
+    salesNavSectionOrder(businessType, { solarWorkflow }).map((id) => ({
+      id,
+      label: SALES_NAV_SECTION_LABEL[id],
+      items: salesNavItemsBySection(items, id),
+    })).filter((group) => group.items.length > 0);
   const dashboardHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";
 
   const badges: Partial<Record<SalesNavBadgeKey, number>> = {
