@@ -23,7 +23,7 @@ export default async function SalesMyWorkPage() {
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
   return (
     <Layout breadcrumb="Sales / MY WORK" pageTitle="My work" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} dense breadcrumb="Sales / My work" title="My work" description="Visits and tasks assigned to you.">
+      <SalesAppShell {...shell} dense breadcrumb="Sales / My work" title="My work" description="Site visits and installation tasks assigned to you.">
         <MyWorkClient tasks={data.tasks} visits={data.visits} basePath="/sales/projects" />
       </SalesAppShell>
     </Layout>

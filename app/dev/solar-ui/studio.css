@@ -1,0 +1,77 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: SegmiQ sales (existing)
+ * DNA: app/dev/real-estate-ui mock shell. Tokens stay on .sales-dashboard-premium.
+ * Component-scope: studio chrome. states: default · hover · focus · active · disabled · loading · error · success
+ * pre-emit critique: P5 H4 E4 S5 R4 V4
+ */
+
+.so-btn {
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 180ms cubic-bezier(0.2, 0, 0, 1),
+    color 180ms cubic-bezier(0.2, 0, 0, 1),
+    border-color 180ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+.so-btn:hover,
+.so-btn.is-hover { filter: brightness(0.96); }
+.so-btn:focus { outline: none; }
+.so-btn:focus-visible,
+.so-btn.is-focus {
+  outline: 2px solid var(--sb-focus);
+  outline-offset: 2px;
+}
+.so-btn:active,
+.so-btn.is-active { transform: translateY(1px); }
+.so-btn:disabled,
+.so-btn[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.45;
+  transform: none;
+}
+.so-btn[data-state="loading"] { opacity: 0.7; }
+.so-btn[data-state="error"] {
+  background: transparent;
+  color: var(--sales-danger-fg, var(--sales-danger));
+  border: 1px solid var(--sales-danger-fg, var(--sales-danger));
+}
+.so-btn[data-state="success"] {
+  background: var(--sales-text-primary);
+  color: var(--sales-surface);
+}
+.so-board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 260px);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.so-col {
+  min-width: 0;
+  border: 1px solid var(--sales-border);
+  border-radius: 6px;
+  background: var(--sales-surface);
+}
+.so-steps {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  border: 1px solid var(--sales-border);
+  border-radius: 6px;
+  background: var(--sales-surface);
+}
+.so-step {
+  flex: 1 0 120px;
+  min-width: 0;
+  padding: 12px 14px;
+  border-right: 1px solid var(--sales-border-subtle);
+  text-align: left;
+}
+.so-step:last-child { border-right: 0; }
+.so-step[aria-current="step"] { background: var(--sales-surface-hover); }
+
+@media (prefers-reduced-motion: reduce) {
+  .so-btn,
+  .so-btn:active,
+  .so-btn.is-active { transition: none; transform: none; }
+}

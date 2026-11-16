@@ -8,6 +8,7 @@ import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
 import { SalesQuotesClient } from "@/components/sales/quotes/SalesQuotesClient";
 import { Skeleton } from "@/components/sales/ui";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
+import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -53,6 +54,7 @@ export default async function SalesQuotesPage() {
 
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
   const shell = await loadSalesShellProps(session);
+  const solar = session.clientId ? await companyUsesSolarWorkflow(session.clientId) : false;
 
   return (
     <Layout
@@ -67,7 +69,7 @@ export default async function SalesQuotesPage() {
         dense
         breadcrumb="Sales / Quotations"
         title="Quotations"
-        description="Create, send and follow up on commercial offers for active Deals."
+        description={solar ? "Open the quotation for a lead. Sending it is what moves that lead to Quote sent." : "Create, send and follow up on commercial offers for active Deals."}
         searchPlaceholder="Search leads, customers, quotes..."
       >
         <Suspense fallback={<QuotesFallback />}>

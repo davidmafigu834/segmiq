@@ -10,6 +10,7 @@ import { SalesToolboxClient } from "@/components/sales/toolbox/SalesToolboxClien
 import { ToolboxHeaderSearch } from "@/components/sales/toolbox/ToolboxHeaderSearch";
 import { Skeleton } from "@/components/sales/ui";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
+import { redirectSolarSalesperson } from "@/lib/sales/solar-workflow/salesperson-home";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -34,6 +35,7 @@ function ToolboxFallback() {
 export default async function SalesToolboxPage() {
   const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
+  await redirectSolarSalesperson(session.clientId, "/sales/dashboard");
 
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
   const shell = await loadSalesShellProps(session);

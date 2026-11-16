@@ -22,6 +22,7 @@ import {
   salesCalendarViewingWindow,
 } from "@/lib/real-estate/viewing-calendar";
 import { loadRealEstateCalendarViewings } from "@/lib/real-estate/viewing-calendar-load";
+import { redirectSolarSalesperson } from "@/lib/sales/solar-workflow/salesperson-home";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -55,6 +56,7 @@ export default async function SalesCalendarRoutePage({
 }) {
   const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
+  await redirectSolarSalesperson(session.clientId, "/sales/dashboard");
 
   if (session.demoGuest && session.clientId) {
     const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");

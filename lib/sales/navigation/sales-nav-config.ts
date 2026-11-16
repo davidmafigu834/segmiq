@@ -307,11 +307,14 @@ export const SALES_MOBILE_PRIMARY_IDS = ["dashboard", "pipeline", "whatsapp", "t
 
 export function salesMobilePrimaryItems(
   items: SalesNavItemConfig[],
-  businessType?: BusinessType | string | null
+  businessType?: BusinessType | string | null,
+  options?: { solarWorkflow?: boolean }
 ): SalesNavItemConfig[] {
   const order = isRealEstate(businessType)
     ? (["dashboard", "listings", "calendar", "transactions"] as const)
-    : SALES_MOBILE_PRIMARY_IDS;
+    : options?.solarWorkflow
+      ? (["dashboard", "leads", "whatsapp"] as const)
+      : SALES_MOBILE_PRIMARY_IDS;
   return order
     .map((id) => items.find((i) => i.id === id))
     .filter((i): i is SalesNavItemConfig => Boolean(i));
@@ -326,64 +329,34 @@ function withoutSolarDelivery(items: SalesNavItemConfig[], solarWorkflow?: boole
   return items.filter((item) => item.id !== "projects" && item.id !== "myWork");
 }
 
-/** Salesperson destinations that already exist. Not applied to Real Estate. */
-export const SOLAR_SALES_SECTION_ORDER: SalesNavSectionId[] = [
-  "overview",
-  "sales",
-  "field",
-  "intelligence",
-  "tools",
-];
+/** Salesperson home for solar: today, the lead list, and WhatsApp. Delivery stays on the company menu. */
+export const SOLAR_SALES_SECTION_ORDER: SalesNavSectionId[] = ["sales"];
 
-const SOLAR_SALES_ITEM_ORDER = [
-  "dashboard",
-  "whatsapp",
-  "pipeline",
-  "socialInbox",
-  "leads",
-  "quotes",
-  "tasks",
-  "wonLost",
-  "myWork",
-  "projects",
-  "calendar",
-  "command",
-  "reports",
-  "goals",
-  "toolbox",
-] as const;
+const SOLAR_SALES_ITEM_ORDER = ["dashboard", "leads", "whatsapp"] as const;
 
-const SOLAR_SALES_PLACEMENT: Record<string, { section: SalesNavSectionId; label?: string }> = {
-  dashboard: { section: "overview" },
-  whatsapp: { section: "sales" },
-  pipeline: { section: "sales", label: "Solar Pipeline" },
-  socialInbox: { section: "sales" },
-  leads: { section: "sales" },
-  quotes: { section: "sales" },
-  tasks: { section: "sales" },
-  wonLost: { section: "sales" },
-  myWork: { section: "field" },
-  projects: { section: "field" },
-  calendar: { section: "field" },
-  command: { section: "intelligence" },
-  reports: { section: "intelligence" },
-  goals: { section: "tools" },
-  toolbox: { section: "tools" },
+const SOLAR_SALES_PLACEMENT: Record<
+  string,
+  { section: SalesNavSectionId; label: string; mobileLabel: string }
+> = {
+  dashboard: { section: "sales", label: "Today", mobileLabel: "Today" },
+  leads: { section: "sales", label: "Leads", mobileLabel: "Leads" },
+  whatsapp: { section: "sales", label: "WhatsApp", mobileLabel: "WhatsApp" },
 };
 
 function applySolarSalesNavigation(items: SalesNavItemConfig[]): SalesNavItemConfig[] {
   const byId = new Map(items.map((item) => [item.id, item]));
-  const ordered = SOLAR_SALES_ITEM_ORDER.flatMap((id) => {
+  return SOLAR_SALES_ITEM_ORDER.flatMap((id) => {
     const item = byId.get(id);
     const place = SOLAR_SALES_PLACEMENT[id];
     if (!item || !place) return [];
-    return [{ ...item, section: place.section, label: place.label ?? item.label }];
+    return [{
+      ...item,
+      section: place.section,
+      label: place.label,
+      mobileLabel: place.mobileLabel,
+      mobileSlot: "primary" as const,
+    }];
   });
-  const seen = new Set(ordered.map((item) => item.id));
-  const extras = items
-    .filter((item) => !seen.has(item.id))
-    .map((item) => ({ ...item, section: "tools" as const, mobileSlot: item.mobileSlot ?? ("more" as const) }));
-  return [...ordered, ...extras];
 }
 
 export function salesNavSectionOrder(

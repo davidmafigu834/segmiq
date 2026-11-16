@@ -8,6 +8,7 @@ import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
 import { WonLostClient } from "@/components/sales/won-lost/WonLostClient";
 import { Skeleton } from "@/components/sales/ui";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
+import { redirectSolarSalesperson } from "@/lib/sales/solar-workflow/salesperson-home";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ function WonLostFallback() {
 export default async function SalesWonLostPage() {
   const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
+  await redirectSolarSalesperson(session.clientId, "/sales/leads");
 
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
   const shell = await loadSalesShellProps(session);

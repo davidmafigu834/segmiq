@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addDays, format, formatDistanceToNow } from "date-fns";
@@ -8,11 +8,12 @@ import { ArrowLeft, ArrowLeftRight, PanelRightClose } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { QuotationBuilder } from "@/components/leads/QuotationBuilder";
 import { CreateFromDealDialog } from "@/components/work-projects/CreateFromDealDialog";
+import { PremiumSheet } from "@/components/sales/PremiumSheet";
+import { Button } from "@/components/sales/ui";
 import { TransferDialog } from "@/components/inbox/TransferDialog";
 import { TransferToSupportDialog } from "@/components/inbox/TransferToSupportDialog";
 import { displayContactName, WhatsAppAvatar } from "@/components/inbox/WhatsAppAvatar";
-import { SalesCopilotPanel } from "@/components/inbox/SalesCopilotWorkspace";
-import { formatCurrencyAmount, hasMeaningfulScore } from "@/lib/inbox/format-display";
+import { formatCurrencyAmount } from "@/lib/inbox/format-display";
 import type { InboxConversation } from "@/lib/inbox/types";
 import type { SolarPanelActionKind } from "@/lib/sales/solar-workflow/opportunity";
 import {
@@ -154,6 +155,8 @@ export function SolarOpportunityPanel({
   const [transferOpen, setTransferOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [editingQuote, setEditingQuote] = useState<QuotationWithItems | null>(null);
+  const [note, setNote] = useState("");
+  const [noteBusy, setNoteBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -191,10 +194,28 @@ export function SolarOpportunityPanel({
   const name = card?.customer.name || displayContactName(conversation);
   const phone = card?.customer.phone || conversation.phone;
   const owner = card?.customer.ownerName || conversation.assignee?.name || "Unassigned";
-  const earlyScore =
-    card && (card.stage === "NEW_LEAD" || card.stage === "CONTACTED") && hasMeaningfulScore(conversation.score, conversation.breakdown)
-      ? conversation.score
-      : null;
+
+  async function saveNote(event: FormEvent) {
+    event.preventDefault();
+    const text = note.trim();
+    if (!text || noteBusy) return;
+    setNoteBusy(true);
+    try {
+      const response = await fetch(`/api/leads/${conversation.id}/note`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: text }),
+      });
+      if (!response.ok) {
+        setMessage("Could not save the note.");
+        return;
+      }
+      setNote("");
+      setMessage("Note saved.");
+    } finally {
+      setNoteBusy(false);
+    }
+  }
   const panelClass =
     panelWidth == null
       ? "w-[min(100%,380px)] min-w-0 shrink-0 max-[1099px]:w-full max-[1099px]:max-w-none"
@@ -396,7 +417,6 @@ export function SolarOpportunityPanel({
       </header>
 
       <div className="inbox-scroll min-h-0 flex-1 overflow-y-auto bg-sales-surface pb-[env(safe-area-inset-bottom)]">
-        <SalesCopilotPanel leadId={conversation.id} />
         {loading ? <SolarSkeleton /> : null}
         {!loading && loadError ? (
           <p className="p-4 text-[13px] text-sales-text-secondary">CRM context is temporarily unavailable. Messaging remains active.</p>
@@ -432,6 +452,26 @@ export function SolarOpportunityPanel({
                   onSchedule={(date) => void saveReminder(format(date, "yyyy-MM-dd"))}
                 />
               ) : null}
+              <form onSubmit={(event) => void saveNote(event)} className="mt-3 border-t border-sales-border-subtle pt-3">
+                <label className="block text-[12px] font-semibold text-sales-text-label" htmlFor={`wa-note-${conversation.id}`}>
+                  Note
+                </label>
+                <textarea
+                  id={`wa-note-${conversation.id}`}
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                  rows={3}
+                  placeholder="What you learned"
+                  className="mt-1.5 w-full rounded-[10px] border border-sales-border bg-sales-bg px-3 py-2 text-[13px] text-sales-text-primary"
+                />
+                <button
+                  type="submit"
+                  disabled={noteBusy || !note.trim()}
+                  className="mt-2 inline-flex min-h-11 items-center rounded-[9px] border border-sales-border px-3 text-[13px] font-semibold text-sales-text-primary disabled:opacity-50"
+                >
+                  {noteBusy ? "Saving…" : "Save note"}
+                </button>
+              </form>
             </div>
 
             <Section title="Account">
@@ -440,9 +480,6 @@ export function SolarOpportunityPanel({
                 {card.customer.sourceLabel ? ` · ${card.customer.sourceLabel}` : ""}
               </p>
               <p className="mt-1 text-[12.5px] text-sales-text-secondary">Owner · {owner}</p>
-              {earlyScore != null ? (
-                <p className="mt-2 text-[12px] text-sales-text-muted">Lead score · {earlyScore}</p>
-              ) : null}
               {!conversation.assignedToId && canClaim ? (
                 <button
                   type="button"
@@ -1065,41 +1102,48 @@ function ScheduleVisitDialog({
     onSaved();
   }
 
+  const field = "mt-1 block min-h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[14px] text-sales-text-primary";
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 sm:items-center">
-      <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-[16px] bg-sales-surface p-5 sm:rounded-[16px]">
-        <h2 className="text-[1.15rem] font-semibold text-sales-text-primary">Schedule site visit</h2>
-        <p className="mt-1 text-[13px] text-sales-text-secondary">This is a pre-sale visit. It stays with this WhatsApp conversation.</p>
-        <label className="mt-4 block text-[12px] font-medium">Date
-          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="mt-1 block min-h-11 w-full rounded-[10px] border border-sales-border px-3" />
+    <PremiumSheet
+      title="Schedule site visit"
+      description="This is a pre-sale visit. It stays with this WhatsApp conversation."
+      size="sm"
+      onClose={onClose}
+      closeDisabled={saving}
+      footer={
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button variant="primary" loading={saving} onClick={() => void save()}>Schedule site visit</Button>
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        <label className="block text-[12px] font-medium text-sales-text-secondary">Date
+          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className={field} />
         </label>
-        <label className="mt-3 block text-[12px] font-medium">Time
-          <input type="time" value={time} onChange={(event) => setTime(event.target.value)} className="mt-1 block min-h-11 w-full rounded-[10px] border border-sales-border px-3" />
+        <label className="block text-[12px] font-medium text-sales-text-secondary">Time
+          <input type="time" value={time} onChange={(event) => setTime(event.target.value)} className={field} />
         </label>
-        <label className="mt-3 block text-[12px] font-medium">Duration
-          <select value={duration} onChange={(event) => setDuration(Number(event.target.value))} className="mt-1 block min-h-11 w-full rounded-[10px] border border-sales-border px-3">
+        <label className="block text-[12px] font-medium text-sales-text-secondary">Duration
+          <select value={duration} onChange={(event) => setDuration(Number(event.target.value))} className={field}>
             <option value={60}>1 hour</option>
             <option value={90}>90 minutes</option>
             <option value={120}>2 hours</option>
           </select>
         </label>
-        <label className="mt-3 block text-[12px] font-medium">Assigned
-          <select value={assignedToId} onChange={(event) => setAssignedToId(event.target.value)} className="mt-1 block min-h-11 w-full rounded-[10px] border border-sales-border px-3">
+        <label className="block text-[12px] font-medium text-sales-text-secondary">Assigned
+          <select value={assignedToId} onChange={(event) => setAssignedToId(event.target.value)} className={field}>
             {staff.map((person) => (
               <option key={person.id} value={person.id}>{person.name}</option>
             ))}
           </select>
         </label>
-        <label className="mt-3 block text-[12px] font-medium">Site
-          <input value={address} onChange={(event) => setAddress(event.target.value)} className="mt-1 block min-h-11 w-full rounded-[10px] border border-sales-border px-3" />
+        <label className="block text-[12px] font-medium text-sales-text-secondary">Site
+          <input value={address} onChange={(event) => setAddress(event.target.value)} className={field} />
         </label>
-        {error ? <p className="mt-3 text-[12.5px] text-sales-danger">{error}</p> : null}
-        <button type="button" disabled={saving} onClick={() => void save()} className="mt-4 min-h-11 w-full rounded-[10px] bg-sales-brand text-[14px] font-semibold text-sales-brand-text disabled:opacity-50">
-          {saving ? "Scheduling…" : "Schedule site visit"}
-        </button>
-        <button type="button" onClick={onClose} className="mt-2 min-h-11 w-full text-[13px] font-semibold text-sales-text-secondary">Cancel</button>
+        {error ? <p className="text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
       </div>
-    </div>
+    </PremiumSheet>
   );
 }
 
@@ -1135,18 +1179,23 @@ function WonDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 sm:items-center">
-      <div className="w-full max-w-md rounded-t-[16px] bg-sales-surface p-5 sm:rounded-[16px]">
-        <h2 className="text-[1.15rem] font-semibold">Mark deal won</h2>
-        <label className="mt-3 block text-[12px] font-medium">Won value
-          <input inputMode="decimal" value={value} onChange={(event) => setValue(event.target.value)} className="mt-1 block min-h-11 w-full rounded-[10px] border border-sales-border px-3" />
-        </label>
-        {error ? <p className="mt-3 text-[12.5px] text-sales-danger">{error}</p> : null}
-        <button type="button" disabled={saving} onClick={() => void save()} className="mt-4 min-h-11 w-full rounded-[10px] bg-sales-brand text-[14px] font-semibold text-sales-brand-text">
-          Mark deal won
-        </button>
-        <button type="button" onClick={onClose} className="mt-2 min-h-11 w-full text-[13px] font-semibold text-sales-text-secondary">Cancel</button>
-      </div>
-    </div>
+    <PremiumSheet
+      title="Mark deal won"
+      description="Confirm the won value before delivery starts."
+      size="sm"
+      onClose={onClose}
+      closeDisabled={saving}
+      footer={
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button variant="primary" loading={saving} onClick={() => void save()}>Mark deal won</Button>
+        </div>
+      }
+    >
+      <label className="block text-[12px] font-medium text-sales-text-secondary">Won value
+        <input inputMode="decimal" value={value} onChange={(event) => setValue(event.target.value)} className="mt-1 block min-h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[14px] text-sales-text-primary" />
+      </label>
+      {error ? <p className="mt-3 text-[13px] text-sales-danger-fg" role="alert">{error}</p> : null}
+    </PremiumSheet>
   );
 }

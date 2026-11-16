@@ -38,6 +38,8 @@ import { QuotationsPanel } from "@/components/leads/QuotationsPanel";
 import { HandoverBanner } from "@/components/leads/HandoverBanner";
 import { LeadBriefing } from "@/components/leads/LeadBriefing";
 import { SolarStageCue } from "@/components/sales/solar/SolarStageCue";
+import { SolarLeadWork } from "@/components/sales/solar/SolarLeadWork";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { AskSegmiq } from "@/components/intelligence/AskSegmiq";
 import { DealValueEditor } from "@/components/leads/DealValueEditor";
 import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
@@ -101,6 +103,8 @@ export function LeadDetailPanel({
   const { data: session } = useSession();
   const router = useRouter();
   const role = session?.role;
+  const { solarWorkflow } = useCompanyWorkspace();
+  const solarSales = solarWorkflow && role === "SALESPERSON";
   const [logRefresh, setLogRefresh] = useState(0);
   const [businessType, setBusinessType] = useState<"trades" | "real_estate">("trades");
   const [timelineRefresh, setTimelineRefresh] = useState(0);
@@ -336,12 +340,12 @@ export function LeadDetailPanel({
             ) : null}
           </div>
 
-          {score != null && Number.isFinite(score) ? (
+          {solarSales || score == null || !Number.isFinite(score) ? null : (
             <LeadScoreGauge score={score} size={52} className="hidden shrink-0 sm:flex" />
-          ) : null}
+          )}
 
           <div className="flex shrink-0 items-center gap-0.5">
-            {!isReadOnly && !isClosed ? (
+            {!isReadOnly && !isClosed && !solarSales ? (
               <button
                 type="button"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] text-sales-text-muted transition-colors hover:bg-sales-surface-hover hover:text-sales-warning-fg"
@@ -400,7 +404,7 @@ export function LeadDetailPanel({
                         Open quote
                       </button>
                     ) : null}
-                    {!isReadOnly ? (
+                    {!isReadOnly && !solarSales ? (
                       <button
                         type="button"
                         className="flex w-full px-3 py-2 text-left text-[13px] hover:bg-sales-surface-hover"
@@ -439,7 +443,7 @@ export function LeadDetailPanel({
               Quote
             </button>
           ) : null}
-          {!isReadOnly ? (
+          {!isReadOnly && !solarSales ? (
             <button type="button" onClick={() => setActiveTab("send")} className={tabClass(activeTab === "send")}>
               Send
             </button>
@@ -488,7 +492,7 @@ export function LeadDetailPanel({
 
           <div className={activeTab !== "details" ? "hidden" : ""}>
             <div className="space-y-4 p-4 max-md:pt-3 sm:p-5">
-              {score != null && Number.isFinite(score) ? (
+              {solarSales ? null : score != null && Number.isFinite(score) ? (
                 <div className="flex items-center gap-4 rounded-[12px] border border-sales-border bg-sales-surface-subtle px-4 py-3.5">
                   <LeadScoreBadge score={score} />
                   <div className="min-w-0 flex-1">
@@ -527,12 +531,21 @@ export function LeadDetailPanel({
                     className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[#25D366] px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
                   >
                     <SiWhatsapp size={16} aria-hidden />
-                    Open in Sales Hub
+                    {solarSales ? "Open WhatsApp" : "Open in Sales Hub"}
                   </Link>
                 </div>
               ) : null}
 
               <SolarStageCue leadId={activeLead.id} visitBase="/sales/site-visits" quotesBase="/sales/quotes" />
+              {solarSales ? (
+                <SolarLeadWork
+                  key={`${activeLead.id}-${activeLead.follow_up_date ?? ""}`}
+                  leadId={activeLead.id}
+                  followUpDate={activeLead.follow_up_date}
+                  onSaved={() => setTimelineRefresh((k) => k + 1)}
+                />
+              ) : (
+                <>
               <LeadBriefing leadId={activeLead.id} />
               <AskSegmiq leadId={activeLead.id} />
               <LeadIntelligenceCard
@@ -540,7 +553,11 @@ export function LeadDetailPanel({
                 canReprocess={role === "SUPER_ADMIN" || role === "CLIENT_MANAGER"}
               />
               <HandoverBanner leadId={activeLead.id} />
+                </>
+              )}
 
+              {solarSales ? null : (
+              <>
               <div className="rounded-[12px] border border-sales-border bg-sales-surface p-3 text-[13px]">
                 <p className="text-[11px] font-medium text-sales-text-muted">
                   Lead lifecycle
@@ -613,6 +630,9 @@ export function LeadDetailPanel({
                 />
               ) : null}
 
+              </>
+              )}
+
               {!isWhatsAppChat ? <FacebookFormIntentSection formData={activeLead.form_data} /> : null}
 
               <div className="space-y-1.5">
@@ -644,7 +664,7 @@ export function LeadDetailPanel({
                 {!isWhatsAppChat ? <MagicLinkButton token={activeLead.magic_token} /> : null}
               </div>
 
-              {!isReadOnly && (canRecordWonCustomer || (!isClosed && !converted)) ? (
+              {!solarSales && !isReadOnly && (canRecordWonCustomer || (!isClosed && !converted)) ? (
                 <div>
                   <p className="mb-3 text-[11px] font-medium text-sales-text-muted">
                     Qualification
@@ -727,6 +747,7 @@ export function LeadDetailPanel({
                       <Plus size={18} strokeWidth={1.8} aria-hidden />
                       Log call
                     </button>
+                    {solarSales ? null : (
                     <button
                       type="button"
                       className={qaBtn}
@@ -736,6 +757,7 @@ export function LeadDetailPanel({
                       <ExternalLink size={18} strokeWidth={1.8} aria-hidden />
                       Send assets
                     </button>
+                    )}
                     <button
                       type="button"
                       className={qaBtn}
@@ -751,6 +773,7 @@ export function LeadDetailPanel({
             </div>
 
             {role === "SALESPERSON" &&
+            !solarSales &&
             !isReadOnly &&
             !isClosed &&
             !converted ? (
@@ -764,6 +787,7 @@ export function LeadDetailPanel({
                 </button>
               </div>
             ) : role === "SALESPERSON" &&
+              !solarSales &&
               !isReadOnly &&
               converted &&
               (activeLead.active_deal_id || relatedDeal?.id) ? (

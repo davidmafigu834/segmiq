@@ -8,6 +8,7 @@ import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
 import { SalesGoalsClient } from "@/components/sales/goals/SalesGoalsClient";
 import { Skeleton } from "@/components/sales/ui";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
+import { redirectSolarSalesperson } from "@/lib/sales/solar-workflow/salesperson-home";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ function GoalsFallback() {
 export default async function SalesGoalsPage() {
   const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
+  await redirectSolarSalesperson(session.clientId, "/sales/dashboard");
 
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
   const shell = await loadSalesShellProps(session);

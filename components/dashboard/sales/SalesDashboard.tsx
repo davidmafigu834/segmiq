@@ -19,6 +19,8 @@ import { PipelineSnapshotCard } from "./PipelineSnapshotCard";
 import { AgentDailyWorkspace } from "@/components/real-estate/AgentDailyWorkspace";
 import { RealEstatePageBones } from "@/components/real-estate/ui/RealEstatePageBones";
 import { SalesCopilotDailyWorkspace } from "./SalesCopilotDailyWorkspace";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { SolarToday } from "@/components/sales/solar/SolarToday";
 
 /** Action-oriented KPIs stay elevated; the rest demote to a dense strip. */
 const PRIMARY_KPI_IDS = new Set(["new-enquiries", "followups", "active-deals"]);
@@ -62,6 +64,8 @@ function SalesDashboardInner({
   const { openLogSheet, logSheetProps } = useSalesLogSheet();
   const { sheet } = logSheetProps(legacy.allActiveLeads);
   const isRealEstate = Boolean(data.realEstate && data.clientId);
+  const { solarWorkflow } = useCompanyWorkspace();
+  const solar = solarWorkflow && !isRealEstate;
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps(legacy.assignmentMode ?? "direct", { realEstate: isRealEstate });
   const roleLabel = isRealEstate ? "Agent" : "Sales Executive";
@@ -123,6 +127,23 @@ function SalesDashboardInner({
             clientId={data.clientId!}
             data={data.realEstate!}
           />
+      ) : solar ? (
+        <>
+          <DashboardHeader
+            firstName={firstName}
+            userName={fullName}
+            avatarUrl={avatarUrl}
+            unreadNotifications={unreadNotifications}
+            notificationRole={notificationRole}
+            onOpenLog={() => openLogSheet("")}
+            onAddLead={openAddHubSheet}
+            toolbar
+            demoGuest={demoGuest}
+            title="Today"
+            breadcrumb="Sales / Today"
+          />
+          <SolarToday onAddLead={demoGuest ? undefined : openAddHubSheet} />
+        </>
       ) : (
         <>
           <DashboardHeader

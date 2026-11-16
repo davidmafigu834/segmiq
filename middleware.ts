@@ -236,6 +236,7 @@ export async function middleware(req: NextRequest) {
     path.startsWith("/dev/listing-preview") ||
     path.startsWith("/dev/compliance-preview") ||
     path.startsWith("/dev/real-estate-ui") ||
+    path.startsWith("/dev/solar-ui") ||
     path.startsWith("/dev/superadmin-ui") ||
     path.startsWith("/f/") ||
     path === "/cloud" ||

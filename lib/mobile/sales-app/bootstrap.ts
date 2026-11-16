@@ -39,7 +39,7 @@ import {
   resolveSalesNavItems,
   salesMobilePrimaryItems,
 } from "@/lib/sales/navigation/sales-nav-config";
-import { resolveSalesTimezone } from "@/lib/sales/intelligence/timezone";
+import { organisationTimeZone } from "@/lib/sales/intelligence/timezone";
 import {
   mobileApiError,
   type MobileApiErrorCode,
@@ -176,7 +176,7 @@ export type SalesAppBootstrapV1 = {
     timeZone: {
       /** Organisation setting (client_marketing_settings.timezone); null when never set. */
       configured: string | null;
-      /** Zone the server uses for this organisation's sales day boundaries. */
+      /** Saved organisation zone, otherwise the company-settings default. Not the agency platform default. */
       effective: string;
       source: "ORGANISATION" | "PLATFORM_DEFAULT";
     };
@@ -454,7 +454,7 @@ function navigationFor(
   if (salesAccess === "BLOCKED") {
     return { home: null, primary: [], sections, destinations: [] };
   }
-  const primaryIds = new Set(salesMobilePrimaryItems(items, experience.businessType).map((i) => i.id));
+  const primaryIds = new Set(salesMobilePrimaryItems(items, experience.businessType, { solarWorkflow }).map((i) => i.id));
   const destinations = items.map((item) => ({
     id: destinationId(item.id),
     label: item.label,
@@ -463,7 +463,7 @@ function navigationFor(
     placement: primaryIds.has(item.id) ? ("PRIMARY" as const) : ("MORE" as const),
     webPath: item.href,
   }));
-  const primary = salesMobilePrimaryItems(items, experience.businessType).map((i) => destinationId(i.id));
+  const primary = salesMobilePrimaryItems(items, experience.businessType, { solarWorkflow }).map((i) => destinationId(i.id));
   return { home: destinationId("dashboard"), primary, sections, destinations };
 }
 
@@ -494,7 +494,7 @@ export function buildSalesAppBootstrap(
   const salesAccess: SalesAccessV1 = subscriptionStatus === "SUSPENDED" ? "BLOCKED" : "ALLOWED";
   const navigation = navigationFor(experience, salesAccess);
   const assignmentMode = normalizeAssignmentMode(org.assignmentMode);
-  const effectiveTimeZone = resolveSalesTimezone(source.configuredTimeZone ?? source.platformDefaultTimeZone);
+  const effectiveTimeZone = organisationTimeZone(source.configuredTimeZone);
   const quote = source.quotationSettings;
 
   return {

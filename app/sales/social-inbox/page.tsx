@@ -6,6 +6,7 @@ import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import { SocialInboxSalesHost } from "@/components/social-inbox/SocialInboxWorkspace";
 import { Skeleton } from "@/components/sales/ui";
+import { redirectSolarSalesperson } from "@/lib/sales/solar-workflow/salesperson-home";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export default async function SalesSocialInboxPage() {
   const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
   if (!session.clientId) redirect("/login");
+  await redirectSolarSalesperson(session.clientId, "/sales/inbox");
 
   const shell = await loadSalesShellProps(session);
   const { loadDemoDatasetForClient } = await import("@/lib/demo/provider");

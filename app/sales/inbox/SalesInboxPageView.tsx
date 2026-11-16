@@ -5,6 +5,7 @@ import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { TeamInbox } from "@/components/inbox/TeamInbox";
 import { WhatsAppSalesHubShell } from "@/components/inbox/WhatsAppSalesHubShell";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
+import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 import type { InboxFilter } from "@/lib/inbox/types";
 
 function InboxSuspenseFallback() {
@@ -78,6 +79,10 @@ export async function SalesInboxPageView({
     (navBadges.followUpDue || 0);
   const tasksBadge = navBadges.followUpsToday || navBadges.callNow || 0;
 
+  const solar = await companyUsesSolarWorkflow(session.clientId);
+  const hubTitle = solar ? "WhatsApp" : pageTitle;
+  const hubBreadcrumb = solar ? "Sales / WhatsApp" : breadcrumb;
+
   return (
     <WhatsAppSalesHubShell
       userName={session.user?.name ?? "Sales"}
@@ -97,14 +102,14 @@ export async function SalesInboxPageView({
           alsoSells={session.alsoSells}
           clientId={session.clientId}
           roleSubtitle={isSolo ? "Owner" : "Sales Executive"}
-          pipelineHref="/sales/pipeline"
+          pipelineHref={solar ? "/sales/leads" : "/sales/pipeline"}
           settingsHref="/sales/profile"
           inboxHref="/sales/inbox"
           teamHref={isSolo ? undefined : dashboardHref}
           initialFilter={initialFilter}
           backHref={dashboardHref}
-          pageTitle={pageTitle}
-          breadcrumb={breadcrumb}
+          pageTitle={hubTitle}
+          breadcrumb={hubBreadcrumb}
           unreadNotifications={unreadNotifications}
           avatarUrl={avatarUrl}
         />

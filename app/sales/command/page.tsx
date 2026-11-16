@@ -7,12 +7,14 @@ import { SoloLayout } from "@/components/layouts/SoloLayout";
 import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
 import { SalesCommandWorkspace } from "@/components/sales/command/SalesCommandWorkspace";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
+import { redirectSolarSalesperson } from "@/lib/sales/solar-workflow/salesperson-home";
 
 export const dynamic = "force-dynamic";
 
 export default async function SalesCommandPage() {
   const session = await getOperationalSession();
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
+  await redirectSolarSalesperson(session.clientId, "/sales/dashboard");
 
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
   const shell = await loadSalesShellProps(session);

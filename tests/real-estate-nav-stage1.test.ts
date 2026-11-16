@@ -144,8 +144,14 @@ describe("real estate stage 1 navigation", () => {
     );
     assert.equal(trades.find((item) => item.id === "quotes")?.href, "/sales/quotes");
     const solar = resolveSalesNavItems(false, "trades", { solarWorkflow: true });
-    assert.equal(solar.some((item) => item.id === "projects"), true);
+    assert.deepEqual(solar.map((item) => item.id), ["dashboard", "leads", "whatsapp"]);
+    assert.equal(solar.find((item) => item.id === "dashboard")?.label, "Today");
+    assert.equal(solar.some((item) => item.id === "projects" || item.id === "myWork"), false);
     assert.equal(solar.some((item) => item.id === "listings"), false);
+    assert.deepEqual(
+      salesMobilePrimaryItems(solar, "trades", { solarWorkflow: true }).map((item) => item.id),
+      ["dashboard", "leads", "whatsapp"]
+    );
     const company = getCompanyNavigation("trades");
     assert.deepEqual(getCompanyNavSectionOrder("trades"), ["company", "products", "tools"]);
     assert.equal(company.some((item) => item.id === "review" || item.id === "people"), false);

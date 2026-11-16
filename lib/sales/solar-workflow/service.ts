@@ -69,6 +69,7 @@ export type SolarPipelineCard = {
   value: number | null;
   currency: string;
   nextAction: string;
+  reminderAt: string | null;
   quoteAccepted: boolean;
   visit: {
     id: string;
@@ -289,14 +290,14 @@ export async function loadSolarSalesBoard(
   const [{ data: leads }, { data: deals }, { data: visits }, { data: quotes }, { data: users }] = await Promise.all([
     supabase
       .from("leads")
-      .select("id, client_id, name, phone, status, source, project_type, form_data, assigned_to_id, contact_id, created_at, updated_at, active_deal_id")
+      .select("id, client_id, name, phone, status, source, project_type, form_data, assigned_to_id, contact_id, created_at, updated_at, active_deal_id, follow_up_date")
       .eq("client_id", actor.clientId)
       .in("status", ["NEW", "CONTACTED", "QUALIFIED", "CONVERTED_TO_DEAL"])
       .order("updated_at", { ascending: false })
       .limit(500),
     supabase
       .from("deals")
-      .select("id, client_id, originating_lead_id, contact_id, owner_id, stage, name, service_summary, location, estimated_value, won_value, sales_commercial_intent, updated_at")
+      .select("id, client_id, originating_lead_id, contact_id, owner_id, stage, name, service_summary, location, estimated_value, won_value, sales_commercial_intent, updated_at, next_action_at")
       .eq("client_id", actor.clientId)
       .order("updated_at", { ascending: false })
       .limit(500),
@@ -392,6 +393,7 @@ export async function loadSolarSalesBoard(
       value: value == null ? null : Number(value),
       currency: quote?.currency || "USD",
       nextAction: solarPrimaryAction(factsFrom({ preset, lead, deal, visits: visitFacts, quotes: leadQuotes })),
+      reminderAt: deal?.next_action_at || lead.follow_up_date || null,
       quoteAccepted: quoteAccepted(leadQuotes),
       visit: latestVisit
         ? {

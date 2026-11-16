@@ -240,7 +240,10 @@ test("real estate, solar and general organisations resolve to their experiences"
   assert.equal(solar.capabilities.featureFlags.solarWorkflow, true);
   assert.equal(solar.capabilities.featureFlags.demoWorkspace, true);
   assert.equal(solar.organisation.workspaceMode, "demo");
-  assert.ok(solar.navigation.destinations.some((d) => d.id === "PROJECTS"));
+  assert.deepEqual(solar.navigation.destinations.map((d) => d.id), ["DASHBOARD", "LEADS", "WHATSAPP"]);
+  assert.equal(solar.navigation.destinations.find((d) => d.id === "DASHBOARD")?.label, "Today");
+  assert.deepEqual(solar.navigation.primary, ["DASHBOARD", "LEADS", "WHATSAPP"]);
+  assert.equal(solar.navigation.destinations.some((d) => d.id === "PROJECTS"), false);
   assert.equal(solar.navigation.destinations.some((d) => d.id === "LISTINGS"), false);
 
   const general = (await bootstrapAs(data, ok(authFor(userRow(data, "sp-a"))))).body as unknown as SalesAppBootstrapV1;

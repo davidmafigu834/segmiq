@@ -25,6 +25,8 @@ export function DashboardHeader({
   toolbar = false,
   showQuickActions = true,
   demoGuest = false,
+  title,
+  breadcrumb = "Sales / Dashboard",
 }: {
   firstName: string;
   userName: string;
@@ -40,13 +42,15 @@ export function DashboardHeader({
   /** The Real Estate dashboard places its own create actions beside the page title. */
   showQuickActions?: boolean;
   demoGuest?: boolean;
+  title?: string;
+  breadcrumb?: string;
 }) {
   const greeting = `Good ${greetingPart()}, ${firstName}`;
 
   return (
     <SalesPageHeader
-      breadcrumb="Sales / Dashboard"
-      title={toolbar ? "Dashboard" : greeting}
+      breadcrumb={breadcrumb}
+      title={title ?? (toolbar ? "Dashboard" : greeting)}
       description={toolbar ? undefined : description}
       toolbar={toolbar}
       actions={

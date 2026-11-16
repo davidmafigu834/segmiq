@@ -101,6 +101,7 @@ export function SalesQuickActions({
   realEstate?: boolean;
 }) {
   const router = useRouter();
+  const { solarWorkflow } = useCompanyWorkspace();
   const items = [
     onAddLead
       ? {
@@ -120,26 +121,34 @@ export function SalesQuickActions({
       : null,
     {
       key: "sales-hub",
-      label: "Open Sales Hub",
+      label: solarWorkflow ? "WhatsApp" : "Open Sales Hub",
       icon: <BrandIcon brand="whatsapp" size={16} />,
       onSelect: () => router.push("/sales/inbox"),
     },
-    {
-      key: "quotes",
-      label: realEstate ? "View listings" : "View quotations",
-      icon: realEstate ? (
-        <Building2 size={16} strokeWidth={1.8} aria-hidden />
-      ) : (
-        <FileText size={16} strokeWidth={1.8} aria-hidden />
-      ),
-      onSelect: () => router.push(realEstate ? "/sales/listings" : "/sales/quotes"),
-    },
-    {
-      key: "calendar",
-      label: "View calendar",
-      icon: <CalendarDays size={16} strokeWidth={1.8} aria-hidden />,
-      onSelect: () => router.push("/sales/calendar"),
-    },
+    solarWorkflow || realEstate
+      ? null
+      : {
+          key: "quotes",
+          label: "View quotations",
+          icon: <FileText size={16} strokeWidth={1.8} aria-hidden />,
+          onSelect: () => router.push("/sales/quotes"),
+        },
+    realEstate
+      ? {
+          key: "quotes",
+          label: "View listings",
+          icon: <Building2 size={16} strokeWidth={1.8} aria-hidden />,
+          onSelect: () => router.push("/sales/listings"),
+        }
+      : null,
+    solarWorkflow
+      ? null
+      : {
+          key: "calendar",
+          label: "View calendar",
+          icon: <CalendarDays size={16} strokeWidth={1.8} aria-hidden />,
+          onSelect: () => router.push("/sales/calendar"),
+        },
   ].filter((item): item is NonNullable<typeof item> => Boolean(item));
 
   return (

@@ -7,8 +7,10 @@ import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { SoloLayout } from "@/components/layouts/SoloLayout";
 import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
 import { SalesLeadsClient } from "@/components/sales/leads-directory/SalesLeadsClient";
+import { SolarSalesLeads } from "@/components/sales/solar/SolarSalesLeads";
 import { Skeleton } from "@/components/sales/ui";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
+import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -43,6 +45,7 @@ export default async function SalesLeadsDirectoryPage() {
 
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
   const shell = await loadSalesShellProps(session);
+  const solar = session.clientId ? await companyUsesSolarWorkflow(session.clientId) : false;
 
   let assignmentMode: "direct" | "pool" | "round_robin" = "direct";
   if (session.clientId && !session.demoGuest) {
@@ -69,14 +72,18 @@ export default async function SalesLeadsDirectoryPage() {
         assignmentMode={assignmentMode}
         breadcrumb="Sales / Leads"
         title="Leads"
-        description="All your inbound and captured leads in one place. Engage, qualify and convert."
+        description={solar ? "Add a lead, then filter by stage. Open one to write a note or set the reminder." : "All your inbound and captured leads in one place. Engage, qualify and convert."}
         searchPlaceholder="Search leads, customers, quotes..."
       >
         <Suspense fallback={<LeadsFallback />}>
-          <SalesLeadsClient
-            assignmentMode={assignmentMode}
-            repName={session.user?.name ?? ""}
-          />
+          {solar ? (
+            <SolarSalesLeads assignmentMode={assignmentMode} />
+          ) : (
+            <SalesLeadsClient
+              assignmentMode={assignmentMode}
+              repName={session.user?.name ?? ""}
+            />
+          )}
         </Suspense>
       </SalesAppShell>
     </Layout>
