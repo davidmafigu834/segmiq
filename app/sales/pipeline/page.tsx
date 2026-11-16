@@ -16,6 +16,9 @@ import { RealEstatePipelineBoard } from "@/components/real-estate/RealEstatePipe
 import { getRealEstatePipelineData } from "@/lib/sales/get-real-estate-pipeline-data";
 import { isRealEstate } from "@/lib/terminology";
 import { readSalesWorkflowPreset } from "@/lib/sales/solar-workflow/service";
+import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
+import { SolarPipelineDesk } from "@/components/sales/solar/SolarPipelineDesk";
+import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import type { DealRow, QuotationRow } from "@/types";
 import { demoStageLabels } from "@/lib/demo/stage-labels";
 
@@ -52,7 +55,20 @@ export default async function SalesPipelinePage() {
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
 
   if (session.clientId && (await readSalesWorkflowPreset(session.clientId)) === "SOLAR_INSTALLATION") {
-    redirect("/sales/leads");
+    const shell = await loadSalesShellProps(session);
+    return (
+      <SalesLayout breadcrumb="Sales / SOLAR PIPELINE" pageTitle="Solar Pipeline" hideShellHeader hideShellSidebar contentFlush>
+        <SalesAppShell
+          {...shell}
+          breadcrumb="Sales / Solar Pipeline"
+          title="Solar Pipeline"
+          showDefaultHeader={false}
+          searchPlaceholder="Search leads, customers, quotes..."
+        >
+          <SolarPipelineDesk />
+        </SalesAppShell>
+      </SalesLayout>
+    );
   }
 
   const supabase = createAdminClient();

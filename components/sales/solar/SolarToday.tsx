@@ -1,14 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { SolarSalesStage } from "@/lib/sales/solar-workflow";
+import { SOLAR_SALES_STAGE_LABEL } from "@/lib/sales/solar-workflow";
+import { Bones, EmptyNote, Head, Panel, WorkRow } from "./desk";
 
 type Card = {
   leadId: string;
   customerName: string;
-  stageLabel: string;
+  stage: SolarSalesStage;
+  location: string | null;
   nextAction: string;
   reminderAt: string | null;
+  visit: { scheduledStartAt: string | null } | null;
 };
 
 function dueKey(value: string): string | null {
@@ -28,6 +33,7 @@ function todayKey() {
 }
 
 export function SolarToday({ onAddLead }: { onAddLead?: () => void }) {
+  const router = useRouter();
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,13 +44,13 @@ export function SolarToday({ onAddLead }: { onAddLead?: () => void }) {
       .then((res) => res.json())
       .then((json: { cards?: Card[]; error?: string }) => {
         if (cancelled) return;
-        if (!json.cards) setError(json.error || "Could not load reminders.");
+        if (!json.cards) setError(json.error || "Could not load the desk.");
         else setCards(json.cards);
         setLoading(false);
       })
       .catch(() => {
         if (!cancelled) {
-          setError("Could not load reminders.");
+          setError("Could not load the desk.");
           setLoading(false);
         }
       });
@@ -54,73 +60,98 @@ export function SolarToday({ onAddLead }: { onAddLead?: () => void }) {
   }, []);
 
   const today = todayKey();
-  const rows = cards.flatMap((card) => {
+  const attention = cards.flatMap((card) => {
     if (!card.reminderAt) return [];
     const key = dueKey(card.reminderAt);
     if (!key || key > today) return [];
     return [{ card, overdue: key < today }];
   });
-  const overdue = rows.filter((row) => row.overdue);
-  const due = rows.filter((row) => !row.overdue);
+  const overdue = attention.filter((row) => row.overdue);
+  const due = attention.filter((row) => !row.overdue);
+  const open = cards.filter((card) => card.stage !== "WON" && card.stage !== "LOST").length;
+  const visits = cards.filter((card) => card.visit?.scheduledStartAt && dueKey(card.visit.scheduledStartAt) === today).length;
+  const won = cards.filter((card) => card.stage === "WON").length;
+
+  function openLead(id: string) {
+    router.push(`/sales/leads?lead=${id}`);
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="font-display text-[24px] font-semibold tracking-[-0.03em] text-sales-text-primary">Today</h2>
-          <p className="mt-1 max-w-[52ch] text-[14px] text-sales-text-secondary">
-            Reminders that are overdue, then reminders due today. Open the lead to write a note or move the sale.
-          </p>
-        </div>
-        {onAddLead ? (
-          <button
-            type="button"
-            onClick={onAddLead}
-            className="inline-flex h-11 items-center rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text"
-          >
-            Add lead
-          </button>
-        ) : null}
-      </div>
-      {loading ? <div className="h-40 animate-pulse rounded-[12px] bg-sales-surface-subtle" aria-hidden /> : null}
+    <div className="space-y-8">
+      <Head
+        kicker="Solar installation"
+        title="Dashboard"
+        detail="Reminders that are overdue, then reminders due today. Open the lead to write a note or move the sale."
+        action={onAddLead ? "New lead" : undefined}
+        onAction={onAddLead}
+      />
       {error ? <p className="text-[14px] text-sales-danger-fg" role="alert">{error}</p> : null}
-      {!loading && !error && rows.length === 0 ? (
-        <div className="rounded-[12px] border border-sales-border bg-sales-surface px-4 py-8">
-          <p className="text-[15px] font-semibold text-sales-text-primary">Nothing due</p>
-          <p className="mt-1 text-[14px] text-sales-text-secondary">Set a reminder on a lead and it will wait here.</p>
-          <Link href="/sales/leads" className="mt-3 inline-flex h-11 items-center text-[14px] font-semibold text-sales-text-primary">
-            Open leads
-          </Link>
-        </div>
-      ) : null}
-      {!loading && rows.length > 0 ? (
-        <div className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
-          {overdue.length > 0 ? <Group label="Overdue" rows={overdue} /> : null}
-          {due.length > 0 ? <Group label="Today" rows={due} /> : null}
-        </div>
-      ) : null}
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.85fr)]">
+        <Panel title="Needs you" count={loading ? undefined : attention.length}>
+          {loading ? <Bones /> : attention.length === 0 ? (
+            <EmptyNote title="Nothing waiting" detail="Set a reminder on a lead and it will wait here." />
+          ) : (
+            <ul>
+              {overdue.map(({ card }) => (
+                <WorkRow
+                  key={card.leadId}
+                  name={card.customerName}
+                  meta={`${SOLAR_SALES_STAGE_LABEL[card.stage]}${card.location ? ` · ${card.location}` : ""}`}
+                  detail={card.nextAction}
+                  mark="overdue"
+                  action="Open"
+                  onAction={() => openLead(card.leadId)}
+                />
+              ))}
+              {due.map(({ card }) => (
+                <WorkRow
+                  key={card.leadId}
+                  name={card.customerName}
+                  meta={`${SOLAR_SALES_STAGE_LABEL[card.stage]}${card.location ? ` · ${card.location}` : ""}`}
+                  detail={card.nextAction}
+                  mark="today"
+                  action="Open"
+                  onAction={() => openLead(card.leadId)}
+                />
+              ))}
+            </ul>
+          )}
+        </Panel>
+        <Panel title="Today" count={loading ? undefined : due.length}>
+          {loading ? <Bones /> : due.length === 0 ? (
+            <EmptyNote title="Nothing due today" detail="Overdue reminders stay in Needs you." />
+          ) : (
+            <ul>
+              {due.map(({ card }) => (
+                <WorkRow
+                  key={card.leadId}
+                  name={card.customerName}
+                  meta={SOLAR_SALES_STAGE_LABEL[card.stage]}
+                  detail={card.nextAction}
+                  mark="today"
+                  action="Open"
+                  onAction={() => openLead(card.leadId)}
+                />
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </div>
+      <div className="grid grid-cols-2 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface sm:grid-cols-4">
+        <Metric label="Open leads" value={loading ? "–" : String(open)} />
+        <Metric label="Visits today" value={loading ? "–" : String(visits)} />
+        <Metric label="Overdue" value={loading ? "–" : String(overdue.length)} attention={overdue.length > 0} />
+        <Metric label="Won" value={loading ? "–" : String(won)} />
+      </div>
     </div>
   );
 }
 
-function Group({ label, rows }: { label: string; rows: Array<{ card: Card; overdue: boolean }> }) {
+function Metric({ label, value, attention }: { label: string; value: string; attention?: boolean }) {
   return (
-    <section>
-      <h3 className="border-b border-sales-border-subtle px-4 py-2 text-[12px] font-semibold text-sales-text-muted">{label}</h3>
-      <ul>
-        {rows.map(({ card }) => (
-          <li key={card.leadId} className="border-b border-sales-border-subtle last:border-b-0">
-            <Link href={`/sales/leads?lead=${card.leadId}`} className="flex items-center gap-3 px-4 py-3 hover:bg-sales-surface-hover">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[14px] font-semibold text-sales-text-primary">{card.customerName}</p>
-                <p className="truncate text-[12px] text-sales-text-muted">{card.stageLabel}</p>
-                <p className="mt-0.5 text-[13px] text-sales-text-secondary">{card.nextAction}</p>
-              </div>
-              <span className="text-[13px] font-semibold text-sales-text-primary">Open</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <div className="border-b border-r border-sales-border-subtle px-4 py-4">
+      <p className="text-[12px] text-sales-text-muted">{label}</p>
+      <p className={`mt-1 font-display text-[24px] font-semibold leading-none ${attention ? "text-sales-danger-fg" : "text-sales-text-primary"}`}>{value}</p>
+    </div>
   );
 }

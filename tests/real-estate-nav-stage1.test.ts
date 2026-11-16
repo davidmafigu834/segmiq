@@ -144,13 +144,14 @@ describe("real estate stage 1 navigation", () => {
     );
     assert.equal(trades.find((item) => item.id === "quotes")?.href, "/sales/quotes");
     const solar = resolveSalesNavItems(false, "trades", { solarWorkflow: true });
-    assert.deepEqual(solar.map((item) => item.id), ["dashboard", "leads", "whatsapp"]);
-    assert.equal(solar.find((item) => item.id === "dashboard")?.label, "Today");
-    assert.equal(solar.some((item) => item.id === "projects" || item.id === "myWork"), false);
+    assert.deepEqual(solar.map((item) => item.id), ["dashboard", "whatsapp", "pipeline", "leads", "quotes", "myWork", "projects", "calendar"]);
+    assert.equal(solar.find((item) => item.id === "dashboard")?.label, "Dashboard");
+    assert.equal(solar.find((item) => item.id === "pipeline")?.label, "Solar Pipeline");
+    assert.equal(solar.find((item) => item.id === "whatsapp")?.label, "WhatsApp Sales Hub");
     assert.equal(solar.some((item) => item.id === "listings"), false);
     assert.deepEqual(
       salesMobilePrimaryItems(solar, "trades", { solarWorkflow: true }).map((item) => item.id),
-      ["dashboard", "leads", "whatsapp"]
+      ["dashboard", "whatsapp", "pipeline", "projects"]
     );
     const company = getCompanyNavigation("trades");
     assert.deepEqual(getCompanyNavSectionOrder("trades"), ["company", "products", "tools"]);

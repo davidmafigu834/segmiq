@@ -139,8 +139,8 @@ function SalesDashboardInner({
             onAddLead={openAddHubSheet}
             toolbar
             demoGuest={demoGuest}
-            title="Today"
-            breadcrumb="Sales / Today"
+            title="Dashboard"
+            breadcrumb="Sales / Dashboard"
           />
           <SolarToday onAddLead={demoGuest ? undefined : openAddHubSheet} />
         </>

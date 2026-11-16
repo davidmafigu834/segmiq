@@ -72,7 +72,8 @@ export default async function SalesLeadsDirectoryPage() {
         assignmentMode={assignmentMode}
         breadcrumb="Sales / Leads"
         title="Leads"
-        description={solar ? "Add a lead, then filter by stage. Open one to write a note or set the reminder." : "All your inbound and captured leads in one place. Engage, qualify and convert."}
+        description={solar ? "New, contacted, and qualified stay on those stages until a visit or a quotation exists." : "All your inbound and captured leads in one place. Engage, qualify and convert."}
+        showDefaultHeader={!solar}
         searchPlaceholder="Search leads, customers, quotes..."
       >
         <Suspense fallback={<LeadsFallback />}>

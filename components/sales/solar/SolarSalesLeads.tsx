@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus } from "lucide-react";
 import { SOLAR_SALES_STAGE_LABEL, SOLAR_SALES_STAGES, type SolarSalesStage } from "@/lib/sales/solar-workflow";
 import { AddToHubSheet } from "@/components/sales/AddToHubSheet";
 import { LeadDetailPanel } from "@/app/sales/leads/LeadDetailPanel";
-import { Button } from "@/components/sales/ui";
 import { openLeadPanel } from "@/store/uiStore";
 import type { LeadRow } from "@/types";
+import { EmptyNote, Head, Panel, WorkRow, inkBtn, lineBtn } from "./desk";
 
 type Card = {
   leadId: string;
@@ -72,55 +71,41 @@ export function SolarSalesLeads({ assignmentMode }: { assignmentMode: "direct" |
   const visible = stage === "all" ? cards : cards.filter((card) => card.stage === stage);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-[52ch] text-[14px] text-sales-text-secondary">
-          Filter by stage. The stage comes from the lead, the visit, the quotation, and the deal.
-        </p>
-        <Button variant="primary" size="md" leftIcon={<Plus size={16} />} onClick={() => setAddOpen(true)}>
-          Add lead
-        </Button>
-      </div>
-      <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Stages">
-        <StageChip label="All" count={cards.length} pressed={stage === "all"} onClick={() => setStage("all")} />
+    <div className="space-y-8">
+      <Head
+        kicker="Sales"
+        title="Leads"
+        detail="New, contacted, and qualified stay on those stages until a visit or a quotation exists."
+        action="New lead"
+        onAction={() => setAddOpen(true)}
+      />
+      <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Stages">
+        <button type="button" className={stage === "all" ? inkBtn : lineBtn} aria-pressed={stage === "all"} onClick={() => setStage("all")}>All</button>
         {SOLAR_SALES_STAGES.map((id) => (
-          <StageChip
-            key={id}
-            label={SOLAR_SALES_STAGE_LABEL[id]}
-            count={cards.filter((card) => card.stage === id).length}
-            pressed={stage === id}
-            onClick={() => setStage(id)}
-          />
+          <button key={id} type="button" className={stage === id ? inkBtn : lineBtn} aria-pressed={stage === id} onClick={() => setStage(id)}>
+            {SOLAR_SALES_STAGE_LABEL[id]}
+          </button>
         ))}
       </div>
-      {loading ? <div className="h-40 animate-pulse rounded-[12px] bg-sales-surface-subtle" aria-hidden /> : null}
       {error ? <p className="text-[14px] text-sales-danger-fg" role="alert">{error}</p> : null}
-      {!loading && !error && visible.length === 0 ? (
-        <div className="rounded-[12px] border border-sales-border bg-sales-surface px-4 py-8">
-          <p className="text-[15px] font-semibold">No leads in this stage</p>
-          <p className="mt-1 text-[14px] text-sales-text-secondary">Add a lead, or choose another stage.</p>
-        </div>
-      ) : null}
-      {!loading && visible.length > 0 ? (
-        <ul className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
-          {visible.map((card) => (
-            <li key={card.leadId} className="flex items-center gap-3 border-b border-sales-border-subtle px-4 py-3 last:border-b-0">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[14px] font-semibold">{card.customerName}</p>
-                <p className="truncate text-[12px] text-sales-text-muted">{SOLAR_SALES_STAGE_LABEL[card.stage]}{card.location ? ` · ${card.location}` : ""}</p>
-                <p className="mt-0.5 text-[13px] text-sales-text-secondary">{card.nextAction}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => void open(card.leadId)}
-                className="inline-flex h-9 shrink-0 items-center rounded-[8px] bg-sales-text-primary px-3 text-[13px] font-semibold text-sales-surface"
-              >
-                Open
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <Panel title="Leads" count={loading ? undefined : visible.length}>
+        {loading ? <div className="h-40 animate-pulse bg-sales-surface-subtle" aria-hidden /> : visible.length === 0 ? (
+          <EmptyNote title="No leads in this stage" detail="Add a lead, or choose another stage." />
+        ) : (
+          <ul>
+            {visible.map((card) => (
+              <WorkRow
+                key={card.leadId}
+                name={card.customerName}
+                meta={SOLAR_SALES_STAGE_LABEL[card.stage]}
+                detail={`${card.nextAction}${card.location ? ` · ${card.location}` : ""}`}
+                action="Open"
+                onAction={() => void open(card.leadId)}
+              />
+            ))}
+          </ul>
+        )}
+      </Panel>
       {addOpen ? (
         <AddToHubSheet
           assignmentMode={assignmentMode}
@@ -133,19 +118,5 @@ export function SolarSalesLeads({ assignmentMode }: { assignmentMode: "direct" |
       ) : null}
       <LeadDetailPanel leads={leads} onLeadUpdated={(lead) => setLeads((current) => current.map((row) => (row.id === lead.id ? lead : row)))} />
     </div>
-  );
-}
-
-function StageChip({ label, count, pressed, onClick }: { label: string; count: number; pressed: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={pressed}
-      onClick={onClick}
-      className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[8px] border px-3 text-[13px] font-semibold ${pressed ? "border-sales-text-primary bg-sales-text-primary text-sales-surface" : "border-sales-border bg-sales-surface text-sales-text-primary"}`}
-    >
-      {label}
-      <span className="tabular-nums opacity-70">{count}</span>
-    </button>
   );
 }

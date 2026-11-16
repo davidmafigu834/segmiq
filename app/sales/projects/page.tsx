@@ -9,6 +9,7 @@ import { ProjectListClient } from "@/components/work-projects/ProjectListClient"
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import { companyOwners, loadProjectList, tradesProjectActor } from "@/lib/work-projects/page-data";
 import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
+import { Head } from "@/components/sales/solar/desk";
 
 export const dynamic = "force-dynamic";
 
@@ -31,14 +32,22 @@ export default async function SalesProjectsPage() {
         dense
         breadcrumb="Sales / Projects"
         title="Projects"
-        description="Delivery work on deals you own or are assigned to."
+        description="A won solar deal becomes a project. Status runs from planning through handover."
+        showDefaultHeader={false}
       >
-        <ProjectListClient
-          initialItems={items}
-          basePath="/sales/projects"
-          canCreate={session.role === "CLIENT_MANAGER" || session.role === "SUPER_ADMIN"}
-          owners={owners}
-        />
+        <div className="space-y-8">
+          <Head
+            kicker="Field & delivery"
+            title="Projects"
+            detail="A won solar deal becomes a project. Status runs from planning through handover. Installation stays on the project."
+          />
+          <ProjectListClient
+            initialItems={items}
+            basePath="/sales/projects"
+            canCreate={session.role === "CLIENT_MANAGER" || session.role === "SUPER_ADMIN"}
+            owners={owners}
+          />
+        </div>
       </SalesAppShell>
     </Layout>
   );

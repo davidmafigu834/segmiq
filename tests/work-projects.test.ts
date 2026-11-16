@@ -207,11 +207,11 @@ describe("work project handoff safeguards", () => {
     assert.match(permissions, /P\.PROJECTS_MANAGE/);
   });
 
-  it("keeps Projects on the solar company menu and off the salesperson menu", () => {
+  it("keeps Projects on the solar company menu and the salesperson menu", () => {
     assert.equal(COMPANY_NAVIGATION.some((item) => item.id === "projects"), true);
     assert.equal(REAL_ESTATE_COMPANY_NAVIGATION.some((item) => item.id === "projects"), false);
     assert.equal(resolveSalesNavItems(false, "trades").some((item) => item.id === "projects"), false);
-    assert.equal(resolveSalesNavItems(false, "trades", { solarWorkflow: true }).some((item) => item.id === "projects"), false);
+    assert.equal(resolveSalesNavItems(false, "trades", { solarWorkflow: true }).some((item) => item.id === "projects"), true);
     assert.equal(resolveSalesNavItems(false, "real_estate").some((item) => item.id === "projects"), false);
   });
 });

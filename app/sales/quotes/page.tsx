@@ -9,6 +9,7 @@ import { SalesQuotesClient } from "@/components/sales/quotes/SalesQuotesClient";
 import { Skeleton } from "@/components/sales/ui";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
+import { Head } from "@/components/sales/solar/desk";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -70,10 +71,22 @@ export default async function SalesQuotesPage() {
         breadcrumb="Sales / Quotations"
         title="Quotations"
         description={solar ? "Open the quotation for a lead. Sending it is what moves that lead to Quote sent." : "Create, send and follow up on commercial offers for active Deals."}
+        showDefaultHeader={!solar}
         searchPlaceholder="Search leads, customers, quotes..."
       >
         <Suspense fallback={<QuotesFallback />}>
-          <SalesQuotesClient />
+          {solar ? (
+            <div className="space-y-8">
+              <Head
+                kicker="Sales"
+                title="Quotations"
+                detail="Open the quotation for a lead. Sending it is what moves that lead to Quote sent."
+              />
+              <SalesQuotesClient />
+            </div>
+          ) : (
+            <SalesQuotesClient />
+          )}
         </Suspense>
       </SalesAppShell>
     </Layout>

@@ -313,7 +313,7 @@ export function salesMobilePrimaryItems(
   const order = isRealEstate(businessType)
     ? (["dashboard", "listings", "calendar", "transactions"] as const)
     : options?.solarWorkflow
-      ? (["dashboard", "leads", "whatsapp"] as const)
+      ? (["dashboard", "whatsapp", "pipeline", "projects"] as const)
       : SALES_MOBILE_PRIMARY_IDS;
   return order
     .map((id) => items.find((i) => i.id === id))
@@ -329,18 +329,23 @@ function withoutSolarDelivery(items: SalesNavItemConfig[], solarWorkflow?: boole
   return items.filter((item) => item.id !== "projects" && item.id !== "myWork");
 }
 
-/** Salesperson home for solar: today, the lead list, and WhatsApp. Delivery stays on the company menu. */
-export const SOLAR_SALES_SECTION_ORDER: SalesNavSectionId[] = ["sales"];
+/** Salesperson menu in the same groups as the solar installation mock. */
+export const SOLAR_SALES_SECTION_ORDER: SalesNavSectionId[] = ["overview", "sales", "field"];
 
-const SOLAR_SALES_ITEM_ORDER = ["dashboard", "leads", "whatsapp"] as const;
+const SOLAR_SALES_ITEM_ORDER = ["dashboard", "whatsapp", "pipeline", "leads", "quotes", "myWork", "projects", "calendar"] as const;
 
 const SOLAR_SALES_PLACEMENT: Record<
   string,
-  { section: SalesNavSectionId; label: string; mobileLabel: string }
+  { section: SalesNavSectionId; label: string; mobileLabel: string; mobileSlot: "primary" | "more" }
 > = {
-  dashboard: { section: "sales", label: "Today", mobileLabel: "Today" },
-  leads: { section: "sales", label: "Leads", mobileLabel: "Leads" },
-  whatsapp: { section: "sales", label: "WhatsApp", mobileLabel: "WhatsApp" },
+  dashboard: { section: "overview", label: "Dashboard", mobileLabel: "Dashboard", mobileSlot: "primary" },
+  whatsapp: { section: "sales", label: "WhatsApp Sales Hub", mobileLabel: "WhatsApp", mobileSlot: "primary" },
+  pipeline: { section: "sales", label: "Solar Pipeline", mobileLabel: "Pipeline", mobileSlot: "primary" },
+  leads: { section: "sales", label: "Leads", mobileLabel: "Leads", mobileSlot: "more" },
+  quotes: { section: "sales", label: "Quotations", mobileLabel: "Quotes", mobileSlot: "more" },
+  myWork: { section: "field", label: "My work", mobileLabel: "My work", mobileSlot: "more" },
+  projects: { section: "field", label: "Projects", mobileLabel: "Projects", mobileSlot: "primary" },
+  calendar: { section: "field", label: "Calendar", mobileLabel: "Calendar", mobileSlot: "more" },
 };
 
 function applySolarSalesNavigation(items: SalesNavItemConfig[]): SalesNavItemConfig[] {
@@ -354,7 +359,7 @@ function applySolarSalesNavigation(items: SalesNavItemConfig[]): SalesNavItemCon
       section: place.section,
       label: place.label,
       mobileLabel: place.mobileLabel,
-      mobileSlot: "primary" as const,
+      mobileSlot: place.mobileSlot,
     }];
   });
 }

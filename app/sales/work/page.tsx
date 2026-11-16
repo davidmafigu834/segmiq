@@ -10,6 +10,7 @@ import { listMyWork } from "@/lib/work-projects/field-service";
 import { tradesProjectActor } from "@/lib/work-projects/page-data";
 import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import { companyUsesSolarWorkflow } from "@/lib/sales/solar-workflow/service";
+import { Head } from "@/components/sales/solar/desk";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +24,11 @@ export default async function SalesMyWorkPage() {
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
   return (
     <Layout breadcrumb="Sales / MY WORK" pageTitle="My work" hideShellHeader hideShellSidebar contentFlush>
-      <SalesAppShell {...shell} dense breadcrumb="Sales / My work" title="My work" description="Site visits and installation tasks assigned to you.">
-        <MyWorkClient tasks={data.tasks} visits={data.visits} basePath="/sales/projects" />
+      <SalesAppShell {...shell} dense breadcrumb="Sales / My work" title="My work" description="Site visits and installation tasks assigned to you." showDefaultHeader={false}>
+        <div className="space-y-8">
+          <Head kicker="Field & delivery" title="My work" detail="Site visits and installation tasks assigned to you." />
+          <MyWorkClient tasks={data.tasks} visits={data.visits} basePath="/sales/projects" />
+        </div>
       </SalesAppShell>
     </Layout>
   );

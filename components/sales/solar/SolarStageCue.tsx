@@ -5,6 +5,7 @@ import Link from "next/link";
 import { SOLAR_PROGRESS_STEPS, solarProgressIndex, type SolarSalesStage } from "@/lib/sales/solar-workflow";
 import { resolveSolarEngagement } from "@/lib/sales/solar-workflow/engagement";
 import type { SolarPanelActionKind } from "@/lib/sales/solar-workflow/opportunity";
+import "./solar-desk.css";
 
 type Snapshot = {
   stage: SolarSalesStage;
@@ -131,29 +132,28 @@ export function SolarStageCue({
   }
 
   return (
-    <section className="rounded-[12px] border border-sales-border bg-sales-surface p-4">
-      <h2 className="text-[13px] font-medium text-sales-text-secondary">Solar sales progress</h2>
-      <ol className="mt-3 space-y-1.5">
+    <div className="space-y-3">
+      <ol className="so-steps" aria-label="Solar journey">
         {SOLAR_PROGRESS_STEPS.map((step, index) => {
           const done = card.stage === "WON" ? true : index < current;
           const active = index === current && card.stage !== "LOST" && card.stage !== "WON";
           return (
-            <li key={step.id} className="flex min-h-8 items-center gap-2 text-[14px]">
-              <span aria-hidden className="w-4 text-sales-text-muted">{done ? "✓" : active ? "●" : "○"}</span>
-              <span className={active ? "font-semibold text-sales-text-primary" : "text-sales-text-secondary"}>{step.label}</span>
+            <li key={step.id} className="so-step" aria-current={active ? "step" : undefined}>
+              <p className="text-[12px] text-sales-text-muted">{done ? "Done" : active ? "Now" : "Later"}</p>
+              <p className="mt-1 text-[13px] font-semibold text-sales-text-primary">{step.label}</p>
             </li>
           );
         })}
-        {card.stage === "LOST" ? <li className="text-[14px] text-sales-text-secondary">Lost</li> : null}
       </ol>
-      {card.quoteAccepted ? <p className="mt-3 text-[13px] text-sales-text-primary">Customer accepted quotation</p> : null}
+      {card.stage === "LOST" ? <p className="text-[14px] text-sales-text-secondary">Lost</p> : null}
+      {card.quoteAccepted ? <p className="text-[13px] text-sales-text-primary">Customer accepted quotation</p> : null}
       {card.nextAction ? (
         actionHref ? (
-          <Link href={actionHref} className="mt-3 inline-flex min-h-11 items-center text-[14px] font-semibold">{card.nextAction}</Link>
+          <Link href={actionHref} className="inline-flex min-h-11 items-center text-[14px] font-semibold text-sales-text-primary">{card.nextAction}</Link>
         ) : (
-          <p className="mt-3 text-[14px] font-semibold text-sales-text-primary">Next · {card.nextAction}</p>
+          <p className="text-[14px] font-semibold text-sales-text-primary">Next · {card.nextAction}</p>
         )
       ) : null}
-    </section>
+    </div>
   );
 }
