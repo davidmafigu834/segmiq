@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import {
   canRequestLaunchMode,
@@ -140,6 +141,43 @@ describe("Release 5 launch promotion prerequisites", () => {
       }),
       { allowed: false, missing: ["tenant_isolation"] },
     );
+  });
+
+  it("lets a super admin move a client to a plan while launch gates stay closed", () => {
+    const migration = readFileSync(
+      new URL(
+        "../app/api/admin/commercial/clients/[clientId]/migration/confirm/route.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    const planChange = readFileSync(
+      new URL(
+        "../app/api/admin/commercial/clients/[clientId]/plan-change/confirm/route.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    const grace = readFileSync(
+      new URL(
+        "../app/api/admin/commercial/clients/[clientId]/grace/route.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    for (const source of [migration, planChange]) {
+      assert.doesNotMatch(source, /checkCommercialWrite/);
+      assert.doesNotMatch(source, /PLATFORM_COMMERCIAL_WRITES_ENABLED/);
+      assert.doesNotMatch(source, /PLATFORM_CATALOGUE_PUBLIC_ENABLED/);
+      assert.doesNotMatch(source, /PLATFORM_SALES_QUOTES_ENABLED/);
+      assert.doesNotMatch(source, /PLATFORM_CUSTOMER_ACTIVATION_GATE_ENABLED/);
+      assert.doesNotMatch(source, /PLATFORM_AI_USAGE_SHADOW_ENABLED/);
+      assert.doesNotMatch(source, /PLATFORM_AI_USAGE_ENFORCEMENT_ENABLED/);
+      assert.doesNotMatch(source, /PLATFORM_AI_TOPUPS_ENABLED/);
+      assert.doesNotMatch(source, /PLATFORM_V2_INVOICE_LINES_ENABLED/);
+      assert.match(source, /requireSuperAdmin/);
+    }
+    assert.match(grace, /checkCommercialWrite/);
   });
 
   it("accepts promotion only with every required evidence check", () => {
