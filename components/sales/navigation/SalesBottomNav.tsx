@@ -77,6 +77,7 @@ export function SalesBottomNav({
   const { businessType, solarWorkflow } = useCompanyWorkspace();
   const items = salesMobilePrimaryItems(resolveSalesNavItems(isSolo, businessType, { solarWorkflow }), businessType, { solarWorkflow });
   const realEstate = isRealEstate(businessType);
+  const solar = Boolean(solarWorkflow) && !realEstate;
   const badges: Partial<Record<SalesNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
     tasks: tasksBadge,
@@ -96,7 +97,7 @@ export function SalesBottomNav({
           const active = salesNavIsActive(item, pathname);
           const badge = item.badgeKey ? badges[item.badgeKey] : undefined;
           const showBadge = badge != null && badge > 0;
-          const isWa = item.id === "whatsapp" && !realEstate;
+          const isWa = item.id === "whatsapp" && !realEstate && !solar;
           return (
             <Link
               key={item.id}
@@ -163,7 +164,7 @@ export function SalesBottomNav({
                 (onOpenMenu ? menuOpen : moreOpen) && "bg-[var(--sales-sidebar-active)]"
               )}
             >
-              {realEstate ? (
+              {realEstate || solar ? (
                 <Menu
                   size={20}
                   strokeWidth={(onOpenMenu ? menuOpen : moreOpen) ? 2 : 1.75}

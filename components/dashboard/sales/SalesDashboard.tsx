@@ -128,22 +128,7 @@ function SalesDashboardInner({
             data={data.realEstate!}
           />
       ) : solar ? (
-        <>
-          <DashboardHeader
-            firstName={firstName}
-            userName={fullName}
-            avatarUrl={avatarUrl}
-            unreadNotifications={unreadNotifications}
-            notificationRole={notificationRole}
-            onOpenLog={() => openLogSheet("")}
-            onAddLead={openAddHubSheet}
-            toolbar
-            demoGuest={demoGuest}
-            title="Dashboard"
-            breadcrumb="Sales / Dashboard"
-          />
-          <SolarToday onAddLead={demoGuest ? undefined : openAddHubSheet} />
-        </>
+        <SolarToday onAddLead={demoGuest ? undefined : openAddHubSheet} />
       ) : (
         <>
           <DashboardHeader

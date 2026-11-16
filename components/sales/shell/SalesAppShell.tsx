@@ -38,6 +38,9 @@ import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sideb
 import { cn } from "@/lib/ui/cn";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { RealEstateTopBar } from "@/components/real-estate/navigation/RealEstateTopBar";
+import { SolarWorkspaceBar } from "@/components/sales/solar/SolarWorkspaceBar";
+import { Head } from "@/components/sales/solar/desk";
+import "@/components/sales/solar/solar-workspace.css";
 import type { UserRole } from "@/types";
 
 export function SalesPageHeader({
@@ -234,7 +237,9 @@ function SalesAppShellInner({
   const { quickActionsOpen, setQuickActionsOpen, hideBottomNav } = useSalesMobileChrome();
   const workspace = useCompanyWorkspace();
   const realEstateWorkspace = realEstate || workspace.isRealEstate;
-  const sidebarWidth = realEstateWorkspace ? 272 : width;
+  const solarWorkspace = Boolean(workspace.solarWorkflow) && !realEstateWorkspace;
+  const studioWorkspace = realEstateWorkspace || solarWorkspace;
+  const sidebarWidth = studioWorkspace ? 272 : width;
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -276,12 +281,13 @@ function SalesAppShellInner({
       ref={shellRef}
       className={cn(
         "sales-dashboard-premium dashboard-shell flex h-[100dvh] max-h-[100dvh] min-h-0 w-full min-w-0 max-w-[100vw] flex-col overflow-hidden bg-sales-bg text-sales-text-primary",
+        solarWorkspace && "solar-workspace",
         className
       )}
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideBottomNav ? "true" : "false"}
       data-content-flush={contentFlush ? "true" : "false"}
-      data-mobile-full-bleed={mobileFullBleed || realEstateWorkspace ? "true" : "false"}
+      data-mobile-full-bleed={mobileFullBleed || studioWorkspace ? "true" : "false"}
       data-sales-portal="true"
       data-re-workspace={realEstateWorkspace ? "true" : undefined}
       style={{ ["--sales-sidebar-current-width" as string]: `${sidebarWidth}px` } as CSSProperties}
@@ -301,16 +307,16 @@ function SalesAppShellInner({
           isSolo={isSolo}
           whatsappBadge={whatsappBadge}
           tasksBadge={tasksBadge}
-          collapsed={realEstateWorkspace ? false : collapsed}
+          collapsed={studioWorkspace ? false : collapsed}
           onToggleCollapsed={toggleCollapsed}
-          mobileOpen={realEstateWorkspace && mobileNavOpen}
+          mobileOpen={studioWorkspace && mobileNavOpen}
           onCloseMobile={() => setMobileNavOpen(false)}
           unreadNotifications={unreadNotifications}
           notificationRole={notificationRole}
         />
       </div>
 
-      {!hideMobileChrome && !hideBottomNav && !realEstateWorkspace ? (
+      {!hideMobileChrome && !hideBottomNav && !studioWorkspace ? (
         <SalesMobileTopBar
           isSolo={isSolo}
           userName={userName}
@@ -330,6 +336,13 @@ function SalesAppShellInner({
             unreadNotifications={unreadNotifications}
             notificationRole={notificationRole}
           />
+        ) : solarWorkspace ? (
+          <SolarWorkspaceBar
+            name={userName}
+            unreadNotifications={unreadNotifications}
+            notificationRole={notificationRole}
+            onAddLead={() => openAddHubSheet()}
+          />
         ) : null}
         <main
           id="sales-main-content"
@@ -342,7 +355,7 @@ function SalesAppShellInner({
             !contentFlush && dense && "sales-page-content--dense"
           )}
         >
-          <SegmiQDotWave />
+          {solarWorkspace ? null : <SegmiQDotWave />}
           <div
             className={
               contentFlush
@@ -352,7 +365,9 @@ function SalesAppShellInner({
                   : "sales-page-stack relative space-y-4 layout:space-y-5"
             }
           >
-            {showDefaultHeader && (toolbar || title) && !realEstateWorkspace ? (
+            {solarWorkspace && showDefaultHeader && title ? (
+              <Head kicker="Solar installation" title={title} detail={description ?? ""} />
+            ) : showDefaultHeader && (toolbar || title) && !realEstateWorkspace ? (
               <SalesPageHeader
                 breadcrumb={breadcrumb}
                 title={title ?? ""}
@@ -374,7 +389,7 @@ function SalesAppShellInner({
             isSolo={isSolo}
             whatsappBadge={whatsappBadge}
             tasksBadge={tasksBadge}
-            onOpenMenu={realEstateWorkspace ? () => setMobileNavOpen(true) : undefined}
+            onOpenMenu={studioWorkspace ? () => setMobileNavOpen(true) : undefined}
             menuOpen={mobileNavOpen}
           />
           <SalesMoreSheet

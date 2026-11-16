@@ -67,6 +67,13 @@ export function SalesSidebar({
       items: salesNavItemsBySection(items, id),
     })).filter((group) => group.items.length > 0);
   const dashboardHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";
+  const studio = realEstate || solarGrouped;
+  const solarGuide = [
+    { title: "Find a screen", body: "Press F, then type the page you need.", action: "Try Find", focusSearch: true },
+    { title: "Today", body: "Overdue reminders, then reminders due today.", action: "Open Today", href: dashboardHref },
+    { title: "Solar Pipeline", body: "The stage comes from the visit, the quotation, and the deal.", action: "Open pipeline", href: "/sales/pipeline" },
+    { title: "WhatsApp", body: "A conversation opens the same lead.", action: "Open WhatsApp", href: "/sales/inbox" },
+  ];
 
   const badges: Partial<Record<SalesNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
@@ -74,7 +81,7 @@ export function SalesSidebar({
   };
   const [find, setFind] = useState("");
   const findQuery = find.trim().toLowerCase();
-  const visibleGroups = realEstate && findQuery
+  const visibleGroups = studio && findQuery
     ? groups
         .map((group) => ({
           ...group,
@@ -85,13 +92,13 @@ export function SalesSidebar({
 
   function body(opts: { drawer: boolean; collapsedMode: boolean }) {
     const { drawer, collapsedMode } = opts;
-    if (realEstate) {
+    if (studio) {
       return (
         <RealEstateSidebarChrome
           name={userName}
           personName={userName}
           userId={userId}
-          planBadge={planBadge}
+          planBadge={planBadge ?? (solarGrouped ? { label: "Solar", overdue: false } : null)}
           role={userRoleLabel}
           homeHref={dashboardHref}
           helpHref="/sales/training"
@@ -102,6 +109,9 @@ export function SalesSidebar({
           onClose={onCloseMobile}
           query={find}
           onQuery={setFind}
+          guide={solarGrouped ? solarGuide : undefined}
+          attentionBody={solarGrouped ? "A reminder is waiting on Today." : undefined}
+          status={solarGrouped ? "Solar installation" : undefined}
         >
           {visibleGroups.length === 0 ? <p className="re-sb-soon-block">No matches.</p> : (
             <ReSidebarSections
@@ -375,12 +385,12 @@ export function SalesSidebar({
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 hidden border-r border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-bg)] transition-[width] duration-200 ease-out layout:block",
-          realEstate && "re-sb-frame",
-          collapsed && !realEstate ? "w-[68px]" : realEstate ? "w-[272px]" : "w-[228px]"
+          studio && "re-sb-frame",
+          collapsed && !studio ? "w-[68px]" : studio ? "w-[272px]" : "w-[228px]"
         )}
         data-collapsed={collapsed ? "true" : "false"}
       >
-        {body({ drawer: false, collapsedMode: realEstate ? false : collapsed })}
+        {body({ drawer: false, collapsedMode: studio ? false : collapsed })}
       </aside>
 
       {mobileOpen ? (
@@ -391,7 +401,7 @@ export function SalesSidebar({
             aria-label="Close menu"
             onClick={onCloseMobile}
           />
-          <aside className={cn("fixed inset-y-0 left-0 z-50 w-[min(88vw,280px)] border-r border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-bg)] shadow-[0_8px_30px_rgba(17,19,24,0.12)] layout:hidden", realEstate && "re-sb-frame w-[272px]")}>
+          <aside className={cn("fixed inset-y-0 left-0 z-50 w-[min(88vw,280px)] border-r border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-bg)] shadow-[0_8px_30px_rgba(17,19,24,0.12)] layout:hidden", studio && "re-sb-frame w-[272px]")}>
             {body({ drawer: true, collapsedMode: false })}
           </aside>
         </>

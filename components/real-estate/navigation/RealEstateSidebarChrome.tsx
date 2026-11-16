@@ -83,6 +83,9 @@ export function RealEstateSidebarChrome({
   onClose,
   query,
   onQuery,
+  guide,
+  attentionBody,
+  status = "All systems normal",
   children,
 }: {
   name: string;
@@ -99,6 +102,9 @@ export function RealEstateSidebarChrome({
   onClose?: () => void;
   query: string;
   onQuery: (value: string) => void;
+  guide?: SidebarTip[];
+  attentionBody?: string;
+  status?: string;
   children: ReactNode;
 }) {
   const theme = useCrmThemeOptional();
@@ -113,10 +119,13 @@ export function RealEstateSidebarChrome({
   const teamVisible = name.toLowerCase().includes(teamQuery.trim().toLowerCase());
   const person = personName?.trim() || name;
   const portraitSeed = userId?.trim() || person;
-  const tips = workspaceTips(homeHref);
+  const tips = guide ?? workspaceTips(homeHref);
   const [tipIndex, setTipIndex] = useState(() => Math.floor(Date.now() / (3 * 60 * 60 * 1000)) % tips.length);
   const tip = tips[tipIndex % tips.length] ?? tips[0]!;
-  const danger = sidebarDangerNote({ overdue: planBadge?.overdue === true, attention, homeHref });
+  const baseDanger = sidebarDangerNote({ overdue: planBadge?.overdue === true, attention, homeHref });
+  const danger = baseDanger && attentionBody && !planBadge?.overdue
+    ? { ...baseDanger, body: attentionBody, action: "Open Today", href: homeHref }
+    : baseDanger;
   const manager = homeHref.startsWith("/client");
   const accountLinks = manager
     ? [
@@ -382,7 +391,7 @@ export function RealEstateSidebarChrome({
               </button>
               <div className="re-sb-status">
                 <span className="re-sb-status-dot" aria-hidden />
-                All systems normal
+                {status}
               </div>
             </div>
           ) : null}
