@@ -33,12 +33,6 @@ const issueMono = IBM_Plex_Mono({
   variable: "--issue-mono",
 });
 
-type IssuePage = {
-  id: string;
-  title: string;
-  node: ReactNode;
-};
-
 function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
