@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { FilePlus2, Search, X } from "lucide-react";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { limeBtn, lineBtn } from "@/components/sales/solar/desk";
 import {
   Button,
   EmptyState,
@@ -39,6 +42,9 @@ export function CreateQuoteDialog({
   onClose: () => void;
   onCreated: (quotation: QuotationWithItems, leadPhone: string | null) => void;
 }) {
+  const pathname = usePathname();
+  const { solarWorkflow, isRealEstate } = useCompanyWorkspace();
+  const solarSheet = Boolean(solarWorkflow) && !isRealEstate && (pathname?.startsWith("/sales") ?? false);
   const [query, setQuery] = useState("");
   const [deals, setDeals] = useState<DealCandidate[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(false);
@@ -172,6 +178,64 @@ export function CreateQuoteDialog({
   }
 
   if (!open) return null;
+
+  if (solarSheet) {
+    return (
+      <>
+        <button type="button" className="so-sheet-back" aria-label="Close form" onClick={onClose} />
+        <aside className="so-sheet" role="dialog" aria-modal="true" aria-label="New quotation">
+          <div className="so-sheet-scroll">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-sales-text-muted">Solar installation</p>
+                <h2 className="mt-1 font-display text-[28px] font-semibold leading-none tracking-[-0.03em]">New quotation</h2>
+                <p className="mt-2 text-[14px] text-sales-text-secondary">A draft sets Proposal Prepared. Sending it sets Quote Sent.</p>
+              </div>
+              <button type="button" className={`${lineBtn} inline-flex w-9 items-center justify-center px-0`} onClick={onClose} aria-label="Close">
+                <X size={16} strokeWidth={1.75} aria-hidden />
+              </button>
+            </div>
+            <div className="so-form">
+              <label className="so-label">
+                Customer
+                <input value={query} onChange={(event) => setQuery(event.target.value)} className="so-field" placeholder="Search name or phone" autoFocus />
+              </label>
+              <fieldset>
+                <legend className="so-label">Deal</legend>
+                {loadingDeals ? <p className="so-hint">Loading deals…</p> : filtered.length === 0 ? (
+                  <p className="so-hint">No active deal matches. A quotation belongs to a deal.</p>
+                ) : (
+                  <div className="so-choices">
+                    {filtered.map((deal) => (
+                      <button key={deal.id} type="button" className={`so-choice ${selectedId === deal.id ? "is-on" : ""}`} aria-pressed={selectedId === deal.id} onClick={() => setSelectedId(deal.id)}>
+                        {deal.leadName || deal.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </fieldset>
+              {selected ? (
+                <fieldset>
+                  <legend className="so-label">Template</legend>
+                  <div className="so-choices">
+                    <button type="button" className={`so-choice ${templateId === "" ? "is-on" : ""}`} aria-pressed={templateId === ""} onClick={() => setTemplateId("")}>Blank</button>
+                    {loadingTemplates ? <span className="so-hint">Loading templates…</span> : templates.map((template) => (
+                      <button key={template.id} type="button" className={`so-choice ${templateId === template.id ? "is-on" : ""}`} aria-pressed={templateId === template.id} onClick={() => setTemplateId(template.id)}>{template.name}</button>
+                    ))}
+                  </div>
+                </fieldset>
+              ) : null}
+              {error ? <p className="so-alert" role="alert">{error}</p> : null}
+              <div className="so-form-actions">
+                <button type="button" className={limeBtn} disabled={!selected || creating} onClick={() => void create()}>{creating ? "Saving…" : "Save draft"}</button>
+                <button type="button" className={lineBtn} onClick={onClose}>Close</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4">

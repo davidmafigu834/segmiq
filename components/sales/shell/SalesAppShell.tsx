@@ -264,7 +264,7 @@ function SalesAppShellInner({
           <SalesThemeToggle />
         </div>
         {showQuickActions && !demoGuest ? (
-          <SalesQuickActions onAddLead={openAddHubSheet} onLogCall={onLogCall} realEstate={realEstate} />
+          <SalesQuickActions onAddLead={solarWorkspace ? () => router.push("/sales/leads?add=1") : openAddHubSheet} onLogCall={onLogCall} realEstate={realEstate} />
         ) : null}
         <SalesProfileMenu
           userName={userName}
@@ -398,7 +398,7 @@ function SalesAppShellInner({
           <SalesMobileQuickActionsSheet
             open={quickActionsOpen}
             onClose={() => setQuickActionsOpen(false)}
-            onAddLead={() => openAddHubSheet()}
+            onAddLead={() => (solarWorkspace ? router.push("/sales/leads?add=1") : openAddHubSheet())}
             onLogCall={() => {
               if (onLogCall) onLogCall();
               else router.push("/sales/leads");

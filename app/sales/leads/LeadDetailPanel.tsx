@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
   ChevronLeft,
@@ -104,8 +104,9 @@ export function LeadDetailPanel({
   const { data: session } = useSession();
   const router = useRouter();
   const role = session?.role;
+  const pathname = usePathname();
   const { solarWorkflow } = useCompanyWorkspace();
-  const solarSales = solarWorkflow && role === "SALESPERSON";
+  const solarSales = Boolean(solarWorkflow) && (pathname?.startsWith("/sales") ?? false);
   const [logRefresh, setLogRefresh] = useState(0);
   const [businessType, setBusinessType] = useState<"trades" | "real_estate">("trades");
   const [timelineRefresh, setTimelineRefresh] = useState(0);

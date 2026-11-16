@@ -45,6 +45,8 @@ import {
   useSalesToast,
 } from "@/components/sales/ui";
 import { ReportKpiCard } from "@/components/sales/reports/ReportKpiCard";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { SolarPageBones } from "@/components/sales/solar/desk";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { LeadDetailPanel } from "@/app/sales/leads/LeadDetailPanel";
 import { openLeadPanel } from "@/store/uiStore";
@@ -1171,6 +1173,8 @@ function MobileQuoteCard({ quote, onOpen }: { quote: QuoteListRow; onOpen: () =>
 }
 
 function QuotesSkeleton() {
+  const { solarWorkflow, isRealEstate } = useCompanyWorkspace();
+  if (solarWorkflow && !isRealEstate) return <SolarPageBones label="Loading quotations" />;
   return (
     <div className="space-y-4">
       <div className="space-y-3">
