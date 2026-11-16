@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/require-agency-admin";
 import { buildPlanChangePreview } from "@/lib/commercial/amendment-service";
-import {
-  commercialWritesEnabled,
-  validateConsent,
-} from "@/lib/commercial/plan-change";
-import { checkCommercialWrite } from "@/lib/commercial-launch/control";
+import { validateConsent } from "@/lib/commercial/plan-change";
 import { assertSameOrigin } from "@/lib/platform-sales/http";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -18,18 +14,7 @@ export async function POST(
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   if (auth.session.isImpersonating)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const writeDecision = await checkCommercialWrite({
-    clientId: params.clientId,
-    environmentKillSwitchOpen: commercialWritesEnabled(),
-  });
-  if (!writeDecision.allowed)
-    return NextResponse.json(
-      {
-        error: "Commercial writes are disabled pending release verification",
-        reason: writeDecision.reason,
-      },
-      { status: 409 },
-    );
+  // Operator plan changes stay available while public launch gates are off.
   try {
     assertSameOrigin(request);
     const { input, preview } = await buildPlanChangePreview(

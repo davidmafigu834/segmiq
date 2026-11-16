@@ -231,26 +231,36 @@ export async function loadCommercialHealth(): Promise<CommercialHealthSnapshot> 
       },
     ],
     features: [
-      ["catalogue_public", "PLATFORM_CATALOGUE_PUBLIC_ENABLED"],
-      ["commercial_accounts", "PLATFORM_COMMERCIAL_WRITES_ENABLED"],
-      ["manual_amendments", "PLATFORM_COMMERCIAL_WRITES_ENABLED"],
-      ["grace_periods", "PLATFORM_COMMERCIAL_WRITES_ENABLED"],
-      ["platform_sales_quotes", "PLATFORM_SALES_QUOTES_ENABLED"],
-      [
-        "contracts_required_for_new_signup",
-        "PLATFORM_CUSTOMER_ACTIVATION_GATE_ENABLED",
-      ],
-      ["agentic_usage_shadow", "PLATFORM_AI_USAGE_SHADOW_ENABLED"],
-      ["agentic_usage_enforced", "PLATFORM_AI_USAGE_ENFORCEMENT_ENABLED"],
-      ["approved_topups", "PLATFORM_AI_TOPUPS_ENABLED"],
-      ["commercial_invoice_lines", "PLATFORM_V2_INVOICE_LINES_ENABLED"],
-    ].map(([key, env]) => ({
-      key,
-      active: envEnabled(env),
-      detail: envEnabled(env)
-        ? `Enabled by ${env}`
-        : `Fail-closed: ${env} is not true`,
-    })),
+      {
+        key: "commercial_accounts",
+        active: true,
+        detail: "A super admin can migrate a client onto a plan from the organisation page.",
+      },
+      {
+        key: "manual_amendments",
+        active: true,
+        detail: "A super admin can change that plan from the organisation page.",
+      },
+      ...[
+        ["catalogue_public", "PLATFORM_CATALOGUE_PUBLIC_ENABLED"],
+        ["grace_periods", "PLATFORM_COMMERCIAL_WRITES_ENABLED"],
+        ["platform_sales_quotes", "PLATFORM_SALES_QUOTES_ENABLED"],
+        [
+          "contracts_required_for_new_signup",
+          "PLATFORM_CUSTOMER_ACTIVATION_GATE_ENABLED",
+        ],
+        ["agentic_usage_shadow", "PLATFORM_AI_USAGE_SHADOW_ENABLED"],
+        ["agentic_usage_enforced", "PLATFORM_AI_USAGE_ENFORCEMENT_ENABLED"],
+        ["approved_topups", "PLATFORM_AI_TOPUPS_ENABLED"],
+        ["commercial_invoice_lines", "PLATFORM_V2_INVOICE_LINES_ENABLED"],
+      ].map(([key, env]) => ({
+        key,
+        active: envEnabled(env),
+        detail: envEnabled(env)
+          ? `Enabled by ${env}`
+          : `Fail-closed: ${env} is not true`,
+      })),
+    ],
     readiness,
     counts: {
       legacySubscriptions,
