@@ -145,47 +145,54 @@ describe("real estate stage 1 navigation", () => {
     assert.equal(trades.find((item) => item.id === "quotes")?.href, "/sales/quotes");
     const solar = resolveSalesNavItems(false, "trades", { solarWorkflow: true });
     assert.deepEqual(salesNavSectionOrder("trades", { solarWorkflow: true }), [
-      "overview",
       "sales",
       "field",
       "customers",
       "products",
       "intelligence",
       "management",
+      "tools",
     ]);
     assert.deepEqual(solar.map((item) => item.id), [
       "dashboard",
-      "whatsapp",
       "pipeline",
+      "whatsapp",
       "socialInbox",
       "leads",
       "contacts",
       "quotes",
+      "calendar",
+      "tasks",
+      "command",
+      "reports",
+      "wonLost",
+      "goals",
       "myWork",
       "projects",
-      "calendar",
       "customers",
       "products",
       "inventory",
       "packages",
-      "command",
       "agent",
-      "reports",
       "team",
       "documents",
       "billing",
       "settings",
+      "toolbox",
+      "help",
     ]);
     assert.equal(solar.find((item) => item.id === "customers")?.href, "/sales/customers");
     assert.equal(solar.find((item) => item.id === "settings")?.href, "/sales/profile");
-    assert.equal(solar.find((item) => item.id === "command")?.label, "Command Center");
+    assert.equal(solar.find((item) => item.id === "command")?.label, "Command");
+    assert.equal(solar.find((item) => item.id === "contacts")?.href, "/sales/contacts");
     assert.equal(solar.find((item) => item.id === "dashboard")?.label, "Dashboard");
-    assert.equal(solar.find((item) => item.id === "pipeline")?.label, "Solar Pipeline");
+    assert.equal(solar.find((item) => item.id === "pipeline")?.label, "My Pipeline");
     assert.equal(solar.find((item) => item.id === "whatsapp")?.label, "WhatsApp Sales Hub");
+    assert.equal(solar.find((item) => item.id === "help")?.label, "Help & Support");
     assert.equal(solar.some((item) => item.id === "listings"), false);
     assert.deepEqual(
       salesMobilePrimaryItems(solar, "trades", { solarWorkflow: true }).map((item) => item.id),
-      ["dashboard", "whatsapp", "pipeline", "projects"]
+      ["dashboard", "pipeline", "whatsapp", "tasks"]
     );
     const company = getCompanyNavigation("trades");
     assert.deepEqual(getCompanyNavSectionOrder("trades"), ["company", "products", "tools"]);

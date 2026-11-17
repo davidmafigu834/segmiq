@@ -4,6 +4,7 @@ import {
   CalendarDays,
   BarChart3,
   Building2,
+  CircleHelp,
   ClipboardList,
   Boxes,
   Columns3,
@@ -55,6 +56,7 @@ export type SalesNavIconId =
   | "wonLost"
   | "goals"
   | "toolbox"
+  | "help"
   | "listings"
   | "offers"
   | "transactions"
@@ -144,6 +146,7 @@ export const SALES_NAV_LUCIDE: Record<Exclude<SalesNavIconId, "whatsapp">, Lucid
   wonLost: Trophy,
   goals: Target,
   toolbox: Wrench,
+  help: CircleHelp,
   listings: Building2,
   opportunities: Home,
   owners: UserRound,
@@ -341,7 +344,7 @@ export function salesMobilePrimaryItems(
   const order = isRealEstate(businessType)
     ? (["dashboard", "listings", "calendar", "transactions"] as const)
     : options?.solarWorkflow
-      ? (["dashboard", "whatsapp", "pipeline", "projects"] as const)
+      ? (["dashboard", "pipeline", "whatsapp", "tasks"] as const)
       : SALES_MOBILE_PRIMARY_IDS;
   return order
     .map((id) => items.find((i) => i.id === id))
@@ -359,64 +362,74 @@ function withoutSolarDelivery(items: SalesNavItemConfig[], solarWorkflow?: boole
 
 /** Salesperson menu in the same groups as the solar installation mock. */
 export const SOLAR_SALES_SECTION_ORDER: SalesNavSectionId[] = [
-  "overview",
   "sales",
   "field",
   "customers",
   "products",
   "intelligence",
   "management",
+  "tools",
 ];
 
 const SOLAR_SALES_ITEM_ORDER = [
   "dashboard",
-  "whatsapp",
   "pipeline",
+  "whatsapp",
   "socialInbox",
   "leads",
   "contacts",
   "quotes",
+  "calendar",
+  "tasks",
+  "command",
+  "reports",
+  "wonLost",
+  "goals",
   "myWork",
   "projects",
-  "calendar",
   "customers",
   "products",
   "inventory",
   "packages",
-  "command",
   "agent",
-  "reports",
   "team",
   "documents",
   "billing",
   "settings",
+  "toolbox",
+  "help",
 ] as const;
 
 const SOLAR_SALES_PLACEMENT: Record<
   string,
   { section: SalesNavSectionId; label: string; mobileLabel: string; mobileSlot: "primary" | "more" }
 > = {
-  dashboard: { section: "overview", label: "Dashboard", mobileLabel: "Dashboard", mobileSlot: "primary" },
+  dashboard: { section: "sales", label: "Dashboard", mobileLabel: "Dashboard", mobileSlot: "primary" },
+  pipeline: { section: "sales", label: "My Pipeline", mobileLabel: "Pipeline", mobileSlot: "primary" },
   whatsapp: { section: "sales", label: "WhatsApp Sales Hub", mobileLabel: "WhatsApp", mobileSlot: "primary" },
-  pipeline: { section: "sales", label: "Solar Pipeline", mobileLabel: "Pipeline", mobileSlot: "primary" },
   socialInbox: { section: "sales", label: "Social Inbox", mobileLabel: "Social", mobileSlot: "more" },
   leads: { section: "sales", label: "Leads", mobileLabel: "Leads", mobileSlot: "more" },
   contacts: { section: "sales", label: "Contacts", mobileLabel: "Contacts", mobileSlot: "more" },
   quotes: { section: "sales", label: "Quotations", mobileLabel: "Quotes", mobileSlot: "more" },
+  calendar: { section: "sales", label: "Calendar", mobileLabel: "Calendar", mobileSlot: "more" },
+  tasks: { section: "sales", label: "Tasks", mobileLabel: "Tasks", mobileSlot: "primary" },
+  command: { section: "sales", label: "Command", mobileLabel: "Command", mobileSlot: "more" },
+  reports: { section: "sales", label: "Reports", mobileLabel: "Reports", mobileSlot: "more" },
+  wonLost: { section: "sales", label: "Won & Lost", mobileLabel: "Won & Lost", mobileSlot: "more" },
+  goals: { section: "sales", label: "Goals", mobileLabel: "Goals", mobileSlot: "more" },
   myWork: { section: "field", label: "My work", mobileLabel: "My work", mobileSlot: "more" },
-  projects: { section: "field", label: "Projects", mobileLabel: "Projects", mobileSlot: "primary" },
-  calendar: { section: "field", label: "Calendar", mobileLabel: "Calendar", mobileSlot: "more" },
+  projects: { section: "field", label: "Projects", mobileLabel: "Projects", mobileSlot: "more" },
   customers: { section: "customers", label: "Customers", mobileLabel: "Customers", mobileSlot: "more" },
   products: { section: "products", label: "Products", mobileLabel: "Products", mobileSlot: "more" },
   inventory: { section: "products", label: "Inventory", mobileLabel: "Inventory", mobileSlot: "more" },
   packages: { section: "products", label: "Packages", mobileLabel: "Packages", mobileSlot: "more" },
-  command: { section: "intelligence", label: "Command Center", mobileLabel: "Command", mobileSlot: "more" },
   agent: { section: "intelligence", label: "SegmiQ Agent", mobileLabel: "Agent", mobileSlot: "more" },
-  reports: { section: "intelligence", label: "Reports", mobileLabel: "Reports", mobileSlot: "more" },
   team: { section: "management", label: "Team", mobileLabel: "Team", mobileSlot: "more" },
   documents: { section: "management", label: "Documents", mobileLabel: "Documents", mobileSlot: "more" },
   billing: { section: "management", label: "Billing", mobileLabel: "Billing", mobileSlot: "more" },
   settings: { section: "management", label: "Settings", mobileLabel: "Settings", mobileSlot: "more" },
+  toolbox: { section: "tools", label: "Toolbox", mobileLabel: "Toolbox", mobileSlot: "more" },
+  help: { section: "tools", label: "Help & Support", mobileLabel: "Help", mobileSlot: "more" },
 };
 
 const SOLAR_ONLY_ITEMS: SalesNavItemConfig[] = [
@@ -510,6 +523,16 @@ const SOLAR_ONLY_ITEMS: SalesNavItemConfig[] = [
     section: "management",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/sales/profile") || exactOrChild(p, "/sales/settings"),
+  },
+  {
+    id: "help",
+    label: "Help & Support",
+    href: "/sales/training",
+    icon: "help",
+    section: "tools",
+    mobileSlot: "more",
+    mobileLabel: "Help",
+    match: (p) => exactOrChild(p, "/sales/training"),
   },
 ];
 
