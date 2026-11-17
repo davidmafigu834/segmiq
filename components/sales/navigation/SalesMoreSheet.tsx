@@ -19,6 +19,7 @@ import {
   SOLAR_SALES_SECTION_ORDER,
   resolveSalesNavItems,
   SALES_NAV_SECTION_LABEL,
+  salesNavSectionLabel,
   salesMobileMoreItems,
   salesNavIsActive,
   salesNavItemsBySection,
@@ -143,7 +144,7 @@ export function SalesMoreSheet({
   const solarGrouped = Boolean(solarWorkflow) && !isRealEstate(businessType);
   const moreGroups = (solarGrouped ? SOLAR_SALES_SECTION_ORDER : (["sales", "tools"] as const)).map((id) => ({
     id,
-    label: SALES_NAV_SECTION_LABEL[id],
+    label: salesNavSectionLabel(id, { solarWorkflow }),
     items: salesNavItemsBySection(more, id),
   })).filter((group) => group.items.length > 0);
 

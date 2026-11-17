@@ -145,11 +145,14 @@ describe("real estate stage 1 navigation", () => {
     assert.equal(trades.find((item) => item.id === "quotes")?.href, "/sales/quotes");
     const solar = resolveSalesNavItems(false, "trades", { solarWorkflow: true });
     assert.deepEqual(salesNavSectionOrder("trades", { solarWorkflow: true }), [
+      "overview",
       "sales",
+      "contacts",
+      "follow_up",
+      "intelligence",
       "field",
       "customers",
       "products",
-      "intelligence",
       "management",
       "tools",
     ]);
@@ -159,21 +162,21 @@ describe("real estate stage 1 navigation", () => {
       "whatsapp",
       "socialInbox",
       "leads",
-      "contacts",
       "quotes",
+      "contacts",
       "calendar",
       "tasks",
       "command",
       "reports",
       "wonLost",
       "goals",
+      "agent",
       "myWork",
       "projects",
       "customers",
       "products",
       "inventory",
       "packages",
-      "agent",
       "team",
       "documents",
       "billing",
@@ -184,6 +187,9 @@ describe("real estate stage 1 navigation", () => {
     assert.equal(solar.find((item) => item.id === "customers")?.href, "/sales/customers");
     assert.equal(solar.find((item) => item.id === "settings")?.href, "/sales/profile");
     assert.equal(solar.find((item) => item.id === "command")?.label, "Command");
+    assert.equal(solar.find((item) => item.id === "contacts")?.section, "contacts");
+    assert.equal(solar.find((item) => item.id === "calendar")?.section, "follow_up");
+    assert.equal(solar.find((item) => item.id === "command")?.section, "intelligence");
     assert.equal(solar.find((item) => item.id === "contacts")?.href, "/sales/contacts");
     assert.equal(solar.find((item) => item.id === "dashboard")?.label, "Dashboard");
     assert.equal(solar.find((item) => item.id === "pipeline")?.label, "My Pipeline");

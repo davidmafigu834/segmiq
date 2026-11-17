@@ -98,6 +98,7 @@ export type SalesNavSectionId =
   | "follow_up"
   | "system"
   | "customers"
+  | "contacts"
   | "products"
   | "management";
 
@@ -362,11 +363,14 @@ function withoutSolarDelivery(items: SalesNavItemConfig[], solarWorkflow?: boole
 
 /** Salesperson menu in the same groups as the solar installation mock. */
 export const SOLAR_SALES_SECTION_ORDER: SalesNavSectionId[] = [
+  "overview",
   "sales",
+  "contacts",
+  "follow_up",
+  "intelligence",
   "field",
   "customers",
   "products",
-  "intelligence",
   "management",
   "tools",
 ];
@@ -377,21 +381,21 @@ const SOLAR_SALES_ITEM_ORDER = [
   "whatsapp",
   "socialInbox",
   "leads",
-  "contacts",
   "quotes",
+  "contacts",
   "calendar",
   "tasks",
   "command",
   "reports",
   "wonLost",
   "goals",
+  "agent",
   "myWork",
   "projects",
   "customers",
   "products",
   "inventory",
   "packages",
-  "agent",
   "team",
   "documents",
   "billing",
@@ -404,19 +408,19 @@ const SOLAR_SALES_PLACEMENT: Record<
   string,
   { section: SalesNavSectionId; label: string; mobileLabel: string; mobileSlot: "primary" | "more" }
 > = {
-  dashboard: { section: "sales", label: "Dashboard", mobileLabel: "Dashboard", mobileSlot: "primary" },
+  dashboard: { section: "overview", label: "Dashboard", mobileLabel: "Dashboard", mobileSlot: "primary" },
   pipeline: { section: "sales", label: "My Pipeline", mobileLabel: "Pipeline", mobileSlot: "primary" },
   whatsapp: { section: "sales", label: "WhatsApp Sales Hub", mobileLabel: "WhatsApp", mobileSlot: "primary" },
   socialInbox: { section: "sales", label: "Social Inbox", mobileLabel: "Social", mobileSlot: "more" },
   leads: { section: "sales", label: "Leads", mobileLabel: "Leads", mobileSlot: "more" },
-  contacts: { section: "sales", label: "Contacts", mobileLabel: "Contacts", mobileSlot: "more" },
   quotes: { section: "sales", label: "Quotations", mobileLabel: "Quotes", mobileSlot: "more" },
-  calendar: { section: "sales", label: "Calendar", mobileLabel: "Calendar", mobileSlot: "more" },
-  tasks: { section: "sales", label: "Tasks", mobileLabel: "Tasks", mobileSlot: "primary" },
-  command: { section: "sales", label: "Command", mobileLabel: "Command", mobileSlot: "more" },
-  reports: { section: "sales", label: "Reports", mobileLabel: "Reports", mobileSlot: "more" },
-  wonLost: { section: "sales", label: "Won & Lost", mobileLabel: "Won & Lost", mobileSlot: "more" },
-  goals: { section: "sales", label: "Goals", mobileLabel: "Goals", mobileSlot: "more" },
+  contacts: { section: "contacts", label: "Contacts", mobileLabel: "Contacts", mobileSlot: "more" },
+  calendar: { section: "follow_up", label: "Calendar", mobileLabel: "Calendar", mobileSlot: "more" },
+  tasks: { section: "follow_up", label: "Tasks", mobileLabel: "Tasks", mobileSlot: "primary" },
+  command: { section: "intelligence", label: "Command", mobileLabel: "Command", mobileSlot: "more" },
+  reports: { section: "intelligence", label: "Reports", mobileLabel: "Reports", mobileSlot: "more" },
+  wonLost: { section: "intelligence", label: "Won & Lost", mobileLabel: "Won & Lost", mobileSlot: "more" },
+  goals: { section: "intelligence", label: "Goals", mobileLabel: "Goals", mobileSlot: "more" },
   myWork: { section: "field", label: "My work", mobileLabel: "My work", mobileSlot: "more" },
   projects: { section: "field", label: "Projects", mobileLabel: "Projects", mobileSlot: "more" },
   customers: { section: "customers", label: "Customers", mobileLabel: "Customers", mobileSlot: "more" },
@@ -834,6 +838,7 @@ export const SALES_NAV_SECTION_LABEL: Record<SalesNavSectionId, string> = {
   sales: "Sales",
   tools: "Tools",
   overview: "Dashboard",
+  contacts: "Contacts",
   customers: "Customers",
   products: "Products & stock",
   management: "Management",
@@ -847,6 +852,14 @@ export const SALES_NAV_SECTION_LABEL: Record<SalesNavSectionId, string> = {
   follow_up: "Follow-up",
   system: "System",
 };
+
+export function salesNavSectionLabel(
+  section: SalesNavSectionId,
+  options?: { solarWorkflow?: boolean }
+): string {
+  if (options?.solarWorkflow && section === "overview") return "Overview";
+  return SALES_NAV_SECTION_LABEL[section];
+}
 
 export function salesNavItemsBySection(
   items: SalesNavItemConfig[],

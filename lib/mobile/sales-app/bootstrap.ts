@@ -35,7 +35,7 @@ import {
   RE_PIPELINE_STAGE_LABEL,
 } from "@/lib/real-estate/pipeline";
 import {
-  SALES_NAV_SECTION_LABEL,
+  salesNavSectionLabel,
   resolveSalesNavItems,
   salesMobilePrimaryItems,
 } from "@/lib/sales/navigation/sales-nav-config";
@@ -450,7 +450,7 @@ function navigationFor(
     solarWorkflow,
   });
   const sectionOrder = [...new Set(items.map((item) => item.section))];
-  const sections = sectionOrder.map((id) => ({ id, label: SALES_NAV_SECTION_LABEL[id] ?? id }));
+  const sections = sectionOrder.map((id) => ({ id, label: salesNavSectionLabel(id, { solarWorkflow }) }));
   if (salesAccess === "BLOCKED") {
     return { home: null, primary: [], sections, destinations: [] };
   }

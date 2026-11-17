@@ -11,8 +11,8 @@ import { SalesNavItem, SalesNavSection } from "@/components/sales/navigation/Sal
 import {
   displaySalesName,
   resolveSalesNavItems,
-  SALES_NAV_SECTION_LABEL,
   salesNavIsActive,
+  salesNavSectionLabel,
   salesNavItemsBySection,
   salesNavSectionOrder,
   type SalesNavBadgeKey,
@@ -63,7 +63,7 @@ export function SalesSidebar({
   const groups: Array<{ id: SalesNavSectionId; label: string; items: ReturnType<typeof salesNavItemsBySection> }> =
     salesNavSectionOrder(businessType, { solarWorkflow }).map((id) => ({
       id,
-      label: SALES_NAV_SECTION_LABEL[id],
+      label: salesNavSectionLabel(id, { solarWorkflow }),
       items: salesNavItemsBySection(items, id),
     })).filter((group) => group.items.length > 0);
   const dashboardHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";
