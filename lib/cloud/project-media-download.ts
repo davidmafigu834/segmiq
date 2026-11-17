@@ -1,5 +1,5 @@
-import { resolveMediaKeys } from "@/lib/watermark/storage-keys";
-import { getObject } from "@/lib/storage/r2";
+import { keyFromPublicUrl, resolveMediaKeys } from "@/lib/watermark/storage-keys";
+import { getObject, getPublicUrl } from "@/lib/storage/r2";
 
 export function sanitizeDownloadFilename(name: string): string {
   return name
@@ -23,19 +23,33 @@ export function buildPhotoDownloadFilename(
 
 /** Public / watermarked copy used for sharing and downloads. */
 export function getPublishablePhotoKey(storageKey: string): string {
-  return resolveMediaKeys(storageKey).publicKey;
+  const key = keyFromPublicUrl(storageKey) ?? storageKey;
+  return resolveMediaKeys(key).publicKey;
 }
 
 export function buildProjectPhotosZipFilename(projectTitle: string): string {
   return `${sanitizeDownloadFilename(projectTitle)}-photos.zip`;
 }
 
+async function readStorageKey(key: string): Promise<Buffer> {
+  try {
+    return await getObject(key);
+  } catch (storageError) {
+    const url = getPublicUrl(key);
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) throw storageError;
+    return Buffer.from(await res.arrayBuffer());
+  }
+}
+
 /** Watermarked/public copy, falling back to the original upload if needed. */
 export async function fetchPublishablePhotoBuffer(storageKey: string): Promise<Buffer> {
-  const { publicKey, originalKey } = resolveMediaKeys(storageKey);
+  const key = keyFromPublicUrl(storageKey) ?? storageKey;
+  const { publicKey, originalKey } = resolveMediaKeys(key);
   try {
-    return await getObject(publicKey);
-  } catch {
-    return await getObject(originalKey);
+    return await readStorageKey(publicKey);
+  } catch (publicError) {
+    if (originalKey === publicKey) throw publicError;
+    return readStorageKey(originalKey);
   }
 }
