@@ -374,6 +374,7 @@ const SOLAR_SALES_ITEM_ORDER = [
   "pipeline",
   "socialInbox",
   "leads",
+  "contacts",
   "quotes",
   "myWork",
   "projects",
@@ -400,6 +401,7 @@ const SOLAR_SALES_PLACEMENT: Record<
   pipeline: { section: "sales", label: "Solar Pipeline", mobileLabel: "Pipeline", mobileSlot: "primary" },
   socialInbox: { section: "sales", label: "Social Inbox", mobileLabel: "Social", mobileSlot: "more" },
   leads: { section: "sales", label: "Leads", mobileLabel: "Leads", mobileSlot: "more" },
+  contacts: { section: "sales", label: "Contacts", mobileLabel: "Contacts", mobileSlot: "more" },
   quotes: { section: "sales", label: "Quotations", mobileLabel: "Quotes", mobileSlot: "more" },
   myWork: { section: "field", label: "My work", mobileLabel: "My work", mobileSlot: "more" },
   projects: { section: "field", label: "Projects", mobileLabel: "Projects", mobileSlot: "primary" },
@@ -418,6 +420,16 @@ const SOLAR_SALES_PLACEMENT: Record<
 };
 
 const SOLAR_ONLY_ITEMS: SalesNavItemConfig[] = [
+  {
+    id: "contacts",
+    label: "Contacts",
+    href: "/sales/contacts",
+    icon: "leads",
+    section: "sales",
+    mobileSlot: "more",
+    mobileLabel: "Contacts",
+    match: (p) => exactOrChild(p, "/sales/contacts"),
+  },
   {
     id: "customers",
     label: "Customers",

@@ -159,6 +159,7 @@ describe("real estate stage 1 navigation", () => {
       "pipeline",
       "socialInbox",
       "leads",
+      "contacts",
       "quotes",
       "myWork",
       "projects",

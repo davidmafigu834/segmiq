@@ -16,6 +16,8 @@ export type ContactListItem = {
   owner: string | null;
   lastTouchedAt: string | null;
   activeLead: ContactListActiveLead | null;
+  /** Newest lead, including won and lost. */
+  latestLead: ContactListActiveLead | null;
 };
 
 export type AttentionStatus = "follow_up_due" | "no_contact" | "quoted" | "won";

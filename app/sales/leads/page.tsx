@@ -80,7 +80,7 @@ export default async function SalesLeadsDirectoryPage() {
       >
         <Suspense fallback={<LeadsFallback solar={solar} />}>
           {solar ? (
-            <SolarSalesLeads />
+            <SolarSalesLeads assignmentMode={assignmentMode} />
           ) : (
             <SalesLeadsClient
               assignmentMode={assignmentMode}

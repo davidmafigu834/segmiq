@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { SolarPanelActionKind } from "@/lib/sales/solar-workflow/opportunity";
 import type { SolarSalesStage } from "@/lib/sales/solar-workflow";
+import { LeadTimeline } from "@/components/leads/LeadTimeline";
+import { SendAssetPanel } from "@/components/leads/SendAssetPanel";
+import { solarFollowUpWrite } from "@/lib/sales/solar-workflow/engagement";
 import { SolarLeadWork } from "./SolarLeadWork";
 import { lineBtn } from "./desk";
 import "./solar-desk.css";
@@ -55,12 +58,16 @@ export function SolarLeadDesk({
   name,
   phone,
   followUpDate,
+  clientId,
+  contactId,
   onSaved,
 }: {
   leadId: string;
   name: string;
   phone: string | null;
   followUpDate: string | null;
+  clientId?: string;
+  contactId?: string | null;
   onSaved?: () => void;
 }) {
   const router = useRouter();
@@ -69,6 +76,10 @@ export function SolarLeadDesk({
   const [busy, setBusy] = useState(false);
   const [logging, setLogging] = useState(false);
   const [call, setCall] = useState("");
+  const [outcome, setOutcome] = useState("answered");
+  const [followDate, setFollowDate] = useState("");
+  const [followTime, setFollowTime] = useState("09:00");
+  const [tab, setTab] = useState<"details" | "timeline" | "quote" | "send">("details");
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/sales/solar-workflow/lead?leadId=${encodeURIComponent(leadId)}`);
@@ -112,20 +123,45 @@ export function SolarLeadDesk({
     event.preventDefault();
     const text = call.trim();
     if (!text) return;
+    if (outcome === "follow" && !followDate) {
+      setStatus("Choose the date for this follow-up.");
+      return;
+    }
     setBusy(true);
+    const when = outcome === "follow" ? ` Follow-up ${followDate} ${followTime}.` : "";
     const res = await fetch(`/api/leads/${leadId}/note`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ note: `Call · ${text}` }),
+      body: JSON.stringify({ note: `Call · ${text}${when}` }),
     });
-    setBusy(false);
     if (!res.ok) {
+      setBusy(false);
       setStatus("Could not save the call.");
       return;
     }
+    if (outcome === "follow") {
+      const write = solarFollowUpWrite(card?.dealId ?? null, followDate);
+      const saved = write.resource === "deal"
+        ? await fetch(`/api/deals/${card?.dealId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...write.body, next_action_at: new Date(`${followDate}T${followTime || "09:00"}`).toISOString() }),
+          })
+        : await fetch(`/api/leads/${leadId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ follow_up_date: followDate }),
+          });
+      if (!saved.ok) {
+        setBusy(false);
+        setStatus("The call was saved. The follow-up date was not.");
+        return;
+      }
+    }
+    setBusy(false);
     setCall("");
     setLogging(false);
-    setStatus("Call logged. The stage stays the same.");
+    setStatus(outcome === "follow" ? `Follow-up set for ${followDate} ${followTime}.` : "Call logged. The stage stays the same.");
     onSaved?.();
   }
 
@@ -165,10 +201,24 @@ export function SolarLeadDesk({
 
   return (
     <div>
-      <p className="text-[13px] font-medium text-sales-text-muted">{card?.stageLabel ?? "Lead"}</p>
-      <h2 className="mt-1 break-words font-display text-[28px] font-semibold leading-none tracking-[-0.03em]">{name}</h2>
+      {contactId ? (
+        <a href={`/sales/contacts?contact=${contactId}`} className="block text-left">
+          <p className="text-[13px] font-medium text-sales-text-muted">{card?.stageLabel ?? "Lead"}</p>
+          <h2 className="mt-1 break-words font-display text-[28px] font-semibold leading-none tracking-[-0.03em] text-sales-text-primary">{name}</h2>
+        </a>
+      ) : (
+        <>
+          <p className="text-[13px] font-medium text-sales-text-muted">{card?.stageLabel ?? "Lead"}</p>
+          <h2 className="mt-1 break-words font-display text-[28px] font-semibold leading-none tracking-[-0.03em]">{name}</h2>
+        </>
+      )}
       {card?.requirement.location ? <p className="mt-2 text-[14px] text-sales-text-secondary">{card.requirement.location}</p> : null}
       <p className="mt-1 text-[13px] text-sales-text-muted">{phone || card?.customer.phone || "No phone on file"}</p>
+      <div className="mt-4 flex gap-2 border-b border-sales-border" role="tablist">
+        {(["details", "timeline", "quote", "send"] as const).map((id) => (
+          <button key={id} type="button" role="tab" aria-selected={tab === id} className={`border-b-2 px-3 py-2 text-[13px] font-semibold capitalize ${tab === id ? "border-sales-text-primary text-sales-text-primary" : "border-transparent text-sales-text-secondary"}`} onClick={() => setTab(id)}>{id}</button>
+        ))}
+      </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {phone || card?.customer.phone ? <a className={lineBtn} href={`tel:${phone || card?.customer.phone}`}>Call</a> : null}
@@ -178,16 +228,59 @@ export function SolarLeadDesk({
 
       {logging ? (
         <form className="so-form" onSubmit={(event) => void saveCall(event)}>
+          <label className="so-label" htmlFor={`solar-outcome-${leadId}`}>
+            Outcome
+            <select id={`solar-outcome-${leadId}`} value={outcome} onChange={(event) => setOutcome(event.target.value)} className="so-field">
+              <option value="answered">Answered</option>
+              <option value="no_answer">No answer</option>
+              <option value="follow">Follow-up</option>
+            </select>
+          </label>
           <label className="so-label" htmlFor={`solar-call-${leadId}`}>
             What was said
             <textarea id={`solar-call-${leadId}`} value={call} onChange={(event) => setCall(event.target.value)} className="so-field" />
           </label>
           <div className="so-form-actions">
-            <button type="submit" className="so-btn h-11 bg-sales-brand px-4 text-[14px] font-semibold text-sales-brand-text" disabled={busy}>Save call</button>
+            {outcome === "follow" ? (
+              <div className="grid grid-cols-2 gap-3">
+                <label className="so-label">
+                  Date
+                  <input type="date" value={followDate} onChange={(event) => setFollowDate(event.target.value)} className="so-field" required />
+                </label>
+                <label className="so-label">
+                  Time
+                  <input type="time" value={followTime} onChange={(event) => setFollowTime(event.target.value)} className="so-field" required />
+                </label>
+              </div>
+            ) : null}
+            <button type="submit" className={`${lineBtn} h-11 w-full`} disabled={busy}>Save call</button>
           </div>
         </form>
       ) : null}
+      {status ? <p className="mt-3 text-[13px] text-sales-text-secondary" role="status">{status}</p> : null}
 
+      {tab === "timeline" ? <LeadTimeline leadId={leadId} /> : null}
+      {tab === "quote" ? (
+        <section className="so-record mt-6" aria-label="Quotation">
+          <div className="so-record-row">
+            <span className="so-record-kicker">Quotation</span>
+            <span className="so-record-copy">
+              <span className="so-record-value">{card?.quotation?.number || "None yet"}</span>
+              {quoteMeta ? <span className="so-record-meta">{quoteMeta}</span> : null}
+            </span>
+          </div>
+          {quoteAction ? (
+            <button type="button" className={`${lineBtn} mt-3`} onClick={() => router.push(quoteHref)}>{quoteAction}</button>
+          ) : null}
+        </section>
+      ) : null}
+      {tab === "send" && clientId ? (
+        <div className="mt-4">
+          <SendAssetPanel leadId={leadId} clientId={clientId} leadPhone={phone || card?.customer.phone} onSent={() => setStatus("Sent.")} />
+        </div>
+      ) : null}
+      {tab === "details" ? (
+      <>
       <p className="mb-2 mt-6 text-[13px] text-sales-text-secondary">Click a stage to move this lead. A reminder does not.</p>
       <ol className="so-rail" aria-label="Solar journey">
         {JOURNEY.map((step, index) => {
@@ -214,7 +307,6 @@ export function SolarLeadDesk({
       </ol>
 
       <SolarLeadWork key={`${leadId}-${followUpDate ?? ""}`} leadId={leadId} followUpDate={followUpDate} onSaved={onSaved} />
-      {status ? <p className="mt-3 text-[13px] text-sales-text-secondary" role="status">{status}</p> : null}
 
       <section className="so-record mt-6" aria-label="On this lead">
         {nextHref ? (
@@ -256,6 +348,8 @@ export function SolarLeadDesk({
           </div>
         )}
       </section>
+      </>
+      ) : null}
     </div>
   );
 }

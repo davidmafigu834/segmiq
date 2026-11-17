@@ -22,6 +22,7 @@ type LeadMeta = {
   owner: string | null;
   lastTouchedAt: string | null;
   activeLead: ContactListActiveLead | null;
+  latestLead: ContactListActiveLead | null;
 };
 
 export async function buildContactLeadMetaByContactId(
@@ -47,8 +48,18 @@ export async function buildContactLeadMetaByContactId(
 
     let meta = metaByContact.get(cid);
     if (!meta) {
-      meta = { owner, lastTouchedAt: updated, activeLead: null };
+      meta = { owner, lastTouchedAt: updated, activeLead: null, latestLead: null };
       metaByContact.set(cid, meta);
+    }
+
+    if (!meta.latestLead) {
+      meta.latestLead = {
+        id: lr.id as string,
+        status: lr.status as string,
+        project_type: (lr.project_type as string | null) ?? null,
+        follow_up_date: (lr.follow_up_date as string | null) ?? null,
+        assigneeName: owner,
+      };
     }
 
     if (!CLOSED_STATUSES.has(lr.status as string) && !meta.activeLead) {
@@ -69,7 +80,7 @@ export async function buildContactLeadMetaByContactId(
 export function mergeContactListItems<T extends ContactRow>(
   contacts: T[],
   metaByContact: Map<string, LeadMeta>
-): (T & Pick<ContactListItem, "owner" | "lastTouchedAt" | "activeLead">)[] {
+): (T & Pick<ContactListItem, "owner" | "lastTouchedAt" | "activeLead" | "latestLead">)[] {
   return contacts.map((c) => {
     const meta = metaByContact.get(c.id);
     return {
@@ -77,6 +88,7 @@ export function mergeContactListItems<T extends ContactRow>(
       owner: meta?.owner ?? null,
       lastTouchedAt: meta?.lastTouchedAt ?? c.updated_at,
       activeLead: meta?.activeLead ?? null,
+      latestLead: meta?.latestLead ?? null,
     };
   });
 }
@@ -84,7 +96,7 @@ export function mergeContactListItems<T extends ContactRow>(
 export async function enrichContactsWithLeads<T extends ContactRow>(
   supabase: SupabaseClient,
   contacts: T[]
-): Promise<(T & Pick<ContactListItem, "owner" | "lastTouchedAt" | "activeLead">)[]> {
+): Promise<(T & Pick<ContactListItem, "owner" | "lastTouchedAt" | "activeLead" | "latestLead">)[]> {
   const ids = contacts.map((c) => c.id);
   const metaByContact = await buildContactLeadMetaByContactId(supabase, ids);
   return mergeContactListItems(contacts, metaByContact);

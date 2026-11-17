@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SOLAR_SALES_STAGE_LABEL, SOLAR_SALES_STAGES, type SolarSalesStage } from "@/lib/sales/solar-workflow";
-import { SolarCreateSheet } from "@/components/sales/solar/SolarCreateSheet";
+import { AddToHubSheet } from "@/components/sales/AddToHubSheet";
 import { LeadDetailPanel } from "@/app/sales/leads/LeadDetailPanel";
 import { openLeadPanel } from "@/store/uiStore";
 import type { LeadRow } from "@/types";
@@ -18,7 +18,11 @@ type Card = {
   nextAction: string;
 };
 
-export function SolarSalesLeads() {
+export function SolarSalesLeads({
+  assignmentMode = "direct",
+}: {
+  assignmentMode?: "direct" | "pool" | "round_robin";
+}) {
   const searchParams = useSearchParams();
   const [cards, setCards] = useState<Card[]>([]);
   const [stage, setStage] = useState<SolarSalesStage | "all">("all");
@@ -108,7 +112,10 @@ export function SolarSalesLeads() {
         )}
       </Panel>
       {addOpen ? (
-        <SolarCreateSheet
+        <AddToHubSheet
+          assignmentMode={assignmentMode}
+          mode="salesperson"
+          defaultType="lead"
           onClose={() => setAddOpen(false)}
           onSuccess={() => {
             setAddOpen(false);
