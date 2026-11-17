@@ -11,7 +11,7 @@ type When = "any" | "today" | "yesterday" | "week" | "custom";
 type Who = "all" | "mine" | "new" | "talking" | "visit" | "quote" | "won" | "lost";
 type Group = Exclude<Who, "all" | "mine"> | "none";
 
-const GROUPS: { id: Group; label: string }[] = [
+const GROUPS: { id: Exclude<Group, "none">; label: string }[] = [
   { id: "new", label: "New" },
   { id: "talking", label: "Contacted" },
   { id: "visit", label: "Visit" },

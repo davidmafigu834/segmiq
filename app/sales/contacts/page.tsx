@@ -39,7 +39,7 @@ export default async function SalesContactsPage({
   const { data } = session.clientId
     ? await fetchRoundRobinEligibleUsers(supabase, session.clientId, { select: "id, name" })
     : { data: [] };
-  const team = ((data ?? []) as { id: string; name: string | null }[])
+  const team = ((data ?? []) as unknown as { id: string; name: string | null }[])
     .filter((person) => person.id && person.name)
     .map((person) => ({ id: person.id, name: person.name as string }));
   const contactParam = searchParams.contact;
