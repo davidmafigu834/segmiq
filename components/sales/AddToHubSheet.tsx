@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Check,
 } from "lucide-react";
+import "@/components/sales/solar/solar-match.css";
 
 import {
   WALK_IN_OUTCOMES,
@@ -58,6 +59,7 @@ export function AddToHubSheet({
   hideSourceField = false,
   variant = "default",
   realEstate = false,
+  solar = false,
   initialContact,
   defaultForceNew = false,
   onClose,
@@ -72,6 +74,7 @@ export function AddToHubSheet({
   hideSourceField?: boolean;
   variant?: "default" | "walk_in";
   realEstate?: boolean;
+  solar?: boolean;
   initialContact?: { name?: string | null; phone?: string | null; email?: string | null };
   defaultForceNew?: boolean;
   onClose: () => void;
@@ -284,8 +287,20 @@ export function AddToHubSheet({
           <p className="mt-1 text-[13px] text-sales-text-secondary">Done — returning to your list…</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
-              {variant !== "walk_in" && !lockType && (
+        <div className={solar ? "so-form so-hub-solar" : "flex flex-col gap-4"}>
+              {variant !== "walk_in" && !lockType && solar ? (
+              <div className="so-add-types">
+                <button type="button" className={`so-add-type ${type === "lead" ? "is-on" : ""}`} aria-pressed={type === "lead"} onClick={() => setType("lead")}>
+                  <span>New lead</span>
+                  <span>Enters the pipeline.</span>
+                </button>
+                <button type="button" className={`so-add-type ${type === "customer" ? "is-on" : ""}`} aria-pressed={type === "customer"} onClick={() => setType("customer")}>
+                  <span>Existing customer</span>
+                  <span>Files to Customers.</span>
+                </button>
+              </div>
+              ) : null}
+              {variant !== "walk_in" && !lockType && !solar ? (
               <div className="flex gap-2">
                 {(["lead", "customer"] as const).map((t) => (
                   <button
@@ -752,10 +767,10 @@ export function AddToHubSheet({
                 </label>
               ) : null}
               {isLead && mode === "salesperson" && (
-                <div className="flex items-center gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface-hover px-3 py-2.5">
-                  <Check size={15} className="shrink-0 text-sales-brand-fg" />
-                  <span className="text-[12.5px] text-sales-text-secondary">{salespersonNote}</span>
-                </div>
+                <p className={solar ? "so-add-own" : "flex items-center gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface-hover px-3 py-2.5 text-[12.5px] text-sales-text-secondary"}>
+                  <Check size={15} className="shrink-0" aria-hidden />
+                  {salespersonNote}
+                </p>
               )}
 
               {error && <p className="text-[12.5px] text-sales-danger">{error}</p>}
@@ -768,7 +783,7 @@ export function AddToHubSheet({
                   dupeBlocking ||
                   (isLead && mode === "manager" && assignChoice === "specific" && !assigneeId)
                 }
-                className="mt-1 flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sales-neutral-900)]/30 disabled:opacity-50"
+                className={solar ? "so-lead-btn" : "mt-1 flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sales-neutral-900)]/30 disabled:opacity-50"}
               >
                 <UserPlus size={15} strokeWidth={1.8} />{" "}
                 {variant === "walk_in" || isWalkInFlow

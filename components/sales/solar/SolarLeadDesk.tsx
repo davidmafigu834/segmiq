@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
+import { ExternalLink, Phone, Plus } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si";
+import type { ActivityTimelineItem } from "@/lib/activity/types";
 import type { SolarPanelActionKind } from "@/lib/sales/solar-workflow/opportunity";
 import type { SolarSalesStage } from "@/lib/sales/solar-workflow";
-import { LeadTimeline } from "@/components/leads/LeadTimeline";
-import { SendAssetPanel } from "@/components/leads/SendAssetPanel";
 import { solarFollowUpWrite } from "@/lib/sales/solar-workflow/engagement";
 import { SolarLeadWork } from "./SolarLeadWork";
-import { lineBtn } from "./desk";
 import "./solar-desk.css";
 
 type Card = {
@@ -58,7 +58,7 @@ export function SolarLeadDesk({
   name,
   phone,
   followUpDate,
-  clientId,
+  clientId: _clientId,
   contactId,
   onSaved,
 }: {
@@ -74,12 +74,15 @@ export function SolarLeadDesk({
   const [card, setCard] = useState<Card | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [logging, setLogging] = useState(false);
+  const [logging, setLogging] = useState(true);
   const [call, setCall] = useState("");
   const [outcome, setOutcome] = useState("answered");
   const [followDate, setFollowDate] = useState("");
   const [followTime, setFollowTime] = useState("09:00");
   const [tab, setTab] = useState<"details" | "timeline" | "quote" | "send">("details");
+  const [events, setEvents] = useState<ActivityTimelineItem[]>([]);
+  const [asset, setAsset] = useState<"quote" | "package" | "photos">("package");
+  const [sendNote, setSendNote] = useState("");
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/sales/solar-workflow/lead?leadId=${encodeURIComponent(leadId)}`);
@@ -90,6 +93,22 @@ export function SolarLeadDesk({
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (tab !== "timeline") return;
+    let live = true;
+    void fetch(`/api/leads/${leadId}/timeline?limit=30`)
+      .then(async (res) => {
+        const json = (await res.json().catch(() => ({}))) as { items?: ActivityTimelineItem[] };
+        if (live) setEvents(json.items ?? []);
+      })
+      .catch(() => {
+        if (live) setEvents([]);
+      });
+    return () => {
+      live = false;
+    };
+  }, [tab, leadId, status]);
 
   async function move(target: SolarSalesStage) {
     if (busy || card?.stage === target) return;
@@ -165,6 +184,27 @@ export function SolarLeadDesk({
     onSaved?.();
   }
 
+  async function deliver(event: FormEvent) {
+    event.preventDefault();
+    const choice = asset === "quote" && !card?.quotation ? "package" : asset;
+    if (choice === "photos" && card?.assessment.status !== "COMPLETED") return;
+    const label = choice === "quote" ? "Quotation" : choice === "photos" ? "Site photos" : "Package overview";
+    setBusy(true);
+    const res = await fetch(`/api/leads/${leadId}/note`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ note: `Sent · ${label}${sendNote.trim() ? ` · ${sendNote.trim()}` : ""}` }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      setStatus("Could not record the send.");
+      return;
+    }
+    setSendNote("");
+    setStatus(`${label} recorded on the timeline.`);
+    onSaved?.();
+  }
+
   const stage = card?.stage ?? "NEW_LEAD";
   const at = journeyAt(stage);
   const visitHref = card?.visit ? `/sales/site-visits/${card.visit.id}` : "/sales/work";
@@ -199,35 +239,151 @@ export function SolarLeadDesk({
           : null;
   const nextGo = card?.nextActionKind === "prepare_proposal" ? "Prepare" : nextHref ? "Open" : null;
 
+  const dial = phone || card?.customer.phone || "";
+  const place = card?.requirement.location || "No location on file";
+  const mark = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("") || "•";
+  const quoteReady = Boolean(card?.quotation && card.quotation.total != null);
+  const photosReady = card?.assessment.status === "COMPLETED";
+  const closed = stage === "WON" || stage === "LOST";
+  const dayGroups: Array<{ day: string; items: ActivityTimelineItem[] }> = [];
+  for (const item of events) {
+    const day = new Date(item.occurredAt).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+    const last = dayGroups[dayGroups.length - 1];
+    if (last?.day === day) last.items.push(item);
+    else dayGroups.push({ day, items: [item] });
+  }
+  const person = (
+    <>
+      <span className="so-lead-mark" aria-hidden>{mark}</span>
+      <span className="min-w-0">
+        <span className="so-lead-person-kicker">{card?.stageLabel ?? "Lead"}</span>
+        <span className="so-lead-person-name">{name}</span>
+        <span className="so-lead-person-meta">{place}{dial ? ` · ${dial}` : ""}</span>
+      </span>
+      <span className="so-lead-person-go">Customer</span>
+    </>
+  );
+
   return (
     <div>
-      {contactId ? (
-        <a href={`/sales/contacts?contact=${contactId}`} className="block text-left">
-          <p className="text-[13px] font-medium text-sales-text-muted">{card?.stageLabel ?? "Lead"}</p>
-          <h2 className="mt-1 break-words font-display text-[28px] font-semibold leading-none tracking-[-0.03em] text-sales-text-primary">{name}</h2>
-        </a>
-      ) : (
-        <>
-          <p className="text-[13px] font-medium text-sales-text-muted">{card?.stageLabel ?? "Lead"}</p>
-          <h2 className="mt-1 break-words font-display text-[28px] font-semibold leading-none tracking-[-0.03em]">{name}</h2>
-        </>
-      )}
-      {card?.requirement.location ? <p className="mt-2 text-[14px] text-sales-text-secondary">{card.requirement.location}</p> : null}
-      <p className="mt-1 text-[13px] text-sales-text-muted">{phone || card?.customer.phone || "No phone on file"}</p>
-      <div className="mt-4 flex gap-2 border-b border-sales-border" role="tablist">
+      <header className="so-lead-head">
+        {contactId ? (
+          <a className="so-lead-person" href={`/sales/contacts?contact=${contactId}`}>{person}</a>
+        ) : (
+          <div className="so-lead-person">{person}</div>
+        )}
+      </header>
+      <div className="flex shrink-0 border-b border-sales-border" role="tablist" aria-label="Lead">
         {(["details", "timeline", "quote", "send"] as const).map((id) => (
-          <button key={id} type="button" role="tab" aria-selected={tab === id} className={`border-b-2 px-3 py-2 text-[13px] font-semibold capitalize ${tab === id ? "border-sales-text-primary text-sales-text-primary" : "border-transparent text-sales-text-secondary"}`} onClick={() => setTab(id)}>{id}</button>
+          <button key={id} type="button" role="tab" aria-selected={tab === id} className={`so-lead-tab ${tab === id ? "is-on" : ""}`} onClick={() => setTab(id)}>
+            {id === "details" ? "Details" : id === "timeline" ? "Timeline" : id === "quote" ? "Quote" : "Send"}
+          </button>
         ))}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {phone || card?.customer.phone ? <a className={lineBtn} href={`tel:${phone || card?.customer.phone}`}>Call</a> : null}
-        <a className={lineBtn} href={`/sales/inbox?lead=${leadId}`}>WhatsApp</a>
-        <button type="button" className={lineBtn} aria-expanded={logging} onClick={() => setLogging((open) => !open)}>Log call</button>
-      </div>
+      {tab === "timeline" ? (
+        <div className="so-time">
+          {dayGroups.length === 0 ? <p className="so-quote-copy">No activity yet.</p> : dayGroups.map((group) => (
+            <section key={group.day}>
+              <h3 className="so-time-day">{group.day}</h3>
+              <ol className="so-time-rail">
+                {group.items.map((item, index) => (
+                  <li key={item.id} className={`so-time-row ${index === 0 && group === dayGroups[0] ? "is-latest" : ""}`}>
+                    <span className="so-time-node" aria-hidden />
+                    <div>
+                      <p className="so-time-kind">{item.activityType.replaceAll("_", " ")}</p>
+                      <p className="so-time-title">{item.title}</p>
+                      {item.summary ? <p className="so-time-detail">{item.summary}</p> : null}
+                      <p className="so-time-who">{item.actorName}</p>
+                    </div>
+                    <time className="so-time-when">{new Date(item.occurredAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</time>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ))}
+        </div>
+      ) : null}
 
+      {tab === "quote" ? (
+        <div className="so-quote">
+          <p className="so-quote-status">{card?.quotation?.statusLabel || (assessmentDone ? "Assessment done" : "Waiting")}</p>
+          <div className="so-quote-head">
+            <h3>{card?.quotation?.number || "No quotation"}</h3>
+            {quoteMeta ? <p className="so-quote-amount">{money(card?.quotation?.total ?? null, card?.quotation?.currency || "USD") || card?.quotation?.statusLabel}</p> : null}
+          </div>
+          <p className="so-quote-copy">{quoteMeta}</p>
+          <div className="so-quote-actions">
+            {!card?.quotation && assessmentDone && stage !== "LOST" ? <button type="button" className="so-lead-btn" onClick={() => void move("PROPOSAL_PREPARED")}>Prepare quotation</button> : null}
+            {card?.quotation ? <button type="button" className="so-lead-btn" onClick={() => router.push(quoteHref)}>Open quotation</button> : null}
+            {card?.quotation && quoteReady ? <button type="button" className="so-lead-btn" onClick={() => void move("QUOTE_SENT")}>Send quotation</button> : null}
+            {card?.project ? <button type="button" className="so-lead-btn" onClick={() => router.push(`/sales/projects/${card.project?.id}`)}>Open project</button> : null}
+          </div>
+          {status ? <p className="so-quote-note" role="status">{status}</p> : null}
+        </div>
+      ) : null}
+
+      {tab === "send" ? (
+        <form className="so-send" onSubmit={(event) => void deliver(event)}>
+          <p className="so-send-kicker">To · {dial ? "Phone" : "No number"}</p>
+          <p className="so-send-who">{name}</p>
+          <p className="so-send-phone">{dial || "No phone on file"}</p>
+          <fieldset className="so-send-set">
+            <legend className="so-send-kicker">What to send</legend>
+            <label className={quoteReady ? "so-send-choice" : "so-send-choice is-off"}>
+              <input type="radio" name="solar-send" checked={asset === "quote"} disabled={!quoteReady} onChange={() => setAsset("quote")} />
+              <span><span className="so-send-name">Quotation</span><span className="so-send-meta">{quoteReady ? quoteMeta : "Price a quotation before it can be sent."}</span></span>
+            </label>
+            <label className="so-send-choice">
+              <input type="radio" name="solar-send" checked={asset === "package"} onChange={() => setAsset("package")} />
+              <span><span className="so-send-name">Package overview</span><span className="so-send-meta">The system you are proposing.</span></span>
+            </label>
+            <label className={photosReady ? "so-send-choice" : "so-send-choice is-off"}>
+              <input type="radio" name="solar-send" checked={asset === "photos"} disabled={!photosReady} onChange={() => setAsset("photos")} />
+              <span><span className="so-send-name">Site photos</span><span className="so-send-meta">{photosReady ? "From the completed visit." : "The visit is not complete."}</span></span>
+            </label>
+          </fieldset>
+          <label className="so-label so-send-note" htmlFor={`solar-send-${leadId}`}>
+            Note
+            <textarea id={`solar-send-${leadId}`} value={sendNote} onChange={(event) => setSendNote(event.target.value)} className="so-field" />
+          </label>
+          <button type="submit" className="so-lead-btn" disabled={busy}>Send {asset === "quote" ? "quotation" : asset === "photos" ? "site photos" : "package overview"}</button>
+          {status ? <p className="so-send-note-out" role="status">{status}</p> : null}
+        </form>
+      ) : null}
+
+      {tab === "details" ? (
+      <div>
+      <div className="space-y-4 p-5">
+        <div className="so-lead-card">
+          <p className="so-lead-kicker">Next</p>
+          <p className="mt-1 text-[14px] font-semibold">{card?.nextAction || "Contact the lead"}</p>
+          <p className="mt-0.5 text-[12px] text-sales-text-secondary">{place}</p>
+        </div>
+        <button type="button" className="so-lead-card block w-full text-left" onClick={() => router.push(visitHref)}>
+          <p className="so-lead-kicker">Site visit</p>
+          <p className="mt-1 text-[14px] font-semibold">{visitTitle}</p>
+          <p className="mt-0.5 text-[12px] text-sales-text-secondary">{visitMeta}</p>
+        </button>
+        {dial ? <a className="block font-mono text-[15px] text-sales-info" href={`tel:${dial}`}>{dial}</a> : <p className="text-[13px] text-sales-text-muted">No phone on file</p>}
+        {closed ? null : (
+          <div className="flex gap-2">
+            <button type="button" className="so-lead-btn" onClick={() => void move("WON")}>Record won customer</button>
+            <button type="button" className="so-lead-btn" onClick={() => void move("LOST")}>Mark not qualified</button>
+          </div>
+        )}
+        <div>
+          <p className="so-lead-kicker mb-2.5">Quick actions</p>
+          <div className="flex gap-2">
+            <a className="so-lead-qa" href={`/sales/inbox?lead=${leadId}`}><SiWhatsapp size={18} color="#25D366" aria-hidden />WhatsApp</a>
+            {dial ? <a className="so-lead-qa" href={`tel:${dial}`}><Phone size={18} strokeWidth={1.8} aria-hidden />Call</a> : null}
+            <button type="button" className="so-lead-qa" onClick={() => setLogging(true)}><Plus size={18} strokeWidth={1.8} aria-hidden />Log call</button>
+            <button type="button" className="so-lead-qa" onClick={() => setTab("send")}><ExternalLink size={18} strokeWidth={1.8} aria-hidden />Send assets</button>
+          </div>
+        </div>
+      </div>
       {logging ? (
-        <form className="so-form" onSubmit={(event) => void saveCall(event)}>
+        <form id="solar-log-call" className="so-form so-form-card mx-5 mb-5" onSubmit={(event) => void saveCall(event)}>
           <label className="so-label" htmlFor={`solar-outcome-${leadId}`}>
             Outcome
             <select id={`solar-outcome-${leadId}`} value={outcome} onChange={(event) => setOutcome(event.target.value)} className="so-field">
@@ -253,35 +409,13 @@ export function SolarLeadDesk({
                 </label>
               </div>
             ) : null}
-            <button type="submit" className={`${lineBtn} h-11 w-full`} disabled={busy}>Save call</button>
+            <button type="submit" className="so-lead-btn" disabled={busy}>Save call</button>
           </div>
         </form>
       ) : null}
-      {status ? <p className="mt-3 text-[13px] text-sales-text-secondary" role="status">{status}</p> : null}
-
-      {tab === "timeline" ? <LeadTimeline leadId={leadId} /> : null}
-      {tab === "quote" ? (
-        <section className="so-record mt-6" aria-label="Quotation">
-          <div className="so-record-row">
-            <span className="so-record-kicker">Quotation</span>
-            <span className="so-record-copy">
-              <span className="so-record-value">{card?.quotation?.number || "None yet"}</span>
-              {quoteMeta ? <span className="so-record-meta">{quoteMeta}</span> : null}
-            </span>
-          </div>
-          {quoteAction ? (
-            <button type="button" className={`${lineBtn} mt-3`} onClick={() => router.push(quoteHref)}>{quoteAction}</button>
-          ) : null}
-        </section>
-      ) : null}
-      {tab === "send" && clientId ? (
-        <div className="mt-4">
-          <SendAssetPanel leadId={leadId} clientId={clientId} leadPhone={phone || card?.customer.phone} onSent={() => setStatus("Sent.")} />
-        </div>
-      ) : null}
-      {tab === "details" ? (
-      <>
-      <p className="mb-2 mt-6 text-[13px] text-sales-text-secondary">Click a stage to move this lead. A reminder does not.</p>
+      {status ? <p className="px-5 text-[13px] text-sales-text-secondary" role="status">{status}</p> : null}
+      <div className="space-y-4 px-5 pb-5">
+      <p className="text-[13px] text-sales-text-secondary">Click a stage to move this lead. A reminder does not.</p>
       <ol className="so-rail" aria-label="Solar journey">
         {JOURNEY.map((step, index) => {
           const current = stage !== "LOST" && (stage === "WON" ? index === JOURNEY.length - 1 : index === at);
@@ -348,7 +482,8 @@ export function SolarLeadDesk({
           </div>
         )}
       </section>
-      </>
+      </div>
+      </div>
       ) : null}
     </div>
   );

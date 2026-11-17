@@ -115,6 +115,7 @@ export function SolarSalesLeads({
         <AddToHubSheet
           assignmentMode={assignmentMode}
           mode="salesperson"
+          solar
           defaultType="lead"
           onClose={() => setAddOpen(false)}
           onSuccess={() => {

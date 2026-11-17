@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Phone, Search } from "lucide-react";
 import type { ContactTimelineEvent } from "@/lib/customer-hub/build-contact-timeline";
 import type { ContactListItem } from "@/lib/customer-hub/contact-list-types";
 import { lineBtn } from "./desk";
@@ -210,27 +211,32 @@ export function SolarContacts({
       phone ? { label: "Phone", value: phone, href: `tel:${phone}` } : null,
       open.email ? { label: "Email", value: open.email, href: `mailto:${open.email}` } : null,
     ].filter(Boolean) as { label: string; value: string; href: string }[];
+    const mark = (open.name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("");
     return (
-      <div className="so-book">
+      <div className="so-contact">
         <button type="button" className={lineBtn} onClick={() => setOpenId("")}>Back to contacts</button>
-        <h1 className="mt-4 font-display text-[32px] font-semibold leading-none tracking-[-0.03em]">{open.name || "Unnamed contact"}</h1>
-        <p className="mt-2 text-[14px] text-sales-text-secondary">{stageLabel(lead?.status)} · {open.owner ? `With ${open.owner}` : "Unassigned"}</p>
-        <div className="mt-5 grid gap-3">
+        <header className="so-contact-hero">
+          <span className="so-lead-mark" aria-hidden>{mark}</span>
+          <div>
+            <p className="so-contact-kicker">{stageLabel(lead?.status)}</p>
+            <h1>{open.name || "Unnamed contact"}</h1>
+            <p className="so-contact-sub">{open.owner ? `With ${open.owner}` : "Unassigned"}</p>
+          </div>
+        </header>
+        <div className="so-saved">
           {saved.map((line) => (
-            <div key={line.label} className="flex items-center justify-between gap-3 border border-sales-border px-3 py-2">
-              <a href={line.href} className="min-w-0">
-                <span className="block text-[12px] text-sales-text-muted">{line.label}</span>
-                <span className="block truncate text-[14px]">{line.value}</span>
-              </a>
+            <div key={line.label} className="so-saved-row">
+              <span>{line.label}</span>
+              <a href={line.href}>{line.value}</a>
               <button type="button" className={lineBtn} onClick={() => void copyText(line.value)}>Copy</button>
             </div>
           ))}
         </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {phone ? <a className={lineBtn} href={`tel:${phone}`}>Call</a> : null}
-          {phone ? <a className={lineBtn} href={`https://wa.me/${digits(phone)}`} target="_blank" rel="noreferrer">WhatsApp</a> : null}
-          {open.email ? <a className={lineBtn} href={`mailto:${open.email}`}>Email</a> : <button type="button" className={lineBtn} disabled>Email</button>}
-          {phone ? <a className={lineBtn} href={`sms:${phone}`}>Text</a> : null}
+        <div className="so-reach">
+          {phone ? <a className="so-lead-qa" href={`tel:${phone}`}>Call</a> : null}
+          {phone ? <a className="so-lead-qa" href={`https://wa.me/${digits(phone)}`} target="_blank" rel="noreferrer">WhatsApp</a> : null}
+          {open.email ? <a className="so-lead-qa" href={`mailto:${open.email}`}>Email</a> : <button type="button" className="so-lead-qa" disabled>Email</button>}
+          {phone ? <a className="so-lead-qa" href={`sms:${phone}`}>Text</a> : null}
         </div>
         <p className="mt-5 text-[13px] text-sales-text-secondary">Came in through {open.source || "an unrecorded source"}.</p>
         {lead ? (
@@ -270,81 +276,132 @@ export function SolarContacts({
     );
   }
 
+  const lostCount = mine.filter((row) => stageGroup((row.latestLead ?? row.activeLead)?.status) === "lost").length;
+  const touches = [
+    { id: "today" as const, label: "Today", count: mine.filter((row) => dayKey(row.lastTouchedAt) === today).length },
+    { id: "yesterday" as const, label: "Yesterday", count: mine.filter((row) => dayKey(row.lastTouchedAt) === yesterday).length },
+    { id: "week" as const, label: "This week", count: mine.filter((row) => { const day = dayKey(row.lastTouchedAt); return day >= weekStart && day <= today; }).length },
+  ];
+  const touchPeak = Math.max(1, ...touches.map((item) => item.count));
   return (
-    <div className="so-book">
-      <p className="text-[13px] text-sales-text-muted">Contacts</p>
-      <h1 className="mt-1 font-display text-[32px] font-semibold leading-none tracking-[-0.03em]">Contacts</h1>
-      <p className="mt-2 max-w-[62ch] text-[14px] text-sales-text-secondary">Every person in the account, with the number, the last touch, and where the job stands.</p>
-      <section className="mt-6" aria-label="Your book">
-        <div className="space-y-2">
-          {GROUPS.map((group) => {
-            const count = mine.filter((row) => stageGroup((row.latestLead ?? row.activeLead)?.status) === group.id).length;
-            return (
-              <button key={group.id} type="button" className="grid w-full grid-cols-[92px_1fr_24px] items-center gap-3 text-left" onClick={() => { setYours(true); setWho(group.id); setWhen("any"); }}>
-                <span className="text-[13px]">{group.label}</span>
-                <span className="h-2 bg-sales-surface-hover"><span className="block h-2 bg-sales-text-primary" style={{ width: count ? `${Math.max(14, (count / pulsePeak) * 100)}%` : "0%" }} /></span>
-                <span className="text-[13px] tabular-nums">{count}</span>
-              </button>
-            );
-          })}
-          <button type="button" className="pt-1 text-left text-[13px] text-sales-text-secondary" onClick={() => { setYours(true); setWho("lost"); setWhen("any"); }}>
-            {mine.filter((row) => stageGroup((row.latestLead ?? row.activeLead)?.status) === "lost").length} lost
-          </button>
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-display text-[32px] font-semibold leading-none tracking-[-0.03em]">Contacts</h1>
+        <p className="mt-2 max-w-[62ch] text-[14px] text-sales-text-secondary">Every number, address, and conversation is kept here. Search a name or the part of a number you still remember.</p>
+      </div>
+      <section className="so-pulse" aria-label="Your book">
+        <header className="so-pulse-head">
+          <p>Your book</p>
+          <h2>{you || "You"}</h2>
+          <p>{lostCount ? `${lostCount} lost.` : "This is where your contacts stand."}</p>
+        </header>
+        <div className="so-pulse-grid">
+          <div>
+            <h3>Pipeline</h3>
+            <div className="so-funnel">
+              {GROUPS.map((group) => {
+                const count = mine.filter((row) => stageGroup((row.latestLead ?? row.activeLead)?.status) === group.id).length;
+                return (
+                  <button key={group.id} type="button" aria-pressed={yours && who === group.id} onClick={() => { setYours(true); setWho(group.id); setWhen("any"); }}>
+                    <span>{group.label}</span>
+                    <span className="so-funnel-track" aria-hidden><span className="so-funnel-fill" style={{ width: count ? `${Math.max(14, (count / pulsePeak) * 100)}%` : "0%" }} /></span>
+                    <span className="so-funnel-n">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button type="button" className="so-funnel-lost" aria-pressed={yours && who === "lost"} onClick={() => { setYours(true); setWho("lost"); setWhen("any"); }}>
+              Lost <span>{lostCount}</span>
+            </button>
+          </div>
+          <div>
+            <h3>Touched</h3>
+            <div className="so-cols">
+              {touches.map((item) => (
+                <button key={item.id} type="button" aria-pressed={yours && when === item.id} onClick={() => { setYours(true); setWho("all"); setWhen(item.id); }}>
+                  <span className="so-col-n">{item.count}</span>
+                  <span className="so-col-bar" style={{ height: `${Math.max(6, (item.count / touchPeak) * 72)}px` }} />
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
-      <div className="mt-6 grid gap-3 md:grid-cols-[1fr_180px_180px]">
-        <input className="so-field" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, number, email" aria-label="Search contacts" />
-        <select className="so-field" value={when} aria-label="When" onChange={(event) => { setWhen(event.target.value as When); setYours(false); }}>
+      <div className="so-book-tools">
+        <label className="so-book-find">
+          <Search size={16} strokeWidth={1.8} aria-hidden />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, number, suburb, email" aria-label="Find a contact" />
+        </label>
+        <div className="so-book-picks">
+          <label>
+            When
+            <select className="so-field" value={when} aria-label="When they were touched" onChange={(event) => { setWhen(event.target.value as When); setYours(false); }}>
           <option value="any">Any time</option>
           <option value="today">Today</option>
           <option value="yesterday">Yesterday</option>
           <option value="week">This week</option>
           <option value="custom">Choose dates</option>
-        </select>
-        <select className="so-field" value={who} aria-label="Stage" onChange={(event) => {
-          const value = event.target.value as Who;
-          setWho(value);
-          setYours(value === "mine");
-        }}>
-          <option value="all">All contacts</option>
-          <option value="mine">Mine</option>
-          <option value="new">New</option>
-          <option value="talking">Contacted</option>
-          <option value="visit">Visit</option>
-          <option value="quote">Quotation</option>
-          <option value="won">Won</option>
-          <option value="lost">Lost</option>
-        </select>
-      </div>
+            </select>
+          </label>
+          <label>
+            Stage
+            <select className="so-field" value={who} aria-label="Stage" onChange={(event) => {
+              const value = event.target.value as Who;
+              setWho(value);
+              setYours(value === "mine");
+            }}>
+              <option value="all">All contacts</option>
+              <option value="mine">Mine</option>
+              <option value="new">New</option>
+              <option value="talking">Contacted</option>
+              <option value="visit">Visit</option>
+              <option value="quote">Quotation</option>
+              <option value="won">Won</option>
+              <option value="lost">Lost</option>
+            </select>
+          </label>
+        </div>
       {when === "custom" ? (
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <input type="date" className="so-field" value={from} aria-label="From" onChange={(event) => setFrom(event.target.value)} />
-          <input type="date" className="so-field" value={to} aria-label="To" onChange={(event) => setTo(event.target.value)} />
+        <div className="so-book-dates">
+          <label>From<input type="date" className="so-field" value={from} aria-label="From" onChange={(event) => setFrom(event.target.value)} /></label>
+          <label>To<input type="date" className="so-field" value={to} aria-label="To" onChange={(event) => setTo(event.target.value)} /></label>
         </div>
       ) : null}
-      <p className="mt-3 text-[13px] text-sales-text-muted">{error || `${shown.length} contacts${yours || who === "mine" ? " · yours" : ""}`}</p>
+      <p className="so-book-count">{error || `${shown.length} contacts${yours || who === "mine" ? " · yours" : ""}`}</p>
+      </div>
       {picked.length ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <select className="so-field" value={assignee} aria-label="Assign to" onChange={(event) => setAssignee(event.target.value)}>
-            <option value="">Assign to</option>
-            {team.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
-          </select>
-          <button type="button" className={lineBtn} disabled={!assignee} onClick={() => void assignSelected()}>Assign {picked.length}</button>
-        </div>
+        <form className="so-book-assign" onSubmit={(event) => { event.preventDefault(); void assignSelected(); }}>
+          <p>{picked.length} marked</p>
+          <label>
+            Assign to
+            <select className="so-field" value={assignee} aria-label="Assign to" onChange={(event) => setAssignee(event.target.value)}>
+              <option value="">Choose</option>
+              {team.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
+            </select>
+          </label>
+          <button type="submit" className={lineBtn} disabled={!assignee}>Assign</button>
+          <button type="button" className={lineBtn} onClick={() => setPicked([])}>Clear</button>
+        </form>
       ) : null}
-      {notice ? <p className="mt-2 text-[13px] text-sales-text-secondary" role="status">{notice}</p> : null}
-      <ul className="mt-4 divide-y divide-sales-border border-y border-sales-border">
+      {notice ? <p className="text-[13px] text-sales-text-secondary" role="status">{notice}</p> : null}
+      <ul className="so-book-list">
         {shown.map((row) => {
           const lead = row.latestLead ?? row.activeLead;
+          const mark = (row.name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("");
           return (
-            <li key={row.id} className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 py-3">
+            <li key={row.id} className="so-book-item">
               <input type="checkbox" aria-label={`Mark ${row.name || "contact"}`} checked={picked.includes(row.id)} onChange={(event) => setPicked((current) => event.target.checked ? [...current, row.id] : current.filter((id) => id !== row.id))} />
-              <button type="button" className="min-w-0 text-left" onClick={() => setOpenId(row.id)}>
-                <span className="block truncate text-[15px] font-semibold">{row.name || "Unnamed contact"}</span>
-                <span className="block truncate text-[13px] text-sales-text-secondary">{row.phone || "No phone"} · {stageLabel(lead?.status)}</span>
-                <span className="block truncate text-[12px] text-sales-text-muted">{row.lastTouchedAt ? `Last touch ${new Date(row.lastTouchedAt).toLocaleDateString()}` : "No activity yet"}</span>
+              <button type="button" className="so-book-open" onClick={() => setOpenId(row.id)}>
+                <span className="so-lead-mark" aria-hidden>{mark}</span>
+                <span className="min-w-0">
+                  <span className="so-book-name">{row.name || "Unnamed contact"}</span>
+                  <span className="so-book-phone">{row.phone || "No phone"}</span>
+                  <span className="so-book-meta">{row.lastTouchedAt ? `Last touch ${new Date(row.lastTouchedAt).toLocaleDateString()}` : "No activity yet"}</span>
+                </span>
+                <span className="so-book-stage">{stageLabel(lead?.status)}</span>
               </button>
-              {row.phone ? <a className={lineBtn} href={`tel:${row.phone}`}>Call</a> : null}
+              {row.phone ? <a className="so-book-call" href={`tel:${row.phone}`} aria-label={`Call ${row.name || "contact"}`}><Phone size={16} strokeWidth={1.8} aria-hidden /></a> : <span />}
             </li>
           );
         })}
