@@ -6,9 +6,8 @@ const DEFAULT_CHROMIUM_PACK_URL =
   "https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.x64.tar";
 
 const PAGE_LOAD_TIMEOUT_MS = 45_000;
-const PER_IMAGE_WAIT_MS = 8_000;
-const IMAGE_OPTIMIZE_BUDGET_MS = 28_000;
-const IMAGE_OPTIMIZE_CONCURRENCY = 4;
+const PER_IMAGE_WAIT_MS = 12_000;
+const IMAGE_OPTIMIZE_CONCURRENCY = 3;
 
 function localChromePath(): string | null {
   if (process.env.CHROMIUM_LOCAL_EXECUTABLE) {
@@ -118,15 +117,14 @@ async function injectOptimizedImages(page: Page): Promise<void> {
     }))
   );
 
-  const startedAt = Date.now();
   const optimized = await mapWithConcurrency(images, IMAGE_OPTIMIZE_CONCURRENCY, async (image) => {
-    if (Date.now() - startedAt > IMAGE_OPTIMIZE_BUDGET_MS) {
-      return { index: image.index, dataUrl: null as string | null };
-    }
     const dataUrl = await optimizeImageToDataUrl(
       image.src,
       printImageMaxWidth(image.className)
     );
+    if (!dataUrl && image.src && !image.src.startsWith("data:")) {
+      console.warn("[project pdf] could not inline image", image.src);
+    }
     return { index: image.index, dataUrl };
   });
 

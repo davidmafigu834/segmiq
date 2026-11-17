@@ -35,12 +35,23 @@ async function buildProjectPhotosZip(projectTitle: string, photos: PhotoRow[]): 
 
     void (async () => {
       try {
+        let added = 0;
         for (let i = 0; i < photos.length; i++) {
           const photo = photos[i]!;
-          const buffer = await fetchPublishablePhotoBuffer(photo.storage_key);
-          archive.append(buffer, {
-            name: buildPhotoDownloadFilename(projectTitle, i, photo.caption),
-          });
+          try {
+            const buffer = await fetchPublishablePhotoBuffer(photo.storage_key);
+            archive.append(buffer, {
+              name: buildPhotoDownloadFilename(projectTitle, i, photo.caption),
+            });
+            added += 1;
+          } catch (err) {
+            console.error("[media/download zip] skipped photo", photo.id, err);
+          }
+        }
+        if (added === 0) {
+          archive.abort();
+          reject(new Error("Could not read any photos."));
+          return;
         }
         await archive.finalize();
       } catch (err) {
