@@ -301,7 +301,7 @@ export function LeadDetailPanel({
         />
       ) : null}
       <div
-        className={`pipeline-drawer-light pointer-events-auto relative z-10 flex w-full min-w-0 max-w-full flex-col overflow-hidden border-sales-border text-sales-text-primary shadow-[0_8px_30px_rgba(16,24,40,0.08)] transition-transform duration-200 max-md:max-h-[min(96dvh,100dvh)] max-md:rounded-t-2xl max-md:pb-[env(safe-area-inset-bottom)] md:h-[100dvh] md:max-h-[100dvh] md:rounded-none md:border-l ${solarSales ? "solar-lead-sheet bg-sales-surface md:w-[520px] md:max-w-[min(100%,520px)]" : "bg-sales-surface md:w-[520px] md:max-w-[min(100%,520px)]"}`}
+        className={`pipeline-drawer-light pointer-events-auto relative z-10 flex w-full min-w-0 max-w-full flex-col overflow-hidden border-sales-border text-sales-text-primary shadow-[0_8px_30px_rgba(16,24,40,0.08)] transition-transform duration-200 max-md:max-h-[min(96dvh,100dvh)] max-md:rounded-t-2xl max-md:pb-[env(safe-area-inset-bottom)] md:h-[100dvh] md:max-h-[100dvh] md:rounded-none md:border-l ${solarSales ? "solar-lead-sheet so-studio md:w-[520px] md:max-w-[min(100%,520px)]" : "bg-sales-surface md:w-[520px] md:max-w-[min(100%,520px)]"}`}
         role="dialog"
         aria-modal={isMobileDrawer}
         onClick={(e) => e.stopPropagation()}

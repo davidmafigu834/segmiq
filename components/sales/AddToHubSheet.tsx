@@ -269,6 +269,8 @@ export function AddToHubSheet({
       onClose={onClose}
       labelledBy="add-hub-sheet-title"
       maxWidthClass="max-w-[480px]"
+      className={solar ? "so-studio so-sheet-panel" : undefined}
+      contentClassName={solar ? "so-studio-body" : undefined}
     >
       {success ? (
         <div className="flex flex-col items-center justify-center py-10 text-center">
