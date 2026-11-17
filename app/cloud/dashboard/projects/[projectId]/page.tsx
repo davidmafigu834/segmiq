@@ -110,45 +110,6 @@ async function pooled<T>(
   return results;
 }
 
-function filenameFromDisposition(header: string | null, fallback: string): string {
-  const encoded = header?.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
-  if (encoded) {
-    try {
-      return decodeURIComponent(encoded);
-    } catch {
-      return fallback;
-    }
-  }
-  const plain = header?.match(/filename="?([^";]+)"?/i)?.[1];
-  return plain?.trim() || fallback;
-}
-
-function saveBlobFile(blob: Blob, filename: string) {
-  const objectUrl = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = objectUrl;
-  anchor.download = filename;
-  anchor.rel = "noopener";
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
-}
-
-async function downloadApiFile(url: string, fallbackName: string): Promise<void> {
-  const res = await fetch(url, { credentials: "same-origin" });
-  if (!res.ok) {
-    const payload = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(payload.error ?? "Download failed");
-  }
-  const blob = await res.blob();
-  const type = blob.type || res.headers.get("content-type") || "";
-  if (!blob.size || type.includes("json") || type.startsWith("text/")) {
-    throw new Error("Could not prepare download.");
-  }
-  saveBlobFile(blob, filenameFromDisposition(res.headers.get("content-disposition"), fallbackName));
-}
-
 function stopCardDrag(event: { stopPropagation: () => void }) {
   event.stopPropagation();
 }
@@ -200,7 +161,6 @@ export default function ProjectDetailPage() {
   const [coverMediaId, setCoverMediaId] = useState<string | null>(null);
   const [profileSlug, setProfileSlug] = useState<string | null>(null);
   const [pdfRegenerating, setPdfRegenerating] = useState(false);
-  const [downloadingAll, setDownloadingAll] = useState(false);
 
   function showToast(msg: string) {
     setToastMsg(msg);
@@ -712,30 +672,7 @@ export default function ProjectDetailPage() {
     ? `/api/clients/${session.clientId}/projects/${projectId}/media/download`
     : null;
 
-  async function downloadAllPhotos() {
-    if (!allPhotosDownloadUrl || !project) return;
-    setDownloadingAll(true);
-    try {
-      const fallback = `${project.title.replace(/[^\w\s.-]/g, "").trim() || "project"}-photos.zip`;
-      await downloadApiFile(allPhotosDownloadUrl, fallback);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Could not download photos.");
-    } finally {
-      setDownloadingAll(false);
-    }
-  }
-
-  async function downloadPhoto(mediaId: string, index: number) {
-    try {
-      await downloadApiFile(
-        photoDownloadUrl(mediaId),
-        `photo-${String(index + 1).padStart(2, "0")}.jpg`
-      );
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Could not download photo.");
-    }
-  }
-
+  const allPhotosFilename = `${project.title.replace(/[^\w\s.-]/g, "").trim() || "project"}-photos.zip`;
   const catStyles = project ? getProjectCardStyles(project.category) : null;
 
   return (
@@ -932,17 +869,16 @@ export default function ProjectDetailPage() {
             {media.length} {media.some(m => m.type === "video") ? "items" : "photos"}
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            {galleryPhotos.length > 0 && (
-              <button
-                type="button"
-                onClick={() => downloadAllPhotos()}
-                disabled={downloadingAll}
-                className="cloud-btn-ghost !h-9 px-3 text-[12px] disabled:opacity-60"
+            {galleryPhotos.length > 0 && allPhotosDownloadUrl && (
+              <a
+                href={allPhotosDownloadUrl}
+                download={allPhotosFilename}
+                className="cloud-btn-ghost !h-9 px-3 text-[12px]"
               >
                 <Download className="h-3.5 w-3.5" />
-                <span className="sm:hidden">{downloadingAll ? "Preparing…" : "Download all"}</span>
-                <span className="hidden sm:inline">{downloadingAll ? "Preparing…" : "Download all for social"}</span>
-              </button>
+                <span className="sm:hidden">Download all</span>
+                <span className="hidden sm:inline">Download all for social</span>
+              </a>
             )}
             <p className="hidden text-[11px] text-[var(--cloud-text-tertiary)] font-cloud-body md:block">
               drag to reorder
@@ -1012,20 +948,18 @@ export default function ProjectDetailPage() {
                               decoding="async"
                               className="h-full w-full object-contain"
                             />
-                            <button
-                              type="button"
+                            <a
+                              href={photoDownloadUrl(m.id)}
+                              download
                               onMouseDown={stopCardDrag}
                               onTouchStart={stopCardDrag}
                               onPointerDown={stopCardDrag}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                void downloadPhoto(m.id, idx);
-                              }}
+                              onClick={(e) => e.stopPropagation()}
                               className="absolute bottom-1.5 right-1.5 z-10 rounded-full bg-white/85 p-1.5 text-[#666660] transition-opacity hover:text-[#0a0a0a] opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
                               aria-label="Download watermarked photo"
                             >
                               <Download className="h-3 w-3" />
-                            </button>
+                            </a>
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); void setCoverPhoto(m.id); }}
@@ -1751,18 +1685,16 @@ export default function ProjectDetailPage() {
           </button>
 
           {currentMedia.type !== "video" && (
-            <button
-              type="button"
+            <a
+              href={photoDownloadUrl(currentMedia.id)}
+              download
               className="absolute right-14 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
-              onClick={(e) => {
-                e.stopPropagation();
-                void downloadPhoto(currentMedia.id, lightboxIdx ?? 0);
-              }}
+              onClick={(e) => e.stopPropagation()}
               title="Download watermarked photo"
               aria-label="Download watermarked photo"
             >
               <Download className="h-5 w-5" />
-            </button>
+            </a>
           )}
 
           <button

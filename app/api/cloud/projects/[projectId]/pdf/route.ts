@@ -70,7 +70,11 @@ export async function GET(
     }) &&
     pdfUrl
   ) {
-    return NextResponse.redirect(pdfUrl, { status: 302 });
+    const stored = await fetch(pdfUrl);
+    if (stored.ok) {
+      const buffer = Buffer.from(await stored.arrayBuffer());
+      return pdfAttachmentResponse(buffer, filename);
+    }
   }
 
   try {
