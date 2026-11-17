@@ -58,7 +58,6 @@ export function SolarLeadDesk({
   name,
   phone,
   followUpDate,
-  clientId: _clientId,
   contactId,
   onSaved,
 }: {

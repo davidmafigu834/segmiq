@@ -331,7 +331,7 @@ export function AddToHubSheet({
                   </button>
                 ))}
               </div>
-              )}
+              ) : null}
 
               <label className="flex flex-col gap-1.5">
                 <span className={labelClass}>{isLead ? "Name" : "Customer name"}</span>
