@@ -677,7 +677,7 @@ async function main() {
   const { data: clients, error: clientErr } = await supabase
     .from("clients")
     .select(
-      "id, name, slug, industry, website, country, owner_email, dial_code, capability_tagline, years_in_operation, business_type, is_archived"
+      "id, name, slug, industry, website, country, owner_email, dial_code, capability_tagline, years_in_operation, business_type, sales_workflow_preset, is_archived"
     )
     .or("name.ilike.%Ecolus%,slug.ilike.%ecolus%")
     .eq("is_archived", false);
@@ -788,6 +788,9 @@ async function main() {
     note("Company Information → Tagline", TAGLINE, `Existing capability_tagline is "${client.capability_tagline}". Left unchanged.`);
   }
   if (client.years_in_operation == null) clientPatch.years_in_operation = 8;
+  if (client.sales_workflow_preset !== "SOLAR_INSTALLATION") {
+    clientPatch.sales_workflow_preset = "SOLAR_INSTALLATION";
+  }
 
   const clientKeys = Object.keys(clientPatch).filter((k) => k !== "updated_at");
   if (clientKeys.length) {
